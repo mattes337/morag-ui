@@ -1,18 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     performVectorSearch,
     executePromptWithContext,
+    checkApiHealth,
     type SearchResult,
 } from '../lib/vectorSearch';
 
 export default function Page() {
     const [activeTab, setActiveTab] = useState('databases');
-    const [selectedDatabase, setSelectedDatabase] = useState(null);
-    const [selectedDocument, setSelectedDocument] = useState(null);
+    const [selectedDatabase, setSelectedDatabase] = useState<any>(null);
+    const [selectedDocument, setSelectedDocument] = useState<any>(null);
     const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
-    const [selectedDocumentType, setSelectedDocumentType] = useState(null);
+    const [selectedDocumentType, setSelectedDocumentType] = useState<any>(null);
     const [showCreateDatabaseDialog, setShowCreateDatabaseDialog] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [showApiConfigDialog, setShowApiConfigDialog] = useState(false);
@@ -101,7 +102,7 @@ export default function Page() {
         { type: 'website', label: 'Website', icon: '🌐' },
     ];
 
-    const getStateColor = (state) => {
+    const getStateColor = (state: string) => {
         switch (state) {
             case 'pending':
                 return 'bg-yellow-100 text-yellow-800';
@@ -424,7 +425,7 @@ export default function Page() {
                             value={promptText}
                             onChange={(e) => setPromptText(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                            rows="4"
+                            rows={4}
                             placeholder="Enter your question or prompt here..."
                             data-oid="prompt-textarea"
                         />
@@ -704,7 +705,8 @@ export default function Page() {
                             <span className="text-sm text-gray-500" data-oid="m:_spt0">
                                 Management Interface
                             </span>
-                        </div<div className="flex items-center space-x-4" data-oid="s_ensf0">
+                        </div>
+                        <div className="flex items-center space-x-4" data-oid="s_ensf0">
                             <span className="text-sm text-gray-600" data-oid="zwk6asf">
                                 Vector Database & RAG Management
                             </span>
@@ -755,10 +757,10 @@ export default function Page() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="3fsc6s5">
-                {activeTab === 'databases' && <DatabasesView data-oid="1z59b1n" />}
-                {activeTab === 'documents' && <DocumentsView data-oid="ve5mah3" />}
-                {activeTab === 'prompt' && <PromptView data-oid="prompt-main" />}
-                {activeTab === 'apikeys' && <ApiKeysView data-oid=".spof3q" />}
+                {activeTab === 'databases' && <DatabasesView />}
+                {activeTab === 'documents' && <DocumentsView />}
+                {activeTab === 'prompt' && <PromptView />}
+                {activeTab === 'apikeys' && <ApiKeysView />}
             </main>
 
             {/* Add Document Dialog */}
@@ -980,7 +982,7 @@ export default function Page() {
                                 </label>
                                 <textarea
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    rows="3"
+                                    rows={3}
                                     placeholder="Database description..."
                                     data-oid="fdwzozl"
                                 />
