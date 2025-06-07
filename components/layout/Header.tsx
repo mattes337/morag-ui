@@ -1,7 +1,17 @@
+}, [setShowUserMenu]);
+
+    const handleLogout = () => {
+        setUser(null);
+        setShowUserMenu(false);
+        // Add logout logic here
+    };
+
+    return (
+=======
 'use client';
 
 import { useApp } from '../../contexts/AppContext';
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 
 export function Header() {
     const { 
@@ -29,6 +39,14 @@ export function Header() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
+    }, [setShowUserMenu]);
+
+    const handleLogout = () => {
+        setUser(null);
+        setShowUserMenu(false);
+        // Add logout logic here
+    };
+
     return (
 =======
     }, [setShowUserMenu]);
