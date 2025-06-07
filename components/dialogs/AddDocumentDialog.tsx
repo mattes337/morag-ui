@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { DocumentType } from '../../types';
+import { DocumentType, Document } from '../../types';
 
 interface AddDocumentDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    mode?: 'add' | 'supersede';
+    documentToSupersede?: Document | null;
 }
 
-export function AddDocumentDialog({ isOpen, onClose }: AddDocumentDialogProps) {
+export function AddDocumentDialog({ isOpen, onClose, mode = 'add', documentToSupersede }: AddDocumentDialogProps) {
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
 
     const documentTypes: DocumentType[] = [
@@ -34,8 +36,27 @@ export function AddDocumentDialog({ isOpen, onClose }: AddDocumentDialogProps) {
         >
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4" data-oid="z2ikfbr">
                 <h3 className="text-lg font-semibold mb-4" data-oid="6374_rr">
-                    Add Document
+                    {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                 </h3>
+
+                {mode === 'supersede' && documentToSupersede && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4" data-oid="supersede-warning">
+                        <div className="flex items-start space-x-3" data-oid="warning-content">
+                            <div className="text-yellow-600 text-xl" data-oid="warning-icon">⚠️</div>
+                            <div data-oid="warning-text">
+                                <h4 className="font-medium text-yellow-800 mb-1" data-oid="warning-title">
+                                    Document Supersede Warning
+                                </h4>
+                                <p className="text-sm text-yellow-700 mb-2" data-oid="warning-description">
+                                    This action will replace the existing document "{documentToSupersede.name}" and remove it from the vector store. This action cannot be undone.
+                                </p>
+                                <div className="text-xs text-yellow-600" data-oid="document-info">
+                                    Current document: {documentToSupersede.chunks} chunks, Quality: {(documentToSupersede.quality * 100).toFixed(0)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {!selectedDocumentType ? (
                     <div data-oid=".gkrayq">
@@ -187,13 +208,16 @@ export function AddDocumentDialog({ isOpen, onClose }: AddDocumentDialogProps) {
                         data-oid="k0-0:qt"
                     >
                         Cancel
-                    </button>
-                    {selectedDocumentType && (
+                    </button{selectedDocumentType && (
                         <button
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            className={`px-4 py-2 text-white rounded-md ${
+                                mode === 'supersede' 
+                                    ? 'bg-yellow-600 hover:bg-yellow-700' 
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
                             data-oid="1cpzg6e"
                         >
-                            Add Document
+                            {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                         </button>
                     )}
                 </div>

@@ -10,6 +10,10 @@ export function GlobalDialogs() {
     const {
         showAddDocumentDialog,
         setShowAddDocumentDialog,
+        showSupersedeDocumentDialog,
+        setShowSupersedeDocumentDialog,
+        documentToSupersede,
+        setDocumentToSupersede,
         showCreateDatabaseDialog,
         setShowCreateDatabaseDialog,
         showApiKeyDialog,
@@ -24,6 +28,17 @@ export function GlobalDialogs() {
                 isOpen={showAddDocumentDialog}
                 onClose={() => setShowAddDocumentDialog(false)}
                 data-oid="qvb-a83"
+            />
+
+            <AddDocumentDialog
+                isOpen={showSupersedeDocumentDialog}
+                onClose={() => {
+                    setShowSupersedeDocumentDialog(false);
+                    setDocumentToSupersede(null);
+                }}
+                mode="supersede"
+                documentToSupersede={documentToSupersede}
+                data-oid="supersede-dialog"
             />
 
             <CreateDatabaseDialog

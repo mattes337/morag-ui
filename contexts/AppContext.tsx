@@ -25,6 +25,10 @@ interface AppContextType {
     // Dialog states
     showAddDocumentDialog: boolean;
     setShowAddDocumentDialog: (show: boolean) => void;
+    showSupersedeDocumentDialog: boolean;
+    setShowSupersedeDocumentDialog: (show: boolean) => void;
+    documentToSupersede: Document | null;
+    setDocumentToSupersede: (document: Document | null) => void;
     showCreateDatabaseDialog: boolean;
     setShowCreateDatabaseDialog: (show: boolean) => void;
     showApiKeyDialog: boolean;
@@ -124,6 +128,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Dialog states
     const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
+    const [showSupersedeDocumentDialog, setShowSupersedeDocumentDialog] = useState(false);
+    const [documentToSupersede, setDocumentToSupersede] = useState<Document | null>(null);
     const [showCreateDatabaseDialog, setShowCreateDatabaseDialog] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [showApiConfigDialog, setShowApiConfigDialog] = useState(false);
@@ -158,6 +164,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSelectedDocument,
         showAddDocumentDialog,
         setShowAddDocumentDialog,
+        showSupersedeDocumentDialog,
+        setShowSupersedeDocumentDialog,
+        documentToSupersede,
+        setDocumentToSupersede,
         showCreateDatabaseDialog,
         setShowCreateDatabaseDialog,
         showApiKeyDialog,
