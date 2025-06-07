@@ -8,6 +8,7 @@ interface DocumentsViewProps {
     onBackToDatabases: () => void;
     onAddDocument: () => void;
     onPromptDocument: (document: Document) => void;
+    onViewDocumentDetail: (document: Document) => void;
 }
 
 export function DocumentsView({
@@ -16,6 +17,7 @@ export function DocumentsView({
     onBackToDatabases,
     onAddDocument,
     onPromptDocument,
+    onViewDocumentDetail,
 }: DocumentsViewProps) {
     const getStateColor = (state: string) => {
         switch (state) {
@@ -107,11 +109,14 @@ export function DocumentsView({
                         {documents.map((doc) => (
                             <tr key={doc.id} data-oid="wbadi_n">
                                 <td className="px-6 py-4 whitespace-nowrap" data-oid="3dmlvd_">
-                                    <div
-                                        className="text-sm font-medium text-gray-900"
-                                        data-oid="vn2iif-"
-                                    >
-                                        {doc.name}
+                                    <div className="text-sm font-medium" data-oid="vn2iif-">
+                                        <button
+                                            onClick={() => onViewDocumentDetail(doc)}
+                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                            data-oid="8ddrjwy"
+                                        >
+                                            {doc.name}
+                                        </button>
                                     </div>
                                     <div className="text-sm text-gray-500" data-oid="hnin.07">
                                         {doc.uploadDate}
@@ -147,6 +152,13 @@ export function DocumentsView({
                                     className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
                                     data-oid="sy.:d8z"
                                 >
+                                    <button
+                                        onClick={() => onViewDocumentDetail(doc)}
+                                        className="text-indigo-600 hover:text-indigo-900"
+                                        data-oid="view-detail-btn"
+                                    >
+                                        View Details
+                                    </button>
                                     <button
                                         onClick={() => onPromptDocument(doc)}
                                         className="text-green-600 hover:text-green-900"
