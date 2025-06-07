@@ -132,12 +132,33 @@ export function AddDocumentDialog({ isOpen, onClose }: AddDocumentDialogProps) {
                                 >
                                     Chunk Size
                                 </label>
-                                <input
-                                    type="number"
-                                    defaultValue="512"
+                                <select
+                                    defaultValue="1000"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     data-oid="7fyan5y"
-                                />
+                                >
+                                    <option value="1000" data-oid="a25qqwd">
+                                        1000
+                                    </option>
+                                    <option value="2000" data-oid="s4oip-v">
+                                        2000
+                                    </option>
+                                    <option value="3000" data-oid="iw12lr6">
+                                        3000
+                                    </option>
+                                    <option value="4000" data-oid="-oe_k4z">
+                                        4000
+                                    </option>
+                                    <option value="5000" data-oid="7nw0d2u">
+                                        5000
+                                    </option>
+                                    <option value="6000" data-oid="yorep4t">
+                                        6000
+                                    </option>
+                                    <option value="8000" data-oid="xdp-6dz">
+                                        8000
+                                    </option>
+                                </select>
                             </div>
                             <div data-oid="2nkrmt9">
                                 <label
