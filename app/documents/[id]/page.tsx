@@ -12,7 +12,14 @@ interface DocumentDetailPageProps {
 
 export default function DocumentDetailPage({ params }: DocumentDetailPageProps) {
     const router = useRouter();
-    const { documents, setDocuments, selectedDocument, setSelectedDocument } = useApp();
+    const {
+        documents,
+        setDocuments,
+        selectedDocument,
+        setSelectedDocument,
+        setShowSupersedeDocumentDialog,
+        setDocumentToSupersede,
+    } = useApp();
 
     // Find the document by ID
     const document = documents.find((doc) => doc.id.toString() === params.id);
@@ -43,12 +50,9 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     };
 
     const handleSupersedeDocument = (document: any) => {
-        setDocuments((prev: any) =>
-            prev.map((doc: any) =>
-                doc.id === document.id ? { ...doc, state: 'deprecated' as const } : doc,
-            ),
-        );
-        console.log('Superseding document:', document.name);
+        setDocumentToSupersede(document);
+        setShowSupersedeDocumentDialog(true);
+        console.log('Opening supersede dialog for document:', document.name);
     };
 
     const handleDeleteDocument = (document: any) => {
