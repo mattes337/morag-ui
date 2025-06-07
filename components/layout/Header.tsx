@@ -29,7 +29,17 @@ export function Header() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
+    return (
+=======
     }, [setShowUserMenu]);
+
+    const handleLogout = () => {
+        setUser(null);
+        setShowUserMenu(false);
+        // Add logout logic here
+    };
+
+    return (
 
     
 =======
