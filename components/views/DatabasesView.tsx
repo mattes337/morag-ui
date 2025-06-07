@@ -16,15 +16,15 @@ export function DatabasesView({
     onPromptDatabase,
 }: DatabasesViewProps) {
     return (
-        <div className="space-y-6" data-oid="p0s5gyx">
-            <div className="flex justify-between items-center" data-oid="9ij34l-">
-                <h2 className="text-2xl font-bold text-gray-900" data-oid="fr68u5z">
+        <div className="space-y-6" data-oid="z0fr7z:">
+            <div className="flex justify-between items-center" data-oid="f1linpl">
+                <h2 className="text-2xl font-bold text-gray-900" data-oid="pttltwq">
                     Vector Databases
                 </h2>
                 <button
                     onClick={onCreateDatabase}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    data-oid="ex4xbf3"
+                    data-oid=":3taxny"
                 >
                     Create Database
                 </button>
@@ -32,39 +32,39 @@ export function DatabasesView({
 
             <div
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                data-oid="m8vwf-3"
+                data-oid="kqixnxr"
             >
                 {databases.map((db) => (
                     <div
                         key={db.id}
                         className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                        data-oid="_k3wstc"
+                        data-oid="b8xi793"
                     >
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="cd2vgbq">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="em067bj">
                             {db.name}
                         </h3>
-                        <p className="text-gray-600 text-sm mb-4" data-oid="ff6aa5n">
+                        <p className="text-gray-600 text-sm mb-4" data-oid="dvaxbm2">
                             {db.description}
                         </p>
                         <div
                             className="flex justify-between items-center text-sm text-gray-500 mb-4"
-                            data-oid="xti.ark"
+                            data-oid="pbe4.xl"
                         >
-                            <span data-oid="2300dii">{db.documentCount} documents</span>
-                            <span data-oid="52h6pvt">Updated {db.lastUpdated}</span>
+                            <span data-oid="gkf5.5y">{db.documentCount} documents</span>
+                            <span data-oid="_.zzg7p">Updated {db.lastUpdated}</span>
                         </div>
-                        <div className="flex space-x-2" data-oid="3yn8yz0">
+                        <div className="flex space-x-2" data-oid="m3nh2si">
                             <button
                                 onClick={() => onPromptDatabase(db)}
                                 className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                                data-oid="cmo32t4"
+                                data-oid="nuqvsw8"
                             >
                                 Prompt
                             </button>
                             <button
                                 onClick={() => onSelectDatabase(db)}
                                 className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                                data-oid="o9h9tob"
+                                data-oid="faoypxq"
                             >
                                 View Docs
                             </button>

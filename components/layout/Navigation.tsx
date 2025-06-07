@@ -1,35 +1,35 @@
 'use client';
 
-interface NavigationProps {
-    activeTab: string;
-    onTabChange: (tab: string) => void;
-}
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+export function Navigation() {
+    const pathname = usePathname();
+
     const tabs = [
-        { id: 'databases', label: 'Databases' },
-        { id: 'documents', label: 'Documents' },
-        { id: 'prompt', label: 'Prompt' },
-        { id: 'apikeys', label: 'API Keys' },
+        { id: 'databases', label: 'Databases', href: '/' },
+        { id: 'documents', label: 'Documents', href: '/documents' },
+        { id: 'prompt', label: 'Prompt', href: '/prompt' },
+        { id: 'apikeys', label: 'API Keys', href: '/api-keys' },
     ];
 
     return (
-        <nav className="bg-white border-b border-gray-200" data-oid="0p0hcui">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-oid="89j7ba8">
-                <div className="flex space-x-8" data-oid="v8ce7um">
+        <nav className="bg-white border-b border-gray-200" data-oid="3v4ze-:">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-oid="y9-q.0b">
+                <div className="flex space-x-8" data-oid="mij1nrk">
                     {tabs.map((tab) => (
-                        <button
+                        <Link
                             key={tab.id}
-                            onClick={() => onTabChange(tab.id)}
+                            href={tab.href}
                             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === tab.id
+                                pathname === tab.href
                                     ? 'border-blue-500 text-blue-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
-                            data-oid="pk3ubv."
+                            data-oid="maa0e35"
                         >
                             {tab.label}
-                        </button>
+                        </Link>
                     ))}
                 </div>
             </div>
