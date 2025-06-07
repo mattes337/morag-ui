@@ -220,3 +220,18 @@ export function extractKeyTerms(query: string): string[] {
                 ].includes(term),
         );
 }
+
+// Mock API health check function
+export async function checkApiHealth(): Promise<boolean> {
+    try {
+        // Simulate API health check delay
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Mock health check - in production, this would ping your actual API
+        // For now, randomly return true/false to simulate API status
+        return Math.random() > 0.1; // 90% chance of being healthy
+    } catch (error) {
+        console.error('API health check failed:', error);
+        return false;
+    }
+}
