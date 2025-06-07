@@ -12,19 +12,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang="en" data-oid="_ap9_kx">
-            <body className="" data-oid=".0djxkd">
-                <AppProvider data-oid="admf492">
-                    <div className="min-h-screen bg-gray-50" data-oid="tqe35hj">
-                        <Header data-oid="xfk:j-i" />
-                        <Navigation data-oid="ytrz1.." />
+        <html lang="en" data-oid="sn2ysmi">
+            <body className="" data-oid="prg_jeq">
+                <AppProvider data-oid="15_.rz.">
+                    <div className="min-h-screen bg-gray-50" data-oid="0t40qhc">
+                        <Header data-oid="4p3s3c9" />
+                        <Navigation data-oid="u6umy3b" />
                         <main
                             className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-                            data-oid="97g72il"
+                            data-oid="verp_97"
                         >
                             {children}
                         </main>
-                        <GlobalDialogs data-oid=".ih4-hw" />
+                        <GlobalDialogs data-oid="7y0d0e1" />
                     </div>
                 </AppProvider>
             </body>

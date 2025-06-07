@@ -37,16 +37,16 @@ export function DocumentsView({
     };
 
     return (
-        <div className="space-y-6" data-oid="x.95ex8">
-            <div className="flex justify-between items-center" data-oid="a_e3lg3">
-                <div data-oid="v-wzh-v">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="pf5h6.p">
+        <div className="space-y-6" data-oid="nza3s1f">
+            <div className="flex justify-between items-center" data-oid="n7lwouf">
+                <div data-oid="0zlc865">
+                    <h2 className="text-2xl font-bold text-gray-900" data-oid="xu409k6">
                         Documents {selectedDatabase && `- ${selectedDatabase.name}`}
                     </h2>
                     <button
                         onClick={onBackToDatabases}
                         className="text-blue-600 hover:text-blue-800 text-sm"
-                        data-oid="3nsbxvg"
+                        data-oid="ue5udu."
                     >
                         ← Back to Databases
                     </button>
@@ -54,7 +54,7 @@ export function DocumentsView({
                 <button
                     onClick={onAddDocument}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    data-oid="2k_3vwa"
+                    data-oid="0-da_mi"
                 >
                     Add Document
                 </button>
@@ -62,125 +62,125 @@ export function DocumentsView({
 
             <div
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="te45295"
+                data-oid="h:gn57f"
             >
-                <table className="w-full" data-oid="s1sc2-y">
-                    <thead className="bg-gray-50" data-oid="ef2vj8q">
-                        <tr data-oid="hb6vkh9">
+                <table className="w-full" data-oid="qs6sk_n">
+                    <thead className="bg-gray-50" data-oid="73eurpp">
+                        <tr data-oid="_rjwjm1">
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="u-8f155"
+                                data-oid="o88m8r1"
                             >
                                 Document
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="da2ox1p"
+                                data-oid="v9c_mg6"
                             >
                                 Type
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="6ihg7wp"
+                                data-oid="0ip8f5n"
                             >
                                 State
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="z.beshl"
+                                data-oid="_7adqwq"
                             >
                                 Version
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="gcuu4e7"
+                                data-oid="hupnr43"
                             >
                                 Stats
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="4k._3go"
+                                data-oid="kg-0xqk"
                             >
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="89s.3uw">
+                    <tbody className="bg-white divide-y divide-gray-200" data-oid="q87st.9">
                         {documents.map((doc) => (
-                            <tr key={doc.id} data-oid="br7r2ao">
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="-fs0f7_">
-                                    <div className="text-sm font-medium" data-oid="wo9ot57">
+                            <tr key={doc.id} data-oid="ero70tr">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="urr:.bt">
+                                    <div className="text-sm font-medium" data-oid="y:3l2x3">
                                         <button
                                             onClick={() => onViewDocumentDetail(doc)}
                                             className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                                            data-oid="c0:jbp."
+                                            data-oid="1ww:pgk"
                                         >
                                             {doc.name}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500" data-oid="2oyq.l0">
+                                    <div className="text-sm text-gray-500" data-oid="2dv-c:b">
                                         {doc.uploadDate}
                                     </div>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="fzz8l-4"
+                                    data-oid="yjzoe1x"
                                 >
                                     {doc.type}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="pw01e1h">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="j2:fqfg">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
-                                        data-oid="b:42sb6"
+                                        data-oid="1rqt_z:"
                                     >
                                         {doc.state}
                                     </span>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="qxly6no"
+                                    data-oid="4kmzn:s"
                                 >
                                     v{doc.version}
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="x7i6g10"
+                                    data-oid="kfn7i_k"
                                 >
                                     {doc.chunks} chunks, {(doc.quality * 100).toFixed(0)}% quality
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="q8fsx7p"
+                                    data-oid="2gkk2f8"
                                 >
                                     <button
                                         onClick={() => onViewDocumentDetail(doc)}
                                         className="text-indigo-600 hover:text-indigo-900"
-                                        data-oid="-6js1ae"
+                                        data-oid="ban8y3a"
                                     >
                                         View Details
                                     </button>
                                     <button
                                         onClick={() => onPromptDocument(doc)}
                                         className="text-green-600 hover:text-green-900"
-                                        data-oid="h2jfuut"
+                                        data-oid="58yv96y"
                                     >
                                         Prompt
                                     </button>
                                     <button
                                         className="text-blue-600 hover:text-blue-900"
-                                        data-oid="z:wazzd"
+                                        data-oid=".co.hl7"
                                     >
                                         Re-ingest
                                     </button>
                                     <button
                                         className="text-yellow-600 hover:text-yellow-900"
-                                        data-oid="2oe14kl"
+                                        data-oid="4p9_qzq"
                                     >
                                         Supersede
                                     </button>
                                     <button
                                         className="text-red-600 hover:text-red-900"
-                                        data-oid="pd8p1ct"
+                                        data-oid="fx7p3ec"
                                     >
                                         Delete
                                     </button>
