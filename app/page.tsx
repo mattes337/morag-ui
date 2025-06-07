@@ -167,24 +167,24 @@ export default function Page() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50" data-oid="f8pv73a">
+        <div className="min-h-screen bg-gray-50" data-oid="6hftfki">
             <Header
                 apiHealthy={apiHealthy}
                 onConfigClick={() => setShowApiConfigDialog(true)}
-                data-oid="ugk6d0b"
+                data-oid="5xk8s72"
             />
 
-            <Navigation activeTab={activeTab} onTabChange={setActiveTab} data-oid="4gcn7s_" />
+            <Navigation activeTab={activeTab} onTabChange={setActiveTab} data-oid="0je9x-e" />
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="3fsc6s5">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid=":59v6m6">
                 {activeTab === 'databases' && (
                     <DatabasesView
                         databases={databases}
                         onCreateDatabase={() => setShowCreateDatabaseDialog(true)}
                         onSelectDatabase={handleSelectDatabase}
                         onPromptDatabase={handlePromptDatabase}
-                        data-oid="k9ogx7l"
+                        data-oid="hj:c2c5"
                     />
                 )}
                 {activeTab === 'documents' && (
@@ -194,7 +194,7 @@ export default function Page() {
                         onBackToDatabases={handleBackToDatabases}
                         onAddDocument={() => setShowAddDocumentDialog(true)}
                         onPromptDocument={handlePromptDocument}
-                        data-oid="x339:nl"
+                        data-oid="6zl097g"
                     />
                 )}
                 {activeTab === 'prompt' && (
@@ -211,14 +211,14 @@ export default function Page() {
                         onSubmitPrompt={handlePromptSubmit}
                         onClearDocumentFilter={handleClearDocumentFilter}
                         onClearDatabaseFilter={handleClearDatabaseFilter}
-                        data-oid="z0p:onb"
+                        data-oid="_6z5_yp"
                     />
                 )}
                 {activeTab === 'apikeys' && (
                     <ApiKeysView
                         apiKeys={apiKeys}
                         onGenerateApiKey={() => setShowApiKeyDialog(true)}
-                        data-oid="79yau6i"
+                        data-oid="ufxtlec"
                     />
                 )}
             </main>
@@ -227,25 +227,25 @@ export default function Page() {
             <AddDocumentDialog
                 isOpen={showAddDocumentDialog}
                 onClose={() => setShowAddDocumentDialog(false)}
-                data-oid="brjarvn"
+                data-oid="vlb_ta9"
             />
 
             <CreateDatabaseDialog
                 isOpen={showCreateDatabaseDialog}
                 onClose={() => setShowCreateDatabaseDialog(false)}
-                data-oid="habce1g"
+                data-oid="0uwru0k"
             />
 
             <ApiKeyDialog
                 isOpen={showApiKeyDialog}
                 onClose={() => setShowApiKeyDialog(false)}
-                data-oid="1fqmkf7"
+                data-oid="msaqgpo"
             />
 
             <ApiConfig
                 isOpen={showApiConfigDialog}
                 onClose={() => setShowApiConfigDialog(false)}
-                data-oid="z.909gb"
+                data-oid="w59r4ju"
             />
         </div>
     );
