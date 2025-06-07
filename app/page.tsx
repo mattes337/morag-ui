@@ -12,6 +12,7 @@ import { Header } from '../components/layout/Header';
 import { Navigation } from '../components/layout/Navigation';
 import { DatabasesView } from '../components/views/DatabasesView';
 import { DocumentsView } from '../components/views/DocumentsView';
+import { DocumentDetailView } from '../components/views/DocumentDetailView';
 import { PromptView } from '../components/views/PromptView';
 import { ApiKeysView } from '../components/views/ApiKeysView';
 import { AddDocumentDialog } from '../components/dialogs/AddDocumentDialog';
@@ -23,6 +24,7 @@ export default function Page() {
     const [activeTab, setActiveTab] = useState('databases');
     const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+    const [viewingDocumentDetail, setViewingDocumentDetail] = useState(false);
     const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
     const [showCreateDatabaseDialog, setShowCreateDatabaseDialog] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
@@ -83,6 +85,16 @@ export default function Page() {
             chunks: 0,
             quality: 0,
             uploadDate: '2024-01-15',
+        },
+        {
+            id: 3,
+            name: 'Company Website Analysis',
+            type: 'Website',
+            state: 'ingested',
+            version: 1,
+            chunks: 23,
+            quality: 0.87,
+            uploadDate: '2024-01-12',
         },
     ]);
 
@@ -166,6 +178,46 @@ export default function Page() {
         setSelectedDatabase(null);
     };
 
+    const handleViewDocumentDetail = (document: Document) => {
+        setSelectedDocument(document);
+        setViewingDocumentDetail(true);
+    };
+
+    const handleBackFromDocumentDetail = () => {
+        setViewingDocumentDetail(false);
+        setSelectedDocument(null);
+    };
+
+    const handleReingestDocument = (document: Document) => {
+        // Update document state to ingesting
+        setDocuments((prev) =>
+            prev.map((doc) =>
+                doc.id === document.id ? { ...doc, state: 'ingesting' as const } : doc,
+            ),
+        );
+        console.log('Reingesting document:', document.name);
+    };
+
+    const handleSupersedeDocument = (document: Document) => {
+        // Update document state to deprecated and create new version
+        setDocuments((prev) =>
+            prev.map((doc) =>
+                doc.id === document.id ? { ...doc, state: 'deprecated' as const } : doc,
+            ),
+        );
+        console.log('Superseding document:', document.name);
+    };
+
+    const handleDeleteDocument = (document: Document) => {
+        // Update document state to deleted
+        setDocuments((prev) =>
+            prev.map((doc) =>
+                doc.id === document.id ? { ...doc, state: 'deleted' as const } : doc,
+            ),
+        );
+        console.log('Deleting document:', document.name);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50" data-oid="6hftfki">
             <Header
@@ -174,7 +226,12 @@ export default function Page() {
                 data-oid="5xk8s72"
             />
 
-            <Navigation activeTab={activeTab} onTabChange={setActiveTab} data-oid="0je9x-e" />
+            <Navigation
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                viewingDocumentDetail={viewingDocumentDetail}
+                data-oid="0je9x-e"
+            />
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid=":59v6m6">
@@ -187,14 +244,25 @@ export default function Page() {
                         data-oid="hj:c2c5"
                     />
                 )}
-                {activeTab === 'documents' && (
+                {activeTab === 'documents' && !viewingDocumentDetail && (
                     <DocumentsView
                         documents={documents}
                         selectedDatabase={selectedDatabase}
                         onBackToDatabases={handleBackToDatabases}
                         onAddDocument={() => setShowAddDocumentDialog(true)}
                         onPromptDocument={handlePromptDocument}
+                        onViewDocumentDetail={handleViewDocumentDetail}
                         data-oid="6zl097g"
+                    />
+                )}
+                {activeTab === 'documents' && viewingDocumentDetail && selectedDocument && (
+                    <DocumentDetailView
+                        document={selectedDocument}
+                        onBack={handleBackFromDocumentDetail}
+                        onReingest={handleReingestDocument}
+                        onSupersede={handleSupersedeDocument}
+                        onDelete={handleDeleteDocument}
+                        data-oid="doc-detail-view"
                     />
                 )}
                 {activeTab === 'prompt' && (
