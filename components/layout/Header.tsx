@@ -31,11 +31,7 @@ export function Header() {
         };
     }, [setShowUserMenu]);
 
-    const handleLogout = () => {
-        setUser(null);
-        setShowUserMenu(false);
-        // Add logout logic here
-    };
+    
 =======
     return (
         <header className="bg-white border-b border-gray-200" data-oid="oh73c.5">
