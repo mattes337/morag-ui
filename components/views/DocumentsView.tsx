@@ -166,24 +166,6 @@ export function DocumentsView({
                                     >
                                         Prompt
                                     </button>
-                                    <button
-                                        className="text-blue-600 hover:text-blue-900"
-                                        data-oid=".co.hl7"
-                                    >
-                                        Re-ingest
-                                    </button>
-                                    <button
-                                        className="text-yellow-600 hover:text-yellow-900"
-                                        data-oid="4p9_qzq"
-                                    >
-                                        Supersede
-                                    </button>
-                                    <button
-                                        className="text-red-600 hover:text-red-900"
-                                        data-oid="fx7p3ec"
-                                    >
-                                        Delete
-                                    </button>
                                 </td>
                             </tr>
                         ))}
