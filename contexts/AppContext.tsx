@@ -177,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AppContext.Provider value={value} data-oid="bx5:30u">
+        <AppContext.Provider value={value} data-oid="eq81-8_">
             {children}
         </AppContext.Provider>
     );

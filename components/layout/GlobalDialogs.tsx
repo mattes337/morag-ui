@@ -23,25 +23,25 @@ export function GlobalDialogs() {
             <AddDocumentDialog
                 isOpen={showAddDocumentDialog}
                 onClose={() => setShowAddDocumentDialog(false)}
-                data-oid="03gdi.:"
+                data-oid="qvb-a83"
             />
 
             <CreateDatabaseDialog
                 isOpen={showCreateDatabaseDialog}
                 onClose={() => setShowCreateDatabaseDialog(false)}
-                data-oid="o_oc7jw"
+                data-oid="99q3y3b"
             />
 
             <ApiKeyDialog
                 isOpen={showApiKeyDialog}
                 onClose={() => setShowApiKeyDialog(false)}
-                data-oid="gs7uwdi"
+                data-oid="ibl0oha"
             />
 
             <ApiConfig
                 isOpen={showApiConfigDialog}
                 onClose={() => setShowApiConfigDialog(false)}
-                data-oid="he9gqke"
+                data-oid="csq9ry1"
             />
         </>
     );
