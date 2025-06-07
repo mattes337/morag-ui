@@ -35,6 +35,14 @@ interface AppContextType {
     setShowApiKeyDialog: (show: boolean) => void;
     showApiConfigDialog: boolean;
     setShowApiConfigDialog: (show: boolean) => void;
+    showReingestConfirmDialog: boolean;
+    setShowReingestConfirmDialog: (show: boolean) => void;
+    documentToReingest: Document | null;
+    setDocumentToReingest: (document: Document | null) => void;
+    showDeleteConfirmDialog: boolean;
+    setShowDeleteConfirmDialog: (show: boolean) => void;
+    documentToDelete: Document | null;
+    setDocumentToDelete: (document: Document | null) => void;
 
     // Prompt state
     promptText: string;
@@ -133,6 +141,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [showCreateDatabaseDialog, setShowCreateDatabaseDialog] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [showApiConfigDialog, setShowApiConfigDialog] = useState(false);
+    const [showReingestConfirmDialog, setShowReingestConfirmDialog] = useState(false);
+    const [documentToReingest, setDocumentToReingest] = useState<Document | null>(null);
+    const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+    const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
 
     // Prompt state
     const [promptText, setPromptText] = useState('');
@@ -174,6 +186,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowApiKeyDialog,
         showApiConfigDialog,
         setShowApiConfigDialog,
+        showReingestConfirmDialog,
+        setShowReingestConfirmDialog,
+        documentToReingest,
+        setDocumentToReingest,
+        showDeleteConfirmDialog,
+        setShowDeleteConfirmDialog,
+        documentToDelete,
+        setDocumentToDelete,
         promptText,
         setPromptText,
         numDocuments,

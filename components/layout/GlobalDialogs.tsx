@@ -4,6 +4,8 @@ import { useApp } from '../../contexts/AppContext';
 import { AddDocumentDialog } from '../dialogs/AddDocumentDialog';
 import { CreateDatabaseDialog } from '../dialogs/CreateDatabaseDialog';
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
+import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
+import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
 import { ApiConfig } from '../ApiConfig';
 
 export function GlobalDialogs() {
@@ -20,6 +22,14 @@ export function GlobalDialogs() {
         setShowApiKeyDialog,
         showApiConfigDialog,
         setShowApiConfigDialog,
+        showReingestConfirmDialog,
+        setShowReingestConfirmDialog,
+        documentToReingest,
+        setDocumentToReingest,
+        showDeleteConfirmDialog,
+        setShowDeleteConfirmDialog,
+        documentToDelete,
+        setDocumentToDelete,
     } = useApp();
 
     return (
@@ -51,6 +61,38 @@ export function GlobalDialogs() {
                 isOpen={showApiKeyDialog}
                 onClose={() => setShowApiKeyDialog(false)}
                 data-oid="ibl0oha"
+            />
+
+            <ReingestConfirmDialog
+                isOpen={showReingestConfirmDialog}
+                onClose={() => {
+                    setShowReingestConfirmDialog(false);
+                    setDocumentToReingest(null);
+                }}
+                onConfirm={() => {
+                    if (documentToReingest) {
+                        // Here you would call the actual reingest function
+                        console.log('Reingesting document:', documentToReingest);
+                    }
+                }}
+                document={documentToReingest}
+                data-oid="i99-kln"
+            />
+
+            <DeleteConfirmDialog
+                isOpen={showDeleteConfirmDialog}
+                onClose={() => {
+                    setShowDeleteConfirmDialog(false);
+                    setDocumentToDelete(null);
+                }}
+                onConfirm={() => {
+                    if (documentToDelete) {
+                        // Here you would call the actual delete function
+                        console.log('Deleting document:', documentToDelete);
+                    }
+                }}
+                document={documentToDelete}
+                data-oid="3p.ffm5"
             />
 
             <ApiConfig
