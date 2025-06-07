@@ -135,7 +135,8 @@ export function AddDocumentDialog({
                         </div>
                     </div>
                 ) : selectedDocumentType ? (
-                    <div className="space-y-4" data-oid="ph5mlhy"<div className="flex items-center space-x-2 mb-4" data-oid="lqp1aup">
+                    <div className="space-y-4" data-oid="ph5mlhy">
+                        <div className="flex items-center space-x-2 mb-4" data-oid="lqp1aup">
                             <span className="text-2xl" data-oid="yw2pk_m">
                                 {selectedDocumentType.icon}
                             </span>
