@@ -10,7 +10,7 @@ export default function ApiKeysPage() {
         <ApiKeysView
             apiKeys={apiKeys}
             onGenerateApiKey={() => setShowApiKeyDialog(true)}
-            data-oid="r4fr1_s"
+            data-oid=":tmzft8"
         />
     );
 }
