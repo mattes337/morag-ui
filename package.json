@@ -9,6 +9,8 @@
         "lint": "next lint",
         "format": "prettier --write ."
     },
+    "devDependencies": {
+=======
     "dependencies": {
         "@radix-ui/react-slot": "^1.1.0",
         "class-variance-authority": "^0.7.0",
@@ -20,6 +22,7 @@
         "tailwind-merge": "^2.5.2",
         "tailwindcss-animate": "^1.0.7"
     },
+    "devDependencies": {
 =======
     "devDependencies": {
         "@types/node": "^20",
