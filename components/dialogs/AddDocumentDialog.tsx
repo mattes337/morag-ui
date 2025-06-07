@@ -35,18 +35,23 @@ export function AddDocumentDialog({
     useEffect(() => {
         if (mode === 'supersede' && documentToSupersede) {
             const docType = documentToSupersede.type.toLowerCase();
-            const matchingType = documentTypes.find(type => 
-                type.type === docType || 
-                type.label.toLowerCase().includes(docType) ||
-                (docType === 'youtube' && type.type === 'youtube') ||
-                (docType === 'website' && type.type === 'website')
+            const matchingType = documentTypes.find(
+                (type) =>
+                    type.type === docType ||
+                    type.label.toLowerCase().includes(docType) ||
+                    (docType === 'youtube' && type.type === 'youtube') ||
+                    (docType === 'website' && type.type === 'website'),
             );
-            
+
             if (matchingType) {
                 setSelectedDocumentType(matchingType);
             } else {
                 // Default fallback for unknown types
-                setSelectedDocumentType({ type: docType, label: documentToSupersede.type, icon: '📄' });
+                setSelectedDocumentType({
+                    type: docType,
+                    label: documentToSupersede.type,
+                    icon: '📄',
+                });
             }
 
             // Set default values based on current document (these would typically come from the document's metadata)
@@ -111,7 +116,7 @@ export function AddDocumentDialog({
                     </div>
                 )}
 
-                {(!selectedDocumentType && mode === 'add') ? (
+                {!selectedDocumentType && mode === 'add' ? (
                     <div data-oid=".gkrayq">
                         <p className="text-gray-600 mb-4" data-oid="h0m8-uw">
                             Select document type:
@@ -184,13 +189,14 @@ export function AddDocumentDialog({
                         <div className="grid grid-cols-2 gap-4" data-oid="z:3dffc">
                             <div data-oid="ke5swkv">
                                 <label className="flex items-center space-x-2" data-oid="gig79o4">
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded" 
+                                    <input
+                                        type="checkbox"
+                                        className="rounded"
                                         checked={gpuProcessing}
                                         onChange={(e) => setGpuProcessing(e.target.checked)}
-                                        data-oid="si_.rz5" 
+                                        data-oid="si_.rz5"
                                     />
+
                                     <span className="text-sm" data-oid="zm4lnof">
                                         GPU Processing
                                     </span>
@@ -198,13 +204,14 @@ export function AddDocumentDialog({
                             </div>
                             <div data-oid="rrjv5ky">
                                 <label className="flex items-center space-x-2" data-oid="kdjs9fa">
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded" 
+                                    <input
+                                        type="checkbox"
+                                        className="rounded"
                                         checked={contextualEmbedding}
                                         onChange={(e) => setContextualEmbedding(e.target.checked)}
-                                        data-oid="nn-o-bm" 
+                                        data-oid="nn-o-bm"
                                     />
+
                                     <span className="text-sm" data-oid="sb-pd8d">
                                         Contextual Embedding
                                     </span>
@@ -262,14 +269,20 @@ export function AddDocumentDialog({
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     data-oid="lbzd8nn"
                                 >
-                                    <option value="Semantic" data-oid="8msnyrz">Semantic</option>
-                                    <option value="Fixed Size" data-oid="ufifs7z">Fixed Size</option>
-                                    <option value="Sentence" data-oid="eqkxclv">Sentence</option>
+                                    <option value="Semantic" data-oid="8msnyrz">
+                                        Semantic
+                                    </option>
+                                    <option value="Fixed Size" data-oid="ufifs7z">
+                                        Fixed Size
+                                    </option>
+                                    <option value="Sentence" data-oid="eqkxclv">
+                                        Sentence
+                                    </option>
                                 </select>
                             </div>
                         </div>
                     </div>
-                )}
+                ) : null}
 
                 <div className="flex justify-end space-x-3 mt-6" data-oid="ficpqzx">
                     <button
