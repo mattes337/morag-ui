@@ -16,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <body className="" data-oid="prg_jeq">
                 <AppProvider data-oid="15_.rz.">
                     <div className="min-h-screen bg-gray-50" data-oid="0t40qhc">
-                        <Header data-oid="4p3s3c9" />
+                        <Header data-oid="9ved4r5" />
                         <Navigation data-oid="u6umy3b" />
                         <main
                             className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"

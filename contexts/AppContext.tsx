@@ -1,12 +1,20 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Database, Document, ApiKey } from '../types';
+import { Database, Document, ApiKey, DatabaseServer, UserSettings, User } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
 
 interface AppContextType {
     // API Health
     apiHealthy: boolean | null;
+
+    // User & Settings
+    user: User | null;
+    setUser: (user: User | null) => void;
+    userSettings: UserSettings;
+    setUserSettings: (settings: UserSettings) => void;
+    servers: DatabaseServer[];
+    setServers: (servers: DatabaseServer[]) => void;
 
     // Data
     databases: Database[];
@@ -43,6 +51,12 @@ interface AppContextType {
     setShowDeleteConfirmDialog: (show: boolean) => void;
     documentToDelete: Document | null;
     setDocumentToDelete: (document: Document | null) => void;
+    showUserMenu: boolean;
+    setShowUserMenu: (show: boolean) => void;
+    showSettingsDialog: boolean;
+    setShowSettingsDialog: (show: boolean) => void;
+    showServersDialog: boolean;
+    setShowServersDialog: (show: boolean) => void;
 
     // Prompt state
     promptText: string;
@@ -61,6 +75,46 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
     const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
+
+    // User & Settings state
+    const [user, setUser] = useState<User | null>({
+        id: '1',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        role: 'admin',
+    });
+
+    const [userSettings, setUserSettings] = useState<UserSettings>({
+        theme: 'light',
+        language: 'en',
+        notifications: true,
+        autoSave: true,
+    });
+
+    const [servers, setServers] = useState<DatabaseServer[]>([
+        {
+            id: '1',
+            name: 'Primary Qdrant',
+            type: 'qdrant',
+            host: 'localhost',
+            port: 6333,
+            collection: 'documents',
+            isActive: true,
+            createdAt: '2024-01-01T00:00:00Z',
+            lastConnected: '2024-01-15T10:30:00Z',
+        },
+        {
+            id: '2',
+            name: 'Neo4j Knowledge Graph',
+            type: 'neo4j',
+            host: 'localhost',
+            port: 7687,
+            username: 'neo4j',
+            database: 'neo4j',
+            isActive: false,
+            createdAt: '2024-01-05T00:00:00Z',
+        },
+    ]);
 
     // Data state
     const [databases, setDatabases] = useState<Database[]>([
@@ -145,6 +199,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [documentToReingest, setDocumentToReingest] = useState<Document | null>(null);
     const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+    const [showServersDialog, setShowServersDialog] = useState(false);
 
     // Prompt state
     const [promptText, setPromptText] = useState('');
@@ -164,6 +221,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const value: AppContextType = {
         apiHealthy,
+        user,
+        setUser,
+        userSettings,
+        setUserSettings,
+        servers,
+        setServers,
         databases,
         setDatabases,
         documents,
@@ -194,6 +257,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setShowDeleteConfirmDialog,
         documentToDelete,
         setDocumentToDelete,
+        showUserMenu,
+        setShowUserMenu,
+        showSettingsDialog,
+        setShowSettingsDialog,
+        showServersDialog,
+        setShowServersDialog,
         promptText,
         setPromptText,
         numDocuments,

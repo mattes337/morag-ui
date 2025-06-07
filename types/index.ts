@@ -39,3 +39,35 @@ export interface SearchResult {
     chunk: number;
     content: string;
 }
+
+export interface DatabaseServer {
+    id: string;
+    name: string;
+    type: 'qdrant' | 'neo4j' | 'pinecone' | 'weaviate' | 'chroma';
+    host: string;
+    port: number;
+    username?: string;
+    password?: string;
+    apiKey?: string;
+    database?: string;
+    collection?: string;
+    isActive: boolean;
+    createdAt: string;
+    lastConnected?: string;
+}
+
+export interface UserSettings {
+    theme: 'light' | 'dark' | 'system';
+    language: string;
+    notifications: boolean;
+    autoSave: boolean;
+    defaultDatabase?: string;
+}
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    role: 'admin' | 'user' | 'viewer';
+}
