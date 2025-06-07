@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DocumentType, Document } from '../../types';
 
 interface AddDocumentDialogProps {
@@ -17,6 +17,10 @@ export function AddDocumentDialog({
     documentToSupersede,
 }: AddDocumentDialogProps) {
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
+    const [chunkSize, setChunkSize] = useState('1000');
+    const [chunkingMethod, setChunkingMethod] = useState('Semantic');
+    const [gpuProcessing, setGpuProcessing] = useState(false);
+    const [contextualEmbedding, setContextualEmbedding] = useState(false);
 
     const documentTypes: DocumentType[] = [
         { type: 'pdf', label: 'PDF Document', icon: '📄' },
@@ -27,8 +31,38 @@ export function AddDocumentDialog({
         { type: 'website', label: 'Website', icon: '🌐' },
     ];
 
+    // Auto-select document type and set defaults when in supersede mode
+    useEffect(() => {
+        if (mode === 'supersede' && documentToSupersede) {
+            const docType = documentToSupersede.type.toLowerCase();
+            const matchingType = documentTypes.find(type => 
+                type.type === docType || 
+                type.label.toLowerCase().includes(docType) ||
+                (docType === 'youtube' && type.type === 'youtube') ||
+                (docType === 'website' && type.type === 'website')
+            );
+            
+            if (matchingType) {
+                setSelectedDocumentType(matchingType);
+            } else {
+                // Default fallback for unknown types
+                setSelectedDocumentType({ type: docType, label: documentToSupersede.type, icon: '📄' });
+            }
+
+            // Set default values based on current document (these would typically come from the document's metadata)
+            setChunkSize('1000'); // Default, could be extracted from document metadata
+            setChunkingMethod('Semantic'); // Default, could be extracted from document metadata
+            setGpuProcessing(false); // Default
+            setContextualEmbedding(true); // Default for supersede
+        }
+    }, [mode, documentToSupersede, documentTypes]);
+
     const handleClose = () => {
         setSelectedDocumentType(null);
+        setChunkSize('1000');
+        setChunkingMethod('Semantic');
+        setGpuProcessing(false);
+        setContextualEmbedding(false);
         onClose();
     };
 
@@ -77,7 +111,7 @@ export function AddDocumentDialog({
                     </div>
                 )}
 
-                {!selectedDocumentType ? (
+                {(!selectedDocumentType && mode === 'add') ? (
                     <div data-oid=".gkrayq">
                         <p className="text-gray-600 mb-4" data-oid="h0m8-uw">
                             Select document type:
@@ -100,22 +134,23 @@ export function AddDocumentDialog({
                             ))}
                         </div>
                     </div>
-                ) : (
-                    <div className="space-y-4" data-oid="ph5mlhy">
-                        <div className="flex items-center space-x-2 mb-4" data-oid="lqp1aup">
+                ) : selectedDocumentType ? (
+                    <div className="space-y-4" data-oid="ph5mlhy"<div className="flex items-center space-x-2 mb-4" data-oid="lqp1aup">
                             <span className="text-2xl" data-oid="yw2pk_m">
                                 {selectedDocumentType.icon}
                             </span>
                             <span className="font-medium" data-oid="47x2fqk">
                                 {selectedDocumentType.label}
                             </span>
-                            <button
-                                onClick={() => setSelectedDocumentType(null)}
-                                className="text-blue-600 hover:text-blue-800 text-sm"
-                                data-oid="p:ig9sc"
-                            >
-                                Change
-                            </button>
+                            {mode === 'add' && (
+                                <button
+                                    onClick={() => setSelectedDocumentType(null)}
+                                    className="text-blue-600 hover:text-blue-800 text-sm"
+                                    data-oid="p:ig9sc"
+                                >
+                                    Change
+                                </button>
+                            )}
                         </div>
 
                         <div data-oid="f5mqox4">
@@ -148,7 +183,13 @@ export function AddDocumentDialog({
                         <div className="grid grid-cols-2 gap-4" data-oid="z:3dffc">
                             <div data-oid="ke5swkv">
                                 <label className="flex items-center space-x-2" data-oid="gig79o4">
-                                    <input type="checkbox" className="rounded" data-oid="si_.rz5" />
+                                    <input 
+                                        type="checkbox" 
+                                        className="rounded" 
+                                        checked={gpuProcessing}
+                                        onChange={(e) => setGpuProcessing(e.target.checked)}
+                                        data-oid="si_.rz5" 
+                                    />
                                     <span className="text-sm" data-oid="zm4lnof">
                                         GPU Processing
                                     </span>
@@ -156,7 +197,13 @@ export function AddDocumentDialog({
                             </div>
                             <div data-oid="rrjv5ky">
                                 <label className="flex items-center space-x-2" data-oid="kdjs9fa">
-                                    <input type="checkbox" className="rounded" data-oid="nn-o-bm" />
+                                    <input 
+                                        type="checkbox" 
+                                        className="rounded" 
+                                        checked={contextualEmbedding}
+                                        onChange={(e) => setContextualEmbedding(e.target.checked)}
+                                        data-oid="nn-o-bm" 
+                                    />
                                     <span className="text-sm" data-oid="sb-pd8d">
                                         Contextual Embedding
                                     </span>
@@ -173,7 +220,8 @@ export function AddDocumentDialog({
                                     Chunk Size
                                 </label>
                                 <select
-                                    defaultValue="1000"
+                                    value={chunkSize}
+                                    onChange={(e) => setChunkSize(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     data-oid="7fyan5y"
                                 >
@@ -208,12 +256,14 @@ export function AddDocumentDialog({
                                     Chunking Method
                                 </label>
                                 <select
+                                    value={chunkingMethod}
+                                    onChange={(e) => setChunkingMethod(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     data-oid="lbzd8nn"
                                 >
-                                    <option data-oid="8msnyrz">Semantic</option>
-                                    <option data-oid="ufifs7z">Fixed Size</option>
-                                    <option data-oid="eqkxclv">Sentence</option>
+                                    <option value="Semantic" data-oid="8msnyrz">Semantic</option>
+                                    <option value="Fixed Size" data-oid="ufifs7z">Fixed Size</option>
+                                    <option value="Sentence" data-oid="eqkxclv">Sentence</option>
                                 </select>
                             </div>
                         </div>
@@ -228,7 +278,7 @@ export function AddDocumentDialog({
                     >
                         Cancel
                     </button>
-                    {selectedDocumentType && (
+                    {(selectedDocumentType || mode === 'supersede') && (
                         <button
                             className={`px-4 py-2 text-white rounded-md ${
                                 mode === 'supersede'
