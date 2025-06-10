@@ -45,17 +45,17 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="gvv1m8j"
+            data-oid="fsqjk-3"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="vl7z2p8">
-                <h3 className="text-lg font-semibold mb-4" data-oid="y-q86pe">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="8xt8rus">
+                <h3 className="text-lg font-semibold mb-4" data-oid="hr463_r">
                     Create Database
                 </h3>
-                <form onSubmit={handleSubmit} className="space-y-4" data-oid="1xl83yv">
-                    <div data-oid="bogust9">
+                <form onSubmit={handleSubmit} className="space-y-4" data-oid="a74kqx4">
+                    <div data-oid="gh20wn9">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="uf5dpsd"
+                            data-oid="jq-gk-d"
                         >
                             Name
                         </label>
@@ -67,13 +67,13 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             placeholder="Database name..."
                             disabled={isLoading}
                             required
-                            data-oid="wbuveye"
+                            data-oid="rpiulvw"
                         />
                     </div>
-                    <div data-oid=".g.cjq6">
+                    <div data-oid="kaxaitu">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="t6hh:4i"
+                            data-oid="cwlw26x"
                         >
                             Description
                         </label>
@@ -85,16 +85,16 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             placeholder="Database description..."
                             disabled={isLoading}
                             required
-                            data-oid="zt-8hwr"
+                            data-oid="uqdfy5b"
                         />
                     </div>
-                    <div className="flex justify-end space-x-3 mt-6" data-oid="5vkd-mc">
+                    <div className="flex justify-end space-x-3 mt-6" data-oid="y-cp7:u">
                         <button
                             type="button"
                             onClick={handleClose}
                             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                             disabled={isLoading}
-                            data-oid="i53139k"
+                            data-oid="qre5h-q"
                         >
                             Cancel
                         </button>
@@ -102,7 +102,7 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             type="submit"
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                             disabled={isLoading || !name.trim() || !description.trim()}
-                            data-oid="ue8gq48"
+                            data-oid="tw3-.m1"
                         >
                             {isLoading ? 'Creating...' : 'Create'}
                         </button>

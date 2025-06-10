@@ -15,7 +15,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     // If user is not logged in and not on login page, show login page content
     if (!user && !isLoginPage) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="pw3ohno">
+            <div className="min-h-screen bg-gray-50" data-oid="dzf0t72">
                 {children}
             </div>
         );
@@ -25,7 +25,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     // If on login page, show login page without header/nav
     if (isLoginPage) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="of:2yql">
+            <div className="min-h-screen bg-gray-50" data-oid="f4qm_hc">
                 {children}
             </div>
         );
@@ -33,13 +33,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
     // Normal authenticated layout
     return (
-        <div className="min-h-screen bg-gray-50" data-oid="0nhl4s3">
-            <Header data-oid="rwsnb5u" />
-            <Navigation data-oid="ejvdvcn" />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid=".9p8y-n">
+        <div className="min-h-screen bg-gray-50" data-oid="e4hmc.z">
+            <Header data-oid="ko:xmr8" />
+            <Navigation data-oid="9qwp661" />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="ut3:4pt">
                 {children}
             </main>
-            <GlobalDialogs data-oid="csdbg5z" />
+            <GlobalDialogs data-oid="yvun3qf" />
         </div>
     );
 }

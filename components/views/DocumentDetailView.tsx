@@ -64,13 +64,13 @@ export function DocumentDetailView({
             return (
                 <div
                     className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden"
-                    data-oid="vo1fivq"
+                    data-oid="6y7_-j9"
                 >
                     <iframe
                         src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`}
                         className="w-full h-full"
                         title={`PDF Viewer - ${document.name}`}
-                        data-oid="-27fjy0"
+                        data-oid="q5o4sef"
                     />
                 </div>
             );
@@ -82,7 +82,7 @@ export function DocumentDetailView({
             return (
                 <div
                     className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden"
-                    data-oid="d:waymw"
+                    data-oid="mehl57."
                 >
                     <iframe
                         src={`https://www.youtube.com/embed/${videoId}`}
@@ -90,7 +90,7 @@ export function DocumentDetailView({
                         title={`YouTube Video - ${document.name}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        data-oid="3.yew-9"
+                        data-oid="01iwyfo"
                     />
                 </div>
             );
@@ -102,14 +102,14 @@ export function DocumentDetailView({
             return (
                 <div
                     className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden"
-                    data-oid="coucww0"
+                    data-oid="6nu3l4c"
                 >
                     <iframe
                         src={websiteUrl}
                         className="w-full h-full"
                         title={`Website - ${document.name}`}
                         sandbox="allow-scripts allow-same-origin"
-                        data-oid="eg5hed9"
+                        data-oid="xutdkdk"
                     />
                 </div>
             );
@@ -119,16 +119,16 @@ export function DocumentDetailView({
         return (
             <div
                 className="w-full h-96 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50"
-                data-oid="f1yjc1o"
+                data-oid="nm1k3ft"
             >
-                <div className="text-center" data-oid="yd38_jk">
-                    <div className="text-4xl mb-4" data-oid="61a1xw9">
+                <div className="text-center" data-oid="vvu60_1">
+                    <div className="text-4xl mb-4" data-oid="jn9olhs">
                         📄
                     </div>
-                    <p className="text-gray-600" data-oid="xhu.9u8">
+                    <p className="text-gray-600" data-oid="jnk3af.">
                         Preview not available for this document type
                     </p>
-                    <p className="text-sm text-gray-500 mt-2" data-oid="sjmd15w">
+                    <p className="text-sm text-gray-500 mt-2" data-oid="s2.daez">
                         Type: {document.type}
                     </p>
                 </div>
@@ -137,122 +137,122 @@ export function DocumentDetailView({
     };
 
     return (
-        <div className="space-y-6" data-oid=":wfepp-">
+        <div className="space-y-6" data-oid="ud7yuoh">
             {/* Header */}
-            <div className="flex justify-between items-start" data-oid="onp_kux">
-                <div data-oid="uaav4ak">
+            <div className="flex justify-between items-start" data-oid="837a.sd">
+                <div data-oid="wl.dcmn">
                     <button
                         onClick={onBack}
                         className="text-blue-600 hover:text-blue-800 text-sm mb-2"
-                        data-oid="8w8sw8t"
+                        data-oid="z8qmgme"
                     >
                         ← Back to Documents
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900" data-oid="g7up4vu">
+                    <h1 className="text-3xl font-bold text-gray-900" data-oid=":m9ap02">
                         {document.name}
                     </h1>
-                    <div className="flex items-center space-x-4 mt-2" data-oid="hnzalvt">
+                    <div className="flex items-center space-x-4 mt-2" data-oid="u7::x8c">
                         <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${getStateColor(document.state)}`}
-                            data-oid="higsg_q"
+                            data-oid="l9zzlbv"
                         >
                             {document.state}
                         </span>
-                        <span className="text-sm text-gray-500" data-oid="-07s708">
+                        <span className="text-sm text-gray-500" data-oid="f634jzq">
                             Type: {document.type}
                         </span>
-                        <span className="text-sm text-gray-500" data-oid="oldbfc7">
+                        <span className="text-sm text-gray-500" data-oid="r2:3z0c">
                             Version: v{document.version}
                         </span>
-                        <span className="text-sm text-gray-500" data-oid="7u7ujex">
+                        <span className="text-sm text-gray-500" data-oid="xex0cq-">
                             Uploaded: {document.uploadDate}
                         </span>
                     </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex space-x-3" data-oid="cu67jku"></div>
+                <div className="flex space-x-3" data-oid="u31-m24"></div>
             </div>
 
             {/* Document Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-oid="y2gvkh7">
-                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="yucm:9z">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid=".6qxqv:">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-oid="g79tbty">
+                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="wgvqhie">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="rbsc89o">
                         Processing Stats
                     </h3>
-                    <div className="space-y-2" data-oid="kmmqh2q">
-                        <div className="flex justify-between" data-oid="g8_9gs6">
-                            <span className="text-gray-600" data-oid=":gbo_5l">
+                    <div className="space-y-2" data-oid="odpqjhk">
+                        <div className="flex justify-between" data-oid="i-:g2.-">
+                            <span className="text-gray-600" data-oid="94t:wwf">
                                 Chunks:
                             </span>
-                            <span className="font-medium" data-oid="bb:yxbl">
+                            <span className="font-medium" data-oid="95xp:7p">
                                 {document.chunks}
                             </span>
                         </div>
-                        <div className="flex justify-between" data-oid="78hvwl7">
-                            <span className="text-gray-600" data-oid="zfd6.ad">
+                        <div className="flex justify-between" data-oid="f1ml41r">
+                            <span className="text-gray-600" data-oid="sup5fa4">
                                 Quality:
                             </span>
-                            <span className="font-medium" data-oid="40:qr6o">
+                            <span className="font-medium" data-oid="skk-0kx">
                                 {(document.quality * 100).toFixed(1)}%
                             </span>
                         </div>
-                        <div className="flex justify-between" data-oid="6mhjvfq">
-                            <span className="text-gray-600" data-oid="73u794u">
+                        <div className="flex justify-between" data-oid="3xtyx_e">
+                            <span className="text-gray-600" data-oid="y0tsw.y">
                                 Version:
                             </span>
-                            <span className="font-medium" data-oid="2n47vn4">
+                            <span className="font-medium" data-oid="qb-r74e">
                                 v{document.version}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="6aooe3s">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="jionp1t">
+                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="y9u19-e">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="m7g1rec">
                         Document Info
                     </h3>
-                    <div className="space-y-2" data-oid="3g5i4_7">
-                        <div className="flex justify-between" data-oid="q:sa.mg">
-                            <span className="text-gray-600" data-oid="vj4nm97">
+                    <div className="space-y-2" data-oid="xyhtmm_">
+                        <div className="flex justify-between" data-oid="jiwad9f">
+                            <span className="text-gray-600" data-oid="pa0jh39">
                                 Type:
                             </span>
-                            <span className="font-medium" data-oid="tr23hkd">
+                            <span className="font-medium" data-oid="qwusn.t">
                                 {document.type}
                             </span>
                         </div>
-                        <div className="flex justify-between" data-oid="oif6c5j">
-                            <span className="text-gray-600" data-oid="i9czu6a">
+                        <div className="flex justify-between" data-oid="cl-hsh2">
+                            <span className="text-gray-600" data-oid="m62_.un">
                                 State:
                             </span>
                             <span
                                 className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(document.state)}`}
-                                data-oid="2pxmw5z"
+                                data-oid="xu-.bzv"
                             >
                                 {document.state}
                             </span>
                         </div>
-                        <div className="flex justify-between" data-oid="7f.e2m1">
-                            <span className="text-gray-600" data-oid="488e40g">
+                        <div className="flex justify-between" data-oid="b_szevs">
+                            <span className="text-gray-600" data-oid="72w5ekl">
                                 Uploaded:
                             </span>
-                            <span className="font-medium" data-oid="izl7tgy">
+                            <span className="font-medium" data-oid="bmp04zj">
                                 {document.uploadDate}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="g8jkthx">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="6v_c5_3">
+                <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="8.ggs:6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2" data-oid="_7wptw9">
                         Actions
                     </h3>
-                    <div className="space-y-2" data-oid="m56g7yv">
+                    <div className="space-y-2" data-oid="mm1c72i">
                         <button
                             onClick={handleReingestClick}
                             className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
                             disabled={document.state === 'ingesting'}
-                            data-oid="htt-.ke"
+                            data-oid="zqlp_yp"
                         >
                             🔄 Reingest Document
                         </button>
@@ -262,7 +262,7 @@ export function DocumentDetailView({
                             disabled={
                                 document.state === 'deprecated' || document.state === 'deleted'
                             }
-                            data-oid="rjs4t7l"
+                            data-oid="e_1_qcl"
                         >
                             📝 Supersede Version
                         </button>
@@ -270,7 +270,7 @@ export function DocumentDetailView({
                             onClick={handleDeleteClick}
                             className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
                             disabled={document.state === 'deleted'}
-                            data-oid="m8811h9"
+                            data-oid="iv_.9_x"
                         >
                             🗑️ Delete Document
                         </button>
@@ -279,8 +279,8 @@ export function DocumentDetailView({
             </div>
 
             {/* Document Preview */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="ol6utm5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="58gfz2:">
+            <div className="bg-white p-6 rounded-lg border border-gray-200" data-oid="ex:0pc3">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="twwnnge">
                     Document Preview
                 </h3>
                 {renderDocumentEmbed()}

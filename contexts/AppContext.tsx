@@ -139,14 +139,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Data state
     const [databases, setDatabases] = useState<Database[]>([
         {
-            id: 1,
+            id: '1',
             name: 'Research Papers',
             description: 'Academic papers and research documents',
             documentCount: 24,
             lastUpdated: '2024-01-15',
         },
         {
-            id: 2,
+            id: '2',
             name: 'Company Knowledge Base',
             description: 'Internal documentation and procedures',
             documentCount: 156,
@@ -156,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const [documents, setDocuments] = useState<Document[]>([
         {
-            id: 1,
+            id: '1',
             name: 'Machine Learning Fundamentals.pdf',
             type: 'PDF',
             state: 'ingested',
@@ -166,7 +166,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             uploadDate: '2024-01-10',
         },
         {
-            id: 2,
+            id: '2',
             name: 'AI Ethics Lecture',
             type: 'YouTube',
             state: 'ingesting',
@@ -176,7 +176,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
             uploadDate: '2024-01-15',
         },
         {
-            id: 3,
+            id: '3',
+            name: 'Company Website Analysis',
+            type: 'Website',
+            state: 'ingested',
+            version: 1,
+            chunks: 23,
+            quality: 0.87,
+            uploadDate: '2024-01-12',
+        },
+    ]);
+=======
+    const [documents, setDocuments] = useState<Document[]>([
+        {
+            id: '1',
+            name: 'Machine Learning Fundamentals.pdf',
+            type: 'PDF',
+            state: 'ingested',
+            version: 2,
+            chunks: 45,
+            quality: 0.92,
+            uploadDate: '2024-01-10',
+        },
+        {
+            id: '2',
+            name: 'AI Ethics Lecture',
+            type: 'YouTube',
+            state: 'ingesting',
+            version: 1,
+            chunks: 0,
+            quality: 0,
+            uploadDate: '2024-01-15',
+        },
+        {
+            id: '3',
             name: 'Company Website Analysis',
             type: 'Website',
             state: 'ingested',
@@ -189,14 +222,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([
         {
-            id: 1,
+            id: '1',
             name: 'Production Workflow',
             key: 'mk_prod_****************************',
             created: '2024-01-01',
             lastUsed: '2024-01-15',
         },
         {
-            id: 2,
+            id: '2',
             name: 'Development Environment',
             key: 'mk_dev_****************************',
             created: '2024-01-10',
