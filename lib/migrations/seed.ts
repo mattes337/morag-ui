@@ -3,11 +3,20 @@ import { prisma } from '../database';
 async function main() {
     console.log('Starting database seed...');
 
+    // Clear existing data first
+    await prisma.job.deleteMany();
+    await prisma.apiKey.deleteMany();
+    await prisma.document.deleteMany();
+    await prisma.database.deleteMany();
+    await prisma.databaseServer.deleteMany();
+    await prisma.userSettings.deleteMany();
+    await prisma.user.deleteMany();
+
+    console.log('Cleared existing data');
+
     // Create a default user
-    const user = await prisma.user.upsert({
-        where: { email: 'john.doe@example.com' },
-        update: {},
-        create: {
+    const user = await prisma.user.create({
+        data: {
             name: 'John Doe',
             email: 'john.doe@example.com',
             role: 'ADMIN',
@@ -17,10 +26,8 @@ async function main() {
     console.log('Created user:', user);
 
     // Create user settings
-    await prisma.userSettings.upsert({
-        where: { userId: user.id },
-        update: {},
-        create: {
+    await prisma.userSettings.create({
+        data: {
             userId: user.id,
             theme: 'LIGHT',
             language: 'en',
