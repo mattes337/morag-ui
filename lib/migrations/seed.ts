@@ -36,6 +36,34 @@ async function main() {
         },
     });
 
+    // Create sample database servers first
+    const server1 = await prisma.databaseServer.create({
+        data: {
+            name: 'Primary Qdrant',
+            type: 'QDRANT',
+            host: 'localhost',
+            port: 6333,
+            collection: 'documents',
+            isActive: true,
+            userId: user.id,
+        },
+    });
+
+    const server2 = await prisma.databaseServer.create({
+        data: {
+            name: 'Neo4j Knowledge Graph',
+            type: 'NEO4J',
+            host: 'localhost',
+            port: 7687,
+            username: 'neo4j',
+            database: 'neo4j',
+            isActive: false,
+            userId: user.id,
+        },
+    });
+
+    console.log('Created database servers:', { server1, server2 });
+
     // Create sample databases
     const db1 = await prisma.database.create({
         data: {
@@ -43,6 +71,7 @@ async function main() {
             description: 'Academic papers and research documents',
             documentCount: 0,
             userId: user.id,
+            serverId: server1.id,
         },
     });
 
@@ -52,6 +81,7 @@ async function main() {
             description: 'Internal documentation and procedures',
             documentCount: 0,
             userId: user.id,
+            serverId: server2.id,
         },
     });
 
@@ -155,34 +185,7 @@ async function main() {
         },
     });
 
-    // Create sample database servers
-    const server1 = await prisma.databaseServer.create({
-        data: {
-            name: 'Primary Qdrant',
-            type: 'QDRANT',
-            host: 'localhost',
-            port: 6333,
-            collection: 'documents',
-            isActive: true,
-            userId: user.id,
-        },
-    });
-
-    const server2 = await prisma.databaseServer.create({
-        data: {
-            name: 'Neo4j Knowledge Graph',
-            type: 'NEO4J',
-            host: 'localhost',
-            port: 7687,
-            username: 'neo4j',
-            database: 'neo4j',
-            isActive: false,
-            userId: user.id,
-        },
-    });
-
     console.log('Created jobs:', { job1, job2 });
-    console.log('Created database servers:', { server1, server2 });
 
     console.log('Database seed completed successfully!');
 }
