@@ -71,3 +71,19 @@ export interface User {
     avatar?: string;
     role: 'admin' | 'user' | 'viewer';
 }
+
+export interface Job {
+    id: number;
+    documentId: number;
+    documentName: string;
+    documentType: string;
+    startDate: string;
+    endDate?: string;
+    status: 'pending' | 'waiting-for-remote-worker' | 'processing' | 'finished' | 'failed';
+    progress: {
+        percentage: number;
+        summary: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+}

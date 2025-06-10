@@ -9,6 +9,7 @@ export function Navigation() {
     const tabs = [
         { id: 'databases', label: 'Databases', href: '/' },
         { id: 'documents', label: 'Documents', href: '/documents' },
+        { id: 'jobs', label: 'Jobs', href: '/jobs' },
         { id: 'prompt', label: 'Prompt', href: '/prompt' },
         { id: 'apikeys', label: 'API Keys', href: '/api-keys' },
         { id: 'servers', label: 'Servers', href: '/servers' },
