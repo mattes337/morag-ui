@@ -1,5 +1,5 @@
 export interface Database {
-    id: number;
+    id: string;
     name: string;
     description: string;
     documentCount: number;
@@ -7,7 +7,7 @@ export interface Database {
 }
 
 export interface Document {
-    id: number;
+    id: string;
     name: string;
     type: string;
     state: 'pending' | 'ingesting' | 'ingested' | 'deprecated' | 'deleted';
@@ -18,7 +18,7 @@ export interface Document {
 }
 
 export interface ApiKey {
-    id: number;
+    id: string;
     name: string;
     key: string;
     created: string;
@@ -73,8 +73,8 @@ export interface User {
 }
 
 export interface Job {
-    id: number;
-    documentId: number;
+    id: string;
+    documentId: string;
     documentName: string;
     documentType: string;
     startDate: string;
