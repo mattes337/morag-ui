@@ -39,7 +39,7 @@ export default function JobsPage() {
             jobs={jobs}
             onCancelJob={handleCancelJob}
             onViewJobDetail={handleViewJobDetail}
-            data-oid="j48:qcm"
+            data-oid="mwr7g8x"
         />
     );
 }

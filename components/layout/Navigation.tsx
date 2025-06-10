@@ -17,9 +17,9 @@ export function Navigation() {
     ];
 
     return (
-        <nav className="bg-white border-b border-gray-200" data-oid=".q1x87n">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-oid="or06vo:">
-                <div className="flex space-x-8" data-oid="sctcr8_">
+        <nav className="bg-white border-b border-gray-200" data-oid="dw8ff_3">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-oid="wjnj_5.">
+                <div className="flex space-x-8" data-oid="84uy:-n">
                     {tabs.map((tab) => (
                         <Link
                             key={tab.id}
@@ -29,7 +29,7 @@ export function Navigation() {
                                     ? 'border-blue-500 text-blue-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
-                            data-oid="s9xxiuq"
+                            data-oid="0tl0i9e"
                         >
                             {tab.label}
                         </Link>
