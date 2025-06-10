@@ -37,16 +37,16 @@ export function DocumentsView({
     };
 
     return (
-        <div className="space-y-6" data-oid="zbmhjlh">
-            <div className="flex justify-between items-center" data-oid="3f_lzlk">
-                <div data-oid="hlqqpmm">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="u5p0-rm">
+        <div className="space-y-6" data-oid="7z3sx1e">
+            <div className="flex justify-between items-center" data-oid="i5qic-b">
+                <div data-oid="mfz7enu">
+                    <h2 className="text-2xl font-bold text-gray-900" data-oid="mosvo30">
                         Documents {selectedDatabase && `- ${selectedDatabase.name}`}
                     </h2>
                     <button
                         onClick={onBackToDatabases}
                         className="text-blue-600 hover:text-blue-800 text-sm"
-                        data-oid="xraqpcn"
+                        data-oid="1oh5sla"
                     >
                         ← Back to Databases
                     </button>
@@ -54,7 +54,7 @@ export function DocumentsView({
                 <button
                     onClick={onAddDocument}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    data-oid="c_xv1n."
+                    data-oid="rfnqn-p"
                 >
                     Add Document
                 </button>
@@ -62,121 +62,121 @@ export function DocumentsView({
 
             <div
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="28x.wik"
+                data-oid="l4kpxx8"
             >
-                <table className="w-full" data-oid="ri6f2pj">
-                    <thead className="bg-gray-50" data-oid="z2uvev9">
-                        <tr data-oid="1lmi287">
+                <table className="w-full" data-oid="c5esisz">
+                    <thead className="bg-gray-50" data-oid="0o..g0u">
+                        <tr data-oid="7dxi17z">
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="btbt_xj"
+                                data-oid="rn5mrhu"
                             >
                                 Document
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="b4h__5g"
+                                data-oid="eok43p9"
                             >
                                 Type
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="ywq3qe9"
+                                data-oid="05mkwgq"
                             >
                                 State
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="xi5j0wp"
+                                data-oid="l_l7dpw"
                             >
                                 Version
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="7.3jcno"
+                                data-oid="ip3cx_a"
                             >
                                 Content Stats
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="ahkfw04"
+                                data-oid="stb4rbh"
                             >
                                 Metadata
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="0awo8d:"
+                                data-oid="kt:d3k_"
                             >
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="0ucbz._">
+                    <tbody className="bg-white divide-y divide-gray-200" data-oid="1t7a2k4">
                         {documents.map((doc) => (
-                            <tr key={doc.id} data-oid="4rvb8-q">
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="z:2k1by">
-                                    <div className="text-sm font-medium" data-oid="::n_-o2">
+                            <tr key={doc.id} data-oid="r2rbru2">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="1sqmja8">
+                                    <div className="text-sm font-medium" data-oid="ti_c2:l">
                                         <button
                                             onClick={() => onViewDocumentDetail(doc)}
                                             className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                                            data-oid="-aqckgn"
+                                            data-oid="klc1ykd"
                                         >
                                             {doc.name}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500" data-oid="j0j55::">
+                                    <div className="text-sm text-gray-500" data-oid="fu7v.0z">
                                         {doc.uploadDate}
                                     </div>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="5e.1gld"
+                                    data-oid="h6i-73w"
                                 >
                                     {doc.type}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="lr:9non">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="c3:nttu">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
-                                        data-oid="-s_axz7"
+                                        data-oid=".7i7336"
                                     >
                                         {doc.state}
                                     </span>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="pokhq9c"
+                                    data-oid="r2:.lfm"
                                 >
                                     v{doc.version}
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="har47t."
+                                    data-oid="lq37o09"
                                 >
-                                    <div data-oid="vvc9la:">
+                                    <div data-oid="3d:6w2r">
                                         {doc.metadata?.chunk_count || doc.chunks} chunks
                                     </div>
-                                    <div className="text-gray-500" data-oid="8hb_9-c">
+                                    <div className="text-gray-500" data-oid="najm6z_">
                                         {(
                                             (doc.metadata?.extraction_quality || doc.quality) * 100
                                         ).toFixed(0)}
                                         % quality
                                     </div>
                                     {doc.metadata?.text_length && (
-                                        <div className="text-gray-500" data-oid="lokd_jh">
+                                        <div className="text-gray-500" data-oid=":tumnr-">
                                             {(doc.metadata.text_length / 1000).toFixed(1)}k chars
                                         </div>
                                     )}
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="in7:2sq"
+                                    data-oid="-5-9z17"
                                 >
-                                    <div className="space-y-1" data-oid="4w6:b6k">
+                                    <div className="space-y-1" data-oid="7xudj7-">
                                         {doc.metadata?.title && (
                                             <div
                                                 className="text-gray-900 font-medium truncate max-w-xs"
                                                 title={doc.metadata.title}
-                                                data-oid="vchcp43"
+                                                data-oid="-scbx6o"
                                             >
                                                 {doc.metadata.title}
                                             </div>
@@ -184,7 +184,7 @@ export function DocumentsView({
                                         {doc.metadata?.author && (
                                             <div
                                                 className="text-gray-500 text-xs"
-                                                data-oid="c74bm6l"
+                                                data-oid="4:dj0qh"
                                             >
                                                 by {doc.metadata.author}
                                             </div>
@@ -192,7 +192,7 @@ export function DocumentsView({
                                         {doc.metadata?.page_count && (
                                             <div
                                                 className="text-gray-500 text-xs"
-                                                data-oid="-qgqlrk"
+                                                data-oid="1bp-i38"
                                             >
                                                 {doc.metadata.page_count} pages
                                             </div>
@@ -200,7 +200,7 @@ export function DocumentsView({
                                         {doc.metadata?.duration && (
                                             <div
                                                 className="text-gray-500 text-xs"
-                                                data-oid="uo-rwla"
+                                                data-oid=".8el:qb"
                                             >
                                                 {Math.floor(doc.metadata.duration / 60)}:
                                                 {(doc.metadata.duration % 60)
@@ -211,7 +211,7 @@ export function DocumentsView({
                                         {doc.metadata?.word_count && (
                                             <div
                                                 className="text-gray-500 text-xs"
-                                                data-oid="y1ngkit"
+                                                data-oid="swbyg32"
                                             >
                                                 {doc.metadata.word_count.toLocaleString()} words
                                             </div>
@@ -219,7 +219,7 @@ export function DocumentsView({
                                         {doc.metadata?.file_size && (
                                             <div
                                                 className="text-gray-500 text-xs"
-                                                data-oid="bz1wdgp"
+                                                data-oid=".:lb:34"
                                             >
                                                 {(doc.metadata.file_size / 1024 / 1024).toFixed(1)}{' '}
                                                 MB
@@ -228,7 +228,7 @@ export function DocumentsView({
                                         {doc.metadata?.language && (
                                             <span
                                                 className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
-                                                data-oid="n292k-:"
+                                                data-oid="u04bofw"
                                             >
                                                 {doc.metadata.language.toUpperCase()}
                                             </span>
@@ -237,19 +237,19 @@ export function DocumentsView({
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="j7do-my"
+                                    data-oid="tgsi9:."
                                 >
                                     <button
                                         onClick={() => onViewDocumentDetail(doc)}
                                         className="text-indigo-600 hover:text-indigo-900"
-                                        data-oid="n-pq4_z"
+                                        data-oid="veoygv-"
                                     >
                                         View Details
                                     </button>
                                     <button
                                         onClick={() => onPromptDocument(doc)}
                                         className="text-green-600 hover:text-green-900"
-                                        data-oid="ig1qs_n"
+                                        data-oid="66dt7__"
                                     >
                                         Prompt
                                     </button>

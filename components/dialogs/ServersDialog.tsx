@@ -70,34 +70,34 @@ export function ServersDialog() {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="m6hakj0"
+            data-oid="kiqes0a"
         >
             <div
                 className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto"
-                data-oid="31ru7qg"
+                data-oid="6vcz7q0"
             >
-                <div className="flex justify-between items-center mb-6" data-oid="2_jck08">
-                    <h2 className="text-xl font-semibold" data-oid="oyl.jee">
+                <div className="flex justify-between items-center mb-6" data-oid="rwdqx5z">
+                    <h2 className="text-xl font-semibold" data-oid="0eb1ch:">
                         Database Servers
                     </h2>
                     <button
                         onClick={() => setShowServersDialog(false)}
                         className="text-gray-400 hover:text-gray-600"
-                        data-oid="mg872v9"
+                        data-oid="paf668_"
                     >
                         <svg
                             className="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
-                            data-oid="-k5lihq"
+                            data-oid="yz_jl76"
                         >
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
                                 d="M6 18L18 6M6 6l12 12"
-                                data-oid="bvia9n3"
+                                data-oid="dzy.a5z"
                             />
                         </svg>
                     </button>
@@ -105,62 +105,62 @@ export function ServersDialog() {
 
                 {!showAddForm && !editingServer && (
                     <>
-                        <div className="flex justify-between items-center mb-4" data-oid="39bkmqg">
-                            <p className="text-gray-600" data-oid="i8zo58m">
+                        <div className="flex justify-between items-center mb-4" data-oid="abej4w7">
+                            <p className="text-gray-600" data-oid="zdqsk_5">
                                 Manage your database server connections
                             </p>
                             <button
                                 onClick={handleAddServer}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                                data-oid="8lp3u6a"
+                                data-oid="c1791et"
                             >
                                 <svg
                                     className="w-4 h-4"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
-                                    data-oid="mmn_0mm"
+                                    data-oid="bas_:_r"
                                 >
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeWidth={2}
                                         d="M12 4v16m8-8H4"
-                                        data-oid="r7h0bxd"
+                                        data-oid="77cy_.2"
                                     />
                                 </svg>
-                                <span data-oid="gi9_vm0">Add Server</span>
+                                <span data-oid="ap1_46i">Add Server</span>
                             </button>
                         </div>
 
-                        <div className="space-y-4" data-oid="tt05twz">
+                        <div className="space-y-4" data-oid="--n.ige">
                             {servers.map((server) => (
                                 <div
                                     key={server.id}
                                     className="border border-gray-200 rounded-lg p-4"
-                                    data-oid="geh8tmv"
+                                    data-oid="z_82ddk"
                                 >
                                     <div
                                         className="flex items-center justify-between"
-                                        data-oid="m-75uzj"
+                                        data-oid="auy6yt6"
                                     >
                                         <div
                                             className="flex items-center space-x-3"
-                                            data-oid="a30._lp"
+                                            data-oid="e74zxgs"
                                         >
-                                            <span className="text-2xl" data-oid="rd1h63y">
+                                            <span className="text-2xl" data-oid="9scah57">
                                                 {getServerTypeIcon(server.type)}
                                             </span>
-                                            <div data-oid="ersz4cr">
+                                            <div data-oid="vw2ylz.">
                                                 <h3
                                                     className="font-medium text-gray-900"
-                                                    data-oid="me6amvu"
+                                                    data-oid="n-rybh:"
                                                 >
                                                     {server.name}
                                                 </h3>
                                                 <p
                                                     className="text-sm text-gray-500"
-                                                    data-oid="y0s-djp"
+                                                    data-oid="pqt_ecq"
                                                 >
                                                     {server.type.toUpperCase()} • {server.host}:
                                                     {server.port}
@@ -169,7 +169,7 @@ export function ServersDialog() {
                                         </div>
                                         <div
                                             className="flex items-center space-x-2"
-                                            data-oid="k:o0f59"
+                                            data-oid="tbt36y8"
                                         >
                                             <span
                                                 className={`px-2 py-1 text-xs rounded-full ${
@@ -177,56 +177,56 @@ export function ServersDialog() {
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-gray-100 text-gray-800'
                                                 }`}
-                                                data-oid=":vfnrdd"
+                                                data-oid="mf_40ko"
                                             >
                                                 {server.isActive ? 'Active' : 'Inactive'}
                                             </span>
                                             <button
                                                 onClick={() => handleToggleActive(server.id)}
                                                 className="text-blue-600 hover:text-blue-800 text-sm"
-                                                data-oid="w-hcfhx"
+                                                data-oid="p931irw"
                                             >
                                                 {server.isActive ? 'Deactivate' : 'Activate'}
                                             </button>
                                             <button
                                                 onClick={() => setEditingServer(server)}
                                                 className="text-gray-600 hover:text-gray-800"
-                                                data-oid="1surm6p"
+                                                data-oid="::.hn9n"
                                             >
                                                 <svg
                                                     className="w-4 h-4"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
-                                                    data-oid="8jvu3__"
+                                                    data-oid="2vwbt.h"
                                                 >
                                                     <path
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                         strokeWidth={2}
                                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                        data-oid="ih.pr5t"
+                                                        data-oid="fh2o:j5"
                                                     />
                                                 </svg>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteServer(server.id)}
                                                 className="text-red-600 hover:text-red-800"
-                                                data-oid="jx2dm-v"
+                                                data-oid="j_ynbk8"
                                             >
                                                 <svg
                                                     className="w-4 h-4"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
-                                                    data-oid="efrx1pi"
+                                                    data-oid="8_di8_h"
                                                 >
                                                     <path
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                         strokeWidth={2}
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                        data-oid="x5u8083"
+                                                        data-oid="fjbkt.c"
                                                     />
                                                 </svg>
                                             </button>
@@ -235,7 +235,7 @@ export function ServersDialog() {
                                     {server.lastConnected && (
                                         <p
                                             className="text-xs text-gray-400 mt-2"
-                                            data-oid="1l:pxmx"
+                                            data-oid="fxz1h_h"
                                         >
                                             Last connected:{' '}
                                             {new Date(server.lastConnected).toLocaleString()}
@@ -255,7 +255,7 @@ export function ServersDialog() {
                             setEditingServer(null);
                             setShowAddForm(false);
                         }}
-                        data-oid="qiytr-x"
+                        data-oid="qt12sfb"
                     />
                 )}
             </div>
@@ -313,16 +313,16 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4" data-oid="3_ku.3w">
-            <h3 className="text-lg font-medium" data-oid="uad-yh:">
+        <form onSubmit={handleSubmit} className="space-y-4" data-oid="sw9jigc">
+            <h3 className="text-lg font-medium" data-oid="st43vk8">
                 {server?.id ? 'Edit Server' : 'Add New Server'}
             </h3>
 
-            <div className="grid grid-cols-2 gap-4" data-oid="qntj7kw">
-                <div data-oid="0h4o1sd">
+            <div className="grid grid-cols-2 gap-4" data-oid="dchb7c2">
+                <div data-oid="3nx95ua">
                     <label
                         className="block text-sm font-medium text-gray-700 mb-1"
-                        data-oid="c1pvvc-"
+                        data-oid="wmtdh.8"
                     >
                         Server Name
                     </label>
@@ -332,14 +332,14 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
-                        data-oid="_p30goy"
+                        data-oid="vaz17tl"
                     />
                 </div>
 
-                <div data-oid="jg.8.p0">
+                <div data-oid="u61zh48">
                     <label
                         className="block text-sm font-medium text-gray-700 mb-1"
-                        data-oid="zivh-y6"
+                        data-oid="k7hc8hy"
                     >
                         Database Type
                     </label>
@@ -347,30 +347,30 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         value={formData.type}
                         onChange={(e) => handleTypeChange(e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        data-oid="k3ccha6"
+                        data-oid="bmnwrz."
                     >
-                        <option value="qdrant" data-oid="bc8ap2t">
+                        <option value="qdrant" data-oid="k-8hgqq">
                             Qdrant
                         </option>
-                        <option value="neo4j" data-oid="yz.d.6r">
+                        <option value="neo4j" data-oid="n:mx4p6">
                             Neo4j
                         </option>
-                        <option value="pinecone" data-oid="85h7a3a">
+                        <option value="pinecone" data-oid="z2i47z8">
                             Pinecone
                         </option>
-                        <option value="weaviate" data-oid="h9n8bcz">
+                        <option value="weaviate" data-oid="5ig0d-g">
                             Weaviate
                         </option>
-                        <option value="chroma" data-oid="w5rt-tx">
+                        <option value="chroma" data-oid="nc_mqpu">
                             Chroma
                         </option>
                     </select>
                 </div>
 
-                <div data-oid="mjx-y5z">
+                <div data-oid="f720.ig">
                     <label
                         className="block text-sm font-medium text-gray-700 mb-1"
-                        data-oid="85c_rk_"
+                        data-oid="y9yskd8"
                     >
                         Host
                     </label>
@@ -380,14 +380,14 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
-                        data-oid="8.6u898"
+                        data-oid="la70u96"
                     />
                 </div>
 
-                <div data-oid="q862kmg">
+                <div data-oid="jy4.alw">
                     <label
                         className="block text-sm font-medium text-gray-700 mb-1"
-                        data-oid="263bg0a"
+                        data-oid="losrg92"
                     >
                         Port
                     </label>
@@ -399,16 +399,16 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         }
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
-                        data-oid="15zw7e5"
+                        data-oid="9awu9lm"
                     />
                 </div>
 
                 {(formData.type === 'neo4j' || formData.type === 'weaviate') && (
                     <>
-                        <div data-oid=":rh8ekk">
+                        <div data-oid="rt2zh3a">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-1"
-                                data-oid="chaer57"
+                                data-oid="1-b2dav"
                             >
                                 Username
                             </label>
@@ -419,14 +419,14 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                                     setFormData({ ...formData, username: e.target.value })
                                 }
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                data-oid="3pgkw5:"
+                                data-oid="emp3f4b"
                             />
                         </div>
 
-                        <div data-oid="3hhxbie">
+                        <div data-oid="1.vjabv">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-1"
-                                data-oid="8-2h5nl"
+                                data-oid="5b4_38z"
                             >
                                 Password
                             </label>
@@ -437,17 +437,17 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                                     setFormData({ ...formData, password: e.target.value })
                                 }
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                data-oid="tin:8d3"
+                                data-oid="qtq:o5q"
                             />
                         </div>
                     </>
                 )}
 
                 {formData.type === 'pinecone' && (
-                    <div className="col-span-2" data-oid="dzgymqw">
+                    <div className="col-span-2" data-oid="bw2l7kx">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"
-                            data-oid="si6bj5u"
+                            data-oid="tm4g5f0"
                         >
                             API Key
                         </label>
@@ -456,16 +456,16 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                             value={formData.apiKey || ''}
                             onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="wd6odna"
+                            data-oid="954cywv"
                         />
                     </div>
                 )}
 
                 {(formData.type === 'qdrant' || formData.type === 'chroma') && (
-                    <div data-oid="gjoj-2k">
+                    <div data-oid="3f9_nzs">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"
-                            data-oid=":3qpz59"
+                            data-oid="4d4cd5b"
                         >
                             Collection
                         </label>
@@ -476,16 +476,16 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                                 setFormData({ ...formData, collection: e.target.value })
                             }
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid=".37r2_7"
+                            data-oid="nf32dq_"
                         />
                     </div>
                 )}
 
                 {formData.type === 'neo4j' && (
-                    <div data-oid="_r1vpqa">
+                    <div data-oid="m5th6jv">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"
-                            data-oid="k:g.fuk"
+                            data-oid="h_pd:-d"
                         >
                             Database
                         </label>
@@ -494,25 +494,25 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                             value={formData.database || ''}
                             onChange={(e) => setFormData({ ...formData, database: e.target.value })}
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="amxdvon"
+                            data-oid="qtacv0o"
                         />
                     </div>
                 )}
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4" data-oid="vgjhxqh">
+            <div className="flex justify-end space-x-3 pt-4" data-oid="3uwjp:v">
                 <button
                     type="button"
                     onClick={onCancel}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                    data-oid="x37zqk5"
+                    data-oid="t_9kkw5"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-                    data-oid="mbedqcm"
+                    data-oid="4hsx2y."
                 >
                     {server?.id ? 'Update Server' : 'Add Server'}
                 </button>

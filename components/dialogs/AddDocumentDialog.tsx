@@ -76,32 +76,32 @@ export function AddDocumentDialog({
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="1p:.tx_"
+            data-oid=".:i:-4g"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4" data-oid="axvdgfw">
-                <h3 className="text-lg font-semibold mb-4" data-oid="uvmqjni">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4" data-oid="p56l26x">
+                <h3 className="text-lg font-semibold mb-4" data-oid="jdw4fx:">
                     {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                 </h3>
 
                 {mode === 'supersede' && documentToSupersede && (
                     <div
                         className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"
-                        data-oid="tusi51f"
+                        data-oid="bnfxb49"
                     >
-                        <div className="flex items-start space-x-3" data-oid="kmxut3z">
-                            <div className="text-yellow-600 text-xl" data-oid="7w8vndi">
+                        <div className="flex items-start space-x-3" data-oid="g2cwz:m">
+                            <div className="text-yellow-600 text-xl" data-oid="uam8yd8">
                                 ⚠️
                             </div>
-                            <div data-oid="q--_830">
-                                <h4 className="font-medium text-yellow-800 mb-1" data-oid="rpdm:zn">
+                            <div data-oid="cxl6s-d">
+                                <h4 className="font-medium text-yellow-800 mb-1" data-oid="u-do0xl">
                                     Document Supersede Warning
                                 </h4>
-                                <p className="text-sm text-yellow-700 mb-2" data-oid="-wswjtb">
+                                <p className="text-sm text-yellow-700 mb-2" data-oid="7hi8cup">
                                     This action will replace the existing document "
                                     {documentToSupersede.name}" and remove it from the vector store.
                                     This action cannot be undone.
                                 </p>
-                                <div className="text-xs text-yellow-600" data-oid="opnaspf">
+                                <div className="text-xs text-yellow-600" data-oid="lx-7uxm">
                                     Current document: {documentToSupersede.chunks} chunks, Quality:{' '}
                                     {(documentToSupersede.quality * 100).toFixed(0)}%
                                 </div>
@@ -111,22 +111,22 @@ export function AddDocumentDialog({
                 )}
 
                 {!selectedDocumentType && mode === 'add' ? (
-                    <div data-oid="8tw6ay5">
-                        <p className="text-gray-600 mb-4" data-oid="vifwn-g">
+                    <div data-oid="73.wosd">
+                        <p className="text-gray-600 mb-4" data-oid="6:5hama">
                             Select document type:
                         </p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4" data-oid="vc_cnx1">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4" data-oid="8-b.17p">
                             {documentTypes.map((type) => (
                                 <button
                                     key={type.type}
                                     onClick={() => setSelectedDocumentType(type)}
                                     className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
-                                    data-oid="k6lf:wk"
+                                    data-oid="lt46e5u"
                                 >
-                                    <div className="text-2xl mb-2" data-oid="oj8y_e.">
+                                    <div className="text-2xl mb-2" data-oid="026vu8n">
                                         {type.icon}
                                     </div>
-                                    <div className="text-sm font-medium" data-oid="wetznws">
+                                    <div className="text-sm font-medium" data-oid="02f4i8d">
                                         {type.label}
                                     </div>
                                 </button>
@@ -134,29 +134,29 @@ export function AddDocumentDialog({
                         </div>
                     </div>
                 ) : selectedDocumentType ? (
-                    <div className="space-y-4" data-oid="bo:npgd">
-                        <div className="flex items-center space-x-2 mb-4" data-oid="f4:is0m">
-                            <span className="text-2xl" data-oid="hih2-uc">
+                    <div className="space-y-4" data-oid="_q20i_u">
+                        <div className="flex items-center space-x-2 mb-4" data-oid="o5iwpu1">
+                            <span className="text-2xl" data-oid="k__ta9y">
                                 {selectedDocumentType.icon}
                             </span>
-                            <span className="font-medium" data-oid="8-k5d-:">
+                            <span className="font-medium" data-oid="19wj7kl">
                                 {selectedDocumentType.label}
                             </span>
                             {mode === 'add' && (
                                 <button
                                     onClick={() => setSelectedDocumentType(null)}
                                     className="text-blue-600 hover:text-blue-800 text-sm"
-                                    data-oid="dulbzp9"
+                                    data-oid="4f2r7vx"
                                 >
                                     Change
                                 </button>
                             )}
                         </div>
 
-                        <div data-oid=".ndcy7d">
+                        <div data-oid=":n53jwo">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-2"
-                                data-oid="i0mqn5k"
+                                data-oid="2dsh_bu"
                             >
                                 {selectedDocumentType.type === 'youtube' ||
                                 selectedDocumentType.type === 'website'
@@ -169,55 +169,55 @@ export function AddDocumentDialog({
                                     type="url"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter URL..."
-                                    data-oid="knhu1gc"
+                                    data-oid="ws9mbbn"
                                 />
                             ) : (
                                 <input
                                     type="file"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="pb44e4d"
+                                    data-oid="m_l625p"
                                 />
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid="qj_tww0">
-                            <div data-oid=".n1p-o-">
-                                <label className="flex items-center space-x-2" data-oid="k:8qq7s">
+                        <div className="grid grid-cols-2 gap-4" data-oid="4af2239">
+                            <div data-oid="uqhu8kb">
+                                <label className="flex items-center space-x-2" data-oid="2_az:p-">
                                     <input
                                         type="checkbox"
                                         className="rounded"
                                         checked={gpuProcessing}
                                         onChange={(e) => setGpuProcessing(e.target.checked)}
-                                        data-oid="k:wzp4n"
+                                        data-oid="tclqz39"
                                     />
 
-                                    <span className="text-sm" data-oid="rqu5rp.">
+                                    <span className="text-sm" data-oid=".d1374-">
                                         GPU Processing
                                     </span>
                                 </label>
                             </div>
-                            <div data-oid="3oqd552">
-                                <label className="flex items-center space-x-2" data-oid="6vj-d9u">
+                            <div data-oid="sjx-ufr">
+                                <label className="flex items-center space-x-2" data-oid="dphmgrm">
                                     <input
                                         type="checkbox"
                                         className="rounded"
                                         checked={contextualEmbedding}
                                         onChange={(e) => setContextualEmbedding(e.target.checked)}
-                                        data-oid="1ubx6jc"
+                                        data-oid="-yyycrq"
                                     />
 
-                                    <span className="text-sm" data-oid="7ogb2:q">
+                                    <span className="text-sm" data-oid="fmr5:rm">
                                         Contextual Embedding
                                     </span>
                                 </label>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid="hiv8dpk">
-                            <div data-oid="5315iwi">
+                        <div className="grid grid-cols-2 gap-4" data-oid="_dmte88">
+                            <div data-oid="ws4zf:g">
                                 <label
                                     className="block text-sm font-medium text-gray-700 mb-1"
-                                    data-oid="g5-5gwo"
+                                    data-oid="whmu62c"
                                 >
                                     Chunk Size
                                 </label>
@@ -225,35 +225,35 @@ export function AddDocumentDialog({
                                     value={chunkSize}
                                     onChange={(e) => setChunkSize(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="v:0zreg"
+                                    data-oid="mx-62_o"
                                 >
-                                    <option value="1000" data-oid="khq.:ax">
+                                    <option value="1000" data-oid=".esqo4g">
                                         1000
                                     </option>
-                                    <option value="2000" data-oid="xmdajnu">
+                                    <option value="2000" data-oid="7gigycp">
                                         2000
                                     </option>
-                                    <option value="3000" data-oid="dlehuc4">
+                                    <option value="3000" data-oid="o1:xscf">
                                         3000
                                     </option>
-                                    <option value="4000" data-oid="l.d18aa">
+                                    <option value="4000" data-oid="wpz2fsq">
                                         4000
                                     </option>
-                                    <option value="5000" data-oid="k8sa6sj">
+                                    <option value="5000" data-oid="ui_79nc">
                                         5000
                                     </option>
-                                    <option value="6000" data-oid="qeztbfw">
+                                    <option value="6000" data-oid="_vhuqls">
                                         6000
                                     </option>
-                                    <option value="8000" data-oid="0kk484t">
+                                    <option value="8000" data-oid="1gsxw1v">
                                         8000
                                     </option>
                                 </select>
                             </div>
-                            <div data-oid="tsckktu">
+                            <div data-oid="dxhuhv9">
                                 <label
                                     className="block text-sm font-medium text-gray-700 mb-1"
-                                    data-oid="cd67vvk"
+                                    data-oid="nq4kfay"
                                 >
                                     Chunking Method
                                 </label>
@@ -261,15 +261,15 @@ export function AddDocumentDialog({
                                     value={chunkingMethod}
                                     onChange={(e) => setChunkingMethod(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="ghczpe:"
+                                    data-oid="3vwhcei"
                                 >
-                                    <option value="Semantic" data-oid="4gb2mcx">
+                                    <option value="Semantic" data-oid="pc5oylh">
                                         Semantic
                                     </option>
-                                    <option value="Fixed Size" data-oid="1t_j2gw">
+                                    <option value="Fixed Size" data-oid="o.6b9-7">
                                         Fixed Size
                                     </option>
-                                    <option value="Sentence" data-oid="ngd3ism">
+                                    <option value="Sentence" data-oid="gh.op74">
                                         Sentence
                                     </option>
                                 </select>
@@ -278,11 +278,11 @@ export function AddDocumentDialog({
                     </div>
                 ) : null}
 
-                <div className="flex justify-end space-x-3 mt-6" data-oid="qaum_fq">
+                <div className="flex justify-end space-x-3 mt-6" data-oid="e91ib7w">
                     <button
                         onClick={handleClose}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        data-oid=":f3mia_"
+                        data-oid="glm3-:j"
                     >
                         Cancel
                     </button>
@@ -293,7 +293,7 @@ export function AddDocumentDialog({
                                     ? 'bg-yellow-600 hover:bg-yellow-700'
                                     : 'bg-blue-600 hover:bg-blue-700'
                             }`}
-                            data-oid="eip5:pn"
+                            data-oid=":qx1e4g"
                         >
                             {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                         </button>

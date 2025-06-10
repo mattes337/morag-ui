@@ -71,7 +71,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
             onReingest={handleReingestDocument}
             onSupersede={handleSupersedeDocument}
             onDelete={handleDeleteDocument}
-            data-oid="zrajv6t"
+            data-oid="1rk9u0f"
         />
     );
 }

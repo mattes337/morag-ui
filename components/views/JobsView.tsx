@@ -50,13 +50,13 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
     };
 
     return (
-        <div className="space-y-6" data-oid="7px8s1o">
-            <div className="flex justify-between items-center" data-oid="8buzfz_">
-                <div data-oid="jbmmm-z">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="a:ccnmx">
+        <div className="space-y-6" data-oid="3-oqwc_">
+            <div className="flex justify-between items-center" data-oid="4q-s-za">
+                <div data-oid="ob0b_ft">
+                    <h2 className="text-2xl font-bold text-gray-900" data-oid="qe-8gpu">
                         Jobs
                     </h2>
-                    <p className="text-gray-600 text-sm mt-1" data-oid="5k5qxyl">
+                    <p className="text-gray-600 text-sm mt-1" data-oid="d8c2r-m">
                         Monitor document processing jobs and their progress
                     </p>
                 </div>
@@ -64,79 +64,79 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
 
             <div
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="cqrq7c3"
+                data-oid="dq5z:k."
             >
-                <table className="w-full" data-oid="5llz9a3">
-                    <thead className="bg-gray-50" data-oid="kkc2sap">
-                        <tr data-oid="15wi8:u">
+                <table className="w-full" data-oid="og6zjfs">
+                    <thead className="bg-gray-50" data-oid="x5d8h1l">
+                        <tr data-oid="n_:oo3i">
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="46:_ozf"
+                                data-oid="x_henbd"
                             >
                                 Document
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="9svw.5g"
+                                data-oid="fzbq.51"
                             >
                                 Status
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="41-orsj"
+                                data-oid="8bqf79h"
                             >
                                 Progress & Details
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="o-hx16t"
+                                data-oid="wa-hg2d"
                             >
                                 Timing
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="i8n1608"
+                                data-oid="03cfi9s"
                             >
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="foj5e1o">
+                    <tbody className="bg-white divide-y divide-gray-200" data-oid="tgkyccv">
                         {jobs.map((job) => (
-                            <tr key={job.id} data-oid="h4vns1z">
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="ql5se11">
-                                    <div className="text-sm font-medium" data-oid="qbp:tlq">
+                            <tr key={job.id} data-oid="22_5mpc">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="8:ec1pp">
+                                    <div className="text-sm font-medium" data-oid="ps734x3">
                                         <button
                                             onClick={() => onViewJobDetail(job)}
                                             className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                                            data-oid="yv1:.q2"
+                                            data-oid="rmg-r18"
                                         >
                                             {job.documentName}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500" data-oid="u_71pr9">
+                                    <div className="text-sm text-gray-500" data-oid="g560050">
                                         {job.documentType} • Job #{job.id}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="q210xfd">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="t5a6xyn">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(job.status)}`}
-                                        data-oid="s73lyz0"
+                                        data-oid="tmkd2rc"
                                     >
                                         {job.status.replace('-', ' ')}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="buke-jh">
-                                    <div className="w-full" data-oid="_sm67lk">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="l_xge03">
+                                    <div className="w-full" data-oid=":yitisj">
                                         <div
                                             className="flex justify-between text-xs text-gray-600 mb-1"
-                                            data-oid="z-sw18y"
+                                            data-oid="1ghirfj"
                                         >
-                                            <span data-oid="0to5or8">
+                                            <span data-oid="zfaxsk9">
                                                 {job.progress.percentage}%
                                             </span>
                                             {job.processingDetails?.estimatedTimeRemaining && (
-                                                <span className="text-gray-500" data-oid="q.r2:rl">
+                                                <span className="text-gray-500" data-oid="8d_0jfa">
                                                     ~
                                                     {Math.ceil(
                                                         job.processingDetails
@@ -148,24 +148,24 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         </div>
                                         <div
                                             className="w-full bg-gray-200 rounded-full h-2"
-                                            data-oid="aep91ld"
+                                            data-oid="t3y__hb"
                                         >
                                             <div
                                                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                                 style={{ width: `${job.progress.percentage}%` }}
-                                                data-oid="cqk1dzp"
+                                                data-oid="3q5hb15"
                                             ></div>
                                         </div>
                                         <div
                                             className="text-xs text-gray-500 mt-1"
-                                            data-oid="g:dtx_2"
+                                            data-oid=".peszu7"
                                         >
                                             {job.progress.summary}
                                         </div>
                                         {job.processingDetails?.currentStep && (
                                             <div
                                                 className="text-xs text-blue-600 mt-1"
-                                                data-oid="fgth26."
+                                                data-oid="b5pfwbf"
                                             >
                                                 Step {job.processingDetails.completedSteps || 0}/
                                                 {job.processingDetails.totalSteps || 0}:{' '}
@@ -175,7 +175,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         {job.metadata?.file_size && (
                                             <div
                                                 className="text-xs text-gray-500 mt-1"
-                                                data-oid="a52fx6c"
+                                                data-oid="9zoq5ig"
                                             >
                                                 Size:{' '}
                                                 {(job.metadata.file_size / 1024 / 1024).toFixed(1)}{' '}
@@ -185,7 +185,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         {job.metadata?.model_used && (
                                             <div
                                                 className="text-xs text-gray-500"
-                                                data-oid="ikvxkl5"
+                                                data-oid="ge7:b4y"
                                             >
                                                 Model: {job.metadata.model_used}
                                             </div>
@@ -193,7 +193,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         {job.processingDetails?.errorMessage && (
                                             <div
                                                 className="text-xs text-red-600 mt-1"
-                                                data-oid="bk23b.y"
+                                                data-oid="xa7-y3q"
                                             >
                                                 ⚠️ {job.processingDetails.errorMessage}
                                             </div>
@@ -202,7 +202,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                             job.processingDetails.warnings.length > 0 && (
                                                 <div
                                                     className="text-xs text-yellow-600 mt-1"
-                                                    data-oid="uw0q8kq"
+                                                    data-oid="l172p22"
                                                 >
                                                     ⚠️ {job.processingDetails.warnings.length}{' '}
                                                     warning(s)
@@ -212,28 +212,28 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="28xkdun"
+                                    data-oid="02msa2d"
                                 >
-                                    <div data-oid="_vyb1-x">
+                                    <div data-oid="t47rul.">
                                         Started: {formatDate(job.startDate)}
                                     </div>
                                     {job.endDate && (
-                                        <div className="text-gray-500" data-oid="9ct-q36">
+                                        <div className="text-gray-500" data-oid="4:a91dn">
                                             Finished: {formatDate(job.endDate)}
                                         </div>
                                     )}
-                                    <div className="text-gray-500" data-oid="kpc8e1.">
+                                    <div className="text-gray-500" data-oid="b9weds7">
                                         Duration: {formatDuration(job.startDate, job.endDate)}
                                     </div>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="6wyn31a"
+                                    data-oid="6.tq.vn"
                                 >
                                     <button
                                         onClick={() => onViewJobDetail(job)}
                                         className="text-indigo-600 hover:text-indigo-900"
-                                        data-oid="b5nde_8"
+                                        data-oid="0e8ndpb"
                                     >
                                         View Details
                                     </button>
@@ -241,7 +241,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         <button
                                             onClick={() => onCancelJob(job)}
                                             className="text-red-600 hover:text-red-900"
-                                            data-oid="vuy:8bm"
+                                            data-oid="8kep3sn"
                                         >
                                             Cancel
                                         </button>
@@ -254,8 +254,8 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
             </div>
 
             {jobs.length === 0 && (
-                <div className="text-center py-12" data-oid="um_ty77">
-                    <div className="text-gray-500" data-oid="2u3b2l5">
+                <div className="text-center py-12" data-oid="sec7c0r">
+                    <div className="text-gray-500" data-oid="dyu_flj">
                         No jobs found. Jobs are created when documents are uploaded or reingested.
                     </div>
                 </div>

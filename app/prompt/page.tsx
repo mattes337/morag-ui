@@ -79,7 +79,7 @@ export default function PromptPage() {
             onSubmitPrompt={handlePromptSubmit}
             onClearDocumentFilter={handleClearDocumentFilter}
             onClearDatabaseFilter={handleClearDatabaseFilter}
-            data-oid="ipe3b7f"
+            data-oid="dxz71o7"
         />
     );
 }
