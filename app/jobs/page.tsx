@@ -10,12 +10,13 @@ export default function JobsPage() {
     const { jobs, setJobs } = useApp();
 
     const handleCancelJob = (job: Job) => {
-        // Update job status to cancelled (we'll treat this as failed for now)
+        // Update job status to cancelled
         const updatedJobs = jobs.map((j) =>
             j.id === job.id
                 ? {
                       ...j,
-                      status: 'failed' as const,
+                      status: 'cancelled' as const,
+                      endDate: new Date().toISOString(),
                       progress: {
                           ...j.progress,
                           summary: 'Job cancelled by user',
