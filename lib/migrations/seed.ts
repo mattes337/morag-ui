@@ -8,7 +8,6 @@ async function main() {
         where: { email: 'john.doe@example.com' },
         update: {},
         create: {
-            id: '1',
             name: 'John Doe',
             email: 'john.doe@example.com',
             role: 'ADMIN',

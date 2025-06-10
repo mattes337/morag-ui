@@ -296,17 +296,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     setJobs(formattedJobs);
                 }
 
-                // For now, set a default user (in a real app, this would come from authentication)
-                const defaultUser: User = {
-                    id: '1',
-                    name: 'John Doe',
-                    email: 'john.doe@example.com',
-                    role: 'admin',
-                };
-                setUser(defaultUser);
+                // For now, get the default user from the database (in a real app, this would come from authentication)
+                const userResponse = await fetch('/api/users/john.doe@example.com');
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    const defaultUser: User = {
+                        id: userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        role: userData.role.toLowerCase(),
+                    };
+                    setUser(defaultUser);
 
-                // Load API keys for the user
-                const apiKeysResponse = await fetch(`/api/api-keys?userId=${defaultUser.id}`);
+                    // Load API keys for the user
+                    const apiKeysResponse = await fetch(`/api/api-keys?userId=${defaultUser.id}`);
+                    if (apiKeysResponse.ok) {
+                        const apiKeysData = await apiKeysResponse.json();
+                        const formattedApiKeys = apiKeysData.map((key: any) => ({
+                            id: key.id,
+                            name: key.name,
+                            key: key.key,
+                            created: new Date(key.created).toISOString().split('T')[0],
+                            lastUsed: key.lastUsed
+                                ? new Date(key.lastUsed).toISOString().split('T')[0]
+                                : '',
+                        }));
+                        setApiKeys(formattedApiKeys);
+                    }
+                } else {
+                    // Fallback user if API fails
+                    const fallbackUser: User = {
+                        id: 'fallback-user-id',
+                        name: 'John Doe',
+                        email: 'john.doe@example.com',
+                        role: 'admin',
+                    };
+                    setUser(fallbackUser);
+                }
                 if (apiKeysResponse.ok) {
                     const apiKeysData = await apiKeysResponse.json();
                     const formattedApiKeys = apiKeysData.map((key: any) => ({
