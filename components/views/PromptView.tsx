@@ -32,13 +32,13 @@ export function PromptView({
     onClearDatabaseFilter,
 }: PromptViewProps) {
     return (
-        <div className="space-y-6" data-oid="0bii.je">
-            <div className="flex justify-between items-center" data-oid="-1r_lw9">
-                <div data-oid="b2ua39i">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="v:dzx6m">
+        <div className="space-y-6" data-oid="1gubr:_">
+            <div className="flex justify-between items-center" data-oid="_0_:fc1">
+                <div data-oid="sm4oi8_">
+                    <h2 className="text-2xl font-bold text-gray-900" data-oid="2a0xx6-">
                         AI Prompt Interface
                     </h2>
-                    <p className="text-sm text-gray-600 mt-1" data-oid="9wdp5f4">
+                    <p className="text-sm text-gray-600 mt-1" data-oid="lqk5u2e">
                         {selectedDocument
                             ? `Searching within: ${selectedDocument.name}`
                             : selectedDatabase
@@ -46,12 +46,12 @@ export function PromptView({
                               : 'Searching across all databases'}
                     </p>
                 </div>
-                <div className="flex items-center space-x-4" data-oid="rojc_ap">
+                <div className="flex items-center space-x-4" data-oid="dbdbzwk">
                     {selectedDocument && (
                         <button
                             onClick={onClearDocumentFilter}
                             className="text-blue-600 hover:text-blue-800 text-sm"
-                            data-oid="lli-0-d"
+                            data-oid="foxrd-i"
                         >
                             ← Clear document filter
                         </button>
@@ -60,7 +60,7 @@ export function PromptView({
                         <button
                             onClick={onClearDatabaseFilter}
                             className="text-blue-600 hover:text-blue-800 text-sm"
-                            data-oid="4juzw_f"
+                            data-oid="owz_j9z"
                         >
                             ← Clear database filter
                         </button>
@@ -69,12 +69,12 @@ export function PromptView({
             </div>
 
             {/* Prompt Input Section */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="kogfasf">
-                <div className="space-y-4" data-oid="jho.ews">
-                    <div data-oid="nts4sa3">
+            <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="myr2ax5">
+                <div className="space-y-4" data-oid="x-2dihc">
+                    <div data-oid="088pwk5">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="9ncoup:"
+                            data-oid="xto96o-"
                         >
                             Your Prompt
                         </label>
@@ -84,16 +84,16 @@ export function PromptView({
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                             rows={4}
                             placeholder="Enter your question or prompt here..."
-                            data-oid="k0zyart"
+                            data-oid="0yu81g5"
                         />
                     </div>
 
-                    <div className="flex items-center justify-between" data-oid="paxr13y">
-                        <div className="flex items-center space-x-4" data-oid="fl2u535">
-                            <div data-oid="dhd.tw1">
+                    <div className="flex items-center justify-between" data-oid="7:b5dci">
+                        <div className="flex items-center space-x-4" data-oid="2tcak3r">
+                            <div data-oid="rxac0jd">
                                 <label
                                     className="block text-sm font-medium text-gray-700 mb-1"
-                                    data-oid="9dg0exc"
+                                    data-oid="ddy:l5b"
                                 >
                                     Documents to retrieve
                                 </label>
@@ -101,21 +101,21 @@ export function PromptView({
                                     value={numDocuments}
                                     onChange={(e) => onNumDocumentsChange(parseInt(e.target.value))}
                                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="-m9fjw6"
+                                    data-oid="tjhh:_j"
                                 >
-                                    <option value={3} data-oid="5vomd4h">
+                                    <option value={3} data-oid="y1jq41l">
                                         3
                                     </option>
-                                    <option value={5} data-oid="42gls7m">
+                                    <option value={5} data-oid="r:v7-2t">
                                         5
                                     </option>
-                                    <option value={10} data-oid="8jzqy60">
+                                    <option value={10} data-oid="tukqswz">
                                         10
                                     </option>
-                                    <option value={15} data-oid="aejjx1c">
+                                    <option value={15} data-oid="1bzoqnt">
                                         15
                                     </option>
-                                    <option value={20} data-oid="we3q64-">
+                                    <option value={20} data-oid="z6wuyj6">
                                         20
                                     </option>
                                 </select>
@@ -126,7 +126,7 @@ export function PromptView({
                             onClick={onSubmitPrompt}
                             disabled={!promptText.trim() || isLoading}
                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            data-oid="arc-941"
+                            data-oid="nn7b01n"
                         >
                             {isLoading ? 'Processing...' : 'Submit Prompt'}
                         </button>
@@ -136,51 +136,51 @@ export function PromptView({
 
             {/* Search Results Section */}
             {searchResults.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="3jmtip1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="4biymm8">
+                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="5eb.4ht">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="ne9oj.v">
                         Retrieved Context ({searchResults.length} documents)
                     </h3>
-                    <div className="space-y-4" data-oid="q61j88k">
+                    <div className="space-y-4" data-oid="j7-a:_k">
                         {searchResults.map((result, index) => (
                             <div
                                 key={result.id}
                                 className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
-                                data-oid="00arord"
+                                data-oid="_72i1zj"
                             >
                                 <div
                                     className="flex justify-between items-start mb-2"
-                                    data-oid="9z6.7kx"
+                                    data-oid="a0prghz"
                                 >
-                                    <div data-oid="jtf_8.8">
+                                    <div data-oid="ljt_p0p">
                                         <span
                                             className="text-sm font-medium text-gray-900"
-                                            data-oid="6_bv1ta"
+                                            data-oid="k9yyf7q"
                                         >
                                             {result.document}
                                         </span>
                                         <span
                                             className="text-sm text-gray-500 ml-2"
-                                            data-oid="80maxe."
+                                            data-oid="52zzd86"
                                         >
                                             ({result.database})
                                         </span>
                                     </div>
-                                    <div className="flex items-center space-x-2" data-oid="5lmr2ba">
+                                    <div className="flex items-center space-x-2" data-oid="y60eg16">
                                         <span
                                             className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
-                                            data-oid="o8xje.p"
+                                            data-oid=".aq53ar"
                                         >
                                             {(result.similarity * 100).toFixed(1)}% match
                                         </span>
                                         <span
                                             className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded"
-                                            data-oid="v85cj-q"
+                                            data-oid="k3x3nr-"
                                         >
                                             Chunk {result.chunk}
                                         </span>
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-700" data-oid="g:tt8i:">
+                                <p className="text-sm text-gray-700" data-oid="ig6cn37">
                                     {result.content}
                                 </p>
                             </div>
@@ -191,12 +191,12 @@ export function PromptView({
 
             {/* AI Response Section */}
             {promptResponse && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="irphjak">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="v_ww30l">
+                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="rciz4k6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4" data-oid="9e4bea3">
                         AI Response
                     </h3>
-                    <div className="prose prose-sm max-w-none" data-oid="q0fq49_">
-                        <div className="whitespace-pre-wrap text-gray-700" data-oid="-768--9">
+                    <div className="prose prose-sm max-w-none" data-oid="2yw_t5-">
+                        <div className="whitespace-pre-wrap text-gray-700" data-oid="npuavoj">
                             {promptResponse}
                         </div>
                     </div>
@@ -205,13 +205,13 @@ export function PromptView({
 
             {/* Loading State */}
             {isLoading && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="rsg8uf_">
-                    <div className="flex items-center justify-center space-x-2" data-oid="x7v-hvz">
+                <div className="bg-white border border-gray-200 rounded-lg p-6" data-oid="9097.m8">
+                    <div className="flex items-center justify-center space-x-2" data-oid="cop:o7e">
                         <div
                             className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"
-                            data-oid="rdss8ax"
+                            data-oid="_kmwylk"
                         ></div>
-                        <span className="text-gray-600" data-oid="iqdluyw">
+                        <span className="text-gray-600" data-oid="qox03ge">
                             {searchResults.length === 0
                                 ? 'Searching documents...'
                                 : 'Generating response...'}
