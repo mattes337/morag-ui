@@ -79,7 +79,13 @@ export interface Job {
     documentType: string;
     startDate: string;
     endDate?: string;
-    status: 'pending' | 'waiting-for-remote-worker' | 'processing' | 'finished' | 'failed';
+    status:
+        | 'pending'
+        | 'waiting-for-remote-worker'
+        | 'processing'
+        | 'finished'
+        | 'failed'
+        | 'cancelled';
     progress: {
         percentage: number;
         summary: string;
