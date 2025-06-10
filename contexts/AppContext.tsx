@@ -186,39 +186,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             uploadDate: '2024-01-12',
         },
     ]);
-=======
-    const [documents, setDocuments] = useState<Document[]>([
-        {
-            id: '1',
-            name: 'Machine Learning Fundamentals.pdf',
-            type: 'PDF',
-            state: 'ingested',
-            version: 2,
-            chunks: 45,
-            quality: 0.92,
-            uploadDate: '2024-01-10',
-        },
-        {
-            id: '2',
-            name: 'AI Ethics Lecture',
-            type: 'YouTube',
-            state: 'ingesting',
-            version: 1,
-            chunks: 0,
-            quality: 0,
-            uploadDate: '2024-01-15',
-        },
-        {
-            id: '3',
-            name: 'Company Website Analysis',
-            type: 'Website',
-            state: 'ingested',
-            version: 1,
-            chunks: 23,
-            quality: 0.87,
-            uploadDate: '2024-01-12',
-        },
-    ]);
 
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([
         {
