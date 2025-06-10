@@ -24,7 +24,7 @@ export class DatabaseService {
         });
     }
 
-    static async getDatabaseById(id: number) {
+    static async getDatabaseById(id: string) {
         return await prisma.database.findUnique({
             where: { id },
             include: {
@@ -42,23 +42,28 @@ export class DatabaseService {
         });
     }
 
-    static async updateDatabase(id: number, data: Partial<Database>) {
+    static async updateDatabase(id: string, data: Partial<Database>) {
         return await prisma.database.update({
             where: { id },
             data,
             include: {
                 documents: true,
+                _count: {
+                    select: {
+                        documents: true,
+                    },
+                },
             },
         });
     }
 
-    static async deleteDatabase(id: number) {
+    static async deleteDatabase(id: string) {
         return await prisma.database.delete({
             where: { id },
         });
     }
 
-    static async updateDocumentCount(databaseId: number) {
+    static async updateDocumentCount(databaseId: string) {
         const count = await prisma.document.count({
             where: { databaseId },
         });

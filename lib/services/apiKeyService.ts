@@ -34,7 +34,7 @@ export class ApiKeyService {
         });
     }
 
-    static async getApiKeyById(id: number) {
+    static async getApiKeyById(id: string) {
         return await prisma.apiKey.findUnique({
             where: { id },
             include: {
@@ -52,7 +52,7 @@ export class ApiKeyService {
         });
     }
 
-    static async updateApiKey(id: number, data: Partial<ApiKey>) {
+    static async updateApiKey(id: string, data: Partial<ApiKey>) {
         return await prisma.apiKey.update({
             where: { id },
             data,
@@ -62,7 +62,7 @@ export class ApiKeyService {
         });
     }
 
-    static async updateLastUsed(id: number) {
+    static async updateLastUsed(id: string) {
         return await prisma.apiKey.update({
             where: { id },
             data: { lastUsed: new Date() },
@@ -72,7 +72,7 @@ export class ApiKeyService {
         });
     }
 
-    static async deleteApiKey(id: number) {
+    static async deleteApiKey(id: string) {
         return await prisma.apiKey.delete({
             where: { id },
         });

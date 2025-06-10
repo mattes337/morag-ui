@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useApp } from '../contexts/AppContext';
 import { DatabasesView } from '../components/views/DatabasesView';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useEffect } from 'react';
 
 export default function DatabasesPage() {
@@ -10,16 +11,21 @@ export default function DatabasesPage() {
     const {
         user,
         databases,
+        isDataLoading,
         setSelectedDatabase,
         setSelectedDocument,
         setShowCreateDatabaseDialog,
     } = useApp();
 
     useEffect(() => {
-        if (!user) {
+        if (!user && !isDataLoading) {
             router.push('/login');
         }
-    }, [user, router]);
+    }, [user, isDataLoading, router]);
+
+    if (isDataLoading) {
+        return <LoadingSpinner data-oid="n_70g.a" />;
+    }
 
     if (!user) {
         return null; // or a loading spinner

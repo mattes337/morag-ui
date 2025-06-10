@@ -1,4 +1,167 @@
 import { prisma } from '../database';
+
+async function main() {
+    console.log('Starting database seed...');
+
+    // Create a default user
+    const user = await prisma.user.upsert({
+        where: { email: 'john.doe@example.com' },
+        update: {},
+        create: {
+            id: '1',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            role: 'ADMIN',
+        },
+    });
+
+    console.log('Created user:', user);
+
+    // Create user settings
+    await prisma.userSettings.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+            userId: user.id,
+            theme: 'LIGHT',
+            language: 'en',
+            notifications: true,
+            autoSave: true,
+        },
+    });
+
+    // Create sample databases
+    const db1 = await prisma.database.upsert({
+        where: { name: 'Research Papers' },
+        update: {},
+        create: {
+            name: 'Research Papers',
+            description: 'Academic papers and research documents',
+            documentCount: 0,
+        },
+    });
+
+    const db2 = await prisma.database.upsert({
+        where: { name: 'Company Knowledge Base' },
+        update: {},
+        create: {
+            name: 'Company Knowledge Base',
+            description: 'Internal documentation and procedures',
+            documentCount: 0,
+        },
+    });
+
+    console.log('Created databases:', { db1, db2 });
+
+    // Create sample documents
+    const doc1 = await prisma.document.create({
+        data: {
+            name: 'Machine Learning Fundamentals.pdf',
+            type: 'PDF',
+            state: 'INGESTED',
+            version: 2,
+            chunks: 45,
+            quality: 0.92,
+            databaseId: db1.id,
+        },
+    });
+
+    const doc2 = await prisma.document.create({
+        data: {
+            name: 'AI Ethics Lecture',
+            type: 'YouTube',
+            state: 'INGESTING',
+            version: 1,
+            chunks: 0,
+            quality: 0,
+            databaseId: db1.id,
+        },
+    });
+
+    const doc3 = await prisma.document.create({
+        data: {
+            name: 'Company Website Analysis',
+            type: 'Website',
+            state: 'INGESTED',
+            version: 1,
+            chunks: 23,
+            quality: 0.87,
+            databaseId: db2.id,
+        },
+    });
+
+    console.log('Created documents:', { doc1, doc2, doc3 });
+
+    // Update database document counts
+    await prisma.database.update({
+        where: { id: db1.id },
+        data: { documentCount: 2 },
+    });
+
+    await prisma.database.update({
+        where: { id: db2.id },
+        data: { documentCount: 1 },
+    });
+
+    // Create sample API keys
+    const apiKey1 = await prisma.apiKey.create({
+        data: {
+            name: 'Production Workflow',
+            key: 'mk_prod_****************************',
+            userId: user.id,
+        },
+    });
+
+    const apiKey2 = await prisma.apiKey.create({
+        data: {
+            name: 'Development Environment',
+            key: 'mk_dev_****************************',
+            userId: user.id,
+        },
+    });
+
+    console.log('Created API keys:', { apiKey1, apiKey2 });
+
+    // Create sample jobs
+    const job1 = await prisma.job.create({
+        data: {
+            documentId: doc1.id,
+            documentName: doc1.name,
+            documentType: doc1.type,
+            userId: user.id,
+            status: 'FINISHED',
+            percentage: 100,
+            summary: 'Document successfully ingested with 45 chunks',
+            endDate: new Date(),
+        },
+    });
+
+    const job2 = await prisma.job.create({
+        data: {
+            documentId: doc2.id,
+            documentName: doc2.name,
+            documentType: doc2.type,
+            userId: user.id,
+            status: 'PROCESSING',
+            percentage: 65,
+            summary: 'Extracting audio and generating transcripts',
+        },
+    });
+
+    console.log('Created jobs:', { job1, job2 });
+
+    console.log('Database seed completed successfully!');
+}
+
+main()
+    .catch((e) => {
+        console.error('Error during seed:', e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
+import { prisma } from '../database';
 import { UserRole, Theme, DocumentState, DatabaseType, JobStatus } from '@prisma/client';
 
 export async function seedDatabase() {
