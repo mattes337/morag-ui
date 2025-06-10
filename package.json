@@ -13,7 +13,9 @@
         "db:migrate": "prisma migrate dev",
         "db:seed": "tsx lib/migrations/seed.ts",
         "db:studio": "prisma studio",
-        "db:reset": "prisma migrate reset"
+        "db:reset": "prisma migrate reset",
+        "db:switch:postgresql": "node scripts/switch-db.js postgresql",
+        "db:switch:mysql": "node scripts/switch-db.js mysql"
     },
     "dependencies": {
         "@prisma/client": "^5.7.1",

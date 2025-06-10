@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = env("DATABASE_PROVIDER") // "postgresql" or "mysql"
+  provider = "mysql" // Change to "mysql" for MariaDB/MySQL
   url      = env("DATABASE_URL")
 }
 
