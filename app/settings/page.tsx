@@ -20,23 +20,23 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto" data-oid="25b1l7_">
-            <div className="bg-white shadow rounded-lg" data-oid="59k007f">
-                <div className="px-6 py-4 border-b border-gray-200" data-oid="u3v_3wm">
-                    <h1 className="text-2xl font-semibold text-gray-900" data-oid="rondj-a">
+        <div className="max-w-4xl mx-auto" data-oid="xo-8q8a">
+            <div className="bg-white shadow rounded-lg" data-oid="e26sn43">
+                <div className="px-6 py-4 border-b border-gray-200" data-oid="cnchdbh">
+                    <h1 className="text-2xl font-semibold text-gray-900" data-oid="5bx4iwz">
                         Settings
                     </h1>
-                    <p className="text-gray-600 mt-1" data-oid="0899exb">
+                    <p className="text-gray-600 mt-1" data-oid="d4z5nau">
                         Manage your application preferences and configuration
                     </p>
                 </div>
 
-                <div className="p-6 space-y-6" data-oid="hemeuzk">
+                <div className="p-6 space-y-6" data-oid="lq83_aw">
                     {/* Theme Setting */}
-                    <div data-oid="5yk0z16">
+                    <div data-oid="xwk8323">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="a-lv-k9"
+                            data-oid="aa78k0h"
                         >
                             Theme
                         </label>
@@ -49,28 +49,28 @@ export default function SettingsPage() {
                                 })
                             }
                             className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="j32s-m6"
+                            data-oid="0yck5pv"
                         >
-                            <option value="light" data-oid="pcrk1to">
+                            <option value="light" data-oid="td3z4qe">
                                 Light
                             </option>
-                            <option value="dark" data-oid="7b0z_7x">
+                            <option value="dark" data-oid="07lrgji">
                                 Dark
                             </option>
-                            <option value="system" data-oid="_l1hjt-">
+                            <option value="system" data-oid="t:w6tnc">
                                 System
                             </option>
                         </select>
-                        <p className="text-sm text-gray-500 mt-1" data-oid="y5zcyq3">
+                        <p className="text-sm text-gray-500 mt-1" data-oid="03np1rl">
                             Choose your preferred color scheme
                         </p>
                     </div>
 
                     {/* Language Setting */}
-                    <div data-oid="d47a:s.">
+                    <div data-oid="xkv1cep">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="h3qh8iw"
+                            data-oid="c.ugu9s"
                         >
                             Language
                         </label>
@@ -83,29 +83,29 @@ export default function SettingsPage() {
                                 })
                             }
                             className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="d0mc387"
+                            data-oid="q7k2t4l"
                         >
-                            <option value="en" data-oid="cmmstgl">
+                            <option value="en" data-oid="ger-0bk">
                                 English
                             </option>
-                            <option value="es" data-oid="8og16rh">
+                            <option value="es" data-oid="4fyw0tr">
                                 Spanish
                             </option>
-                            <option value="fr" data-oid="8yv-a4l">
+                            <option value="fr" data-oid="f8gkhq9">
                                 French
                             </option>
-                            <option value="de" data-oid="v49gpq2">
+                            <option value="de" data-oid="52o26eq">
                                 German
                             </option>
                         </select>
-                        <p className="text-sm text-gray-500 mt-1" data-oid="-9d2cbb">
+                        <p className="text-sm text-gray-500 mt-1" data-oid="ahy_vx0">
                             Select your preferred language
                         </p>
                     </div>
 
                     {/* Notifications Setting */}
-                    <div className="flex items-start" data-oid="-1nobdt">
-                        <div className="flex items-center h-5" data-oid="an82m8e">
+                    <div className="flex items-start" data-oid="xpyvkcb">
+                        <div className="flex items-center h-5" data-oid="5ssvjb-">
                             <input
                                 type="checkbox"
                                 checked={localSettings.notifications}
@@ -116,22 +116,22 @@ export default function SettingsPage() {
                                     })
                                 }
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                data-oid="n3z16e6"
+                                data-oid="mtuixge"
                             />
                         </div>
-                        <div className="ml-3" data-oid="rdmrjku">
-                            <label className="text-sm font-medium text-gray-700" data-oid="o50d3nv">
+                        <div className="ml-3" data-oid=".iqy_fy">
+                            <label className="text-sm font-medium text-gray-700" data-oid="s8zhoej">
                                 Enable Notifications
                             </label>
-                            <p className="text-sm text-gray-500" data-oid="_g34x7t">
+                            <p className="text-sm text-gray-500" data-oid="if15p5h">
                                 Receive notifications about system events and updates
                             </p>
                         </div>
                     </div>
 
                     {/* Auto Save Setting */}
-                    <div className="flex items-start" data-oid="m2w4pyn">
-                        <div className="flex items-center h-5" data-oid="xunau9i">
+                    <div className="flex items-start" data-oid="9ontivm">
+                        <div className="flex items-center h-5" data-oid="wvjtqp5">
                             <input
                                 type="checkbox"
                                 checked={localSettings.autoSave}
@@ -142,24 +142,24 @@ export default function SettingsPage() {
                                     })
                                 }
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                data-oid="zhv_ql2"
+                                data-oid="9u.::14"
                             />
                         </div>
-                        <div className="ml-3" data-oid="m:h50x9">
-                            <label className="text-sm font-medium text-gray-700" data-oid="bxj177.">
+                        <div className="ml-3" data-oid="zna3.in">
+                            <label className="text-sm font-medium text-gray-700" data-oid="ny3im-a">
                                 Auto Save
                             </label>
-                            <p className="text-sm text-gray-500" data-oid="iwn-ihb">
+                            <p className="text-sm text-gray-500" data-oid="qq_1ktx">
                                 Automatically save changes as you work
                             </p>
                         </div>
                     </div>
 
                     {/* Default Database Setting */}
-                    <div data-oid="0nibgqn">
+                    <div data-oid="a..bzqn">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="9z1h30:"
+                            data-oid="fbrn3va"
                         >
                             Default Database
                         </label>
@@ -172,19 +172,19 @@ export default function SettingsPage() {
                                 })
                             }
                             className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="blqeinx"
+                            data-oid="103m7.d"
                         >
-                            <option value="" data-oid="v7h9rkq">
+                            <option value="" data-oid=".xa8bc3">
                                 No default
                             </option>
-                            <option value="research" data-oid="w7217wd">
+                            <option value="research" data-oid="01nahg-">
                                 Research Papers
                             </option>
-                            <option value="knowledge" data-oid=":ozu5-x">
+                            <option value="knowledge" data-oid="46dfcui">
                                 Company Knowledge Base
                             </option>
                         </select>
-                        <p className="text-sm text-gray-500 mt-1" data-oid="7s4jv6y">
+                        <p className="text-sm text-gray-500 mt-1" data-oid="afc9u4h">
                             Choose a default database for new sessions
                         </p>
                     </div>
@@ -192,27 +192,27 @@ export default function SettingsPage() {
 
                 <div
                     className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center"
-                    data-oid="gv35r7c"
+                    data-oid="w:54a18"
                 >
-                    <div data-oid="14-wd3j">
+                    <div data-oid="x958vi3">
                         {isSaved && (
-                            <span className="text-green-600 text-sm font-medium" data-oid="yjs4.7e">
+                            <span className="text-green-600 text-sm font-medium" data-oid="kezgv7a">
                                 Settings saved successfully!
                             </span>
                         )}
                     </div>
-                    <div className="flex space-x-3" data-oid="1dcdlnb">
+                    <div className="flex space-x-3" data-oid="mvdf91w">
                         <button
                             onClick={handleReset}
                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md"
-                            data-oid="2mw7-k."
+                            data-oid="3:-e5o4"
                         >
                             Reset
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-                            data-oid="rp22hvh"
+                            data-oid="3vzpmv."
                         >
                             Save Changes
                         </button>

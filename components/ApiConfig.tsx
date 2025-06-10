@@ -40,18 +40,18 @@ export function ApiConfig({ isOpen, onClose }: ApiConfigProps) {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="zcavch0"
+            data-oid=".._609_"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="nca:v3t">
-                <h3 className="text-lg font-semibold mb-4" data-oid="0-:2674">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="q4vvxaz">
+                <h3 className="text-lg font-semibold mb-4" data-oid=":93w:03">
                     API Configuration
                 </h3>
 
-                <div className="space-y-4" data-oid="d.j3wra">
-                    <div data-oid="xvipm6w">
+                <div className="space-y-4" data-oid="z.ea0qt">
+                    <div data-oid="6ltpjfs">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="db:p-gj"
+                            data-oid="cxjb1zv"
                         >
                             API Base URL
                         </label>
@@ -61,14 +61,14 @@ export function ApiConfig({ isOpen, onClose }: ApiConfigProps) {
                             onChange={(e) => setApiUrl(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="http://localhost:8000/api"
-                            data-oid="u10gg6n"
+                            data-oid="yx3ch0."
                         />
                     </div>
 
-                    <div data-oid="mk0gpvu">
+                    <div data-oid=":_jtyb8">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="041tewc"
+                            data-oid="v6rv:xz"
                         >
                             API Key (Optional)
                         </label>
@@ -78,16 +78,16 @@ export function ApiConfig({ isOpen, onClose }: ApiConfigProps) {
                             onChange={(e) => setApiKey(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter API key if required"
-                            data-oid="2yyc.2x"
+                            data-oid="7:b3.o7"
                         />
                     </div>
 
-                    <div className="flex items-center space-x-2" data-oid="ah-h:xc">
+                    <div className="flex items-center space-x-2" data-oid="q7-a8c2">
                         <button
                             onClick={handleHealthCheck}
                             disabled={isChecking}
                             className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-                            data-oid="sc2x7hi"
+                            data-oid="8x5cuw1"
                         >
                             {isChecking ? 'Checking...' : 'Test Connection'}
                         </button>
@@ -95,7 +95,7 @@ export function ApiConfig({ isOpen, onClose }: ApiConfigProps) {
                         {isHealthy !== null && (
                             <span
                                 className={`text-sm ${isHealthy ? 'text-green-600' : 'text-red-600'}`}
-                                data-oid="-mzdtib"
+                                data-oid="p_fq8fx"
                             >
                                 {isHealthy ? '✓ API is healthy' : '✗ API is not responding'}
                             </span>
@@ -103,18 +103,18 @@ export function ApiConfig({ isOpen, onClose }: ApiConfigProps) {
                     </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 mt-6" data-oid="xczbk1t">
+                <div className="flex justify-end space-x-3 mt-6" data-oid="ajjj0:g">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        data-oid="70r.uzj"
+                        data-oid="1_5lg7k"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        data-oid="hdof7k6"
+                        data-oid="n4ckna0"
                     >
                         Save
                     </button>

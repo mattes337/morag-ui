@@ -37,16 +37,16 @@ export function DocumentsView({
     };
 
     return (
-        <div className="space-y-6" data-oid="_p--rc_">
-            <div className="flex justify-between items-center" data-oid="8kouhgr">
-                <div data-oid="32w:qan">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="vo_pt6v">
+        <div className="space-y-6" data-oid="e:sp5fd">
+            <div className="flex justify-between items-center" data-oid="3:dpp21">
+                <div data-oid="-natwys">
+                    <h2 className="text-2xl font-bold text-gray-900" data-oid="mxvc5_3">
                         Documents {selectedDatabase && `- ${selectedDatabase.name}`}
                     </h2>
                     <button
                         onClick={onBackToDatabases}
                         className="text-blue-600 hover:text-blue-800 text-sm"
-                        data-oid="x:m2ja0"
+                        data-oid="xbzc895"
                     >
                         ← Back to Databases
                     </button>
@@ -54,7 +54,7 @@ export function DocumentsView({
                 <button
                     onClick={onAddDocument}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    data-oid="4p8q6i-"
+                    data-oid="bxri980"
                 >
                     Add Document
                 </button>
@@ -62,107 +62,107 @@ export function DocumentsView({
 
             <div
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="fa:pn-_"
+                data-oid="8r3mzup"
             >
-                <table className="w-full" data-oid="yegi414">
-                    <thead className="bg-gray-50" data-oid=":s6uy11">
-                        <tr data-oid="kkt5hyj">
+                <table className="w-full" data-oid="no1tue1">
+                    <thead className="bg-gray-50" data-oid="kjotryn">
+                        <tr data-oid="8itxxu:">
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="yadptuj"
+                                data-oid="tsta7td"
                             >
                                 Document
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="642j6q:"
+                                data-oid="hbuvl_k"
                             >
                                 Type
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="iq86k:e"
+                                data-oid="fz-k3q5"
                             >
                                 State
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="md-e5as"
+                                data-oid="uk:g52v"
                             >
                                 Version
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="nfd5o9y"
+                                data-oid="qo97scj"
                             >
                                 Stats
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="jpdsc40"
+                                data-oid="8bu6gid"
                             >
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="9njam6m">
+                    <tbody className="bg-white divide-y divide-gray-200" data-oid="5b02nmg">
                         {documents.map((doc) => (
-                            <tr key={doc.id} data-oid=".q:gr7h">
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="s790twu">
-                                    <div className="text-sm font-medium" data-oid=".m2ipww">
+                            <tr key={doc.id} data-oid="j_-vsei">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="rzwmeaa">
+                                    <div className="text-sm font-medium" data-oid="-atfvte">
                                         <button
                                             onClick={() => onViewDocumentDetail(doc)}
                                             className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                                            data-oid="42nt257"
+                                            data-oid="nbg2uza"
                                         >
                                             {doc.name}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500" data-oid="xz59k92">
+                                    <div className="text-sm text-gray-500" data-oid="mq2il8:">
                                         {doc.uploadDate}
                                     </div>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="azg-kdw"
+                                    data-oid="o_8mkt-"
                                 >
                                     {doc.type}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="gggw9di">
+                                <td className="px-6 py-4 whitespace-nowrap" data-oid="-sfx:s1">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
-                                        data-oid="gircn6o"
+                                        data-oid="x5u-agw"
                                     >
                                         {doc.state}
                                     </span>
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="9gp5a_2"
+                                    data-oid=".texv4u"
                                 >
                                     v{doc.version}
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="0n2-rtb"
+                                    data-oid="34gige3"
                                 >
                                     {doc.chunks} chunks, {(doc.quality * 100).toFixed(0)}% quality
                                 </td>
                                 <td
                                     className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="kgiupep"
+                                    data-oid="7xervm:"
                                 >
                                     <button
                                         onClick={() => onViewDocumentDetail(doc)}
                                         className="text-indigo-600 hover:text-indigo-900"
-                                        data-oid="2w8_vew"
+                                        data-oid="g8s3qf1"
                                     >
                                         View Details
                                     </button>
                                     <button
                                         onClick={() => onPromptDocument(doc)}
                                         className="text-green-600 hover:text-green-900"
-                                        data-oid="8ac4-2n"
+                                        data-oid="2jzbd6m"
                                     >
                                         Prompt
                                     </button>

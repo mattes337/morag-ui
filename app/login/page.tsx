@@ -64,34 +64,34 @@ export default function LoginPage() {
     return (
         <div
             className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8"
-            data-oid="c681ose"
+            data-oid="q.-l:0l"
         >
-            <div className="sm:mx-auto sm:w-full sm:max-w-md" data-oid="1k3gy4a">
-                <div className="text-center" data-oid="oihvoka">
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900" data-oid="vlq6cfd">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md" data-oid="latsv4q">
+                <div className="text-center" data-oid="5v6n7:k">
+                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900" data-oid="qbe6nfx">
                         Sign in to your account
                     </h2>
-                    <p className="mt-2 text-sm text-gray-600" data-oid="tg_8eco">
+                    <p className="mt-2 text-sm text-gray-600" data-oid="iuxp-jw">
                         Welcome to the Vector Database Management System
                     </p>
                 </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md" data-oid="u:hf261">
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md" data-oid="_6.kpj7">
                 <div
                     className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
-                    data-oid="1ypt38n"
+                    data-oid="1kk1_9h"
                 >
-                    <form className="space-y-6" onSubmit={handleLogin} data-oid="osbzxn.">
-                        <div data-oid="cqr9tf.">
+                    <form className="space-y-6" onSubmit={handleLogin} data-oid="0a7oqut">
+                        <div data-oid="s:jqg6_">
                             <label
                                 htmlFor="email"
                                 className="block text-sm font-medium text-gray-700"
-                                data-oid="cud9vqr"
+                                data-oid="9lrdfx_"
                             >
                                 Email address
                             </label>
-                            <div className="mt-1" data-oid="gdo8xw.">
+                            <div className="mt-1" data-oid="q_nh_ke">
                                 <input
                                     id="email"
                                     name="email"
@@ -102,20 +102,20 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     placeholder="Enter your email"
-                                    data-oid="19loaiv"
+                                    data-oid="v9y_3xy"
                                 />
                             </div>
                         </div>
 
-                        <div data-oid=":bs:e_-">
+                        <div data-oid="a6-o-.b">
                             <label
                                 htmlFor="password"
                                 className="block text-sm font-medium text-gray-700"
-                                data-oid="s-9eycu"
+                                data-oid="z0:3q:9"
                             >
                                 Password
                             </label>
-                            <div className="mt-1" data-oid="yvna390">
+                            <div className="mt-1" data-oid="js5gfl1">
                                 <input
                                     id="password"
                                     name="password"
@@ -126,7 +126,7 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     placeholder="Enter your password"
-                                    data-oid="8sz3:hy"
+                                    data-oid="k821_c_"
                                 />
                             </div>
                         </div>
@@ -134,27 +134,27 @@ export default function LoginPage() {
                         {error && (
                             <div
                                 className="text-red-600 text-sm text-center bg-red-50 p-2 rounded"
-                                data-oid="h7.6-e0"
+                                data-oid="23ec3o2"
                             >
                                 {error}
                             </div>
                         )}
 
-                        <div data-oid="8j5x95i">
+                        <div data-oid="6t0l6ca">
                             <button
                                 type="submit"
                                 disabled={isLoading}
                                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                data-oid="n4.hhwm"
+                                data-oid="bwodpgm"
                             >
                                 {isLoading ? (
-                                    <div className="flex items-center" data-oid="31sd-9w">
+                                    <div className="flex items-center" data-oid="45pvde3">
                                         <svg
                                             className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 24 24"
-                                            data-oid="akh2qss"
+                                            data-oid="y9qpfeq"
                                         >
                                             <circle
                                                 className="opacity-25"
@@ -163,13 +163,13 @@ export default function LoginPage() {
                                                 r="10"
                                                 stroke="currentColor"
                                                 strokeWidth="4"
-                                                data-oid="q-.nx4h"
+                                                data-oid="au928ij"
                                             ></circle>
                                             <path
                                                 className="opacity-75"
                                                 fill="currentColor"
                                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                data-oid="uvj7hqg"
+                                                data-oid="050sadc"
                                             ></path>
                                         </svg>
                                         Signing in...
@@ -181,52 +181,52 @@ export default function LoginPage() {
                         </div>
                     </form>
 
-                    <div className="mt-8" data-oid="7n_h2:9">
-                        <div className="relative" data-oid=".58eo:k">
-                            <div className="absolute inset-0 flex items-center" data-oid="haeh8.x">
+                    <div className="mt-8" data-oid="cn4e:fy">
+                        <div className="relative" data-oid="sh_ffau">
+                            <div className="absolute inset-0 flex items-center" data-oid="2urhed7">
                                 <div
                                     className="w-full border-t border-gray-300"
-                                    data-oid="tibag64"
+                                    data-oid="7elq8_2"
                                 />
                             </div>
                             <div
                                 className="relative flex justify-center text-sm"
-                                data-oid="7-l8.:x"
+                                data-oid="u9:nrg5"
                             >
-                                <span className="px-2 bg-white text-gray-500" data-oid="pn85.5a">
+                                <span className="px-2 bg-white text-gray-500" data-oid="56:t6nk">
                                     Demo Credentials
                                 </span>
                             </div>
                         </div>
 
-                        <div className="mt-6 space-y-3" data-oid="w8ui_8f">
+                        <div className="mt-6 space-y-3" data-oid="aiwk8r:">
                             {demoCredentials.map((cred, index) => (
                                 <button
                                     key={index}
                                     type="button"
                                     onClick={() => fillCredentials(cred.email, cred.password)}
                                     className="w-full text-left px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid=".r24l0w"
+                                    data-oid="msaokzp"
                                 >
                                     <div
                                         className="flex justify-between items-center"
-                                        data-oid="epsqink"
+                                        data-oid=":--20pt"
                                     >
-                                        <div data-oid="3qjotuf">
+                                        <div data-oid="iek3v.l">
                                             <div
                                                 className="text-sm font-medium text-gray-900"
-                                                data-oid="2ocmf:l"
+                                                data-oid="7dmpxxz"
                                             >
                                                 {cred.role}
                                             </div>
                                             <div
                                                 className="text-xs text-gray-500"
-                                                data-oid="i9vdyut"
+                                                data-oid="_.xl0fq"
                                             >
                                                 {cred.email}
                                             </div>
                                         </div>
-                                        <div className="text-xs text-gray-400" data-oid="5qidoa5">
+                                        <div className="text-xs text-gray-400" data-oid="4z58gyz">
                                             Click to fill
                                         </div>
                                     </div>
@@ -234,8 +234,8 @@ export default function LoginPage() {
                             ))}
                         </div>
 
-                        <div className="mt-4 text-xs text-gray-500 text-center" data-oid="69m-jrw">
-                            <p data-oid="ekfm._s">
+                        <div className="mt-4 text-xs text-gray-500 text-center" data-oid="foo1d4:">
+                            <p data-oid="3lr30wg">
                                 Use any of the demo credentials above to sign in
                             </p>
                         </div>
