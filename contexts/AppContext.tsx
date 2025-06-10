@@ -28,7 +28,11 @@ interface AppContextType {
     isDataLoading: boolean;
 
     // Data operations
-    createDatabase: (data: { name: string; description: string }) => Promise<void>;
+    createDatabase: (data: {
+        name: string;
+        description: string;
+        serverId: string;
+    }) => Promise<void>;
     updateDatabase: (id: string, data: Partial<Database>) => Promise<void>;
     deleteDatabase: (id: string) => Promise<void>;
     createDocument: (data: { name: string; type: string; databaseId?: string }) => Promise<void>;
@@ -358,7 +362,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Data operation functions
-    const createDatabase = async (data: { name: string; description: string }) => {
+    const createDatabase = async (data: {
+        name: string;
+        description: string;
+        serverId: string;
+    }) => {
         try {
             if (!user) throw new Error('No user logged in');
 

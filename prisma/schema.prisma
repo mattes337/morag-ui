@@ -58,9 +58,11 @@ model Database {
   
   // Foreign keys
   userId        String
+  serverId      String
 
   // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    DatabaseServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
   documents Document[]
 
   @@unique([name, userId])
@@ -129,7 +131,8 @@ model DatabaseServer {
   userId        String
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  databases Database[]
 
   @@map("database_servers")
 }

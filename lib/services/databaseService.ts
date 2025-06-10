@@ -2,12 +2,18 @@ import { prisma } from '../database';
 import { Database } from '@prisma/client';
 
 export class DatabaseService {
-    static async createDatabase(data: { name: string; description: string; userId: string }) {
+    static async createDatabase(data: {
+        name: string;
+        description: string;
+        userId: string;
+        serverId: string;
+    }) {
         return await prisma.database.create({
             data,
             include: {
                 documents: true,
                 user: true,
+                server: true,
                 _count: {
                     select: {
                         documents: true,
@@ -22,6 +28,7 @@ export class DatabaseService {
             include: {
                 documents: true,
                 user: true,
+                server: true,
                 _count: {
                     select: {
                         documents: true,
@@ -37,6 +44,7 @@ export class DatabaseService {
             include: {
                 documents: true,
                 user: true,
+                server: true,
                 _count: {
                     select: {
                         documents: true,
@@ -56,6 +64,7 @@ export class DatabaseService {
                     },
                 },
                 user: true,
+                server: true,
                 _count: {
                     select: {
                         documents: true,
@@ -72,6 +81,7 @@ export class DatabaseService {
             include: {
                 documents: true,
                 user: true,
+                server: true,
                 _count: {
                     select: {
                         documents: true,
