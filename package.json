@@ -7,9 +7,16 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "db:generate": "prisma generate",
+        "db:push": "prisma db push",
+        "db:migrate": "prisma migrate dev",
+        "db:seed": "tsx lib/migrations/seed.ts",
+        "db:studio": "prisma studio",
+        "db:reset": "prisma migrate reset"
     },
     "dependencies": {
+        "@prisma/client": "^5.7.1",
         "@radix-ui/react-slot": "^1.1.0",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
@@ -28,7 +35,9 @@
         "eslint-config-next": "^15.1.6",
         "postcss": "^8",
         "prettier": "^3.3.3",
+        "prisma": "^5.7.1",
         "tailwindcss": "^3.4.1",
+        "tsx": "^4.6.2",
         "typescript": "^5"
     }
 }

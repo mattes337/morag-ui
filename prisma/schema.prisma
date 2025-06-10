@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER") // "postgresql" or "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  avatar    String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  apiKeys     ApiKey[]
+  jobs        Job[]
+  userSettings UserSettings?
+
+  @@map("users")
+}
+
+model UserSettings {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  theme            Theme   @default(LIGHT)
+  language         String  @default("en")
+  notifications    Boolean @default(true)
+  autoSave         Boolean @default(true)
+  defaultDatabase  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Database {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  description   String
+  documentCount Int      @default(0)
+  lastUpdated   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  documents Document[]
+
+  @@map("databases")
+}
+
+model Document {
+  id         Int           @id @default(autoincrement())
+  name       String
+  type       String
+  state      DocumentState @default(PENDING)
+  version    Int           @default(1)
+  chunks     Int           @default(0)
+  quality    Float         @default(0.0)
+  uploadDate DateTime      @default(now())
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  
+  // Foreign keys
+  databaseId Int?
+
+  // Relations
+  database Database? @relation(fields: [databaseId], references: [id], onDelete: SetNull)
+  jobs     Job[]
+
+  @@map("documents")
+}
+
+model ApiKey {
+  id        Int      @id @default(autoincrement())
+  name      String
+  key       String   @unique
+  created   DateTime @default(now())
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Foreign keys
+  userId    String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model DatabaseServer {
+  id            String           @id @default(cuid())
+  name          String
+  type          DatabaseType
+  host          String
+  port          Int
+  username      String?
+  password      String?
+  apiKey        String?
+  database      String?
+  collection    String?
+  isActive      Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  lastConnected DateTime?
+  updatedAt     DateTime         @updatedAt
+
+  @@map("database_servers")
+}
+
+model Job {
+  id           Int       @id @default(autoincrement())
+  documentName String
+  documentType String
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  status       JobStatus @default(PENDING)
+  percentage   Int       @default(0)
+  summary      String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Foreign keys
+  documentId   Int
+  userId       String
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("jobs")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum DocumentState {
+  PENDING
+  INGESTING
+  INGESTED
+  DEPRECATED
+  DELETED
+}
+
+enum DatabaseType {
+  QDRANT
+  NEO4J
+  PINECONE
+  WEAVIATE
+  CHROMA
+}
+
+enum JobStatus {
+  PENDING
+  WAITING_FOR_REMOTE_WORKER
+  PROCESSING
+  FINISHED
+  FAILED
+  CANCELLED
+}
