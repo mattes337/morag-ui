@@ -204,80 +204,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
     ]);
 
-    const [jobs, setJobs] = useState<Job[]>([
-        {
-            id: 1,
-            documentId: 1,
-            documentName: 'Machine Learning Fundamentals.pdf',
-            documentType: 'PDF',
-            startDate: '2024-01-10T09:00:00Z',
-            endDate: '2024-01-10T09:15:00Z',
-            status: 'finished',
-            progress: {
-                percentage: 100,
-                summary: 'Document successfully ingested with 45 chunks',
-            },
-            createdAt: '2024-01-10T09:00:00Z',
-            updatedAt: '2024-01-10T09:15:00Z',
-        },
-        {
-            id: 2,
-            documentId: 2,
-            documentName: 'AI Ethics Lecture',
-            documentType: 'YouTube',
-            startDate: '2024-01-15T14:30:00Z',
-            status: 'processing',
-            progress: {
-                percentage: 65,
-                summary: 'Extracting audio and generating transcripts',
-            },
-            createdAt: '2024-01-15T14:30:00Z',
-            updatedAt: '2024-01-15T15:45:00Z',
-        },
-        {
-            id: 3,
-            documentId: 3,
-            documentName: 'Company Website Analysis',
-            documentType: 'Website',
-            startDate: '2024-01-12T11:00:00Z',
-            endDate: '2024-01-12T11:08:00Z',
-            status: 'finished',
-            progress: {
-                percentage: 100,
-                summary: 'Website crawled and content extracted successfully',
-            },
-            createdAt: '2024-01-12T11:00:00Z',
-            updatedAt: '2024-01-12T11:08:00Z',
-        },
-        {
-            id: 4,
-            documentId: 1,
-            documentName: 'Machine Learning Fundamentals.pdf',
-            documentType: 'PDF',
-            startDate: '2024-01-16T10:00:00Z',
-            status: 'waiting-for-remote-worker',
-            progress: {
-                percentage: 0,
-                summary: 'Waiting for available worker to start reingestion',
-            },
-            createdAt: '2024-01-16T10:00:00Z',
-            updatedAt: '2024-01-16T10:00:00Z',
-        },
-        {
-            id: 5,
-            documentId: 4,
-            documentName: 'Technical Documentation.docx',
-            documentType: 'DOCX',
-            startDate: '2024-01-14T16:20:00Z',
-            status: 'failed',
-            progress: {
-                percentage: 25,
-                summary: 'Failed to parse document structure',
-            },
-            createdAt: '2024-01-14T16:20:00Z',
-            updatedAt: '2024-01-14T16:35:00Z',
-        },
-    ]);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [isDataLoading, setIsDataLoading] = useState(true);
 
     // Selected items
     const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);
