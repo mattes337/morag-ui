@@ -11,17 +11,17 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="o2o73.-"
+            data-oid="jli:f-3"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="6dxmvda">
-                <h3 className="text-lg font-semibold mb-4" data-oid="kddvo15">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="u0_:jr5">
+                <h3 className="text-lg font-semibold mb-4" data-oid="fsw04be">
                     Create Database
                 </h3>
-                <div className="space-y-4" data-oid="1ea_mla">
-                    <div data-oid="23rgzt.">
+                <div className="space-y-4" data-oid="kax53mr">
+                    <div data-oid="4ywzroe">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="-k0qgry"
+                            data-oid="w:2j592"
                         >
                             Name
                         </label>
@@ -29,13 +29,13 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             type="text"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Database name..."
-                            data-oid="k.n8-i_"
+                            data-oid="x7q9j5q"
                         />
                     </div>
-                    <div data-oid="jk45oqi">
+                    <div data-oid="if1k6g7">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="b7d4q64"
+                            data-oid=":g44_g0"
                         >
                             Description
                         </label>
@@ -43,21 +43,21 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             rows={3}
                             placeholder="Database description..."
-                            data-oid="a36zm2e"
+                            data-oid="fg2fbz5"
                         />
                     </div>
                 </div>
-                <div className="flex justify-end space-x-3 mt-6" data-oid="3pzn0u4">
+                <div className="flex justify-end space-x-3 mt-6" data-oid="8r8z:c.">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        data-oid="nhbvrbv"
+                        data-oid="r6kkdqy"
                     >
                         Cancel
                     </button>
                     <button
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        data-oid="grq6bq-"
+                        data-oid="v60rujn"
                     >
                         Create
                     </button>

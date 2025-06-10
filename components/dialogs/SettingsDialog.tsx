@@ -24,42 +24,42 @@ export function SettingsDialog() {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="5bcj9gv"
+            data-oid="fhcw.1e"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md" data-oid="9tko8x:">
-                <div className="flex justify-between items-center mb-4" data-oid="-0sc2yo">
-                    <h2 className="text-xl font-semibold" data-oid="qutghb4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md" data-oid="0nncxun">
+                <div className="flex justify-between items-center mb-4" data-oid="657eiwu">
+                    <h2 className="text-xl font-semibold" data-oid="zp0gkae">
                         Settings
                     </h2>
                     <button
                         onClick={handleCancel}
                         className="text-gray-400 hover:text-gray-600"
-                        data-oid="-9nktrd"
+                        data-oid="wav9to8"
                     >
                         <svg
                             className="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
-                            data-oid=":bzzno."
+                            data-oid="yj-t1p2"
                         >
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
                                 d="M6 18L18 6M6 6l12 12"
-                                data-oid=".dgp.c:"
+                                data-oid="0vds12c"
                             />
                         </svg>
                     </button>
                 </div>
 
-                <div className="space-y-4" data-oid="vu:grp.">
+                <div className="space-y-4" data-oid="o.65y_e">
                     {/* Theme Setting */}
-                    <div data-oid="nga5qul">
+                    <div data-oid="-q119jd">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="6a8qb9e"
+                            data-oid="7bf4iuv"
                         >
                             Theme
                         </label>
@@ -72,25 +72,25 @@ export function SettingsDialog() {
                                 })
                             }
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="me:ymqp"
+                            data-oid="ts3ktfc"
                         >
-                            <option value="light" data-oid="vta4hwh">
+                            <option value="light" data-oid="endus87">
                                 Light
                             </option>
-                            <option value="dark" data-oid="uom.-g-">
+                            <option value="dark" data-oid="klrr0bk">
                                 Dark
                             </option>
-                            <option value="system" data-oid="si_djcv">
+                            <option value="system" data-oid="f2k1wwr">
                                 System
                             </option>
                         </select>
                     </div>
 
                     {/* Language Setting */}
-                    <div data-oid="9j268m:">
+                    <div data-oid="33pjz29">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="gctpwao"
+                            data-oid="s1nmhcp"
                         >
                             Language
                         </label>
@@ -103,26 +103,26 @@ export function SettingsDialog() {
                                 })
                             }
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-oid="rj7-3wm"
+                            data-oid="iyi3t4w"
                         >
-                            <option value="en" data-oid="pcol75t">
+                            <option value="en" data-oid="4jm8qvr">
                                 English
                             </option>
-                            <option value="es" data-oid="zx:ezus">
+                            <option value="es" data-oid="b9hvd_f">
                                 Spanish
                             </option>
-                            <option value="fr" data-oid="hv3qa4e">
+                            <option value="fr" data-oid="dj_iqny">
                                 French
                             </option>
-                            <option value="de" data-oid="0qxjr2w">
+                            <option value="de" data-oid="aqpmsur">
                                 German
                             </option>
                         </select>
                     </div>
 
                     {/* Notifications Setting */}
-                    <div className="flex items-center justify-between" data-oid="snarqsq">
-                        <label className="text-sm font-medium text-gray-700" data-oid="66bwypj">
+                    <div className="flex items-center justify-between" data-oid="m5bc3-a">
+                        <label className="text-sm font-medium text-gray-700" data-oid="3imefmn">
                             Enable Notifications
                         </label>
                         <input
@@ -135,13 +135,13 @@ export function SettingsDialog() {
                                 })
                             }
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            data-oid="-r-oqn4"
+                            data-oid="9bwag6-"
                         />
                     </div>
 
                     {/* Auto Save Setting */}
-                    <div className="flex items-center justify-between" data-oid="_r6htm:">
-                        <label className="text-sm font-medium text-gray-700" data-oid="tqn-6tg">
+                    <div className="flex items-center justify-between" data-oid="u0wq6ey">
+                        <label className="text-sm font-medium text-gray-700" data-oid="9w4_is8">
                             Auto Save
                         </label>
                         <input
@@ -154,23 +154,23 @@ export function SettingsDialog() {
                                 })
                             }
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            data-oid="1w9gvdy"
+                            data-oid="h_dqwju"
                         />
                     </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 mt-6" data-oid="uq5t:p4">
+                <div className="flex justify-end space-x-3 mt-6" data-oid="fhzfdyx">
                     <button
                         onClick={handleCancel}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                        data-oid="lc-bhmd"
+                        data-oid="oq9gdmm"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
                         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-                        data-oid="i8ga2hq"
+                        data-oid="0ocgjho"
                     >
                         Save Changes
                     </button>

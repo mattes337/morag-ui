@@ -3,11 +3,27 @@
 import { useRouter } from 'next/navigation';
 import { useApp } from '../contexts/AppContext';
 import { DatabasesView } from '../components/views/DatabasesView';
+import { useEffect } from 'react';
 
 export default function DatabasesPage() {
     const router = useRouter();
-    const { databases, setSelectedDatabase, setSelectedDocument, setShowCreateDatabaseDialog } =
-        useApp();
+    const {
+        user,
+        databases,
+        setSelectedDatabase,
+        setSelectedDocument,
+        setShowCreateDatabaseDialog,
+    } = useApp();
+
+    useEffect(() => {
+        if (!user) {
+            router.push('/login');
+        }
+    }, [user, router]);
+
+    if (!user) {
+        return null; // or a loading spinner
+    }
 
     const handleSelectDatabase = (database: any) => {
         setSelectedDatabase(database);
@@ -26,7 +42,7 @@ export default function DatabasesPage() {
             onCreateDatabase={() => setShowCreateDatabaseDialog(true)}
             onSelectDatabase={handleSelectDatabase}
             onPromptDatabase={handlePromptDatabase}
-            data-oid="euz-sba"
+            data-oid="_20qu10"
         />
     );
 }
