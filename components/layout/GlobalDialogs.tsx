@@ -37,7 +37,7 @@ export function GlobalDialogs() {
             <AddDocumentDialog
                 isOpen={showAddDocumentDialog}
                 onClose={() => setShowAddDocumentDialog(false)}
-                data-oid="6nvk:uh"
+                data-oid="2:tvr94"
             />
 
             <AddDocumentDialog
@@ -48,19 +48,19 @@ export function GlobalDialogs() {
                 }}
                 mode="supersede"
                 documentToSupersede={documentToSupersede}
-                data-oid=".-6l71e"
+                data-oid="zlvmj67"
             />
 
             <CreateDatabaseDialog
                 isOpen={showCreateDatabaseDialog}
                 onClose={() => setShowCreateDatabaseDialog(false)}
-                data-oid="g9kl65b"
+                data-oid="m1.cgwa"
             />
 
             <ApiKeyDialog
                 isOpen={showApiKeyDialog}
                 onClose={() => setShowApiKeyDialog(false)}
-                data-oid="a88769b"
+                data-oid="uen.l4q"
             />
 
             <ReingestConfirmDialog
@@ -76,7 +76,7 @@ export function GlobalDialogs() {
                     }
                 }}
                 document={documentToReingest}
-                data-oid="1y-4fow"
+                data-oid="w3q5t6b"
             />
 
             <DeleteConfirmDialog
@@ -92,13 +92,13 @@ export function GlobalDialogs() {
                     }
                 }}
                 document={documentToDelete}
-                data-oid="qcqqne5"
+                data-oid="jh8vm8o"
             />
 
             <ApiConfig
                 isOpen={showApiConfigDialog}
                 onClose={() => setShowApiConfigDialog(false)}
-                data-oid="01d.1p:"
+                data-oid="6r3hm-5"
             />
         </>
     );
