@@ -334,10 +334,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Data operation functions
     const createDatabase = async (data: { name: string; description: string }) => {
         try {
+            if (!user) throw new Error('No user logged in');
+
             const response = await fetch('/api/databases', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ ...data, userId: user.id }),
             });
 
             if (!response.ok) throw new Error('Failed to create database');
@@ -399,10 +401,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const createDocument = async (data: { name: string; type: string; databaseId?: string }) => {
         try {
+            if (!user) throw new Error('No user logged in');
+
             const response = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ ...data, userId: user.id }),
             });
 
             if (!response.ok) throw new Error('Failed to create document');

@@ -5,6 +5,7 @@ export class DocumentService {
     static async createDocument(data: {
         name: string;
         type: string;
+        userId: string;
         databaseId?: string;
         state?: DocumentState;
         version?: number;
@@ -13,6 +14,7 @@ export class DocumentService {
             data,
             include: {
                 database: true,
+                user: true,
                 jobs: true,
             },
         });
@@ -37,6 +39,26 @@ export class DocumentService {
         return await prisma.document.findMany({
             include: {
                 database: true,
+                user: true,
+                jobs: {
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    take: 1,
+                },
+            },
+            orderBy: {
+                uploadDate: 'desc',
+            },
+        });
+    }
+
+    static async getDocumentsByUser(userId: string) {
+        return await prisma.document.findMany({
+            where: { userId },
+            include: {
+                database: true,
+                user: true,
                 jobs: {
                     orderBy: {
                         createdAt: 'desc',
@@ -55,6 +77,7 @@ export class DocumentService {
             where: { id },
             include: {
                 database: true,
+                user: true,
                 jobs: {
                     orderBy: {
                         createdAt: 'desc',

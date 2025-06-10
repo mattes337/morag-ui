@@ -2,11 +2,17 @@ import { prisma } from '../database';
 import { Database } from '@prisma/client';
 
 export class DatabaseService {
-    static async createDatabase(data: { name: string; description: string }) {
+    static async createDatabase(data: { name: string; description: string; userId: string }) {
         return await prisma.database.create({
             data,
             include: {
                 documents: true,
+                user: true,
+                _count: {
+                    select: {
+                        documents: true,
+                    },
+                },
             },
         });
     }
@@ -15,6 +21,22 @@ export class DatabaseService {
         return await prisma.database.findMany({
             include: {
                 documents: true,
+                user: true,
+                _count: {
+                    select: {
+                        documents: true,
+                    },
+                },
+            },
+        });
+    }
+
+    static async getDatabasesByUser(userId: string) {
+        return await prisma.database.findMany({
+            where: { userId },
+            include: {
+                documents: true,
+                user: true,
                 _count: {
                     select: {
                         documents: true,
@@ -33,6 +55,7 @@ export class DatabaseService {
                         uploadDate: 'desc',
                     },
                 },
+                user: true,
                 _count: {
                     select: {
                         documents: true,
@@ -48,6 +71,7 @@ export class DatabaseService {
             data,
             include: {
                 documents: true,
+                user: true,
                 _count: {
                     select: {
                         documents: true,
