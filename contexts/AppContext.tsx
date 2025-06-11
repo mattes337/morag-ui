@@ -241,13 +241,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
+                console.log('🚀 [AppContext] Starting initial data load');
                 setIsDataLoading(true);
 
                 // Check API health
                 const healthy = await checkApiHealth();
+                console.log('🔌 [AppContext] API health check:', healthy ? 'healthy' : 'unhealthy');
                 setApiHealthy(healthy);
 
                 // Load databases
+                console.log('🗃️ [AppContext] Loading databases');
                 const databasesResponse = await fetch('/api/databases');
                 if (databasesResponse.ok) {
                     const databasesData = await databasesResponse.json();
@@ -258,10 +261,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         documentCount: db._count?.documents || 0,
                         lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
                     }));
+                    console.log('✅ [AppContext] Loaded', formattedDatabases.length, 'databases');
                     setDatabases(formattedDatabases);
                 }
 
                 // Load documents
+                console.log('📄 [AppContext] Loading documents');
                 const documentsResponse = await fetch('/api/documents');
                 if (documentsResponse.ok) {
                     const documentsData = await documentsResponse.json();
@@ -275,6 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         quality: doc.quality,
                         uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
                     }));
+                    console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents');
                     setDocuments(formattedDocuments);
                 }
 
@@ -337,23 +343,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     };
                     setUser(fallbackUser);
                 }
-                if (apiKeysResponse.ok) {
-                    const apiKeysData = await apiKeysResponse.json();
-                    const formattedApiKeys = apiKeysData.map((key: any) => ({
-                        id: key.id,
-                        name: key.name,
-                        key: key.key,
-                        created: new Date(key.created).toISOString().split('T')[0],
-                        lastUsed: key.lastUsed
-                            ? new Date(key.lastUsed).toISOString().split('T')[0]
-                            : '',
-                    }));
-                    setApiKeys(formattedApiKeys);
-                }
             } catch (error) {
-                console.error('Failed to load initial data:', error);
+                console.error('❌ [AppContext] Failed to load initial data:', error);
                 // Set fallback data or show error state
             } finally {
+                console.log('✅ [AppContext] Initial data load completed');
                 setIsDataLoading(false);
             }
         };
@@ -783,11 +777,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshData,
     };
 
-    return (
-        <AppContext.Provider value={value} data-oid="7dpcvxk">
-            {children}
-        </AppContext.Provider>
-    );
+    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

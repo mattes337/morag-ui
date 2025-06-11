@@ -1,6 +1,6 @@
 // Vector search and AI utilities
 export interface SearchResult {
-    id: number;
+    id: string;
     content: string;
     document: string;
     database: string;
@@ -37,6 +37,8 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 export async function performVectorSearch(options: VectorSearchOptions): Promise<SearchResult[]> {
     const { query, numResults, databaseId, documentId, minSimilarity = 0.7 } = options;
 
+    console.log('🔍 [VectorSearch] Performing vector search:', { query, numResults, databaseId, documentId });
+
     // Generate embedding for the query
     const queryEmbedding = await generateEmbedding(query);
 
@@ -46,7 +48,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
     // Mock search results - in production, this would come from your vector database
     const mockResults: SearchResult[] = [
         {
-            id: 1,
+            id: '1',
             content:
                 'Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data without being explicitly programmed.',
             document: 'Machine Learning Fundamentals.pdf',
@@ -56,7 +58,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
             metadata: { page: 5, section: 'Introduction' },
         },
         {
-            id: 2,
+            id: '2',
             content:
                 'Neural networks are computing systems inspired by biological neural networks that constitute animal brains. They are used to estimate functions that depend on a large number of inputs.',
             document: 'AI Ethics Lecture',
@@ -66,7 +68,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
             metadata: { timestamp: '00:15:30', speaker: 'Dr. Smith' },
         },
         {
-            id: 3,
+            id: '3',
             content:
                 'Deep learning uses multiple layers to progressively extract higher-level features from raw input. It has revolutionized computer vision and natural language processing.',
             document: 'Machine Learning Fundamentals.pdf',
@@ -76,7 +78,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
             metadata: { page: 12, section: 'Deep Learning' },
         },
         {
-            id: 4,
+            id: '4',
             content:
                 'Ethical considerations in AI development include fairness, transparency, accountability, and the potential impact on employment and privacy.',
             document: 'AI Ethics Lecture',
@@ -86,7 +88,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
             metadata: { timestamp: '00:32:15', speaker: 'Dr. Smith' },
         },
         {
-            id: 5,
+            id: '5',
             content:
                 'Vector databases enable efficient similarity search for high-dimensional data representations, making them ideal for AI applications requiring semantic search.',
             document: 'Vector Database Guide.pdf',
@@ -96,7 +98,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
             metadata: { page: 3, section: 'Architecture' },
         },
         {
-            id: 6,
+            id: '6',
             content:
                 'Retrieval-Augmented Generation (RAG) combines the power of large language models with external knowledge bases to provide more accurate and contextual responses.',
             document: 'RAG Implementation Guide.pdf',
@@ -129,12 +131,17 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
     // Sort by similarity score (highest first)
     filteredResults.sort((a, b) => b.similarity - a.similarity);
 
-    return filteredResults.slice(0, numResults);
+    const finalResults = filteredResults.slice(0, numResults);
+    console.log('✅ [VectorSearch] Search completed, returning', finalResults.length, 'results');
+
+    return finalResults;
 }
 
 // Mock AI prompt execution - in production, this would call OpenAI, Anthropic, etc.
 export async function executePromptWithContext(options: PromptOptions): Promise<string> {
     const { prompt, context, maxTokens = 1000, temperature = 0.7 } = options;
+
+    console.log('🤖 [AIPrompt] Executing prompt with', context.length, 'context items');
 
     // Simulate API call delay
     await new Promise((resolve) => setTimeout(resolve, 1500));

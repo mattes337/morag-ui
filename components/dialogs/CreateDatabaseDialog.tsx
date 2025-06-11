@@ -50,22 +50,12 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
     };
 
     return (
-        <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="t61oj33"
-        >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid=":cql-5a">
-                <h3 className="text-lg font-semibold mb-4" data-oid="mf4tvxb">
-                    Create Database
-                </h3>
-                <form onSubmit={handleSubmit} className="space-y-4" data-oid="g.-k0ei">
-                    <div data-oid="jmxfhrn">
-                        <label
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="grxmiir"
-                        >
-                            Name
-                        </label>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <h3 className="text-lg font-semibold mb-4">Create Database</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                         <input
                             type="text"
                             value={name}
@@ -74,14 +64,10 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             placeholder="Database name..."
                             disabled={isLoading}
                             required
-                            data-oid="-0i.67e"
                         />
                     </div>
-                    <div data-oid="qsx0ol.">
-                        <label
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="4fqrl95"
-                        >
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             Description
                         </label>
                         <textarea
@@ -92,14 +78,10 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             placeholder="Database description..."
                             disabled={isLoading}
                             required
-                            data-oid="pq442dx"
                         />
                     </div>
-                    <div data-oid="26ldled">
-                        <label
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="gehrt_2"
-                        >
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                             Database Server
                         </label>
                         <select
@@ -108,31 +90,27 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             disabled={isLoading}
                             required
-                            data-oid="709y.ck"
                         >
-                            <option value="" data-oid="y_qt.c3">
-                                Select a server...
-                            </option>
+                            <option value="">Select a server...</option>
                             {servers.map((server) => (
-                                <option key={server.id} value={server.id} data-oid="newtf.:">
+                                <option key={server.id} value={server.id}>
                                     {server.name} ({server.type.toLowerCase()}) - {server.host}:
                                     {server.port}
                                 </option>
                             ))}
                         </select>
                         {servers.length === 0 && (
-                            <p className="text-sm text-gray-500 mt-1" data-oid="c0_uqeb">
+                            <p className="text-sm text-gray-500 mt-1">
                                 No servers available. Please configure a server first.
                             </p>
                         )}
                     </div>
-                    <div className="flex justify-end space-x-3 mt-6" data-oid="k:zdr34">
+                    <div className="flex justify-end space-x-3 mt-6">
                         <button
                             type="button"
                             onClick={handleClose}
                             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                             disabled={isLoading}
-                            data-oid="x:ee41j"
                         >
                             Cancel
                         </button>
@@ -140,7 +118,6 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
                             type="submit"
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                             disabled={isLoading || !name.trim() || !description.trim() || !serverId}
-                            data-oid="flnwa01"
                         >
                             {isLoading ? 'Creating...' : 'Create'}
                         </button>
