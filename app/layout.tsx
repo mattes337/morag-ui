@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang="en" data-oid="352mp56">
-            <body className="" data-oid="ghsembp">
-                <AppProvider data-oid="4dzu2th">
-                    <AuthWrapper data-oid="kkkdtyi">{children}</AuthWrapper>
+        <html lang="en" data-oid="fc9qifa">
+            <body className="" data-oid="50kq9i9">
+                <AppProvider data-oid="wh3v553">
+                    <AuthWrapper data-oid="irxb.:d">{children}</AuthWrapper>
                 </AppProvider>
             </body>
         </html>
