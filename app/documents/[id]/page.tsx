@@ -16,11 +16,12 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     const router = useRouter();
     const {
         documents,
-        setDocuments,
         selectedDocument,
         setSelectedDocument,
         setShowSupersedeDocumentDialog,
         setDocumentToSupersede,
+        updateDocument,
+        deleteDocument,
         isDataLoading,
     } = useApp();
 
@@ -100,13 +101,13 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
         router.push('/documents');
     };
 
-    const handleReingestDocument = (document: Document) => {
-        setDocuments((prev) =>
-            prev.map((doc) =>
-                doc.id === document.id ? { ...doc, state: 'ingesting' as const } : doc,
-            ),
-        );
-        console.log('Reingesting document:', document.name);
+    const handleReingestDocument = async (document: Document) => {
+        try {
+            await updateDocument(document.id, { state: 'ingesting' });
+            console.log('Reingesting document:', document.name);
+        } catch (error) {
+            console.error('Failed to reingest document:', error);
+        }
     };
 
     const handleSupersedeDocument = (document: Document) => {
@@ -115,13 +116,15 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
         console.log('Opening supersede dialog for document:', document.name);
     };
 
-    const handleDeleteDocument = (document: Document) => {
-        setDocuments((prev) =>
-            prev.map((doc) =>
-                doc.id === document.id ? { ...doc, state: 'deleted' as const } : doc,
-            ),
-        );
-        console.log('Deleting document:', document.name);
+    const handleDeleteDocument = async (document: Document) => {
+        try {
+            await deleteDocument(document.id);
+            console.log('Deleting document:', document.name);
+            // Navigate back to documents list after deletion
+            router.push('/documents');
+        } catch (error) {
+            console.error('Failed to delete document:', error);
+        }
     };
 
     // Loading state
