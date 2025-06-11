@@ -33,13 +33,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
     // Normal authenticated layout
     return (
-        <div className="min-h-screen bg-gray-50" data-oid="a88lnhp">
+        <div className="min-h-screen bg-gray-50 flex flex-col" data-oid="a88lnhp">
             <Header data-oid="pubewl9" />
             <Navigation data-oid="cr_4100" />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="8l6-yce">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="8l6-yce">
                 {children}
             </main>
-            <footer className="bg-white border-t border-gray-200 mt-auto" data-oid="ys93:v7">
+            <footer className="bg-white border-t border-gray-200" data-oid="ys93:v7">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4" data-oid="0drbtj3">
                     <p className="text-center text-sm text-gray-500" data-oid="_10c-vs">
                         © 2024 Morag AI. All rights reserved.
