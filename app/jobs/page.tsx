@@ -35,11 +35,6 @@ export default function JobsPage() {
     };
 
     return (
-        <JobsView
-            jobs={jobs}
-            onCancelJob={handleCancelJob}
-            onViewJobDetail={handleViewJobDetail}
-            data-oid="yw4yszk"
-        />
+        <JobsView jobs={jobs} onCancelJob={handleCancelJob} onViewJobDetail={handleViewJobDetail} />
     );
 }

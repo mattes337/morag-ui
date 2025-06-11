@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+    # MySQL Database
+    mysql:
+        image: mysql:8.0
+        container_name: onlook-mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpassword
+            MYSQL_DATABASE: onlook_db
+            MYSQL_USER: onlook_user
+            MYSQL_PASSWORD: onlook_password
+        ports:
+            - '3306:3306'
+        volumes:
+            - mysql_data:/var/lib/mysql
+            - ./mysql-init:/docker-entrypoint-initdb.d
+        networks:
+            - onlook-network
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+            timeout: 20s
+            retries: 10
+
+    # Next.js Application
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: onlook-app
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        environment:
+            - NODE_ENV=production
+            - DATABASE_URL=mysql://onlook_user:onlook_password@mysql:3306/onlook_db
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - onlook-network
+        volumes:
+            - ./uploads:/app/uploads # For file uploads if needed
+
+volumes:
+    mysql_data:
+        driver: local
+
+networks:
+    onlook-network:
+        driver: bridge
