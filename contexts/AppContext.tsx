@@ -783,7 +783,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshData,
     };
 
-    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return (
+        <AppContext.Provider value={value} data-oid="7dpcvxk">
+            {children}
+        </AppContext.Provider>
+    );
 }
 
 export function useApp() {
