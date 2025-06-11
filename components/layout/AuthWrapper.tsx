@@ -39,6 +39,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="8l6-yce">
                 {children}
             </main>
+            <footer className="bg-white border-t border-gray-200 mt-auto" data-oid="ys93:v7">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4" data-oid="0drbtj3">
+                    <p className="text-center text-sm text-gray-500" data-oid="_10c-vs">
+                        © 2024 Morag AI. All rights reserved.
+                    </p>
+                </div>
+            </footer>
             <GlobalDialogs data-oid="om_koap" />
         </div>
     );
