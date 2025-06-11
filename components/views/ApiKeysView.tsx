@@ -9,100 +9,58 @@ interface ApiKeysViewProps {
 
 export function ApiKeysView({ apiKeys, onGenerateApiKey }: ApiKeysViewProps) {
     return (
-        <div className="space-y-6" data-oid="skpk75s">
-            <div className="flex justify-between items-center" data-oid="6n-3.26">
-                <h2 className="text-2xl font-bold text-gray-900" data-oid="1ax3m4t">
-                    API Keys
-                </h2>
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">API Keys</h2>
                 <button
                     onClick={onGenerateApiKey}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    data-oid=":z.v9s5"
                 >
                     Generate API Key
                 </button>
             </div>
 
-            <div
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="zf0.ooo"
-            >
-                <table className="w-full" data-oid="swmf6k.">
-                    <thead className="bg-gray-50" data-oid="z.0k5-n">
-                        <tr data-oid="w5j381o">
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="yvian-_"
-                            >
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Name
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="0amrxx8"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Key
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="dv0ewa7"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Created
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="ewb4kfj"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Last Used
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="yz_2qow"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="5o55cla">
+                    <tbody className="bg-white divide-y divide-gray-200">
                         {apiKeys.map((key) => (
-                            <tr key={key.id} data-oid="u.zqx6m">
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                                    data-oid="ft:v0_n"
-                                >
+                            <tr key={key.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {key.name}
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono"
-                                    data-oid="_5q7zrw"
-                                >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                                     {key.key}
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="cw7ea0r"
-                                >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {key.created}
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid="hzy6d3p"
-                                >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {key.lastUsed}
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="8q1sw2k"
-                                >
-                                    <button
-                                        className="text-blue-600 hover:text-blue-900"
-                                        data-oid="scfz92g"
-                                    >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                    <button className="text-blue-600 hover:text-blue-900">
                                         Copy
                                     </button>
-                                    <button
-                                        className="text-red-600 hover:text-red-900"
-                                        data-oid="id:fckf"
-                                    >
+                                    <button className="text-red-600 hover:text-red-900">
                                         Revoke
                                     </button>
                                 </td>

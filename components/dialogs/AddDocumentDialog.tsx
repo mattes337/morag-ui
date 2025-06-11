@@ -74,34 +74,26 @@ export function AddDocumentDialog({
     if (!isOpen) return null;
 
     return (
-        <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="iyoe7di"
-        >
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4" data-oid="uc9w5r-">
-                <h3 className="text-lg font-semibold mb-4" data-oid="63588o_">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+                <h3 className="text-lg font-semibold mb-4">
                     {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                 </h3>
 
                 {mode === 'supersede' && documentToSupersede && (
-                    <div
-                        className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"
-                        data-oid="-w_1wtl"
-                    >
-                        <div className="flex items-start space-x-3" data-oid="j48jnvu">
-                            <div className="text-yellow-600 text-xl" data-oid="90.cdxk">
-                                ⚠️
-                            </div>
-                            <div data-oid="navgnpy">
-                                <h4 className="font-medium text-yellow-800 mb-1" data-oid="frco9uq">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <div className="flex items-start space-x-3">
+                            <div className="text-yellow-600 text-xl">⚠️</div>
+                            <div>
+                                <h4 className="font-medium text-yellow-800 mb-1">
                                     Document Supersede Warning
                                 </h4>
-                                <p className="text-sm text-yellow-700 mb-2" data-oid="wm4jx-7">
+                                <p className="text-sm text-yellow-700 mb-2">
                                     This action will replace the existing document "
                                     {documentToSupersede.name}" and remove it from the vector store.
                                     This action cannot be undone.
                                 </p>
-                                <div className="text-xs text-yellow-600" data-oid="qzbu0t5">
+                                <div className="text-xs text-yellow-600">
                                     Current document: {documentToSupersede.chunks} chunks, Quality:{' '}
                                     {(documentToSupersede.quality * 100).toFixed(0)}%
                                 </div>
@@ -111,53 +103,38 @@ export function AddDocumentDialog({
                 )}
 
                 {!selectedDocumentType && mode === 'add' ? (
-                    <div data-oid="2b0jzsq">
-                        <p className="text-gray-600 mb-4" data-oid="70amtza">
-                            Select document type:
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4" data-oid="n5wvik1">
+                    <div>
+                        <p className="text-gray-600 mb-4">Select document type:</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {documentTypes.map((type) => (
                                 <button
                                     key={type.type}
                                     onClick={() => setSelectedDocumentType(type)}
                                     className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
-                                    data-oid="z96.ur."
                                 >
-                                    <div className="text-2xl mb-2" data-oid="d14l14q">
-                                        {type.icon}
-                                    </div>
-                                    <div className="text-sm font-medium" data-oid="tfa81n0">
-                                        {type.label}
-                                    </div>
+                                    <div className="text-2xl mb-2">{type.icon}</div>
+                                    <div className="text-sm font-medium">{type.label}</div>
                                 </button>
                             ))}
                         </div>
                     </div>
                 ) : selectedDocumentType ? (
-                    <div className="space-y-4" data-oid="0x_f5s_">
-                        <div className="flex items-center space-x-2 mb-4" data-oid="0f5h86w">
-                            <span className="text-2xl" data-oid="3z665zm">
-                                {selectedDocumentType.icon}
-                            </span>
-                            <span className="font-medium" data-oid="1rjcph3">
-                                {selectedDocumentType.label}
-                            </span>
+                    <div className="space-y-4">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <span className="text-2xl">{selectedDocumentType.icon}</span>
+                            <span className="font-medium">{selectedDocumentType.label}</span>
                             {mode === 'add' && (
                                 <button
                                     onClick={() => setSelectedDocumentType(null)}
                                     className="text-blue-600 hover:text-blue-800 text-sm"
-                                    data-oid="qshuwv5"
                                 >
                                     Change
                                 </button>
                             )}
                         </div>
 
-                        <div data-oid="ttn:96a">
-                            <label
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                                data-oid="wbi:8t2"
-                            >
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 {selectedDocumentType.type === 'youtube' ||
                                 selectedDocumentType.type === 'website'
                                     ? 'URL'
@@ -169,120 +146,83 @@ export function AddDocumentDialog({
                                     type="url"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter URL..."
-                                    data-oid="v9lwaqr"
                                 />
                             ) : (
                                 <input
                                     type="file"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="aw3wdu8"
                                 />
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid="2evpi87">
-                            <div data-oid="r__1cd7">
-                                <label className="flex items-center space-x-2" data-oid="dr1:mn0">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="flex items-center space-x-2">
                                     <input
                                         type="checkbox"
                                         className="rounded"
                                         checked={gpuProcessing}
                                         onChange={(e) => setGpuProcessing(e.target.checked)}
-                                        data-oid="u839h:9"
                                     />
 
-                                    <span className="text-sm" data-oid="e:._b-5">
-                                        GPU Processing
-                                    </span>
+                                    <span className="text-sm">GPU Processing</span>
                                 </label>
                             </div>
-                            <div data-oid="gx-01nb">
-                                <label className="flex items-center space-x-2" data-oid="93uvv-h">
+                            <div>
+                                <label className="flex items-center space-x-2">
                                     <input
                                         type="checkbox"
                                         className="rounded"
                                         checked={contextualEmbedding}
                                         onChange={(e) => setContextualEmbedding(e.target.checked)}
-                                        data-oid="3qe8abn"
                                     />
 
-                                    <span className="text-sm" data-oid="esium.l">
-                                        Contextual Embedding
-                                    </span>
+                                    <span className="text-sm">Contextual Embedding</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid="ehz13te">
-                            <div data-oid="42:m:cp">
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                    data-oid="6z6ya0v"
-                                >
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Chunk Size
                                 </label>
                                 <select
                                     value={chunkSize}
                                     onChange={(e) => setChunkSize(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="qt.58fp"
                                 >
-                                    <option value="1000" data-oid="jm_ymo_">
-                                        1000
-                                    </option>
-                                    <option value="2000" data-oid="hcdtdmy">
-                                        2000
-                                    </option>
-                                    <option value="3000" data-oid="t12pffe">
-                                        3000
-                                    </option>
-                                    <option value="4000" data-oid="n.q:bzl">
-                                        4000
-                                    </option>
-                                    <option value="5000" data-oid="r3ue571">
-                                        5000
-                                    </option>
-                                    <option value="6000" data-oid="._8o1p2">
-                                        6000
-                                    </option>
-                                    <option value="8000" data-oid=".yds6v9">
-                                        8000
-                                    </option>
+                                    <option value="1000">1000</option>
+                                    <option value="2000">2000</option>
+                                    <option value="3000">3000</option>
+                                    <option value="4000">4000</option>
+                                    <option value="5000">5000</option>
+                                    <option value="6000">6000</option>
+                                    <option value="8000">8000</option>
                                 </select>
                             </div>
-                            <div data-oid="gmol98e">
-                                <label
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                    data-oid="04bvac:"
-                                >
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Chunking Method
                                 </label>
                                 <select
                                     value={chunkingMethod}
                                     onChange={(e) => setChunkingMethod(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    data-oid="r90w-f_"
                                 >
-                                    <option value="Semantic" data-oid="1.-5cl4">
-                                        Semantic
-                                    </option>
-                                    <option value="Fixed Size" data-oid=":hgf2yc">
-                                        Fixed Size
-                                    </option>
-                                    <option value="Sentence" data-oid="1:52auu">
-                                        Sentence
-                                    </option>
+                                    <option value="Semantic">Semantic</option>
+                                    <option value="Fixed Size">Fixed Size</option>
+                                    <option value="Sentence">Sentence</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                 ) : null}
 
-                <div className="flex justify-end space-x-3 mt-6" data-oid="gupgyof">
+                <div className="flex justify-end space-x-3 mt-6">
                     <button
                         onClick={handleClose}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        data-oid="diyuf:6"
                     >
                         Cancel
                     </button>
@@ -293,7 +233,6 @@ export function AddDocumentDialog({
                                     ? 'bg-yellow-600 hover:bg-yellow-700'
                                     : 'bg-blue-600 hover:bg-blue-700'
                             }`}
-                            data-oid="8b_qy2x"
                         >
                             {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
                         </button>
