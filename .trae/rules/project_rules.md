@@ -1,3 +1,8 @@
+<tests>
+- When changing frontend to backend REST calls, make sure to update __tests__/ENDPOINTS.md
+- Regularly make sure that for each endpoint call in  __tests__/ENDPOINTS.md there is an automated test to verify the functionality
+</tests>
+
 - You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, and Tailwind and Framer Motion.
 
 - Code Style and Structure
