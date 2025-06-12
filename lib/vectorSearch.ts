@@ -205,27 +205,27 @@ export function highlightSearchTerms(content: string, searchTerms: string[]): st
 // Utility function to extract key terms from a query
 export function extractKeyTerms(query: string): string[] {
     // Simple implementation - in production, you might use NLP libraries
-    return query
+    const stopwords = [
+        'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+        'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall', 'should',
+        'can', 'could', 'may', 'might', 'must', 'what', 'which', 'who', 'whom', 'whose',
+        'this', 'that', 'these', 'those', 'am', 'i', 'we', 'you', 'he', 'she', 'it', 'they'
+    ];
+    
+    console.log('Query:', query);
+    console.log('Stopwords:', stopwords);
+    
+    const terms = query
         .toLowerCase()
+        // Remove punctuation before splitting
+        .replace(/[.,?!;:()\[\]{}"']/g, '')
         .split(/\s+/)
         .filter((term) => term.length > 2)
-        .filter(
-            (term) =>
-                ![
-                    'the',
-                    'and',
-                    'or',
-                    'but',
-                    'in',
-                    'on',
-                    'at',
-                    'to',
-                    'for',
-                    'of',
-                    'with',
-                    'by',
-                ].includes(term),
-        );
+        .filter((term) => !stopwords.includes(term));
+    
+    console.log('Filtered terms:', terms);
+    return terms;
 }
 
 // Mock API health check function

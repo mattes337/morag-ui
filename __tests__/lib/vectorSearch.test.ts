@@ -125,6 +125,8 @@ describe('vectorSearch', () => {
         it('should extract key terms from query', () => {
             const query = 'What is machine learning and artificial intelligence?';
             const keyTerms = extractKeyTerms(query);
+            
+            console.log('keyTerms:', keyTerms);
 
             expect(keyTerms).toContain('machine');
             expect(keyTerms).toContain('learning');
