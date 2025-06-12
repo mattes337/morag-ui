@@ -2,6 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export function Header() {
@@ -31,10 +32,24 @@ export function Header() {
         };
     }, [setShowUserMenu]);
 
-    const handleLogout = () => {
-        console.log('👤 [Header] User logging out:', user?.name);
-        setUser(null);
-        setShowUserMenu(false);
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+            });
+            
+            setUser(null);
+            setShowUserMenu(false);
+            router.push('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still redirect to login even if logout API fails
+            setUser(null);
+            setShowUserMenu(false);
+            router.push('/login');
+        }
     };
 
     return (

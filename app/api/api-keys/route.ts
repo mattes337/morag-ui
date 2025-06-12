@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
+import { requireAuth } from '../../../lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
-
-        if (userId) {
-            const apiKeys = await ApiKeyService.getApiKeysByUser(userId);
-            return NextResponse.json(apiKeys);
-        } else {
-            const apiKeys = await ApiKeyService.getAllApiKeys();
-            return NextResponse.json(apiKeys);
-        }
+        const user = requireAuth(request);
+        const apiKeys = await ApiKeyService.getApiKeysByUser(user.userId);
+        return NextResponse.json(apiKeys);
     } catch (error) {
+        if (error instanceof Error && error.message === 'Authentication required') {
+            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        }
         console.error('Failed to fetch API keys:', error);
         return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 });
     }
@@ -21,19 +18,28 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const user = requireAuth(request);
         const body = await request.json();
-        const { name, key, userId } = body;
+        const { name, key } = body;
 
-        if (!name || !key || !userId) {
+        if (!name || !key) {
             return NextResponse.json(
-                { error: 'Name, key, and userId are required' },
+                { error: 'Name and key are required' },
                 { status: 400 },
             );
         }
 
-        const apiKey = await ApiKeyService.createApiKey({ name, key, userId });
+        const apiKey = await ApiKeyService.createApiKey({ 
+            name, 
+            key, 
+            userId: user.userId // Use authenticated user's ID
+        });
+        
         return NextResponse.json(apiKey, { status: 201 });
     } catch (error) {
+        if (error instanceof Error && error.message === 'Authentication required') {
+            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        }
         console.error('Failed to create API key:', error);
         return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 });
     }

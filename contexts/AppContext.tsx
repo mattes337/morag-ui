@@ -101,12 +101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
 
     // User & Settings state
-    const [user, setUser] = useState<User | null>({
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        role: 'admin',
-    });
+    const [user, setUser] = useState<User | null>(null);
 
     const [userSettings, setUserSettings] = useState<UserSettings>({
         theme: 'light',
@@ -239,18 +234,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Load initial data
     useEffect(() => {
-        const loadInitialData = async () => {
+        const checkAuthAndLoadData = async () => {
+            console.log('🔄 [AppContext] Checking authentication and loading data');
+            setIsDataLoading(true);
+
             try {
-                console.log('🚀 [AppContext] Starting initial data load');
-                setIsDataLoading(true);
-
-                // Check API health
+                // Check API health first
+                console.log('🏥 [AppContext] Checking API health');
                 const healthy = await checkApiHealth();
-                console.log('🔌 [AppContext] API health check:', healthy ? 'healthy' : 'unhealthy');
                 setApiHealthy(healthy);
+                console.log('✅ [AppContext] API health check completed:', healthy);
 
+                // Check authentication status
+                console.log('🔐 [AppContext] Checking authentication');
+                const authResponse = await fetch('/api/auth/me');
+                
+                if (authResponse.ok) {
+                    const authData = await authResponse.json();
+                    setUser(authData.user);
+                    console.log('✅ [AppContext] User authenticated:', authData.user.email);
+
+                    // Load user-specific data
+                    await loadUserData();
+                } else {
+                    console.log('❌ [AppContext] User not authenticated');
+                    setUser(null);
+                }
+            } catch (error) {
+                console.error('❌ [AppContext] Failed to check auth or load data:', error);
+                setUser(null);
+            } finally {
+                console.log('✅ [AppContext] Auth check and data load completed');
+                setIsDataLoading(false);
+            }
+        };
+
+        const loadUserData = async () => {
+            try {
                 // Load databases
-                console.log('🗃️ [AppContext] Loading databases');
+                console.log('🗄️ [AppContext] Loading databases');
                 const databasesResponse = await fetch('/api/databases');
                 if (databasesResponse.ok) {
                     const databasesData = await databasesResponse.json();
@@ -284,6 +306,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     setDocuments(formattedDocuments);
                 }
 
+                // Load API keys
+                console.log('🔑 [AppContext] Loading API keys');
+                const apiKeysResponse = await fetch('/api/api-keys');
+                if (apiKeysResponse.ok) {
+                    const apiKeysData = await apiKeysResponse.json();
+                    const formattedApiKeys = apiKeysData.map((key: any) => ({
+                        id: key.id,
+                        name: key.name,
+                        key: key.key,
+                        created: new Date(key.created).toISOString().split('T')[0],
+                        lastUsed: key.lastUsed
+                            ? new Date(key.lastUsed).toISOString().split('T')[0]
+                            : '',
+                    }));
+                    setApiKeys(formattedApiKeys);
+                }
+
                 // Load jobs
                 const jobsResponse = await fetch('/api/jobs');
                 if (jobsResponse.ok) {
@@ -305,54 +344,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     }));
                     setJobs(formattedJobs);
                 }
-
-                // For now, get the default user from the database (in a real app, this would come from authentication)
-                const userResponse = await fetch('/api/users/john.doe@example.com');
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    const defaultUser: User = {
-                        id: userData.id,
-                        name: userData.name,
-                        email: userData.email,
-                        role: userData.role.toLowerCase(),
-                    };
-                    setUser(defaultUser);
-
-                    // Load API keys for the user
-                    const apiKeysResponse = await fetch(`/api/api-keys?userId=${defaultUser.id}`);
-                    if (apiKeysResponse.ok) {
-                        const apiKeysData = await apiKeysResponse.json();
-                        const formattedApiKeys = apiKeysData.map((key: any) => ({
-                            id: key.id,
-                            name: key.name,
-                            key: key.key,
-                            created: new Date(key.created).toISOString().split('T')[0],
-                            lastUsed: key.lastUsed
-                                ? new Date(key.lastUsed).toISOString().split('T')[0]
-                                : '',
-                        }));
-                        setApiKeys(formattedApiKeys);
-                    }
-                } else {
-                    // Fallback user if API fails
-                    const fallbackUser: User = {
-                        id: 'fallback-user-id',
-                        name: 'John Doe',
-                        email: 'john.doe@example.com',
-                        role: 'admin',
-                    };
-                    setUser(fallbackUser);
-                }
             } catch (error) {
-                console.error('❌ [AppContext] Failed to load initial data:', error);
-                // Set fallback data or show error state
-            } finally {
-                console.log('✅ [AppContext] Initial data load completed');
-                setIsDataLoading(false);
+                console.error('❌ [AppContext] Failed to load user data:', error);
             }
         };
 
-        loadInitialData();
+        checkAuthAndLoadData();
     }, []);
 
     // Data operation functions
@@ -367,10 +364,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const response = await fetch('/api/databases', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, userId: user.id }),
+                body: JSON.stringify(data), // userId is now handled by authentication
             });
 
-            if (!response.ok) throw new Error('Failed to create database');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create database');
+            }
 
             const newDb = await response.json();
             const formattedDb = {
@@ -434,10 +434,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const response = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, userId: user.id }),
+                body: JSON.stringify(data), // userId is now handled by authentication
             });
 
-            if (!response.ok) throw new Error('Failed to create document');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create document');
+            }
 
             const newDoc = await response.json();
             const formattedDoc = {
@@ -515,10 +518,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const response = await fetch('/api/api-keys', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, userId: user.id }),
+                body: JSON.stringify(data), // userId is now handled by authentication
             });
 
-            if (!response.ok) throw new Error('Failed to create API key');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create API key');
+            }
 
             const newKey = await response.json();
             const formattedKey = {

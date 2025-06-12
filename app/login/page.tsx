@@ -17,37 +17,29 @@ export default function LoginPage() {
         setIsLoading(true);
         setError('');
 
-        // Dummy login logic
-        setTimeout(() => {
-            if (email === 'admin@example.com' && password === 'admin123') {
-                setUser({
-                    id: '1',
-                    name: 'Admin User',
-                    email: 'admin@example.com',
-                    role: 'admin',
-                });
-                router.push('/');
-            } else if (email === 'user@example.com' && password === 'user123') {
-                setUser({
-                    id: '2',
-                    name: 'Regular User',
-                    email: 'user@example.com',
-                    role: 'user',
-                });
-                router.push('/');
-            } else if (email === 'viewer@example.com' && password === 'viewer123') {
-                setUser({
-                    id: '3',
-                    name: 'Viewer User',
-                    email: 'viewer@example.com',
-                    role: 'viewer',
-                });
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setUser(data.user);
                 router.push('/');
             } else {
-                setError('Invalid email or password');
+                setError(data.error || 'Login failed');
             }
+        } catch (error) {
+            console.error('Login error:', error);
+            setError('An error occurred during login');
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     const demoCredentials = [
