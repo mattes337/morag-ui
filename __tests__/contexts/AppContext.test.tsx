@@ -16,7 +16,7 @@ jest.mock('../../lib/vectorSearch', () => ({
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AppProvider data-oid="ltb1cvy">{children}</AppProvider>
+    <AppProvider data-oid=".v8-tsg">{children}</AppProvider>
 );
 
 describe('AppContext', () => {

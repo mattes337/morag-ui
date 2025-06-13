@@ -142,13 +142,13 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Loading state
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-96" data-oid="nwxc0fn">
-                <div className="text-center" data-oid="._0swlz">
+            <div className="flex items-center justify-center min-h-96" data-oid="7en5iw:">
+                <div className="text-center" data-oid="_vwkdc5">
                     <div
                         className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
-                        data-oid=":es_ym."
+                        data-oid="7grixbq"
                     ></div>
-                    <p className="text-gray-600" data-oid="tn73sj5">
+                    <p className="text-gray-600" data-oid="exbvu:i">
                         Loading document...
                     </p>
                 </div>
@@ -159,18 +159,18 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Error state
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-96" data-oid="r.74su5">
-                <div className="text-center" data-oid="j3xd_6a">
-                    <div className="text-red-500 text-6xl mb-4" data-oid="xfx5d5r">
+            <div className="flex items-center justify-center min-h-96" data-oid="53hhsxg">
+                <div className="text-center" data-oid="1b4kbbv">
+                    <div className="text-red-500 text-6xl mb-4" data-oid="u5gol42">
                         ⚠️
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="b1793x3">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="7k.uqrc">
                         Error
                     </h2>
-                    <p className="text-gray-600 mb-4" data-oid="tmsnjy4">
+                    <p className="text-gray-600 mb-4" data-oid="89q99t8">
                         {error}
                     </p>
-                    <p className="text-sm text-gray-500" data-oid="w3cs8ov">
+                    <p className="text-sm text-gray-500" data-oid="q7styxd">
                         Redirecting to documents...
                     </p>
                 </div>
@@ -181,21 +181,21 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Document not found
     if (!document) {
         return (
-            <div className="flex items-center justify-center min-h-96" data-oid="wj8vcc2">
-                <div className="text-center" data-oid="3fk-7eb">
-                    <div className="text-gray-400 text-6xl mb-4" data-oid="0jev_jd">
+            <div className="flex items-center justify-center min-h-96" data-oid=":wxshql">
+                <div className="text-center" data-oid="rex_5xo">
+                    <div className="text-gray-400 text-6xl mb-4" data-oid="och6_sm">
                         📄
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="lub2y1o">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="ms31hey">
                         Document Not Found
                     </h2>
-                    <p className="text-gray-600 mb-4" data-oid="v5k::qd">
+                    <p className="text-gray-600 mb-4" data-oid="y68c.7_">
                         The document you&apos;re looking for doesn&apos;t exist.
                     </p>
                     <button
                         onClick={() => router.push('/documents')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        data-oid="q7tz1z1"
+                        data-oid="vsw5hp1"
                     >
                         Back to Documents
                     </button>
@@ -211,7 +211,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
             onReingest={handleReingestDocument}
             onSupersede={handleSupersedeDocument}
             onDelete={handleDeleteDocument}
-            data-oid="4oapgdt"
+            data-oid="f0rx5ib"
         />
     );
 }

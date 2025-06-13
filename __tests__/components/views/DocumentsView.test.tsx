@@ -18,7 +18,7 @@ describe('DocumentsView', () => {
     });
 
     it('should render documents table', () => {
-        render(<DocumentsView {...mockProps} data-oid="swran85" />);
+        render(<DocumentsView {...mockProps} data-oid="s1-63pi" />);
 
         expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
@@ -28,14 +28,14 @@ describe('DocumentsView', () => {
     });
 
     it('should render without selected database', () => {
-        render(<DocumentsView {...mockProps} selectedDatabase={null} data-oid="-1032sm" />);
+        render(<DocumentsView {...mockProps} selectedDatabase={null} data-oid="r3p9mei" />);
 
         expect(screen.getByText('Documents')).toBeInTheDocument();
         expect(screen.queryByText('- Test Database')).not.toBeInTheDocument();
     });
 
     it('should call onBackToDatabases when back button is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="543gl1b" />);
+        render(<DocumentsView {...mockProps} data-oid="rjn8bjo" />);
 
         const backButton = screen.getByText('← Back to Databases');
         fireEvent.click(backButton);
@@ -44,7 +44,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onAddDocument when add button is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="11by.62" />);
+        render(<DocumentsView {...mockProps} data-oid="im1c:rh" />);
 
         const addButton = screen.getByText('Add Document');
         fireEvent.click(addButton);
@@ -53,7 +53,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onViewDocumentDetail when document name is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="ge9.ibn" />);
+        render(<DocumentsView {...mockProps} data-oid="hp-qdih" />);
 
         const documentLink = screen.getByText('Test Document.pdf');
         fireEvent.click(documentLink);
@@ -62,7 +62,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onViewDocumentDetail when View Details button is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="f27dym2" />);
+        render(<DocumentsView {...mockProps} data-oid="r1n.pkp" />);
 
         const viewDetailsButton = screen.getByText('View Details');
         fireEvent.click(viewDetailsButton);
@@ -71,7 +71,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onPromptDocument when Prompt button is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="4:l6sod" />);
+        render(<DocumentsView {...mockProps} data-oid="zz6viji" />);
 
         const promptButton = screen.getByText('Prompt');
         fireEvent.click(promptButton);
@@ -88,7 +88,7 @@ describe('DocumentsView', () => {
             { ...mockDocument, id: '5', state: 'deleted' as const },
         ];
 
-        render(<DocumentsView {...mockProps} documents={documents} data-oid="d565gn7" />);
+        render(<DocumentsView {...mockProps} documents={documents} data-oid="i176_0i" />);
 
         expect(screen.getByText('pending')).toHaveClass('bg-yellow-100', 'text-yellow-800');
         expect(screen.getByText('ingesting')).toHaveClass('bg-blue-100', 'text-blue-800');
@@ -115,7 +115,7 @@ describe('DocumentsView', () => {
         };
 
         render(
-            <DocumentsView {...mockProps} documents={[documentWithMetadata]} data-oid="6.zi962" />,
+            <DocumentsView {...mockProps} documents={[documentWithMetadata]} data-oid="mwgkc5q" />,
         );
 
         // Check that the document name is rendered
@@ -139,7 +139,7 @@ describe('DocumentsView', () => {
     });
 
     it('should handle empty documents list', () => {
-        render(<DocumentsView {...mockProps} documents={[]} data-oid="jxthg6z" />);
+        render(<DocumentsView {...mockProps} documents={[]} data-oid="5b9quus" />);
 
         expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
         expect(screen.getByRole('table')).toBeInTheDocument();

@@ -15,7 +15,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     // If user is not logged in and not on login page, show login page content
     if (!user && !isLoginPage) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="23ef_nw">
+            <div className="min-h-screen bg-gray-50" data-oid="-tvxwno">
                 {children}
             </div>
         );
@@ -25,7 +25,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     // If on login page, show login page without header/nav
     if (isLoginPage) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="azirhg8">
+            <div className="min-h-screen bg-gray-50" data-oid="ps9wjbu">
                 {children}
             </div>
         );
@@ -33,20 +33,20 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
     // Normal authenticated layout
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col" data-oid=":0jzgps">
-            <Header data-oid="aa1d.4s" />
-            <Navigation data-oid="9yc--qe" />
-            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="1jnl1vs">
+        <div className="min-h-screen bg-gray-50 flex flex-col" data-oid="w1f_g.w">
+            <Header data-oid="qx:.xk8" />
+            <Navigation data-oid="1xlo2.s" />
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="t:_duz7">
                 {children}
             </main>
-            <footer className="bg-white border-t border-gray-200" data-oid="_j0s69s">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4" data-oid=".7wh0q.">
-                    <p className="text-center text-sm text-gray-500" data-oid="5:o8udu">
+            <footer className="bg-white border-t border-gray-200" data-oid="k.t4xue">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4" data-oid="dz.vco.">
+                    <p className="text-center text-sm text-gray-500" data-oid="yumpmeg">
                         © 2024 Morag AI. All rights reserved.
                     </p>
                 </div>
             </footer>
-            <GlobalDialogs data-oid="7:wnbo9" />
+            <GlobalDialogs data-oid="ebvyzup" />
         </div>
     );
 }

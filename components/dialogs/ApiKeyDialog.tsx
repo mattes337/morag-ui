@@ -11,17 +11,17 @@ export function ApiKeyDialog({ isOpen, onClose }: ApiKeyDialogProps) {
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            data-oid="qm-5n8i"
+            data-oid="ooowls9"
         >
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="ro72v5.">
-                <h3 className="text-lg font-semibold mb-4" data-oid="1r:uyx8">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" data-oid="ta7cyce">
+                <h3 className="text-lg font-semibold mb-4" data-oid="_e.jqdx">
                     Generate API Key
                 </h3>
-                <div className="space-y-4" data-oid="c08_yfr">
-                    <div data-oid=".h:qxgu">
+                <div className="space-y-4" data-oid="07oo29h">
+                    <div data-oid="bjp._uj">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-2"
-                            data-oid="qgorx:9"
+                            data-oid="t5:62:v"
                         >
                             Key Name
                         </label>
@@ -29,21 +29,21 @@ export function ApiKeyDialog({ isOpen, onClose }: ApiKeyDialogProps) {
                             type="text"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="API key name..."
-                            data-oid="yd90p9l"
+                            data-oid="mw8unep"
                         />
                     </div>
                 </div>
-                <div className="flex justify-end space-x-3 mt-6" data-oid="5sx5xlg">
+                <div className="flex justify-end space-x-3 mt-6" data-oid="o5fbr6:">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        data-oid="r90zv0l"
+                        data-oid="ay.7p0j"
                     >
                         Cancel
                     </button>
                     <button
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        data-oid="2yls4cs"
+                        data-oid="hivhq69"
                     >
                         Generate
                     </button>
