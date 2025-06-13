@@ -65,7 +65,7 @@ export const mockSearchResult = {
 
 // Custom render function that includes providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-    return <AppProvider>{children}</AppProvider>;
+    return <AppProvider data-oid="kcep-1i">{children}</AppProvider>;
 };
 
 const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>

@@ -18,7 +18,7 @@ describe('DocumentsView', () => {
     });
 
     it('should render documents table', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="swran85" />);
 
         expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
@@ -28,14 +28,14 @@ describe('DocumentsView', () => {
     });
 
     it('should render without selected database', () => {
-        render(<DocumentsView {...mockProps} selectedDatabase={null} />);
+        render(<DocumentsView {...mockProps} selectedDatabase={null} data-oid="-1032sm" />);
 
         expect(screen.getByText('Documents')).toBeInTheDocument();
         expect(screen.queryByText('- Test Database')).not.toBeInTheDocument();
     });
 
     it('should call onBackToDatabases when back button is clicked', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="543gl1b" />);
 
         const backButton = screen.getByText('← Back to Databases');
         fireEvent.click(backButton);
@@ -44,7 +44,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onAddDocument when add button is clicked', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="11by.62" />);
 
         const addButton = screen.getByText('Add Document');
         fireEvent.click(addButton);
@@ -53,7 +53,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onViewDocumentDetail when document name is clicked', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="ge9.ibn" />);
 
         const documentLink = screen.getByText('Test Document.pdf');
         fireEvent.click(documentLink);
@@ -62,7 +62,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onViewDocumentDetail when View Details button is clicked', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="f27dym2" />);
 
         const viewDetailsButton = screen.getByText('View Details');
         fireEvent.click(viewDetailsButton);
@@ -71,7 +71,7 @@ describe('DocumentsView', () => {
     });
 
     it('should call onPromptDocument when Prompt button is clicked', () => {
-        render(<DocumentsView {...mockProps} />);
+        render(<DocumentsView {...mockProps} data-oid="4:l6sod" />);
 
         const promptButton = screen.getByText('Prompt');
         fireEvent.click(promptButton);
@@ -88,7 +88,7 @@ describe('DocumentsView', () => {
             { ...mockDocument, id: '5', state: 'deleted' as const },
         ];
 
-        render(<DocumentsView {...mockProps} documents={documents} />);
+        render(<DocumentsView {...mockProps} documents={documents} data-oid="d565gn7" />);
 
         expect(screen.getByText('pending')).toHaveClass('bg-yellow-100', 'text-yellow-800');
         expect(screen.getByText('ingesting')).toHaveClass('bg-blue-100', 'text-blue-800');
@@ -114,19 +114,21 @@ describe('DocumentsView', () => {
             },
         };
 
-        render(<DocumentsView {...mockProps} documents={[documentWithMetadata]} />);
+        render(
+            <DocumentsView {...mockProps} documents={[documentWithMetadata]} data-oid="6.zi962" />,
+        );
 
         // Check that the document name is rendered
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
-        
+
         // Check that basic table structure is there
         expect(screen.getByRole('table')).toBeInTheDocument();
-        
+
         // Check that chunks and quality are rendered (these should definitely be there)
         expect(screen.getByText('15 chunks')).toBeInTheDocument();
         expect(screen.getByText('98% quality')).toBeInTheDocument();
         expect(screen.getByText('5.0k chars')).toBeInTheDocument();
-        
+
         // Check if metadata is conditionally rendered
         const titleElement = screen.queryByText('Test Document Title');
         if (titleElement) {
@@ -137,7 +139,7 @@ describe('DocumentsView', () => {
     });
 
     it('should handle empty documents list', () => {
-        render(<DocumentsView {...mockProps} documents={[]} />);
+        render(<DocumentsView {...mockProps} documents={[]} data-oid="jxthg6z" />);
 
         expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
         expect(screen.getByRole('table')).toBeInTheDocument();

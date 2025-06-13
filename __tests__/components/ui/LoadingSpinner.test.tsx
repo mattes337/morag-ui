@@ -4,7 +4,7 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 
 describe('LoadingSpinner', () => {
     it('should render loading spinner', () => {
-        render(<LoadingSpinner />);
+        render(<LoadingSpinner data-oid="k2eq5u0" />);
 
         const spinner = screen.getByTestId('loading-spinner');
         expect(spinner).toBeInTheDocument();
@@ -19,7 +19,7 @@ describe('LoadingSpinner', () => {
     });
 
     it('should have correct container styling', () => {
-        const { container } = render(<LoadingSpinner />);
+        const { container } = render(<LoadingSpinner data-oid="e76yb92" />);
 
         const spinnerContainer = container.firstChild;
         expect(spinnerContainer).toHaveClass('flex', 'items-center', 'justify-center', 'p-8');

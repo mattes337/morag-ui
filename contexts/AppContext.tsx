@@ -248,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Check authentication status
                 console.log('🔐 [AppContext] Checking authentication');
                 const authResponse = await fetch('/api/auth/me');
-                
+
                 if (authResponse.ok) {
                     const authData = await authResponse.json();
                     setUser(authData.user);
@@ -783,7 +783,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshData,
     };
 
-    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return (
+        <AppContext.Provider value={value} data-oid="arelmjo">
+            {children}
+        </AppContext.Provider>
+    );
 }
 
 export function useApp() {

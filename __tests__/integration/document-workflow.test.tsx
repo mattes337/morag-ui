@@ -55,8 +55,8 @@ describe('Document Workflow Integration', () => {
             const [selectedDocument, setSelectedDocument] = React.useState(null);
 
             return (
-                <AppProvider>
-                    <div>
+                <AppProvider data-oid="qny5.jk">
+                    <div data-oid="r3c9nrg">
                         <DocumentsView
                             documents={[mockDocument]}
                             selectedDatabase={mockDatabase}
@@ -64,13 +64,17 @@ describe('Document Workflow Integration', () => {
                             onAddDocument={() => setShowAddDialog(true)}
                             onPromptDocument={(doc) => setSelectedDocument(doc)}
                             onViewDocumentDetail={(doc) => setSelectedDocument(doc)}
+                            data-oid="h75r.:_"
                         />
+
                         <AddDocumentDialog
                             isOpen={showAddDialog}
                             onClose={() => setShowAddDialog(false)}
+                            data-oid="3bqlajm"
                         />
+
                         {selectedDocument && (
-                            <div data-testid="selected-document">
+                            <div data-testid="selected-document" data-oid="mb7t1.y">
                                 Selected: {selectedDocument.name}
                             </div>
                         )}
@@ -79,7 +83,7 @@ describe('Document Workflow Integration', () => {
             );
         };
 
-        render(<TestComponent />);
+        render(<TestComponent data-oid="w6rjejg" />);
 
         // Wait for initial load
         await waitFor(() => {
@@ -171,21 +175,24 @@ describe('Document Workflow Integration', () => {
             const [showSupersede, setShowSupersede] = React.useState(false);
 
             return (
-                <AppProvider>
-                    <div>
-                        <button onClick={() => setShowSupersede(true)}>Supersede Document</button>
+                <AppProvider data-oid="ck0hmz2">
+                    <div data-oid="juf62bu">
+                        <button onClick={() => setShowSupersede(true)} data-oid="zmqxf-o">
+                            Supersede Document
+                        </button>
                         <AddDocumentDialog
                             isOpen={showSupersede}
                             onClose={() => setShowSupersede(false)}
                             mode="supersede"
                             documentToSupersede={mockDocument}
+                            data-oid="r1efwy4"
                         />
                     </div>
                 </AppProvider>
             );
         };
 
-        render(<TestComponent />);
+        render(<TestComponent data-oid="go2tjq4" />);
 
         // Open supersede dialog
         const supersedeButton = screen.getByText('Supersede Document');
