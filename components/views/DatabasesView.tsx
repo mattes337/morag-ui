@@ -25,7 +25,7 @@ export function DatabasesView({
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No databases yet</h3>
                 <p className="text-gray-600 text-center mb-8 max-w-md">
-                    Get started by creating your first vector database. You'll be able to store and
+                    Get started by creating your first vector database. You&apos;ll be able to store and
                     search through your documents using AI-powered semantic search.
                 </p>
                 <button

@@ -16,14 +16,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get user from database
-        const user = await UserService.getUserByEmail(email);
+        // Get user from database or create if not exists
+        let user = await UserService.getUserByEmail(email);
         
         if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
+            // For demo purposes, create admin user if credentials match
+            if (email === 'admin@example.com' && password === 'admin123') {
+                user = await UserService.createUser({
+                    name: 'Admin User',
+                    email: 'admin@example.com',
+                    role: 'ADMIN'
+                });
+            } else {
+                return NextResponse.json(
+                    { error: 'Invalid credentials' },
+                    { status: 401 }
+                );
+            }
         }
 
         // TODO: Implement proper password verification

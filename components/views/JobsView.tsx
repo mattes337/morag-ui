@@ -60,7 +60,7 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs yet</h3>
                 <p className="text-gray-600 text-center mb-8 max-w-md">
                     Jobs are automatically created when you upload documents or trigger reingestion.
-                    They'll appear here so you can monitor their progress and status.
+                    They&apos;ll appear here so you can monitor their progress and status.
                 </p>
             </div>
         );
