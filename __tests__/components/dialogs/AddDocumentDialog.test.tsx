@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../../utils/test-utils';
-import { AddDocumentDialog } from '../../../components/dialogs/AddDocumentDialog';
-import { mockDocument } from '../../utils/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../../lib/test-utils';
+import AddDocumentDialog from '../../../components/dialogs/AddDocumentDialog';
+import { mockDocument } from '../../../lib/test-utils';
 
 const mockProps = {
     isOpen: true,

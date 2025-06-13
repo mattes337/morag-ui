@@ -1,5 +1,5 @@
-import { prisma } from '../database';
 import { Document, DocumentState } from '@prisma/client';
+import { prisma } from '../database';
 
 export class DocumentService {
     static async createDocument(data: {

@@ -8,7 +8,7 @@ import {
     mockDocument,
     mockApiKey,
     mockJob,
-} from '../utils/test-utils';
+} from '../../lib/test-utils';
 
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({

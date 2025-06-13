@@ -6,7 +6,7 @@ import {
     extractKeyTerms,
     checkApiHealth,
 } from '../../lib/vectorSearch';
-import { mockSearchResult } from '../utils/test-utils';
+import { mockSearchResult } from '../../lib/test-utils';
 
 describe('vectorSearch', () => {
     describe('generateEmbedding', () => {

@@ -1,9 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../utils/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../lib/test-utils';
 import { AppProvider } from '../../contexts/AppContext';
 import { DocumentsView } from '../../components/views/DocumentsView';
 import { AddDocumentDialog } from '../../components/dialogs/AddDocumentDialog';
-import { createMockFetch, mockDatabase, mockDocument } from '../utils/test-utils';
+import { DeleteConfirmDialog } from '../../components/dialogs/DeleteConfirmDialog';
+import { createMockFetch, mockDatabase, mockDocument } from '../../lib/test-utils';
 
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({

@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent } from '../../utils/test-utils';
-import { DocumentsView } from '../../../components/views/DocumentsView';
-import { mockDatabase, mockDocument } from '../../utils/test-utils';
+import { render, screen, fireEvent } from '../../../lib/test-utils';
+import DocumentsView from '../../../components/views/DocumentsView';
+import { mockDatabase, mockDocument } from '../../../lib/test-utils';
 
 const mockProps = {
     documents: [mockDocument],

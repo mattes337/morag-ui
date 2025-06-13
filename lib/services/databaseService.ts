@@ -1,5 +1,5 @@
-import { prisma } from '../database';
 import { Database } from '@prisma/client';
+import { prisma } from '../database';
 
 export class DatabaseService {
     static async createDatabase(data: {

@@ -1,13 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../utils/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../lib/test-utils';
 import { AppProvider } from '../../contexts/AppContext';
+import { DocumentsView } from '../../components/views/DocumentsView';
+import { ApiKeysView } from '../../components/views/ApiKeysView';
+import { JobsView } from '../../components/views/JobsView';
+import { DatabasesView } from '../../components/views/DatabasesView';
 import {
     createMockFetch,
     mockDatabase,
     mockDocument,
     mockApiKey,
     mockJob,
-} from '../utils/test-utils';
+} from '../../lib/test-utils';
 
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({
