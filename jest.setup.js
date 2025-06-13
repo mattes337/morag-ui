@@ -1,5 +1,26 @@
 import '@testing-library/jest-dom';
 
+// Mock Next.js server components
+jest.mock('next/server', () => ({
+    NextRequest: jest.fn().mockImplementation((url, init) => {
+        const request = {
+            url,
+            method: init?.method || 'GET',
+            headers: new Map(Object.entries(init?.headers || {})),
+            json: jest.fn().mockResolvedValue(JSON.parse(init?.body || '{}')),
+            text: jest.fn().mockResolvedValue(init?.body || ''),
+        };
+        return request;
+    }),
+    NextResponse: {
+        json: jest.fn().mockImplementation((data, init) => ({
+            json: jest.fn().mockResolvedValue(data),
+            status: init?.status || 200,
+            headers: new Map(),
+        })),
+    },
+}));
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
     useRouter() {

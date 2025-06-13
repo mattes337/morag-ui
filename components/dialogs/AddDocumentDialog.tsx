@@ -63,6 +63,17 @@ export function AddDocumentDialog({
         }
     }, [mode, documentToSupersede, documentTypes]);
 
+    // Reset form when dialog opens (unless in supersede mode)
+    useEffect(() => {
+        if (isOpen && mode === 'add') {
+            setSelectedDocumentType(null);
+            setChunkSize('1000');
+            setChunkingMethod('Semantic');
+            setGpuProcessing(false);
+            setContextualEmbedding(false);
+        }
+    }, [isOpen, mode]);
+
     const handleClose = () => {
         setSelectedDocumentType(null);
         setChunkSize('1000');
@@ -158,8 +169,9 @@ export function AddDocumentDialog({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="flex items-center space-x-2">
+                                <label htmlFor="gpu-processing" className="flex items-center space-x-2">
                                     <input
+                                        id="gpu-processing"
                                         type="checkbox"
                                         className="rounded"
                                         checked={gpuProcessing}
@@ -170,8 +182,9 @@ export function AddDocumentDialog({
                                 </label>
                             </div>
                             <div>
-                                <label className="flex items-center space-x-2">
+                                <label htmlFor="contextual-embedding" className="flex items-center space-x-2">
                                     <input
+                                        id="contextual-embedding"
                                         type="checkbox"
                                         className="rounded"
                                         checked={contextualEmbedding}
@@ -185,10 +198,11 @@ export function AddDocumentDialog({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="chunk-size" className="block text-sm font-medium text-gray-700 mb-1">
                                     Chunk Size
                                 </label>
                                 <select
+                                    id="chunk-size"
                                     value={chunkSize}
                                     onChange={(e) => setChunkSize(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -203,10 +217,11 @@ export function AddDocumentDialog({
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="chunking-method" className="block text-sm font-medium text-gray-700 mb-1">
                                     Chunking Method
                                 </label>
                                 <select
+                                    id="chunking-method"
                                     value={chunkingMethod}
                                     onChange={(e) => setChunkingMethod(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
