@@ -1,6 +1,7 @@
 'use client';
 
 import { Job } from '../../types';
+import { Clock } from 'lucide-react';
 
 interface JobsViewProps {
     jobs: Job[];
@@ -48,6 +49,33 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
     const canCancelJob = (status: string) => {
         return status === 'pending' || status === 'waiting-for-remote-worker';
     };
+
+    // Show empty state when no jobs exist
+    if (jobs.length === 0) {
+        return (
+            <div
+                className="flex flex-col items-center justify-center py-16 px-4"
+                data-oid="jobs-empty-state"
+            >
+                <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="jobs-icon-container">
+                    <Clock className="w-16 h-16 text-gray-400" data-oid="jobs-icon" />
+                </div>
+                <h3
+                    className="text-xl font-semibold text-gray-900 mb-2"
+                    data-oid="jobs-empty-title"
+                >
+                    No jobs yet
+                </h3>
+                <p
+                    className="text-gray-600 text-center mb-8 max-w-md"
+                    data-oid="jobs-empty-description"
+                >
+                    Jobs are automatically created when you upload documents or trigger reingestion.
+                    They'll appear here so you can monitor their progress and status.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6" data-oid="lea5qh4">
@@ -252,14 +280,6 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                     </tbody>
                 </table>
             </div>
-
-            {jobs.length === 0 && (
-                <div className="text-center py-12" data-oid="03je30-">
-                    <div className="text-gray-500" data-oid="529g1ha">
-                        No jobs found. Jobs are created when documents are uploaded or reingested.
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -3,6 +3,7 @@
 import { useApp } from '../../contexts/AppContext';
 import { DatabaseServer } from '../../types';
 import { useState } from 'react';
+import { Server, Plus } from 'lucide-react';
 
 export default function ServersPage() {
     const { servers, setServers } = useApp();
@@ -229,31 +230,44 @@ export default function ServersPage() {
                                 </div>
                             ))}
                             {servers.length === 0 && (
-                                <div className="text-center py-12" data-oid="33bskiu">
-                                    <svg
-                                        className="mx-auto h-12 w-12 text-gray-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        data-oid="eucv5us"
+                                <div
+                                    className="flex flex-col items-center justify-center py-16 px-4"
+                                    data-oid="servers-empty-state"
+                                >
+                                    <div
+                                        className="bg-gray-100 rounded-full p-6 mb-6"
+                                        data-oid="servers-icon-container"
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
-                                            data-oid="_qsgo.-"
+                                        <Server
+                                            className="w-16 h-16 text-gray-400"
+                                            data-oid="servers-icon"
                                         />
-                                    </svg>
+                                    </div>
                                     <h3
-                                        className="mt-2 text-sm font-medium text-gray-900"
-                                        data-oid="05s-p_8"
+                                        className="text-xl font-semibold text-gray-900 mb-2"
+                                        data-oid="servers-empty-title"
                                     >
-                                        No servers configured
+                                        No servers yet
                                     </h3>
-                                    <p className="mt-1 text-sm text-gray-500" data-oid="y_oo9ua">
-                                        Get started by adding your first database server.
+                                    <p
+                                        className="text-gray-600 text-center mb-8 max-w-md"
+                                        data-oid="servers-empty-description"
+                                    >
+                                        Connect to your vector database servers to store and search
+                                        through your documents. Configure connections to Qdrant,
+                                        Neo4j, Pinecone, Weaviate, or Chroma.
                                     </p>
+                                    <button
+                                        onClick={handleAddServer}
+                                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                                        data-oid="servers-add-button"
+                                    >
+                                        <Plus
+                                            className="w-5 h-5 mr-2"
+                                            data-oid="servers-plus-icon"
+                                        />
+                                        Add Your First Server
+                                    </button>
                                 </div>
                             )}
                         </div>
