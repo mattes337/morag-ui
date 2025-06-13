@@ -40,45 +40,35 @@ export function DocumentsView({
     // Show empty state when no documents exist
     if (documents.length === 0) {
         return (
-            <div className="space-y-6" data-oid="i2io.k_">
-                <div data-oid="q19dbfv">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="mlr0fd3">
-                        Documents {selectedDatabase && `- ${selectedDatabase.name}`}
-                    </h2>
-                    <button
-                        onClick={onBackToDatabases}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                        data-oid="f-j:bza"
-                    >
-                        ← Back to Databases
-                    </button>
-                </div>
-
-                {/* Empty State */}
-                <div
-                    className="flex flex-col items-center justify-center py-16 px-4"
-                    data-oid="58iimr7"
+            <div
+                className="flex flex-col items-center justify-center py-16 px-4"
+                data-oid="58iimr7"
+            >
+                <button
+                    onClick={onBackToDatabases}
+                    className="text-blue-600 hover:text-blue-800 text-sm self-start mb-8"
+                    data-oid="f-j:bza"
                 >
-                    <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="l:bdag8">
-                        <FileText className="w-16 h-16 text-gray-400" data-oid="f7997cc" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2" data-oid="3932q:4">
-                        No documents yet
-                    </h3>
-                    <p className="text-gray-600 text-center mb-8 max-w-md" data-oid="8zlc2kh">
-                        Start building your knowledge base by adding your first document. Upload
-                        PDFs, text files, or other documents to enable AI-powered search and
-                        analysis.
-                    </p>
-                    <button
-                        onClick={onAddDocument}
-                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                        data-oid="xlg6:g2"
-                    >
-                        <Plus className="w-5 h-5 mr-2" data-oid="v1c7n56" />
-                        Add Your First Document
-                    </button>
+                    ← Back to Databases
+                </button>
+                <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="l:bdag8">
+                    <FileText className="w-16 h-16 text-gray-400" data-oid="f7997cc" />
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2" data-oid="3932q:4">
+                    No documents yet
+                </h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md" data-oid="8zlc2kh">
+                    Start building your knowledge base by adding your first document. Upload PDFs,
+                    text files, or other documents to enable AI-powered search and analysis.
+                </p>
+                <button
+                    onClick={onAddDocument}
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    data-oid="xlg6:g2"
+                >
+                    <Plus className="w-5 h-5 mr-2" data-oid="v1c7n56" />
+                    Add Your First Document
+                </button>
             </div>
         );
     }
