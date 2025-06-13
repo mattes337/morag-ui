@@ -637,11 +637,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setIsDataLoading(true);
 
             // Reload all data
-            const [databasesResponse, documentsResponse, jobsResponse] = await Promise.all([
-                fetch('/api/databases'),
-                fetch('/api/documents'),
-                fetch('/api/jobs'),
-            ]);
+            const [serversResponse, databasesResponse, documentsResponse, jobsResponse] =
+                await Promise.all([
+                    fetch('/api/servers'),
+                    fetch('/api/databases'),
+                    fetch('/api/documents'),
+                    fetch('/api/jobs'),
+                ]);
+
+            if (serversResponse.ok) {
+                const serversData = await serversResponse.json();
+                const formattedServers = serversData.map((server: any) => ({
+                    id: server.id,
+                    name: server.name,
+                    type: server.type.toLowerCase(),
+                    host: server.host,
+                    port: server.port,
+                    username: server.username,
+                    password: server.password,
+                    apiKey: server.apiKey,
+                    database: server.database,
+                    collection: server.collection,
+                    isActive: server.isActive,
+                    createdAt: server.createdAt,
+                    lastConnected: server.lastConnected,
+                }));
+                setServers(formattedServers);
+            }
 
             if (databasesResponse.ok) {
                 const databasesData = await databasesResponse.json();
@@ -784,7 +806,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AppContext.Provider value={value} data-oid="oa9965t">
+        <AppContext.Provider value={value} data-oid="jh1sm3g">
             {children}
         </AppContext.Provider>
     );

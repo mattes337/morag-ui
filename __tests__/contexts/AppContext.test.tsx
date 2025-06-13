@@ -16,7 +16,7 @@ jest.mock('../../lib/vectorSearch', () => ({
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AppProvider data-oid=".v8-tsg">{children}</AppProvider>
+    <AppProvider data-oid="qnvycg.">{children}</AppProvider>
 );
 
 describe('AppContext', () => {
@@ -32,9 +32,10 @@ describe('AppContext', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
 
         expect(result.current.user).toBeNull();
-        expect(result.current.databases).toHaveLength(2); // Initial mock databases
-        expect(result.current.documents).toHaveLength(3); // Initial mock documents
-        expect(result.current.apiKeys).toHaveLength(2); // Initial mock API keys
+        expect(result.current.databases).toEqual([]); // No initial mock data
+        expect(result.current.documents).toEqual([]); // No initial mock data
+        expect(result.current.apiKeys).toEqual([]); // No initial mock data
+        expect(result.current.servers).toEqual([]); // No initial mock data
         expect(result.current.jobs).toEqual([]);
         expect(result.current.isDataLoading).toBe(true);
     });

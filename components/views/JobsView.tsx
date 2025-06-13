@@ -53,23 +53,12 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
     // Show empty state when no jobs exist
     if (jobs.length === 0) {
         return (
-            <div
-                className="flex flex-col items-center justify-center py-16 px-4"
-                data-oid="jobs-empty-state"
-            >
-                <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="jobs-icon-container">
-                    <Clock className="w-16 h-16 text-gray-400" data-oid="jobs-icon" />
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="bg-gray-100 rounded-full p-6 mb-6">
+                    <Clock className="w-16 h-16 text-gray-400" />
                 </div>
-                <h3
-                    className="text-xl font-semibold text-gray-900 mb-2"
-                    data-oid="jobs-empty-title"
-                >
-                    No jobs yet
-                </h3>
-                <p
-                    className="text-gray-600 text-center mb-8 max-w-md"
-                    data-oid="jobs-empty-description"
-                >
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs yet</h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md">
                     Jobs are automatically created when you upload documents or trigger reingestion.
                     They'll appear here so you can monitor their progress and status.
                 </p>
@@ -78,93 +67,66 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
     }
 
     return (
-        <div className="space-y-6" data-oid="lea5qh4">
-            <div className="flex justify-between items-center" data-oid="y7ko9vz">
-                <div data-oid="vr_aymy">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="06h3i.l">
-                        Jobs
-                    </h2>
-                    <p className="text-gray-600 text-sm mt-1" data-oid="mut9hky">
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Jobs</h2>
+                    <p className="text-gray-600 text-sm mt-1">
                         Monitor document processing jobs and their progress
                     </p>
                 </div>
             </div>
 
-            <div
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
-                data-oid="y9gtqj_"
-            >
-                <table className="w-full" data-oid="o5_gujf">
-                    <thead className="bg-gray-50" data-oid="s:wh_88">
-                        <tr data-oid="4o-ma1a">
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="rnh_dhe"
-                            >
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Document
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="hd1wdpa"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="nkv8zgj"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Progress & Details
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid=":-rhb1u"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Timing
                             </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                data-oid="p9_x7ju"
-                            >
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200" data-oid="-lxvmsd">
+                    <tbody className="bg-white divide-y divide-gray-200">
                         {jobs.map((job) => (
-                            <tr key={job.id} data-oid="845h9-u">
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="8qplpjv">
-                                    <div className="text-sm font-medium" data-oid="9t5l32s">
+                            <tr key={job.id}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium">
                                         <button
                                             onClick={() => onViewJobDetail(job)}
                                             className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                                            data-oid="hubyo37"
                                         >
                                             {job.documentName}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500" data-oid="vnt8fek">
+                                    <div className="text-sm text-gray-500">
                                         {job.documentType} • Job #{job.id}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="mi8sjqu">
+                                <td className="px-6 py-4 whitespace-nowrap">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(job.status)}`}
-                                        data-oid="m01h-_0"
                                     >
                                         {job.status.replace('-', ' ')}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap" data-oid="5w9.fs:">
-                                    <div className="w-full" data-oid="4s9c5cf">
-                                        <div
-                                            className="flex justify-between text-xs text-gray-600 mb-1"
-                                            data-oid=".-tnw0b"
-                                        >
-                                            <span data-oid="aakddkx">
-                                                {job.progress.percentage}%
-                                            </span>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="w-full">
+                                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                            <span>{job.progress.percentage}%</span>
                                             {job.processingDetails?.estimatedTimeRemaining && (
-                                                <span className="text-gray-500" data-oid="xrmx.r:">
+                                                <span className="text-gray-500">
                                                     ~
                                                     {Math.ceil(
                                                         job.processingDetails
@@ -174,94 +136,63 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                                 </span>
                                             )}
                                         </div>
-                                        <div
-                                            className="w-full bg-gray-200 rounded-full h-2"
-                                            data-oid="4795o.w"
-                                        >
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
                                             <div
                                                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                                 style={{ width: `${job.progress.percentage}%` }}
-                                                data-oid="l:ng_5_"
                                             ></div>
                                         </div>
-                                        <div
-                                            className="text-xs text-gray-500 mt-1"
-                                            data-oid="-e:h1qd"
-                                        >
+                                        <div className="text-xs text-gray-500 mt-1">
                                             {job.progress.summary}
                                         </div>
                                         {job.processingDetails?.currentStep && (
-                                            <div
-                                                className="text-xs text-blue-600 mt-1"
-                                                data-oid="dz._.07"
-                                            >
+                                            <div className="text-xs text-blue-600 mt-1">
                                                 Step {job.processingDetails.completedSteps || 0}/
                                                 {job.processingDetails.totalSteps || 0}:{' '}
                                                 {job.processingDetails.currentStep}
                                             </div>
                                         )}
                                         {job.metadata?.file_size && (
-                                            <div
-                                                className="text-xs text-gray-500 mt-1"
-                                                data-oid="moulbf9"
-                                            >
+                                            <div className="text-xs text-gray-500 mt-1">
                                                 Size:{' '}
                                                 {(job.metadata.file_size / 1024 / 1024).toFixed(1)}{' '}
                                                 MB
                                             </div>
                                         )}
                                         {job.metadata?.model_used && (
-                                            <div
-                                                className="text-xs text-gray-500"
-                                                data-oid="n_9340o"
-                                            >
+                                            <div className="text-xs text-gray-500">
                                                 Model: {job.metadata.model_used}
                                             </div>
                                         )}
                                         {job.processingDetails?.errorMessage && (
-                                            <div
-                                                className="text-xs text-red-600 mt-1"
-                                                data-oid="495mtvl"
-                                            >
+                                            <div className="text-xs text-red-600 mt-1">
                                                 ⚠️ {job.processingDetails.errorMessage}
                                             </div>
                                         )}
                                         {job.processingDetails?.warnings &&
                                             job.processingDetails.warnings.length > 0 && (
-                                                <div
-                                                    className="text-xs text-yellow-600 mt-1"
-                                                    data-oid="7nwizz2"
-                                                >
+                                                <div className="text-xs text-yellow-600 mt-1">
                                                     ⚠️ {job.processingDetails.warnings.length}{' '}
                                                     warning(s)
                                                 </div>
                                             )}
                                     </div>
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                    data-oid=":iqay69"
-                                >
-                                    <div data-oid="84u0_87">
-                                        Started: {formatDate(job.startDate)}
-                                    </div>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div>Started: {formatDate(job.startDate)}</div>
                                     {job.endDate && (
-                                        <div className="text-gray-500" data-oid="giwe4lq">
+                                        <div className="text-gray-500">
                                             Finished: {formatDate(job.endDate)}
                                         </div>
                                     )}
-                                    <div className="text-gray-500" data-oid=":9r9x03">
+                                    <div className="text-gray-500">
                                         Duration: {formatDuration(job.startDate, job.endDate)}
                                     </div>
                                 </td>
-                                <td
-                                    className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-                                    data-oid="g36ij2."
-                                >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                     <button
                                         onClick={() => onViewJobDetail(job)}
                                         className="text-indigo-600 hover:text-indigo-900"
-                                        data-oid="3cexo74"
                                     >
                                         View Details
                                     </button>
@@ -269,7 +200,6 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                                         <button
                                             onClick={() => onCancelJob(job)}
                                             className="text-red-600 hover:text-red-900"
-                                            data-oid="-wtq12r"
                                         >
                                             Cancel
                                         </button>

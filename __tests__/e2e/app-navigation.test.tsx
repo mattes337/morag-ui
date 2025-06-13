@@ -65,15 +65,13 @@ describe('App Navigation E2E', () => {
     it('should handle app initialization and data loading', async () => {
         const TestApp = () => {
             return (
-                <AppProvider data-oid=":vvjhf9">
-                    <div data-testid="app" data-oid="a0uc-gz">
-                        App Loaded
-                    </div>
+                <AppProvider>
+                    <div data-testid="app">App Loaded</div>
                 </AppProvider>
             );
         };
 
-        render(<TestApp data-oid="3tl0bdk" />);
+        render(<TestApp />);
 
         await waitFor(() => {
             expect(screen.getByTestId('app')).toBeInTheDocument();
@@ -96,15 +94,13 @@ describe('App Navigation E2E', () => {
 
         const TestApp = () => {
             return (
-                <AppProvider data-oid="blicw3a">
-                    <div data-testid="app" data-oid="_jzb0j2">
-                        App Loaded
-                    </div>
+                <AppProvider>
+                    <div data-testid="app">App Loaded</div>
                 </AppProvider>
             );
         };
 
-        render(<TestApp data-oid="1o0y:g_" />);
+        render(<TestApp />);
 
         await waitFor(() => {
             expect(screen.getByTestId('app')).toBeInTheDocument();
@@ -119,15 +115,14 @@ describe('App Navigation E2E', () => {
             const [refreshCount, setRefreshCount] = React.useState(0);
 
             return (
-                <AppProvider data-oid="i_icix.">
-                    <div data-oid="whr5zib">
+                <AppProvider>
+                    <div>
                         <button
                             onClick={() => {
                                 setRefreshCount((c) => c + 1);
                                 // Simulate refresh action
                             }}
                             data-testid="refresh-button"
-                            data-oid="tf32n:e"
                         >
                             Refresh ({refreshCount})
                         </button>
@@ -136,7 +131,7 @@ describe('App Navigation E2E', () => {
             );
         };
 
-        render(<TestApp data-oid="c_oatne" />);
+        render(<TestApp />);
 
         await waitFor(() => {
             expect(screen.getByTestId('refresh-button')).toBeInTheDocument();
@@ -159,27 +154,17 @@ describe('App Navigation E2E', () => {
             };
 
             return (
-                <AppProvider data-oid="otx80fo">
-                    <div data-oid="1.5wi4e">
-                        <button
-                            onClick={() => addOperation('create-doc')}
-                            data-testid="create-doc"
-                            data-oid="fay37.:"
-                        >
+                <AppProvider>
+                    <div>
+                        <button onClick={() => addOperation('create-doc')} data-testid="create-doc">
                             Create Document
                         </button>
-                        <button
-                            onClick={() => addOperation('create-db')}
-                            data-testid="create-db"
-                            data-oid="y2i2_46"
-                        >
+                        <button onClick={() => addOperation('create-db')} data-testid="create-db">
                             Create Database
                         </button>
-                        <div data-testid="operations" data-oid="3vhlieg">
+                        <div data-testid="operations">
                             {operations.map((op, i) => (
-                                <div key={i} data-oid="jgd5f5x">
-                                    {op}
-                                </div>
+                                <div key={i}>{op}</div>
                             ))}
                         </div>
                     </div>
@@ -187,7 +172,7 @@ describe('App Navigation E2E', () => {
             );
         };
 
-        render(<TestApp data-oid="ikr8kaf" />);
+        render(<TestApp />);
 
         await waitFor(() => {
             expect(screen.getByTestId('create-doc')).toBeInTheDocument();
@@ -219,24 +204,18 @@ describe('App Navigation E2E', () => {
             if (!mounted) return null;
 
             return (
-                <AppProvider data-oid="m-12h6_">
-                    <div data-oid="c4r:t-l">
-                        <button
-                            onClick={() => setMounted(false)}
-                            data-testid="unmount"
-                            data-oid="waujfkm"
-                        >
+                <AppProvider>
+                    <div>
+                        <button onClick={() => setMounted(false)} data-testid="unmount">
                             Unmount
                         </button>
-                        <div data-testid="app-content" data-oid="f-1gm5y">
-                            Content
-                        </div>
+                        <div data-testid="app-content">Content</div>
                     </div>
                 </AppProvider>
             );
         };
 
-        render(<TestApp data-oid=":.5t8f3" />);
+        render(<TestApp />);
 
         await waitFor(() => {
             expect(screen.getByTestId('app-content')).toBeInTheDocument();

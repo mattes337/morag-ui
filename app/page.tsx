@@ -24,7 +24,7 @@ export default function DatabasesPage() {
     }, [user, isDataLoading, router]);
 
     if (isDataLoading) {
-        return <LoadingSpinner data-oid="1xa:x60" />;
+        return <LoadingSpinner data-oid="a1hr43t" />;
     }
 
     if (!user) {
@@ -48,7 +48,7 @@ export default function DatabasesPage() {
             onCreateDatabase={() => setShowCreateDatabaseDialog(true)}
             onSelectDatabase={handleSelectDatabase}
             onPromptDatabase={handlePromptDatabase}
-            data-oid="a7no5tf"
+            data-oid="bs7d6n9"
         />
     );
 }

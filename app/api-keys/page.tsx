@@ -17,7 +17,7 @@ export default function ApiKeysPage() {
     }, [user, isDataLoading, router]);
 
     if (isDataLoading) {
-        return <LoadingSpinner data-oid="nwy8gp-" />;
+        return <LoadingSpinner data-oid="-3pg1k8" />;
     }
 
     if (!user) {
@@ -29,6 +29,6 @@ export default function ApiKeysPage() {
     };
 
     return (
-        <ApiKeysView apiKeys={apiKeys} onGenerateApiKey={handleGenerateApiKey} data-oid="8bzfbx8" />
+        <ApiKeysView apiKeys={apiKeys} onGenerateApiKey={handleGenerateApiKey} data-oid="fw76c80" />
     );
 }
