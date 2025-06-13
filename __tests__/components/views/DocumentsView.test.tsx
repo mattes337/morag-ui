@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '../../../lib/test-utils';
-import DocumentsView from '../../../components/views/DocumentsView';
+import { DocumentsView } from '../../../components/views/DocumentsView';
 import { mockDatabase, mockDocument } from '../../../lib/test-utils';
 
 const mockProps = {
@@ -141,8 +141,8 @@ describe('DocumentsView', () => {
     it('should handle empty documents list', () => {
         render(<DocumentsView {...mockProps} documents={[]} data-oid=":b43yta" />);
 
-        expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
-        expect(screen.getByRole('table')).toBeInTheDocument();
+        expect(screen.getByText('No documents yet')).toBeInTheDocument();
+        expect(screen.getByText('Add Your First Document')).toBeInTheDocument();
         expect(screen.queryByText('Test Document.pdf')).not.toBeInTheDocument();
     });
 });

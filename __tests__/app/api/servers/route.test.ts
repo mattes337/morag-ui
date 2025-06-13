@@ -7,7 +7,7 @@ import { requireAuth } from '../../../../lib/auth';
 jest.mock('../../../../lib/services/databaseServerService');
 jest.mock('../../../../lib/auth');
 
-const mockDatabaseServerService = DatabaseServerService as jest.Mocked<typeof DatabaseServerService>;
+const mockDatabaseServerService = jest.mocked(DatabaseServerService);
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/servers', () => {

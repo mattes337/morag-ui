@@ -5,7 +5,7 @@ import { DocumentService } from '../../../../../lib/services/documentService';
 // Mock the DocumentService
 jest.mock('../../../../../lib/services/documentService');
 
-const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
+const mockDocumentService = jest.mocked(DocumentService);
 
 describe('/api/documents/[id]', () => {
     const mockParams = { id: 'doc1' };

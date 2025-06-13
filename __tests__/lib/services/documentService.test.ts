@@ -1,7 +1,3 @@
-import { DocumentService } from '../../../lib/services/documentService';
-import { prisma } from '../../../lib/database';
-import { DocumentState } from '@prisma/client';
-
 // Mock Prisma
 jest.mock('../../../lib/database', () => ({
     prisma: {
@@ -17,6 +13,10 @@ jest.mock('../../../lib/database', () => ({
         },
     },
 }));
+
+import { DocumentService } from '../../../lib/services/documentService';
+import { prisma } from '../../../lib/database';
+import { DocumentState } from '@prisma/client';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 

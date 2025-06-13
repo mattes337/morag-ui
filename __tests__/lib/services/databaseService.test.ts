@@ -1,23 +1,32 @@
+// Mock Prisma before any imports
+jest.mock('../../../lib/database', () => {
+    const mockPrismaDatabase = {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+    };
+
+    const mockPrismaDocument = {
+        count: jest.fn(),
+    };
+
+    return {
+        prisma: {
+            database: mockPrismaDatabase,
+            document: mockPrismaDocument,
+        },
+    };
+});
+
 import { DatabaseService } from '../../../lib/services/databaseService';
 import { prisma } from '../../../lib/database';
 
-// Mock Prisma
-jest.mock('../../../lib/database', () => ({
-    prisma: {
-        database: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        document: {
-            count: jest.fn(),
-        },
-    },
-}));
-
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+// Get references to the mocked functions using jest.mocked()
+const mockPrisma = jest.mocked(prisma);
+const mockPrismaDatabase = mockPrisma.database;
+const mockPrismaDocument = mockPrisma.document;
 
 describe('DatabaseService', () => {
     beforeEach(() => {
@@ -38,7 +47,7 @@ describe('DatabaseService', () => {
                 _count: { documents: 0 },
             };
 
-            mockPrisma.database.create.mockResolvedValue(mockDatabase as any);
+            mockPrismaDatabase.create.mockResolvedValue(mockDatabase as any);
 
             const result = await DatabaseService.createDatabase({
                 name: 'Test Database',
@@ -47,7 +56,7 @@ describe('DatabaseService', () => {
                 serverId: 'server1',
             });
 
-            expect(mockPrisma.database.create).toHaveBeenCalledWith({
+            expect(mockPrismaDatabase.create).toHaveBeenCalledWith({
                 data: {
                     name: 'Test Database',
                     description: 'Test description',
@@ -83,12 +92,12 @@ describe('DatabaseService', () => {
                 },
             ];
 
-            mockPrisma.database.findMany.mockResolvedValue(mockDatabases as any);
+            mockPrismaDatabase.findMany.mockResolvedValue(mockDatabases as any);
 
             const result = await DatabaseService.getAllDatabases();
 
-            expect(mockPrisma.database.findMany).toHaveBeenCalledWith({
-                include: {
+            expect(result).toEqual(mockDatabases);
+            expect(mockPrismaDatabase.findMany).toHaveBeenCalledWith({         include: {
                     documents: true,
                     user: true,
                     server: true,
@@ -118,12 +127,12 @@ describe('DatabaseService', () => {
                 },
             ];
 
-            mockPrisma.database.findMany.mockResolvedValue(mockDatabases as any);
+            mockPrismaDatabase.findMany.mockResolvedValue(mockDatabases as any);
 
             const result = await DatabaseService.getDatabasesByUser('user1');
 
-            expect(mockPrisma.database.findMany).toHaveBeenCalledWith({
-                where: { userId: 'user1' },
+            expect(result).toEqual(mockDatabases);
+            expect(mockPrismaDatabase.findMany).toHaveBeenCalledWith({         where: { userId: 'user1' },
                 include: {
                     documents: true,
                     user: true,
@@ -151,12 +160,12 @@ describe('DatabaseService', () => {
                 _count: { documents: 0 },
             };
 
-            mockPrisma.database.findUnique.mockResolvedValue(mockDatabase as any);
+            mockPrismaDatabase.findUnique.mockResolvedValue(mockDatabase as any);
 
             const result = await DatabaseService.getDatabaseById('1');
 
-            expect(mockPrisma.database.findUnique).toHaveBeenCalledWith({
-                where: { id: '1' },
+            expect(result).toEqual(mockDatabase);
+            expect(mockPrismaDatabase.findUnique).toHaveBeenCalledWith({         where: { id: '1' },
                 include: {
                     documents: {
                         orderBy: {
@@ -188,13 +197,13 @@ describe('DatabaseService', () => {
                 _count: { documents: 0 },
             };
 
-            mockPrisma.database.update.mockResolvedValue(mockUpdatedDatabase as any);
+            mockPrismaDatabase.update.mockResolvedValue(mockUpdatedDatabase as any);
 
             const result = await DatabaseService.updateDatabase('1', {
                 name: 'Updated Database',
             });
 
-            expect(mockPrisma.database.update).toHaveBeenCalledWith({
+            expect(mockPrismaDatabase.update).toHaveBeenCalledWith({
                 where: { id: '1' },
                 data: { name: 'Updated Database' },
                 include: {
@@ -217,11 +226,11 @@ describe('DatabaseService', () => {
         it('should delete a database', async () => {
             const mockDeletedDatabase = { id: '1', name: 'Deleted Database' };
 
-            mockPrisma.database.delete.mockResolvedValue(mockDeletedDatabase as any);
+            mockPrismaDatabase.delete.mockResolvedValue(mockDeletedDatabase as any);
 
             const result = await DatabaseService.deleteDatabase('1');
 
-            expect(mockPrisma.database.delete).toHaveBeenCalledWith({
+            expect(mockPrismaDatabase.delete).toHaveBeenCalledWith({
                 where: { id: '1' },
             });
 
@@ -237,16 +246,15 @@ describe('DatabaseService', () => {
                 documentCount: 5,
             };
 
-            mockPrisma.document.count.mockResolvedValue(5);
-            mockPrisma.database.update.mockResolvedValue(mockUpdatedDatabase as any);
+            mockPrismaDocument.count.mockResolvedValue(5);
+            mockPrismaDatabase.update.mockResolvedValue(mockUpdatedDatabase as any);
 
             const result = await DatabaseService.updateDocumentCount('1');
 
-            expect(mockPrisma.document.count).toHaveBeenCalledWith({
+            expect(mockPrismaDocument.count).toHaveBeenCalledWith({
                 where: { databaseId: '1' },
             });
-
-            expect(mockPrisma.database.update).toHaveBeenCalledWith({
+            expect(mockPrismaDatabase.update).toHaveBeenCalledWith({
                 where: { id: '1' },
                 data: { documentCount: 5 },
             });

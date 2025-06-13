@@ -9,7 +9,7 @@ jest.mock('../../../../../lib/services/userService');
 
 const mockGetAuthUser = getAuthUser as jest.MockedFunction<typeof getAuthUser>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
-const mockUserService = UserService as jest.Mocked<typeof UserService>;
+const mockUserService = jest.mocked(UserService);
 
 describe('/api/auth/me', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };

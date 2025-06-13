@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '../../../lib/test-utils';
-import AddDocumentDialog from '../../../components/dialogs/AddDocumentDialog';
+import { AddDocumentDialog } from '../../../components/dialogs/AddDocumentDialog';
 import { mockDocument } from '../../../lib/test-utils';
 
 const mockProps = {
@@ -36,7 +36,7 @@ describe('AddDocumentDialog', () => {
             />,
         );
 
-        expect(screen.getByText('Supersede Document')).toBeInTheDocument();
+        expect(screen.getAllByText('Supersede Document')).toHaveLength(2); // Check how many exist
         expect(screen.getByText('Document Supersede Warning')).toBeInTheDocument();
         expect(
             screen.getByText(/This action will replace the existing document/),

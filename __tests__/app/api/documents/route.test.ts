@@ -6,7 +6,7 @@ import { requireAuth } from '../../../../lib/auth';
 // Mock the DocumentService and auth
 jest.mock('../../../../lib/services/documentService');
 jest.mock('../../../../lib/auth');
-const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
+const mockDocumentService = jest.mocked(DocumentService);
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/documents', () => {

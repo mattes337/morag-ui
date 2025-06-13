@@ -5,7 +5,7 @@ import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 // Mock the ApiKeyService
 jest.mock('../../../../../lib/services/apiKeyService');
 
-const mockApiKeyService = ApiKeyService as jest.Mocked<typeof ApiKeyService>;
+const mockApiKeyService = jest.mocked(ApiKeyService);
 
 describe('/api/api-keys/[id]', () => {
     const mockParams = { id: 'apikey1' };

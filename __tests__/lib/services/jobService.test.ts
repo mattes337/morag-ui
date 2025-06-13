@@ -1,7 +1,3 @@
-import { JobService } from '../../../lib/services/jobService';
-import { prisma } from '../../../lib/database';
-import { JobStatus } from '@prisma/client';
-
 // Mock Prisma
 jest.mock('../../../lib/database', () => ({
     prisma: {
@@ -14,6 +10,10 @@ jest.mock('../../../lib/database', () => ({
         },
     },
 }));
+
+import { JobService } from '../../../lib/services/jobService';
+import { prisma } from '../../../lib/database';
+import { JobStatus } from '@prisma/client';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 

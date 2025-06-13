@@ -5,7 +5,7 @@ import { DatabaseService } from '../../../../../lib/services/databaseService';
 // Mock the DatabaseService
 jest.mock('../../../../../lib/services/databaseService');
 
-const mockDatabaseService = DatabaseService as jest.Mocked<typeof DatabaseService>;
+const mockDatabaseService = jest.mocked(DatabaseService);
 
 describe('/api/databases/[id]', () => {
     const mockParams = { id: 'db1' };

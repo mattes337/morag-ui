@@ -1,6 +1,3 @@
-import { ApiKeyService } from '../../../lib/services/apiKeyService';
-import { prisma } from '../../../lib/database';
-
 // Mock Prisma
 jest.mock('../../../lib/database', () => ({
     prisma: {
@@ -13,6 +10,9 @@ jest.mock('../../../lib/database', () => ({
         },
     },
 }));
+
+import { ApiKeyService } from '../../../lib/services/apiKeyService';
+import { prisma } from '../../../lib/database';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
