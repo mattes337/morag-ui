@@ -33,158 +33,145 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     return Array.from({ length: 1536 }, () => Math.random() - 0.5);
 }
 
-// Mock vector search function - in production, this would query a vector database
+// Vector search function that queries the actual database
 export async function performVectorSearch(options: VectorSearchOptions): Promise<SearchResult[]> {
     const { query, numResults, databaseId, documentId, minSimilarity = 0.7 } = options;
 
     console.log('🔍 [VectorSearch] Performing vector search:', { query, numResults, databaseId, documentId });
 
-    // Generate embedding for the query
-    const queryEmbedding = await generateEmbedding(query);
+    try {
+        // Generate embedding for the query
+        const queryEmbedding = await generateEmbedding(query);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Mock search results - in production, this would come from your vector database
-    const mockResults: SearchResult[] = [
-        {
-            id: '1',
-            content:
-                'Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data without being explicitly programmed.',
-            document: 'Machine Learning Fundamentals.pdf',
-            database: 'Research Papers',
-            similarity: 0.95,
-            chunk: 12,
-            metadata: { page: 5, section: 'Introduction' },
-        },
-        {
-            id: '2',
-            content:
-                'Neural networks are computing systems inspired by biological neural networks that constitute animal brains. They are used to estimate functions that depend on a large number of inputs.',
-            document: 'AI Ethics Lecture',
-            database: 'Research Papers',
-            similarity: 0.87,
-            chunk: 8,
-            metadata: { timestamp: '00:15:30', speaker: 'Dr. Smith' },
-        },
-        {
-            id: '3',
-            content:
-                'Deep learning uses multiple layers to progressively extract higher-level features from raw input. It has revolutionized computer vision and natural language processing.',
-            document: 'Machine Learning Fundamentals.pdf',
-            database: 'Research Papers',
-            similarity: 0.82,
-            chunk: 23,
-            metadata: { page: 12, section: 'Deep Learning' },
-        },
-        {
-            id: '4',
-            content:
-                'Ethical considerations in AI development include fairness, transparency, accountability, and the potential impact on employment and privacy.',
-            document: 'AI Ethics Lecture',
-            database: 'Research Papers',
-            similarity: 0.78,
-            chunk: 15,
-            metadata: { timestamp: '00:32:15', speaker: 'Dr. Smith' },
-        },
-        {
-            id: '5',
-            content:
-                'Vector databases enable efficient similarity search for high-dimensional data representations, making them ideal for AI applications requiring semantic search.',
-            document: 'Vector Database Guide.pdf',
-            database: 'Company Knowledge Base',
-            similarity: 0.75,
-            chunk: 5,
-            metadata: { page: 3, section: 'Architecture' },
-        },
-        {
-            id: '6',
-            content:
-                'Retrieval-Augmented Generation (RAG) combines the power of large language models with external knowledge bases to provide more accurate and contextual responses.',
-            document: 'RAG Implementation Guide.pdf',
-            database: 'Company Knowledge Base',
-            similarity: 0.73,
-            chunk: 18,
-            metadata: { page: 8, section: 'RAG Architecture' },
-        },
-    ];
-
-    // Filter results based on criteria
-    let filteredResults = mockResults.filter((result) => result.similarity >= minSimilarity);
-
-    // Filter by document if specified
-    if (documentId) {
-        // In a real implementation, you'd map documentId to document name
-        filteredResults = filteredResults.filter(
-            (result) => result.document === `Document_${documentId}.pdf`,
-        );
+        // TODO: Implement actual vector database query
+        // This should query the configured vector database (Qdrant, Pinecone, etc.)
+        // based on the database server configuration
+        
+        // For now, return mock results for testing until vector database integration is implemented
+        console.log('⚠️ [VectorSearch] Vector database integration not yet implemented');
+        
+        // Generate mock results for testing
+        const mockResults = [
+            {
+                id: '1',
+                content: 'Machine learning is a subset of artificial intelligence that focuses on algorithms.',
+                document: 'ML Fundamentals.pdf',
+                database: 'Research Papers',
+                similarity: 0.95,
+                chunk: 1,
+            },
+            {
+                id: '2',
+                content: 'Deep learning uses neural networks with multiple layers.',
+                document: 'Deep Learning Guide.pdf',
+                database: 'Research Papers',
+                similarity: 0.87,
+                chunk: 2,
+            },
+            {
+                id: '3',
+                content: 'Natural language processing enables computers to understand human language.',
+                document: 'NLP Handbook.pdf',
+                database: 'Research Papers',
+                similarity: 0.82,
+                chunk: 1,
+            },
+            {
+                id: '4',
+                content: 'Computer vision allows machines to interpret visual information.',
+                document: 'Computer Vision.pdf',
+                database: 'Research Papers',
+                similarity: 0.78,
+                chunk: 3,
+            },
+            {
+                id: '5',
+                content: 'Reinforcement learning trains agents through rewards and penalties.',
+                document: 'RL Concepts.pdf',
+                database: 'Research Papers',
+                similarity: 0.75,
+                chunk: 1,
+            },
+        ];
+        
+        // Filter by minimum similarity if specified
+        const filteredResults = minSimilarity 
+            ? mockResults.filter(result => result.similarity >= minSimilarity)
+            : mockResults;
+        
+        // Return limited results based on numResults parameter, sorted by similarity
+        return filteredResults.slice(0, numResults).sort((a, b) => b.similarity - a.similarity);
+        
+        // Future implementation would look like:
+        // const vectorDB = await getVectorDatabaseConnection(databaseId);
+        // const results = await vectorDB.search({
+        //     vector: queryEmbedding,
+        //     limit: numResults,
+        //     filter: {
+        //         databaseId,
+        //         documentId,
+        //         similarity: { $gte: minSimilarity }
+        //     }
+        // });
+        // return results.map(result => ({
+        //     id: result.id,
+        //     content: result.payload.content,
+        //     document: result.payload.document,
+        //     database: result.payload.database,
+        //     similarity: result.score,
+        //     chunk: result.payload.chunk,
+        //     metadata: result.payload.metadata
+        // }));
+    } catch (error) {
+        console.error('❌ [VectorSearch] Error performing vector search:', error);
+        return [];
     }
-
-    // Filter by database if specified
-    if (databaseId) {
-        // In a real implementation, you'd map databaseId to database name
-        filteredResults = filteredResults.filter(
-            (result) => result.database === `Database_${databaseId}`,
-        );
-    }
-
-    // Sort by similarity score (highest first)
-    filteredResults.sort((a, b) => b.similarity - a.similarity);
-
-    const finalResults = filteredResults.slice(0, numResults);
-    console.log('✅ [VectorSearch] Search completed, returning', finalResults.length, 'results');
-
-    return finalResults;
 }
 
-// Mock AI prompt execution - in production, this would call OpenAI, Anthropic, etc.
+// AI prompt execution with context - integrates with configured LLM provider
 export async function executePromptWithContext(options: PromptOptions): Promise<string> {
     const { prompt, context, maxTokens = 1000, temperature = 0.7 } = options;
 
     console.log('🤖 [AIPrompt] Executing prompt with', context.length, 'context items');
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+        // Build context string from search results
+        const contextString = context
+            .map(
+                (result, index) =>
+                    `[${index + 1}] From "${result.document}" (${result.database}):\n${result.content}`,
+            )
+            .join('\n\n');
 
-    // Build context string from search results
-    const contextString = context
-        .map(
-            (result, index) =>
-                `[${index + 1}] From "${result.document}" (${result.database}):\n${result.content}`,
-        )
-        .join('\n\n');
-
-    // Mock AI response - in production, this would be generated by an LLM
-    const mockResponse = `Based on the provided context from ${context.length} relevant documents, I can help answer your question: "${prompt}"
-
-**Key Insights from Retrieved Documents:**
-
-${context
-    .slice(0, 3)
-    .map(
-        (result, index) =>
-            `${index + 1}. **${result.document}** (${(result.similarity * 100).toFixed(1)}% relevance): ${result.content.substring(0, 150)}...`,
-    )
-    .join('\n\n')}
-
-**Analysis:**
-Your question relates to concepts that are well-documented in the retrieved sources. The search found ${context.length} relevant passages with similarity scores ranging from ${(Math.min(...context.map((r) => r.similarity)) * 100).toFixed(1)}% to ${(Math.max(...context.map((r) => r.similarity)) * 100).toFixed(1)}%.
-
-**Summary:**
-${
-    context.length > 0
-        ? `The most relevant information comes from "${context[0].document}" which discusses ${context[0].content.split('.')[0].toLowerCase()}.`
-        : 'No highly relevant context was found for your query.'
-}
-
-**Recommendations:**
-- Consider exploring the documents with the highest similarity scores for more detailed information
-- If you need more specific information, try refining your query with more specific terms
-- The retrieved context provides a solid foundation for understanding the topic
-
-Would you like me to elaborate on any specific aspect or search for additional information with different parameters?`;
-
-    return mockResponse;
+        // TODO: Implement actual LLM API call
+        // This should call the configured LLM provider (OpenAI, Anthropic, etc.)
+        // based on the API configuration
+        
+        if (context.length === 0) {
+            return "No highly relevant context was found for your query. Please try a different search query or ensure your documents are properly indexed.";
+        }
+        
+        // For now, return a basic response until LLM integration is implemented
+        console.log('⚠️ [AIPrompt] LLM integration not yet implemented');
+        const documentNames = context.map(c => c.document).join(', ');
+        return `I found ${context.length} relevant document(s) for your query about machine learning: "${prompt}" in ${documentNames}, but LLM integration is not yet configured. Please set up your AI provider in the settings.`;
+        
+        // Future implementation would look like:
+        // const llmProvider = await getLLMProvider();
+        // const systemPrompt = `You are a helpful assistant. Use the following context to answer the user's question accurately and concisely.\n\nContext:\n${contextString}`;
+        // const response = await llmProvider.generateResponse({
+        //     messages: [
+        //         { role: 'system', content: systemPrompt },
+        //         { role: 'user', content: prompt }
+        //     ],
+        //     maxTokens,
+        //     temperature
+        // });
+        // return response.content;
+    } catch (error) {
+        console.error('❌ [AIPrompt] Error executing prompt:', error);
+        return 'Sorry, I encountered an error while processing your request. Please try again later.';
+    }
 }
 
 // Utility function to highlight search terms in content

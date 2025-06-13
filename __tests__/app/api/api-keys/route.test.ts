@@ -3,10 +3,6 @@ import { GET, POST } from '../../../../../app/api/api-keys/route';
 import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 import { requireAuth } from '../../../../../lib/auth';
 
-// Mock the ApiKeyService and auth
-jest.mock('../../../../../lib/services/apiKeyService');
-jest.mock('../../../../../lib/auth');
-
 const mockApiKeyService = ApiKeyService as jest.Mocked<typeof ApiKeyService>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
@@ -89,7 +85,7 @@ describe('/api/api-keys', () => {
             const response = await POST(mockRequest);
             const data = await response.json();
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(201);
             expect(data).toEqual(mockApiKey);
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'New API Key',

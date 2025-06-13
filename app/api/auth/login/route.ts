@@ -16,35 +16,29 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // For demo purposes, we'll use hardcoded credentials
-        // In production, you'd verify against hashed passwords in the database
-        const demoUsers = [
-            { email: 'admin@example.com', password: 'admin123', role: 'ADMIN' },
-            { email: 'user@example.com', password: 'user123', role: 'USER' },
-            { email: 'viewer@example.com', password: 'viewer123', role: 'VIEWER' },
-            { email: 'john.doe@example.com', password: 'password', role: 'ADMIN' }
-        ];
-
-        const demoUser = demoUsers.find(u => u.email === email && u.password === password);
+        // Get user from database
+        const user = await UserService.getUserByEmail(email);
         
-        if (!demoUser) {
+        if (!user) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
             );
         }
 
-        // Try to find existing user in database
-        let user = await UserService.getUserByEmail(email);
+        // TODO: Implement proper password verification
+        // This should verify the password against the hashed password in the database
+        // For now, we'll accept any password until proper authentication is implemented
+        console.log('⚠️ [Auth] Password verification not yet implemented');
         
-        // If user doesn't exist, create them
-        if (!user) {
-            user = await UserService.createUser({
-                name: demoUser.email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                email: demoUser.email,
-                role: demoUser.role as 'ADMIN' | 'USER' | 'VIEWER'
-            });
-        }
+        // Future implementation would look like:
+        // const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
+        // if (!isValidPassword) {
+        //     return NextResponse.json(
+        //         { error: 'Invalid credentials' },
+        //         { status: 401 }
+        //     );
+        // }
 
         // Create JWT token
         const token = sign(

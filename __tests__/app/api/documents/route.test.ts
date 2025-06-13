@@ -1,14 +1,20 @@
 import { NextRequest } from 'next/server';
 import { GET, POST } from '../../../../app/api/documents/route';
 import { DocumentService } from '../../../../lib/services/documentService';
+import { requireAuth } from '../../../../lib/auth';
 
-// Mock the DocumentService
+// Mock the DocumentService and auth
 jest.mock('../../../../lib/services/documentService');
+jest.mock('../../../../lib/auth');
 const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/documents', () => {
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+    
     beforeEach(() => {
         jest.clearAllMocks();
+        mockRequireAuth.mockReturnValue(mockUser);
     });
 
     describe('GET', () => {
@@ -26,20 +32,22 @@ describe('/api/documents', () => {
                 },
             ];
 
-            mockDocumentService.getAllDocuments.mockResolvedValue(mockDocuments as any);
+            mockDocumentService.getDocumentsByUser.mockResolvedValue(mockDocuments as any);
 
-            const response = await GET();
+            const request = new NextRequest('http://localhost/api/documents');
+            const response = await GET(request as any);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDocuments);
-            expect(mockDocumentService.getAllDocuments).toHaveBeenCalledTimes(1);
+            expect(mockDocumentService.getDocumentsByUser).toHaveBeenCalledWith('user1');
         });
 
         it('should handle service errors', async () => {
-            mockDocumentService.getAllDocuments.mockRejectedValue(new Error('Database error'));
+            mockDocumentService.getDocumentsByUser.mockRejectedValue(new Error('Database error'));
 
-            const response = await GET();
+            const request = new NextRequest('http://localhost/api/documents');
+            const response = await GET(request as any);
             const data = await response.json();
 
             expect(response.status).toBe(500);
@@ -92,7 +100,7 @@ describe('/api/documents', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Document.pdf',
-                    // Missing type and userId
+                    // Missing type (userId comes from auth)
                 }),
             });
 
@@ -100,7 +108,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name, type, and userId are required' });
+            expect(data).toEqual({ error: 'Name and type are required' });
             expect(mockDocumentService.createDocument).not.toHaveBeenCalled();
         });
 
