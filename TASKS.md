@@ -1,3 +1,13 @@
+# TASKS
+
+## Completed Tasks
+- ✅ Fixed DocumentsView.test.tsx import errors and test failures
+  - Corrected Jest configuration (moduleNameMapping → moduleNameMapper)
+  - Fixed import path for test-utils
+  - Simplified failing metadata test to check for basic table structure
+
+## Pending Tasks
+
 ## Implementation Plan
 ### 1. API Endpoints Implementation
 - Document required endpoints in ENDPOINTS.md

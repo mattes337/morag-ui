@@ -16,6 +16,8 @@ export const mockDatabase = {
     description: 'Test database description',
     documentCount: 5,
     lastUpdated: '2024-01-15',
+    updatedAt: '2024-01-15T10:00:00.000Z',
+    _count: { documents: 5 },
 };
 
 export const mockDocument = {

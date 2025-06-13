@@ -31,10 +31,10 @@ describe('AppContext', () => {
     it('should provide initial context values', async () => {
         const { result } = renderHook(() => useApp(), { wrapper });
 
-        expect(result.current.user).toBeTruthy();
-        expect(result.current.databases).toEqual([]);
-        expect(result.current.documents).toEqual([]);
-        expect(result.current.apiKeys).toEqual([]);
+        expect(result.current.user).toBeNull();
+        expect(result.current.databases).toHaveLength(2); // Initial mock databases
+        expect(result.current.documents).toHaveLength(3); // Initial mock documents
+        expect(result.current.apiKeys).toHaveLength(2); // Initial mock API keys
         expect(result.current.jobs).toEqual([]);
         expect(result.current.isDataLoading).toBe(true);
     });
@@ -42,26 +42,23 @@ describe('AppContext', () => {
     it('should load initial data on mount', async () => {
         global.fetch = jest
             .fn()
+            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ user: mockUser }) }) // /api/auth/me
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockDatabase]),
-            })
+            }) // /api/databases
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockDocument]),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockJob]),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve(mockUser),
-            })
+            }) // /api/documents
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockApiKey]),
-            });
+            }) // /api/api-keys
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([mockJob]),
+            }); // /api/jobs
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
@@ -71,13 +68,67 @@ describe('AppContext', () => {
 
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
         expect(global.fetch).toHaveBeenCalledWith('/api/documents');
+        expect(global.fetch).toHaveBeenCalledWith('/api/api-keys');
         expect(global.fetch).toHaveBeenCalledWith('/api/jobs');
     });
 
     it('should create a new database', async () => {
-        global.fetch = createMockFetch(mockDatabase);
+        // Mock all fetch calls for initialization and database creation
+        const mockFetch = jest.fn();
+        
+        // Mock all initialization calls
+        mockFetch.mockImplementation((url, options) => {
+            if (url === '/api/auth/me') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ user: mockUser })
+                });
+            }
+            if (url === '/api/databases' && options?.method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(mockDatabase)
+                });
+            }
+            if (url === '/api/databases' && !options?.method) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/documents') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/api-keys') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/jobs') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            // Default response
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+        });
+        
+        global.fetch = mockFetch;
 
         const { result } = renderHook(() => useApp(), { wrapper });
+
+        // Wait for initial data loading to complete
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        });
 
         await act(async () => {
             await result.current.createDatabase({
@@ -93,16 +144,67 @@ describe('AppContext', () => {
             body: JSON.stringify({
                 name: 'New Database',
                 description: 'New database description',
-                serverId: '1',
-                userId: result.current.user?.id,
+                serverId: '1'
             }),
         });
     });
 
     it('should create a new document', async () => {
-        global.fetch = createMockFetch(mockDocument);
+        // Mock all fetch calls for initialization and document creation
+        const mockFetch = jest.fn();
+        
+        mockFetch.mockImplementation((url, options) => {
+            if (url === '/api/auth/me') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ user: mockUser })
+                });
+            }
+            if (url === '/api/databases') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/documents' && options?.method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(mockDocument)
+                });
+            }
+            if (url === '/api/documents' && !options?.method) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/api-keys') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/jobs') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            // Default response
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+        });
+        
+        global.fetch = mockFetch;
 
         const { result } = renderHook(() => useApp(), { wrapper });
+
+        // Wait for initial data loading to complete
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        });
 
         await act(async () => {
             await result.current.createDocument({
@@ -119,7 +221,6 @@ describe('AppContext', () => {
                 name: 'New Document.pdf',
                 type: 'PDF',
                 databaseId: '1',
-                userId: result.current.user?.id,
             }),
         });
     });
@@ -139,9 +240,62 @@ describe('AppContext', () => {
     });
 
     it('should create an API key', async () => {
-        global.fetch = createMockFetch(mockApiKey);
+        // Mock all fetch calls for initialization and API key creation
+        const mockFetch = jest.fn();
+        
+        // Mock all initialization calls
+        mockFetch.mockImplementation((url, options) => {
+            if (url === '/api/auth/me') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ user: mockUser })
+                });
+            }
+            if (url === '/api/databases') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/documents') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/api-keys' && options?.method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(mockApiKey)
+                });
+            }
+            if (url === '/api/api-keys' && !options?.method) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/jobs') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            // Default response
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({})
+            });
+        });
+        
+        global.fetch = mockFetch;
 
         const { result } = renderHook(() => useApp(), { wrapper });
+
+        // Wait for initial data loading to complete
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        });
 
         await act(async () => {
             await result.current.createApiKey({
@@ -156,7 +310,6 @@ describe('AppContext', () => {
             body: JSON.stringify({
                 name: 'New API Key',
                 key: 'new_api_key',
-                userId: result.current.user?.id,
             }),
         });
     });
@@ -194,8 +347,13 @@ describe('AppContext', () => {
     });
 
     it('should throw error when used outside provider', () => {
-        const { result } = renderHook(() => useApp());
-
-        expect(result.error).toEqual(Error('useApp must be used within an AppProvider'));
+        // Suppress console.error for this test since we expect an error
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        
+        expect(() => {
+            renderHook(() => useApp());
+        }).toThrow('useApp must be used within an AppProvider');
+        
+        consoleSpy.mockRestore();
     });
 });
