@@ -19,37 +19,28 @@ export function DatabasesView({
     // Show empty state when no databases exist
     if (databases.length === 0) {
         return (
-            <div className="space-y-6" data-oid="08c2oio">
-                <div className="flex justify-between items-center" data-oid="clbn0dh">
-                    <h2 className="text-2xl font-bold text-gray-900" data-oid="ilqhhz5">
-                        Vector Databases
-                    </h2>
+            <div
+                className="flex flex-col items-center justify-center py-16 px-4"
+                data-oid="yoetzk7"
+            >
+                <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="x18fsqn">
+                    <DatabaseIcon className="w-16 h-16 text-gray-400" data-oid="4t6l9md" />
                 </div>
-
-                {/* Empty State */}
-                <div
-                    className="flex flex-col items-center justify-center py-16 px-4"
-                    data-oid="yoetzk7"
+                <h3 className="text-xl font-semibold text-gray-900 mb-2" data-oid="70:3cwo">
+                    No databases yet
+                </h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md" data-oid="6qhyrc3">
+                    Get started by creating your first vector database. You'll be able to store and
+                    search through your documents using AI-powered semantic search.
+                </p>
+                <button
+                    onClick={onCreateDatabase}
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    data-oid="uqqsejy"
                 >
-                    <div className="bg-gray-100 rounded-full p-6 mb-6" data-oid="x18fsqn">
-                        <DatabaseIcon className="w-16 h-16 text-gray-400" data-oid="4t6l9md" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2" data-oid="70:3cwo">
-                        No databases yet
-                    </h3>
-                    <p className="text-gray-600 text-center mb-8 max-w-md" data-oid="6qhyrc3">
-                        Get started by creating your first vector database. You'll be able to store
-                        and search through your documents using AI-powered semantic search.
-                    </p>
-                    <button
-                        onClick={onCreateDatabase}
-                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                        data-oid="uqqsejy"
-                    >
-                        <Plus className="w-5 h-5 mr-2" data-oid="9762036" />
-                        Create Your First Database
-                    </button>
-                </div>
+                    <Plus className="w-5 h-5 mr-2" data-oid="9762036" />
+                    Create Your First Database
+                </button>
             </div>
         );
     }
