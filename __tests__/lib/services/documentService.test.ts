@@ -1,25 +1,25 @@
-// Mock the DocumentService
-jest.mock('../../../lib/services/documentService');
-
 import { DocumentService } from '../../../lib/services/documentService';
 import { DocumentState } from '@prisma/client';
 
-// Create mock DocumentService
+// Mock the DocumentService class
+jest.mock('../../../lib/services/documentService', () => ({
+    DocumentService: {
+        createDocument: jest.fn(),
+        getAllDocuments: jest.fn(),
+        getDocumentById: jest.fn(),
+        updateDocument: jest.fn(),
+        deleteDocument: jest.fn(),
+        getDocumentsByUser: jest.fn(),
+        getDocumentsByDatabase: jest.fn(),
+        updateDocumentQuality: jest.fn(),
+    },
+}));
+
 const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
 
 describe('DocumentService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        
-        // Setup all mock methods
-        mockDocumentService.createDocument = jest.fn();
-        mockDocumentService.getAllDocuments = jest.fn();
-        mockDocumentService.getDocumentById = jest.fn();
-        mockDocumentService.updateDocument = jest.fn();
-        mockDocumentService.deleteDocument = jest.fn();
-        mockDocumentService.getDocumentsByUser = jest.fn();
-        mockDocumentService.getDocumentsByDatabase = jest.fn();
-        mockDocumentService.updateDocumentQuality = jest.fn();
     });
 
     describe('createDocument', () => {

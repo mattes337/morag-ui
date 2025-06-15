@@ -1,23 +1,24 @@
 // Mock the ApiKeyService
-jest.mock('../../../lib/services/apiKeyService');
-
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
 
-// Create mock ApiKeyService
+// Mock the ApiKeyService class
+jest.mock('../../../lib/services/apiKeyService', () => ({
+    ApiKeyService: {
+        createApiKey: jest.fn(),
+        getAllApiKeys: jest.fn(),
+        getApiKeyById: jest.fn(),
+        getApiKeysByUser: jest.fn(),
+        updateApiKey: jest.fn(),
+        deleteApiKey: jest.fn(),
+        validateApiKey: jest.fn(),
+    },
+}));
+
 const mockApiKeyService = ApiKeyService as jest.Mocked<typeof ApiKeyService>;
 
 describe('ApiKeyService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        
-        // Setup all mock methods
-        mockApiKeyService.createApiKey = jest.fn();
-        mockApiKeyService.getAllApiKeys = jest.fn();
-        mockApiKeyService.getApiKeyById = jest.fn();
-        mockApiKeyService.getApiKeysByUser = jest.fn();
-        mockApiKeyService.updateApiKey = jest.fn();
-        mockApiKeyService.deleteApiKey = jest.fn();
-        mockApiKeyService.validateApiKey = jest.fn();
     });
 
     describe('createApiKey', () => {
@@ -27,12 +28,18 @@ describe('ApiKeyService', () => {
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                created: new Date(),
+                lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 user: {
                     id: 'user1',
                     name: 'Test User',
                     email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
                 },
             };
 
@@ -40,11 +47,13 @@ describe('ApiKeyService', () => {
 
             const result = await ApiKeyService.createApiKey({
                 name: 'Test API Key',
+                key: 'test-key-123',
                 userId: 'user1',
             });
 
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'Test API Key',
+                key: 'test-key-123',
                 userId: 'user1',
             });
             expect(result).toEqual(mockApiKey);
@@ -98,12 +107,18 @@ describe('ApiKeyService', () => {
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                created: new Date(),
+                lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 user: {
                     id: 'user1',
                     name: 'Test User',
                     email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
                 },
             };
 
@@ -191,6 +206,8 @@ describe('ApiKeyService', () => {
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                created: new Date(),
+                lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -211,12 +228,18 @@ describe('ApiKeyService', () => {
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                created: new Date(),
+                lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 user: {
                     id: 'user1',
                     name: 'Test User',
                     email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
                 },
             };
 

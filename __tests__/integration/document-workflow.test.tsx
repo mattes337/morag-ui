@@ -53,7 +53,7 @@ describe('Document Workflow Integration', () => {
 
         const TestComponent = () => {
             const [showAddDialog, setShowAddDialog] = React.useState(false);
-            const [selectedDocument, setSelectedDocument] = React.useState(null);
+            const [selectedDocument, setSelectedDocument] = React.useState<any>(null);
 
             return (
                 <AppProvider>

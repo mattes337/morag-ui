@@ -13,7 +13,7 @@ const mockSign = sign as jest.MockedFunction<typeof sign>;
 describe('/api/auth/login', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockSign.mockReturnValue('mock-token');
+        (mockSign as any).mockReturnValue('mock-token');
     });
 
     describe('POST', () => {

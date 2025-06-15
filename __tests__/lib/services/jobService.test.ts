@@ -11,7 +11,11 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
-// Mock the jobService module to ensure proper function exports
+// Import AFTER mocking
+import { JobService } from '../../../lib/services/jobService';
+import { JobStatus } from '@prisma/client';
+
+// Mock the JobService class
 jest.mock('../../../lib/services/jobService', () => ({
     JobService: {
         createJob: jest.fn(),
@@ -27,11 +31,6 @@ jest.mock('../../../lib/services/jobService', () => ({
     },
 }));
 
-// Import AFTER mocking
-import { JobService } from '../../../lib/services/jobService';
-import { JobStatus } from '@prisma/client';
-
-// Get the mocked functions
 const mockedJobService = JobService as jest.Mocked<typeof JobService>;
 
 describe('JobService', () => {

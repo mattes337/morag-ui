@@ -17,7 +17,7 @@ const mockGetDatabaseServersByUser = jest.fn();
 (DatabaseServerService.getDatabaseServersByUser as jest.Mock) = mockGetDatabaseServersByUser;
 
 describe('/api/servers', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER' };
     
     beforeEach(() => {
         jest.clearAllMocks();

@@ -19,9 +19,9 @@ jest.mock('../../../../../lib/auth', () => ({
 }));
 
 // Import AFTER mocking
-import { GET, POST } from '../../../../../app/api/api-keys/route';
-import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
-import { requireAuth } from '../../../../../lib/auth';
+import { GET, POST } from '../../../../app/api/api-keys/route';
+import { ApiKeyService } from '../../../../lib/services/apiKeyService';
+import { requireAuth } from '../../../../lib/auth';
 
 const mockApiKeyService = jest.mocked(ApiKeyService);
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
