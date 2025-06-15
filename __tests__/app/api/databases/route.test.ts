@@ -1,11 +1,19 @@
 import { NextRequest } from 'next/server';
+
+// Mock the database service functions and auth
+jest.mock('../../../../lib/services/databaseService', () => ({
+    getDatabasesByUser: jest.fn(),
+    createDatabase: jest.fn(),
+}));
+jest.mock('../../../../lib/auth', () => ({
+    requireAuth: jest.fn(),
+}));
+
+// Import AFTER mocking
 import { GET, POST } from '../../../../app/api/databases/route';
 import { getDatabasesByUser, createDatabase } from '../../../../lib/services/databaseService';
 import { requireAuth } from '../../../../lib/auth';
 
-// Mock the database service functions and auth
-jest.mock('../../../../lib/services/databaseService');
-jest.mock('../../../../lib/auth');
 const mockGetDatabasesByUser = getDatabasesByUser as jest.MockedFunction<typeof getDatabasesByUser>;
 const mockCreateDatabase = createDatabase as jest.MockedFunction<typeof createDatabase>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;

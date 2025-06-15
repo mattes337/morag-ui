@@ -1,4 +1,24 @@
 import { NextRequest } from 'next/server';
+
+// Mock the services
+jest.mock('../../../../../lib/services/apiKeyService', () => ({
+    ApiKeyService: {
+        createApiKey: jest.fn(),
+        getAllApiKeys: jest.fn(),
+        getApiKeysByUser: jest.fn(),
+        getApiKeyById: jest.fn(),
+        getApiKeyByKey: jest.fn(),
+        updateApiKey: jest.fn(),
+        updateLastUsed: jest.fn(),
+        deleteApiKey: jest.fn(),
+    },
+}));
+
+jest.mock('../../../../../lib/auth', () => ({
+    requireAuth: jest.fn(),
+}));
+
+// Import AFTER mocking
 import { GET, POST } from '../../../../../app/api/api-keys/route';
 import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 import { requireAuth } from '../../../../../lib/auth';

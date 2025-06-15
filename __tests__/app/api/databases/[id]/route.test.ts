@@ -1,9 +1,15 @@
 import { NextRequest } from 'next/server';
-import { GET, PUT, DELETE } from '../../../../../app/api/databases/[id]/route';
-import { getDatabaseById, updateDatabase, deleteDatabase } from '../../../../../lib/services/databaseService';
 
 // Mock the database service functions
-jest.mock('../../../../../lib/services/databaseService');
+jest.mock('../../../../../lib/services/databaseService', () => ({
+    getDatabaseById: jest.fn(),
+    updateDatabase: jest.fn(),
+    deleteDatabase: jest.fn(),
+}));
+
+// Import AFTER mocking
+import { GET, PUT, DELETE } from '../../../../../app/api/databases/[id]/route';
+import { getDatabaseById, updateDatabase, deleteDatabase } from '../../../../../lib/services/databaseService';
 
 const mockGetDatabaseById = getDatabaseById as jest.MockedFunction<typeof getDatabaseById>;
 const mockUpdateDatabase = updateDatabase as jest.MockedFunction<typeof updateDatabase>;

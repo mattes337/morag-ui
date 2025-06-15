@@ -1,11 +1,20 @@
 import { NextRequest } from 'next/server';
+
+// Mock the DocumentService and auth
+jest.mock("../../../../lib/services/documentService", () => ({
+    DocumentService: {
+        getDocumentsByUser: jest.fn(),
+        createDocument: jest.fn(),
+    },
+}));
+jest.mock("../../../../lib/auth", () => ({
+    requireAuth: jest.fn(),
+}));
+
+// Import AFTER mocking
 import { GET, POST } from "../../../../app/api/documents/route";
 import { DocumentService } from "../../../../lib/services/documentService";
 import { requireAuth } from "../../../../lib/auth";
-
-// Mock the DocumentService and auth
-jest.mock("../../../../lib/services/documentService");
-jest.mock("../../../../lib/auth");
 
 const mockDocumentService = jest.mocked(DocumentService);
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;

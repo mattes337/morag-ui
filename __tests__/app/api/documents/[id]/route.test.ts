@@ -1,9 +1,17 @@
 import { NextRequest } from 'next/server';
-import { GET, PUT, DELETE } from '../../../../../app/api/documents/[id]/route';
-import { DocumentService } from '../../../../../lib/services/documentService';
 
 // Mock the DocumentService
-jest.mock('../../../../../lib/services/documentService');
+jest.mock('../../../../../lib/services/documentService', () => ({
+    DocumentService: {
+        getDocumentById: jest.fn(),
+        updateDocument: jest.fn(),
+        deleteDocument: jest.fn(),
+    },
+}));
+
+// Import AFTER mocking
+import { GET, PUT, DELETE } from '../../../../../app/api/documents/[id]/route';
+import { DocumentService } from '../../../../../lib/services/documentService';
 
 const mockDocumentService = jest.mocked(DocumentService);
 

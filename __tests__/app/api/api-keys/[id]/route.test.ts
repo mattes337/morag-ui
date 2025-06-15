@@ -1,9 +1,16 @@
 import { NextRequest } from 'next/server';
-import { DELETE } from '../../../../../app/api/api-keys/[id]/route';
-import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 
 // Mock the ApiKeyService
-jest.mock('../../../../../lib/services/apiKeyService');
+jest.mock('../../../../../lib/services/apiKeyService', () => ({
+    ApiKeyService: {
+        deleteApiKey: jest.fn(),
+        getApiKeyById: jest.fn(),
+    },
+}));
+
+// Import AFTER mocking
+import { DELETE } from '../../../../../app/api/api-keys/[id]/route';
+import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 
 const mockApiKeyService = jest.mocked(ApiKeyService);
 

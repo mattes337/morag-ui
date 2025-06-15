@@ -1,5 +1,18 @@
 // Mock Prisma
-jest.mock('@prisma/client');
+jest.mock('../../../lib/database', () => ({
+    prisma: {
+        apiKey: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        user: {
+            findUnique: jest.fn(),
+        },
+    },
+}));
 
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
 import { prisma } from '../../../lib/database';
