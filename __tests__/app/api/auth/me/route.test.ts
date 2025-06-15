@@ -4,19 +4,26 @@ import { getAuthUser, requireAuth } from '../../../../../lib/auth';
 import { UserService } from '../../../../../lib/services/userService';
 
 // Mock the auth and UserService
-jest.mock('../../../../../lib/auth');
+jest.mock('../../../../../lib/auth', () => ({
+    getAuthUser: jest.fn(),
+    requireAuth: jest.fn()
+}));
 jest.mock('../../../../../lib/services/userService');
 
 const mockGetAuthUser = getAuthUser as jest.MockedFunction<typeof getAuthUser>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
-const mockUserService = jest.mocked(UserService);
+
+// Mock static methods
+const mockGetUserById = jest.fn();
+
+(UserService.getUserById as jest.Mock) = mockGetUserById;
 
 describe('/api/auth/me', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
+        mockGetAuthUser.mockReturnValue(mockUser);
     });
 
     describe('GET', () => {
@@ -30,7 +37,7 @@ describe('/api/auth/me', () => {
             };
 
             mockGetAuthUser.mockReturnValue(mockAuthUser);
-            mockUserService.getUserById.mockResolvedValue(mockUser as any);
+            mockGetUserById.mockResolvedValue(mockUser as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
             const response = await GET(mockRequest);
@@ -46,7 +53,7 @@ describe('/api/auth/me', () => {
                 }
             });
             expect(mockGetAuthUser).toHaveBeenCalledWith(mockRequest);
-            expect(mockUserService.getUserById).toHaveBeenCalledWith('user1');
+            expect(mockGetUserById).toHaveBeenCalledWith('user1');
         });
 
         it('should return 401 if not authenticated', async () => {
@@ -58,14 +65,14 @@ describe('/api/auth/me', () => {
 
             expect(response.status).toBe(401);
             expect(data).toEqual({ error: 'Not authenticated' });
-            expect(mockUserService.getUserById).not.toHaveBeenCalled();
+            expect(mockGetUserById).not.toHaveBeenCalled();
         });
 
         it('should return 404 if user not found', async () => {
             const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
             
             mockGetAuthUser.mockReturnValue(mockAuthUser);
-            mockUserService.getUserById.mockResolvedValue(null);
+            mockGetUserById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
             const response = await GET(mockRequest);
@@ -79,7 +86,7 @@ describe('/api/auth/me', () => {
             const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
             
             mockGetAuthUser.mockReturnValue(mockAuthUser);
-            mockUserService.getUserById.mockRejectedValue(new Error('Database error'));
+            mockGetUserById.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
             const response = await GET(mockRequest);

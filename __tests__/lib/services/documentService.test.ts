@@ -1,18 +1,5 @@
 // Mock Prisma
-jest.mock('../../../lib/database', () => ({
-    prisma: {
-        document: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        database: {
-            update: jest.fn(),
-        },
-    },
-}));
+jest.mock('@prisma/client');
 
 import { DocumentService } from '../../../lib/services/documentService';
 import { prisma } from '../../../lib/database';

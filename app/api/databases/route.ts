@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService } from '../../../lib/services/databaseService';
+import { getDatabasesByUser, createDatabase } from '../../../lib/services/databaseService';
 import { requireAuth } from '../../../lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
         const user = requireAuth(request);
-        const databases = await DatabaseService.getDatabasesByUser(user.userId);
+        const databases = await getDatabasesByUser(user.userId);
         return NextResponse.json(databases);
     } catch (error) {
         if (error instanceof Error && error.message === 'Authentication required') {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
             );
         }
         
-        const database = await DatabaseService.createDatabase({
+        const database = await createDatabase({
             name,
             description,
             userId: user.userId, // Use authenticated user's ID

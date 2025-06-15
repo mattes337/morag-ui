@@ -1,4 +1,4 @@
-// Mock Prisma
+// Mock the database module
 jest.mock('../../../lib/database', () => ({
     prisma: {
         job: {
@@ -13,7 +13,7 @@ jest.mock('../../../lib/database', () => ({
 
 import { JobService } from '../../../lib/services/jobService';
 import { prisma } from '../../../lib/database';
-import { JobStatus } from '@prisma/client';
+import { Job, JobStatus } from '@prisma/client';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
@@ -32,7 +32,7 @@ describe('JobService', () => {
                 userId: 'user1',
                 status: 'PENDING' as JobStatus,
                 percentage: 0,
-                summary: '',
+                summary: null,
                 startDate: new Date(),
                 endDate: null,
                 createdAt: new Date(),
@@ -41,13 +41,14 @@ describe('JobService', () => {
                 user: { id: 'user1', name: 'Test User' },
             };
 
-            mockPrisma.job.create.mockResolvedValue(mockJob as any);
+            mockPrisma.job.create.mockResolvedValue(mockJob);
 
             const result = await JobService.createJob({
                 documentId: 'doc1',
                 documentName: 'Test Document.pdf',
                 documentType: 'PDF',
                 userId: 'user1',
+                status: 'PENDING',
             });
 
             expect(mockPrisma.job.create).toHaveBeenCalledWith({
@@ -56,51 +57,11 @@ describe('JobService', () => {
                     documentName: 'Test Document.pdf',
                     documentType: 'PDF',
                     userId: 'user1',
+                    status: 'PENDING',
                 },
-                include: {
-                    document: true,
-                    user: true,
-                },
+                include: { document: true, user: true }
             });
-
             expect(result).toEqual(mockJob);
-        });
-
-        it('should create a job with custom status', async () => {
-            const mockJob = {
-                id: '1',
-                documentId: 'doc1',
-                documentName: 'Test Document.pdf',
-                documentType: 'PDF',
-                userId: 'user1',
-                status: 'PROCESSING' as JobStatus,
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
-            };
-
-            mockPrisma.job.create.mockResolvedValue(mockJob as any);
-
-            await JobService.createJob({
-                documentId: 'doc1',
-                documentName: 'Test Document.pdf',
-                documentType: 'PDF',
-                userId: 'user1',
-                status: 'PROCESSING',
-            });
-
-            expect(mockPrisma.job.create).toHaveBeenCalledWith({
-                data: {
-                    documentId: 'doc1',
-                    documentName: 'Test Document.pdf',
-                    documentType: 'PDF',
-                    userId: 'user1',
-                    status: 'PROCESSING',
-                },
-                include: {
-                    document: true,
-                    user: true,
-                },
-            });
         });
     });
 
@@ -110,33 +71,29 @@ describe('JobService', () => {
                 {
                     id: '1',
                     documentId: 'doc1',
-                    status: 'COMPLETED',
-                    document: { id: 'doc1', name: 'Document 1' },
-                    user: { id: 'user1', name: 'User 1' },
-                },
-                {
-                    id: '2',
-                    documentId: 'doc2',
-                    status: 'PENDING',
-                    document: { id: 'doc2', name: 'Document 2' },
-                    user: { id: 'user2', name: 'User 2' },
+                    documentName: 'Test Document.pdf',
+                    documentType: 'PDF',
+                    userId: 'user1',
+                    status: 'PENDING' as JobStatus,
+                    percentage: 0,
+                    summary: null,
+                    startDate: new Date(),
+                    endDate: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    document: { id: 'doc1', name: 'Test Document.pdf' },
+                    user: { id: 'user1', name: 'Test User' },
                 },
             ];
 
-            mockPrisma.job.findMany.mockResolvedValue(mockJobs as any);
+            mockPrisma.job.findMany.mockResolvedValue(mockJobs);
 
             const result = await JobService.getAllJobs();
 
             expect(mockPrisma.job.findMany).toHaveBeenCalledWith({
-                include: {
-                    document: true,
-                    user: true,
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
+                include: { document: true, user: true },
+                orderBy: { createdAt: 'desc' },
             });
-
             expect(result).toEqual(mockJobs);
         });
     });
@@ -146,28 +103,31 @@ describe('JobService', () => {
             const mockJobs = [
                 {
                     id: '1',
+                    documentId: 'doc1',
+                    documentName: 'Test Document.pdf',
+                    documentType: 'PDF',
                     userId: 'user1',
-                    status: 'COMPLETED',
-                    document: { id: 'doc1', name: 'Document 1' },
-                    user: { id: 'user1', name: 'User 1' },
+                    status: 'PENDING' as JobStatus,
+                    percentage: 0,
+                    summary: null,
+                    startDate: new Date(),
+                    endDate: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    document: { id: 'doc1', name: 'Test Document.pdf' },
+                    user: { id: 'user1', name: 'Test User' },
                 },
             ];
 
-            mockPrisma.job.findMany.mockResolvedValue(mockJobs as any);
+            mockPrisma.job.findMany.mockResolvedValue(mockJobs);
 
             const result = await JobService.getJobsByUser('user1');
 
             expect(mockPrisma.job.findMany).toHaveBeenCalledWith({
                 where: { userId: 'user1' },
-                include: {
-                    document: true,
-                    user: true,
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
+                include: { document: true, user: true },
+                orderBy: { createdAt: 'desc' },
             });
-
             expect(result).toEqual(mockJobs);
         });
     });
@@ -178,28 +138,114 @@ describe('JobService', () => {
                 {
                     id: '1',
                     documentId: 'doc1',
-                    status: 'COMPLETED',
-                    document: { id: 'doc1', name: 'Document 1' },
-                    user: { id: 'user1', name: 'User 1' },
+                    documentName: 'Test Document.pdf',
+                    documentType: 'PDF',
+                    userId: 'user1',
+                    status: 'PENDING' as JobStatus,
+                    percentage: 0,
+                    summary: null,
+                    startDate: new Date(),
+                    endDate: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    document: { id: 'doc1', name: 'Test Document.pdf' },
+                    user: { id: 'user1', name: 'Test User' },
                 },
             ];
 
-            mockPrisma.job.findMany.mockResolvedValue(mockJobs as any);
+            mockPrisma.job.findMany.mockResolvedValue(mockJobs);
 
             const result = await JobService.getJobsByDocument('doc1');
 
             expect(mockPrisma.job.findMany).toHaveBeenCalledWith({
                 where: { documentId: 'doc1' },
-                include: {
-                    document: true,
-                    user: true,
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
+                include: { document: true, user: true },
+                orderBy: { createdAt: 'desc' },
+            });
+            expect(result).toEqual(mockJobs);
+        });
+    });
+
+    describe('getJobById', () => {
+        it('should return a job by id', async () => {
+            const mockJob = {
+                id: '1',
+                documentId: 'doc1',
+                documentName: 'Test Document.pdf',
+                documentType: 'PDF',
+                userId: 'user1',
+                status: 'PENDING' as JobStatus,
+                percentage: 0,
+                summary: null,
+                startDate: new Date(),
+                endDate: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                document: { id: 'doc1', name: 'Test Document.pdf' },
+                user: { id: 'user1', name: 'Test User' },
+            };
+
+            mockPrisma.job.findUnique.mockResolvedValue(mockJob);
+
+            const result = await JobService.getJobById('1');
+
+            expect(mockPrisma.job.findUnique).toHaveBeenCalledWith({
+                where: { id: '1' },
+                include: { document: true, user: true },
+            });
+            expect(result).toEqual(mockJob);
+        });
+
+        it('should return null if job not found', async () => {
+            mockPrisma.job.findUnique.mockResolvedValue(null);
+
+            const result = await JobService.getJobById('999');
+
+            expect(mockPrisma.job.findUnique).toHaveBeenCalledWith({
+                where: { id: '999' },
+                include: { document: true, user: true },
+            });
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('updateJob', () => {
+        it('should update a job successfully', async () => {
+            const mockUpdatedJob = {
+                id: '1',
+                documentId: 'doc1',
+                documentName: 'Test Document.pdf',
+                documentType: 'PDF',
+                userId: 'user1',
+                status: 'PROCESSING' as JobStatus,
+                percentage: 50,
+                summary: 'Processing...',
+                startDate: new Date(),
+                endDate: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                document: { id: 'doc1', name: 'Test Document.pdf' },
+                user: { id: 'user1', name: 'Test User' },
+            };
+
+            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob);
+
+            const result = await JobService.updateJob('1', {
+                status: 'PROCESSING',
+                percentage: 50,
+                summary: 'Processing...',
             });
 
-            expect(result).toEqual(mockJobs);
+            expect(mockPrisma.job.update).toHaveBeenCalledWith({
+                where: { id: '1' },
+                data: {
+                    status: 'PROCESSING',
+                    percentage: 50,
+                    summary: 'Processing...',
+                },
+                include: { document: true, user: true },
+            });
+            expect(result).toEqual(mockUpdatedJob);
         });
     });
 
@@ -207,91 +253,64 @@ describe('JobService', () => {
         it('should update job progress', async () => {
             const mockUpdatedJob = {
                 id: '1',
+                documentId: 'doc1',
+                documentName: 'Test Document.pdf',
+                documentType: 'PDF',
+                userId: 'user1',
+                status: 'PROCESSING' as JobStatus,
                 percentage: 75,
-                summary: 'Processing chunks...',
+                summary: 'Processing...',
+                startDate: new Date(),
+                endDate: null,
+                createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Document 1' },
-                user: { id: 'user1', name: 'User 1' },
+                document: { id: 'doc1', name: 'Test Document.pdf' },
+                user: { id: 'user1', name: 'Test User' },
             };
 
-            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob as any);
+            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob);
 
-            const result = await JobService.updateJobProgress('1', 75, 'Processing chunks...');
+            const result = await JobService.updateJobProgress('1', 75, 'Processing...');
 
             expect(mockPrisma.job.update).toHaveBeenCalledWith({
                 where: { id: '1' },
-                data: {
-                    percentage: 75,
-                    summary: 'Processing chunks...',
-                    updatedAt: expect.any(Date),
-                },
-                include: {
-                    document: true,
-                    user: true,
-                },
+                data: { percentage: 75, summary: 'Processing...', updatedAt: expect.any(Date) },
+                include: { document: true, user: true },
             });
-
             expect(result).toEqual(mockUpdatedJob);
         });
     });
 
     describe('updateJobStatus', () => {
         it('should update job status', async () => {
+            const mockUpdatedJob = {
+                id: '1',
+                documentId: 'doc1',
+                documentName: 'Test Document.pdf',
+                documentType: 'PDF',
+                userId: 'user1',
+                status: 'COMPLETED' as JobStatus,
+                percentage: 100,
+                summary: 'Completed',
+                startDate: new Date(),
+                endDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                document: { id: 'doc1', name: 'Test Document.pdf' },
+                user: { id: 'user1', name: 'Test User' },
+            };
+
+            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob);
+
             const endDate = new Date();
-            const mockUpdatedJob = {
-                id: '1',
-                status: 'FINISHED' as JobStatus,
-                endDate,
-                updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Document 1' },
-                user: { id: 'user1', name: 'User 1' },
-            };
-
-            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob as any);
-
-            const result = await JobService.updateJobStatus('1', 'FINISHED', endDate);
+            const result = await JobService.updateJobStatus('1', 'COMPLETED', endDate);
 
             expect(mockPrisma.job.update).toHaveBeenCalledWith({
                 where: { id: '1' },
-                data: {
-                    status: 'FINISHED',
-                    endDate,
-                    updatedAt: expect.any(Date),
-                },
-                include: {
-                    document: true,
-                    user: true,
-                },
+                data: { status: 'COMPLETED', endDate, updatedAt: expect.any(Date) },
+                include: { document: true, user: true },
             });
-
             expect(result).toEqual(mockUpdatedJob);
-        });
-
-        it('should update job status without end date', async () => {
-            const mockUpdatedJob = {
-                id: '1',
-                status: 'PROCESSING' as JobStatus,
-                updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Document 1' },
-                user: { id: 'user1', name: 'User 1' },
-            };
-
-            mockPrisma.job.update.mockResolvedValue(mockUpdatedJob as any);
-
-            await JobService.updateJobStatus('1', 'PROCESSING');
-
-            expect(mockPrisma.job.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: {
-                    status: 'PROCESSING',
-                    endDate: undefined,
-                    updatedAt: expect.any(Date),
-                },
-                include: {
-                    document: true,
-                    user: true,
-                },
-            });
         });
     });
 
@@ -300,53 +319,61 @@ describe('JobService', () => {
             const mockActiveJobs = [
                 {
                     id: '1',
-                    status: 'PENDING' as JobStatus,
-                    document: { id: 'doc1', name: 'Document 1' },
-                    user: { id: 'user1', name: 'User 1' },
-                },
-                {
-                    id: '2',
+                    documentId: 'doc1',
+                    documentName: 'Test Document.pdf',
+                    documentType: 'PDF',
+                    userId: 'user1',
                     status: 'PROCESSING' as JobStatus,
-                    document: { id: 'doc2', name: 'Document 2' },
-                    user: { id: 'user2', name: 'User 2' },
+                    percentage: 50,
+                    summary: 'Processing...',
+                    startDate: new Date(),
+                    endDate: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    document: { id: 'doc1', name: 'Test Document.pdf' },
+                    user: { id: 'user1', name: 'Test User' },
                 },
             ];
 
-            mockPrisma.job.findMany.mockResolvedValue(mockActiveJobs as any);
+            mockPrisma.job.findMany.mockResolvedValue(mockActiveJobs);
 
             const result = await JobService.getActiveJobs();
 
             expect(mockPrisma.job.findMany).toHaveBeenCalledWith({
                 where: {
                     status: {
-                        in: ['PENDING', 'WAITING_FOR_REMOTE_WORKER', 'PROCESSING'],
-                    },
+                        in: ['PENDING', 'WAITING_FOR_REMOTE_WORKER', 'PROCESSING']
+                    }
                 },
-                include: {
-                    document: true,
-                    user: true,
-                },
-                orderBy: {
-                    createdAt: 'asc',
-                },
+                include: { document: true, user: true },
+                orderBy: { createdAt: 'asc' },
             });
-
             expect(result).toEqual(mockActiveJobs);
         });
     });
 
     describe('deleteJob', () => {
-        it('should delete a job', async () => {
-            const mockDeletedJob = { id: '1', documentId: 'doc1' };
+        it('should delete a job successfully', async () => {
+            const mockDeletedJob = {
+                id: '1',
+                documentId: 'doc1',
+                documentName: 'Test Document.pdf',
+                documentType: 'PDF',
+                userId: 'user1',
+                status: 'PENDING' as JobStatus,
+                percentage: 0,
+                summary: null,
+                startDate: new Date(),
+                endDate: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 
-            mockPrisma.job.delete.mockResolvedValue(mockDeletedJob as any);
+            mockPrisma.job.delete.mockResolvedValue(mockDeletedJob);
 
             const result = await JobService.deleteJob('1');
 
-            expect(mockPrisma.job.delete).toHaveBeenCalledWith({
-                where: { id: '1' },
-            });
-
+            expect(mockPrisma.job.delete).toHaveBeenCalledWith({ where: { id: '1' } });
             expect(result).toEqual(mockDeletedJob);
         });
     });

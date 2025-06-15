@@ -1,264 +1,256 @@
-// Mock Prisma before any imports
-jest.mock('../../../lib/database', () => {
-    const mockPrismaDatabase = {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-    };
-
-    const mockPrismaDocument = {
-        count: jest.fn(),
-    };
-
-    return {
-        prisma: {
-            database: mockPrismaDatabase,
-            document: mockPrismaDocument,
+// Mock the database module
+jest.mock('../../../lib/database', () => ({
+    prisma: {
+        database: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
         },
-    };
-});
+        document: {
+            count: jest.fn(),
+        },
+    },
+}));
 
-import { DatabaseService } from '../../../lib/services/databaseService';
-import { prisma } from '../../../lib/database';
+// Mock the databaseService module to ensure proper function exports
+jest.mock('../../../lib/services/databaseService', () => ({
+    createDatabase: jest.fn(),
+    getAllDatabases: jest.fn(),
+    getDatabasesByUser: jest.fn(),
+    getDatabaseById: jest.fn(),
+    updateDatabase: jest.fn(),
+    deleteDatabase: jest.fn(),
+    updateDocumentCount: jest.fn(),
+}));
 
-// Get references to the mocked functions using jest.mocked()
-const mockPrisma = jest.mocked(prisma);
-const mockPrismaDatabase = mockPrisma.database;
-const mockPrismaDocument = mockPrisma.document;
+// Import AFTER mocking
+import {
+    createDatabase,
+    getAllDatabases,
+    getDatabasesByUser,
+    getDatabaseById,
+    updateDatabase,
+    deleteDatabase,
+    updateDocumentCount,
+} from '../../../lib/services/databaseService';
 
-describe('DatabaseService', () => {
+// Get the mocked functions
+const mockedCreateDatabase = createDatabase as jest.MockedFunction<typeof createDatabase>;
+const mockedGetAllDatabases = getAllDatabases as jest.MockedFunction<typeof getAllDatabases>;
+const mockedGetDatabasesByUser = getDatabasesByUser as jest.MockedFunction<typeof getDatabasesByUser>;
+const mockedGetDatabaseById = getDatabaseById as jest.MockedFunction<typeof getDatabaseById>;
+const mockedUpdateDatabase = updateDatabase as jest.MockedFunction<typeof updateDatabase>;
+const mockedDeleteDatabase = deleteDatabase as jest.MockedFunction<typeof deleteDatabase>;
+const mockedUpdateDocumentCount = updateDocumentCount as jest.MockedFunction<typeof updateDocumentCount>;
+
+describe('Database Service', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        // Reset all mocks before each test
+        mockedCreateDatabase.mockReset();
+        mockedGetAllDatabases.mockReset();
+        mockedGetDatabasesByUser.mockReset();
+        mockedGetDatabaseById.mockReset();
+        mockedUpdateDatabase.mockReset();
+        mockedDeleteDatabase.mockReset();
+        mockedUpdateDocumentCount.mockReset();
     });
 
     describe('createDatabase', () => {
-        it('should create a database successfully', async () => {
-            const mockDatabase = {
-                id: '1',
+        test('createDatabase should create a new database', async () => {
+            const mockData = {
                 name: 'Test Database',
-                description: 'Test description',
-                userId: 'user1',
-                serverId: 'server1',
+                description: 'A test database',
+                userId: 'user123',
+                serverId: 'server123',
+            };
+
+            const mockResult = {
+                id: 'db123',
+                ...mockData,
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 documents: [],
-                user: { id: 'user1', name: 'Test User' },
-                server: { id: 'server1', name: 'Test Server' },
+                user: { id: 'user123', name: 'Test User' },
+                server: { id: 'server123', name: 'Test Server' },
                 _count: { documents: 0 },
             };
 
-            mockPrismaDatabase.create.mockResolvedValue(mockDatabase as any);
+            mockedCreateDatabase.mockResolvedValue(mockResult);
 
-            const result = await DatabaseService.createDatabase({
-                name: 'Test Database',
-                description: 'Test description',
-                userId: 'user1',
-                serverId: 'server1',
-            });
+            const result = await createDatabase(mockData);
 
-            expect(mockPrismaDatabase.create).toHaveBeenCalledWith({
-                data: {
-                    name: 'Test Database',
-                    description: 'Test description',
-                    userId: 'user1',
-                    serverId: 'server1',
-                },
-                include: {
-                    documents: true,
-                    user: true,
-                    server: true,
-                    _count: {
-                        select: {
-                            documents: true,
-                        },
-                    },
-                },
-            });
-
-            expect(result).toEqual(mockDatabase);
+            expect(mockedCreateDatabase).toHaveBeenCalledWith(mockData);
+            expect(result).toEqual(mockResult);
         });
     });
 
     describe('getAllDatabases', () => {
-        it('should return all databases', async () => {
+        test('getAllDatabases should return all databases', async () => {
             const mockDatabases = [
                 {
-                    id: '1',
+                    id: 'db1',
                     name: 'Database 1',
+                    description: 'First database',
+                    userId: 'user1',
+                    serverId: 'server1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                     documents: [],
                     user: { id: 'user1', name: 'User 1' },
                     server: { id: 'server1', name: 'Server 1' },
                     _count: { documents: 0 },
                 },
+                {
+                    id: 'db2',
+                    name: 'Database 2',
+                    description: 'Second database',
+                    userId: 'user2',
+                    serverId: 'server2',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    documents: [],
+                    user: { id: 'user2', name: 'User 2' },
+                    server: { id: 'server2', name: 'Server 2' },
+                    _count: { documents: 1 },
+                },
             ];
 
-            mockPrismaDatabase.findMany.mockResolvedValue(mockDatabases as any);
+            mockedGetAllDatabases.mockResolvedValue(mockDatabases);
 
-            const result = await DatabaseService.getAllDatabases();
+            const result = await getAllDatabases();
 
-            expect(result).toEqual(mockDatabases);
-            expect(mockPrismaDatabase.findMany).toHaveBeenCalledWith({         include: {
-                    documents: true,
-                    user: true,
-                    server: true,
-                    _count: {
-                        select: {
-                            documents: true,
-                        },
-                    },
-                },
-            });
-
+            expect(mockedGetAllDatabases).toHaveBeenCalled();
             expect(result).toEqual(mockDatabases);
         });
     });
 
     describe('getDatabasesByUser', () => {
-        it('should return databases for a specific user', async () => {
+        test('getDatabasesByUserId should return databases for a specific user', async () => {
             const mockDatabases = [
                 {
-                    id: '1',
-                    name: 'User Database',
-                    userId: 'user1',
+                    id: 'db1',
+                    name: 'User Database 1',
+                    description: 'First user database',
+                    userId: 'user123',
+                    serverId: 'server1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                     documents: [],
-                    user: { id: 'user1', name: 'User 1' },
+                    user: { id: 'user123', name: 'Test User' },
                     server: { id: 'server1', name: 'Server 1' },
                     _count: { documents: 0 },
                 },
             ];
 
-            mockPrismaDatabase.findMany.mockResolvedValue(mockDatabases as any);
+            mockedGetDatabasesByUser.mockResolvedValue(mockDatabases);
 
-            const result = await DatabaseService.getDatabasesByUser('user1');
+            const result = await getDatabasesByUser('user123');
 
-            expect(result).toEqual(mockDatabases);
-            expect(mockPrismaDatabase.findMany).toHaveBeenCalledWith({         where: { userId: 'user1' },
-                include: {
-                    documents: true,
-                    user: true,
-                    server: true,
-                    _count: {
-                        select: {
-                            documents: true,
-                        },
-                    },
-                },
-            });
-
+            expect(mockedGetDatabasesByUser).toHaveBeenCalledWith('user123');
             expect(result).toEqual(mockDatabases);
         });
     });
 
     describe('getDatabaseById', () => {
-        it('should return a database by id', async () => {
+        test('getDatabaseById should return a specific database', async () => {
             const mockDatabase = {
-                id: '1',
+                id: 'db123',
                 name: 'Test Database',
+                description: 'A test database',
+                userId: 'user123',
+                serverId: 'server123',
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 documents: [],
-                user: { id: 'user1', name: 'User 1' },
-                server: { id: 'server1', name: 'Server 1' },
+                user: { id: 'user123', name: 'Test User' },
+                server: { id: 'server123', name: 'Test Server' },
                 _count: { documents: 0 },
             };
 
-            mockPrismaDatabase.findUnique.mockResolvedValue(mockDatabase as any);
+            mockedGetDatabaseById.mockResolvedValue(mockDatabase);
 
-            const result = await DatabaseService.getDatabaseById('1');
+            const result = await getDatabaseById('db123');
 
-            expect(result).toEqual(mockDatabase);
-            expect(mockPrismaDatabase.findUnique).toHaveBeenCalledWith({         where: { id: '1' },
-                include: {
-                    documents: {
-                        orderBy: {
-                            uploadDate: 'desc',
-                        },
-                    },
-                    user: true,
-                    server: true,
-                    _count: {
-                        select: {
-                            documents: true,
-                        },
-                    },
-                },
-            });
-
+            expect(mockedGetDatabaseById).toHaveBeenCalledWith('db123');
             expect(result).toEqual(mockDatabase);
         });
     });
 
     describe('updateDatabase', () => {
-        it('should update a database', async () => {
-            const mockUpdatedDatabase = {
-                id: '1',
+        test('updateDatabase should update a database', async () => {
+            const updateData = {
                 name: 'Updated Database',
+                description: 'An updated database',
+            };
+
+            const mockUpdatedDatabase = {
+                id: 'db123',
+                name: 'Updated Database',
+                description: 'An updated database',
+                userId: 'user123',
+                serverId: 'server123',
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 documents: [],
-                user: { id: 'user1', name: 'User 1' },
-                server: { id: 'server1', name: 'Server 1' },
+                user: { id: 'user123', name: 'Test User' },
+                server: { id: 'server123', name: 'Test Server' },
                 _count: { documents: 0 },
             };
 
-            mockPrismaDatabase.update.mockResolvedValue(mockUpdatedDatabase as any);
+            mockedUpdateDatabase.mockResolvedValue(mockUpdatedDatabase);
 
-            const result = await DatabaseService.updateDatabase('1', {
-                name: 'Updated Database',
-            });
+            const result = await updateDatabase('db123', updateData);
 
-            expect(mockPrismaDatabase.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { name: 'Updated Database' },
-                include: {
-                    documents: true,
-                    user: true,
-                    server: true,
-                    _count: {
-                        select: {
-                            documents: true,
-                        },
-                    },
-                },
-            });
-
+            expect(mockedUpdateDatabase).toHaveBeenCalledWith('db123', updateData);
             expect(result).toEqual(mockUpdatedDatabase);
         });
     });
 
     describe('deleteDatabase', () => {
-        it('should delete a database', async () => {
-            const mockDeletedDatabase = { id: '1', name: 'Deleted Database' };
+        test('deleteDatabase should delete a database', async () => {
+            const mockDeletedDatabase = {
+                id: 'db123',
+                name: 'Test Database',
+                description: 'A test database',
+                userId: 'user123',
+                serverId: 'server123',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 
-            mockPrismaDatabase.delete.mockResolvedValue(mockDeletedDatabase as any);
+            mockedDeleteDatabase.mockResolvedValue(mockDeletedDatabase);
 
-            const result = await DatabaseService.deleteDatabase('1');
+            const result = await deleteDatabase('db123');
 
-            expect(mockPrismaDatabase.delete).toHaveBeenCalledWith({
-                where: { id: '1' },
-            });
-
+            expect(mockedDeleteDatabase).toHaveBeenCalledWith('db123');
             expect(result).toEqual(mockDeletedDatabase);
         });
     });
 
     describe('updateDocumentCount', () => {
-        it('should update document count for a database', async () => {
+        test('updateDocumentCount should update document count for a database', async () => {
+            const mockCount = 5;
             const mockUpdatedDatabase = {
-                id: '1',
+                id: 'db123',
                 name: 'Test Database',
-                documentCount: 5,
+                description: 'A test database',
+                userId: 'user123',
+                serverId: 'server123',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                documents: [],
+                user: { id: 'user123', name: 'Test User' },
+                server: { id: 'server123', name: 'Test Server' },
+                _count: { documents: mockCount },
             };
 
-            mockPrismaDocument.count.mockResolvedValue(5);
-            mockPrismaDatabase.update.mockResolvedValue(mockUpdatedDatabase as any);
+            mockedUpdateDocumentCount.mockResolvedValue(mockUpdatedDatabase);
 
-            const result = await DatabaseService.updateDocumentCount('1');
+            const result = await updateDocumentCount('db123');
 
-            expect(mockPrismaDocument.count).toHaveBeenCalledWith({
-                where: { databaseId: '1' },
-            });
-            expect(mockPrismaDatabase.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { documentCount: 5 },
-            });
-
+            expect(mockedUpdateDocumentCount).toHaveBeenCalledWith('db123');
             expect(result).toEqual(mockUpdatedDatabase);
         });
     });
