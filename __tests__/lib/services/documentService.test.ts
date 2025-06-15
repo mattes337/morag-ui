@@ -1,7 +1,54 @@
 // Mock the database module
-jest.mock('../../../lib/database');
-jest.mock('@prisma/client');
+jest.mock('../../../lib/database', () => ({
+    prisma: {
+        document: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            count: jest.fn(),
+        },
+        database: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            count: jest.fn(),
+        },
+        user: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        server: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        apiKey: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        job: {
+            create: jest.fn(),
+            findMany: jest.fn(),
+            findUnique: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+    },
+}));
 
+// Import modules after mocking
 import { DocumentService } from '../../../lib/services/documentService';
 import { prisma } from '../../../lib/database';
 import { DocumentState } from '@prisma/client';
@@ -278,7 +325,7 @@ describe('DocumentService', () => {
             };
 
             // Set up the mock for the prisma.document.update method
-            (mockPrisma.document.update as jest.Mock).mockResolvedValue(mockUpdatedDocument);
+            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument);
             
             const result = await DocumentService.updateDocumentQuality('1', 0.95, 10);
 
