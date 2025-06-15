@@ -78,56 +78,7 @@ global.console = {
     error: jest.fn(),
 };
 
-// Mock Prisma
-jest.mock('./lib/database', () => ({
-    prisma: {
-        apiKey: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        database: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        document: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        user: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        server: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        job: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        $connect: jest.fn(),
-        $disconnect: jest.fn(),
-        $queryRaw: jest.fn(),
-    },
-}));
+// Prisma mock is handled in individual test files
 
 // Mock Auth
 jest.mock('./lib/auth', () => ({

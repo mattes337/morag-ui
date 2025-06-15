@@ -1,4 +1,5 @@
-// Mock Prisma
+// Mock the database module
+jest.mock('../../../lib/database');
 jest.mock('@prisma/client');
 
 import { DocumentService } from '../../../lib/services/documentService';
@@ -165,7 +166,8 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument as any);
+            // Set up the mock manually
+            mockPrisma.document.update = jest.fn().mockResolvedValue(mockUpdatedDocument as any);
 
             const result = await DocumentService.updateDocument('1', {
                 name: 'Updated Document',
@@ -258,14 +260,26 @@ describe('DocumentService', () => {
         it('should update document quality and chunks', async () => {
             const mockUpdatedDocument = {
                 id: '1',
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.PROCESSED,
+                version: 1,
                 quality: 0.95,
                 chunks: 10,
-                database: { id: 'db1', name: 'DB 1' },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                database: {
+                    id: 'db1',
+                    name: 'Test Database',
+                },
                 jobs: [],
             };
 
-            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument as any);
-
+            // Set up the mock for the prisma.document.update method
+            (mockPrisma.document.update as jest.Mock).mockResolvedValue(mockUpdatedDocument);
+            
             const result = await DocumentService.updateDocumentQuality('1', 0.95, 10);
 
             expect(mockPrisma.document.update).toHaveBeenCalledWith({
@@ -276,7 +290,6 @@ describe('DocumentService', () => {
                     jobs: true,
                 },
             });
-
             expect(result).toEqual(mockUpdatedDocument);
         });
     });
