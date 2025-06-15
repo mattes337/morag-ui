@@ -35,7 +35,15 @@ describe('DocumentService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
                 jobs: [],
             };
 
@@ -77,7 +85,15 @@ describe('DocumentService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                     jobs: [],
                 },
             ];
@@ -104,7 +120,15 @@ describe('DocumentService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
                 jobs: [],
             };
 
@@ -130,7 +154,15 @@ describe('DocumentService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
                 jobs: [],
             };
 
@@ -186,7 +218,15 @@ describe('DocumentService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                     jobs: [],
                 },
             ];
@@ -214,7 +254,15 @@ describe('DocumentService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                     jobs: [],
                 },
             ];

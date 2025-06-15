@@ -58,8 +58,29 @@ describe('JobService', () => {
                 endDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
+                document: {
+                    id: 'doc1',
+                    name: 'Test Document.pdf',
+                    type: 'PDF',
+                    state: 'PENDING' as const,
+                    version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    databaseId: null,
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
             };
 
             mockedJobService.createJob.mockResolvedValue(mockResult);
@@ -87,8 +108,29 @@ describe('JobService', () => {
                     endDate: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    document: { id: 'doc1', name: 'Test Document.pdf' },
-                    user: { id: 'user1', name: 'Test User' },
+                    document: {
+                        id: 'doc1',
+                        name: 'Test Document.pdf',
+                        type: 'PDF',
+                        state: 'PENDING' as const,
+                        version: 1,
+                        chunks: 0,
+                        quality: 0.0,
+                        uploadDate: new Date(),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        userId: 'user1',
+                        databaseId: null,
+                    },
+                    user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
                 },
             ];
 
@@ -117,8 +159,29 @@ describe('JobService', () => {
                     endDate: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    document: { id: 'doc1', name: 'Test Document.pdf' },
-                    user: { id: 'user1', name: 'Test User' },
+                    document: {
+                        id: 'doc1',
+                        name: 'Test Document.pdf',
+                        type: 'PDF',
+                        state: 'PENDING' as const,
+                        version: 1,
+                        chunks: 0,
+                        quality: 0.0,
+                        uploadDate: new Date(),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        userId: 'user1',
+                        databaseId: null,
+                    },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                 },
             ];
 
@@ -147,8 +210,29 @@ describe('JobService', () => {
                     endDate: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    document: { id: 'doc1', name: 'Test Document.pdf' },
-                    user: { id: 'user1', name: 'Test User' },
+                    document: {
+                        id: 'doc1',
+                        name: 'Test Document.pdf',
+                        type: 'PDF',
+                        state: 'PENDING' as const,
+                        version: 1,
+                        chunks: 0,
+                        quality: 0.0,
+                        uploadDate: new Date(),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        userId: 'user1',
+                        databaseId: null,
+                    },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                 },
             ];
 
@@ -176,16 +260,37 @@ describe('JobService', () => {
                 endDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
+                document: {
+                    id: 'doc1',
+                    name: 'Test Document.pdf',
+                    type: 'PDF',
+                    state: 'PENDING' as const,
+                    version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    databaseId: null,
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
             };
 
-            mockedJobService.getJobById.mockResolvedValue(mockJob);
+            mockedJobService.getAllJobs.mockResolvedValue([mockJob]);
 
-            const result = await JobService.getJobById('1');
+            const result = await JobService.getAllJobs();
 
-            expect(mockedJobService.getJobById).toHaveBeenCalledWith('1');
-            expect(result).toEqual(mockJob);
+            expect(mockedJobService.getAllJobs).toHaveBeenCalled();
+            expect(result).toEqual([mockJob]);
         });
     });
 
@@ -209,8 +314,29 @@ describe('JobService', () => {
                 endDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
+                document: {
+                    id: 'doc1',
+                    name: 'Test Document.pdf',
+                    type: 'PDF',
+                    state: 'PENDING' as const,
+                    version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    databaseId: null,
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
             };
 
             mockedJobService.updateJob.mockResolvedValue(mockUpdatedJob);
@@ -237,8 +363,29 @@ describe('JobService', () => {
                 endDate: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
+                document: {
+                    id: 'doc1',
+                    name: 'Test Document.pdf',
+                    type: 'PDF',
+                    state: 'PENDING' as const,
+                    version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    databaseId: null,
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
             };
 
             mockedJobService.updateJobProgress.mockResolvedValue(mockUpdatedJob);
@@ -265,8 +412,29 @@ describe('JobService', () => {
                 endDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                document: { id: 'doc1', name: 'Test Document.pdf' },
-                user: { id: 'user1', name: 'Test User' },
+                document: {
+                    id: 'doc1',
+                    name: 'Test Document.pdf',
+                    type: 'PDF',
+                    state: 'PENDING' as const,
+                    version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    databaseId: null,
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                },
             };
 
             mockedJobService.updateJobStatus.mockResolvedValue(mockUpdatedJob);
@@ -320,8 +488,29 @@ describe('JobService', () => {
                     endDate: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    document: { id: 'doc1', name: 'Test Document.pdf' },
-                    user: { id: 'user1', name: 'Test User' },
+                    document: {
+                        id: 'doc1',
+                        name: 'Test Document.pdf',
+                        type: 'PDF',
+                        state: 'PENDING' as const,
+                        version: 1,
+                        chunks: 0,
+                        quality: 0.0,
+                        uploadDate: new Date(),
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        userId: 'user1',
+                        databaseId: null,
+                    },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                    },
                 },
             ];
 
