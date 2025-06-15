@@ -1,13 +1,29 @@
 import { NextRequest } from 'next/server';
+
+// Mock the services
+jest.mock('../../../../../lib/services/apiKeyService', () => ({
+    ApiKeyService: {
+        createApiKey: jest.fn(),
+        getAllApiKeys: jest.fn(),
+        getApiKeysByUser: jest.fn(),
+        getApiKeyById: jest.fn(),
+        getApiKeyByKey: jest.fn(),
+        updateApiKey: jest.fn(),
+        updateLastUsed: jest.fn(),
+        deleteApiKey: jest.fn(),
+    },
+}));
+
+jest.mock('../../../../../lib/auth', () => ({
+    requireAuth: jest.fn(),
+}));
+
+// Import AFTER mocking
 import { GET, POST } from '../../../../../app/api/api-keys/route';
 import { ApiKeyService } from '../../../../../lib/services/apiKeyService';
 import { requireAuth } from '../../../../../lib/auth';
 
-// Mock the ApiKeyService and auth
-jest.mock('../../../../../lib/services/apiKeyService');
-jest.mock('../../../../../lib/auth');
-
-const mockApiKeyService = ApiKeyService as jest.Mocked<typeof ApiKeyService>;
+const mockApiKeyService = jest.mocked(ApiKeyService);
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/api-keys', () => {
@@ -89,7 +105,7 @@ describe('/api/api-keys', () => {
             const response = await POST(mockRequest);
             const data = await response.json();
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(201);
             expect(data).toEqual(mockApiKey);
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'New API Key',

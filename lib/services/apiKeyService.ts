@@ -1,5 +1,5 @@
-import { prisma } from '../database';
 import { ApiKey } from '@prisma/client';
+import { prisma } from '../database';
 
 export class ApiKeyService {
     static async createApiKey(data: { name: string; key: string; userId: string }) {

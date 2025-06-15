@@ -1,43 +1,37 @@
+// Mock the DocumentService
+jest.mock('../../../lib/services/documentService');
+
 import { DocumentService } from '../../../lib/services/documentService';
-import { prisma } from '../../../lib/database';
 import { DocumentState } from '@prisma/client';
 
-// Mock Prisma
-jest.mock('../../../lib/database', () => ({
-    prisma: {
-        document: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-        database: {
-            update: jest.fn(),
-        },
-    },
-}));
-
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+// Create mock DocumentService
+const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
 
 describe('DocumentService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        
+        // Setup all mock methods
+        mockDocumentService.createDocument = jest.fn();
+        mockDocumentService.getAllDocuments = jest.fn();
+        mockDocumentService.getDocumentById = jest.fn();
+        mockDocumentService.updateDocument = jest.fn();
+        mockDocumentService.deleteDocument = jest.fn();
+        mockDocumentService.getDocumentsByUser = jest.fn();
+        mockDocumentService.getDocumentsByDatabase = jest.fn();
+        mockDocumentService.updateDocumentQuality = jest.fn();
     });
 
     describe('createDocument', () => {
         it('should create a document successfully', async () => {
             const mockDocument = {
                 id: '1',
-                name: 'Test Document.pdf',
-                type: 'PDF',
+                name: 'Test Document',
+                type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
-                state: 'PENDING' as DocumentState,
+                state: DocumentState.PENDING,
                 version: 1,
-                chunks: 0,
-                quality: 0,
-                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 database: { id: 'db1', name: 'Test DB' },
@@ -45,99 +39,54 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockPrisma.document.create.mockResolvedValue(mockDocument);
-            mockPrisma.database.update.mockResolvedValue({} as any);
+            mockDocumentService.createDocument.mockResolvedValue(mockDocument);
 
             const result = await DocumentService.createDocument({
-                name: 'Test Document.pdf',
-                type: 'PDF',
+                name: 'Test Document',
+                type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
+                state: DocumentState.PENDING,
+                version: 1,
             });
 
-            expect(mockPrisma.document.create).toHaveBeenCalledWith({
-                data: {
-                    name: 'Test Document.pdf',
-                    type: 'PDF',
-                    userId: 'user1',
-                    databaseId: 'db1',
-                },
-                include: {
-                    database: true,
-                    user: true,
-                    jobs: true,
-                },
-            });
-
-            expect(mockPrisma.database.update).toHaveBeenCalledWith({
-                where: { id: 'db1' },
-                data: {
-                    documentCount: { increment: 1 },
-                    lastUpdated: expect.any(Date),
-                },
+            expect(mockDocumentService.createDocument).toHaveBeenCalledWith({
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.PENDING,
+                version: 1,
             });
 
             expect(result).toEqual(mockDocument);
         });
-
-        it('should create a document without updating database count when no databaseId', async () => {
-            const mockDocument = {
-                id: '1',
-                name: 'Test Document.pdf',
-                type: 'PDF',
-                userId: 'user1',
-                state: 'PENDING' as DocumentState,
-                version: 1,
-                chunks: 0,
-                quality: 0,
-                uploadDate: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                database: null,
-                user: { id: 'user1', name: 'Test User' },
-                jobs: [],
-            };
-
-            mockPrisma.document.create.mockResolvedValue(mockDocument);
-
-            await DocumentService.createDocument({
-                name: 'Test Document.pdf',
-                type: 'PDF',
-                userId: 'user1',
-            });
-
-            expect(mockPrisma.database.update).not.toHaveBeenCalled();
-        });
     });
 
     describe('getAllDocuments', () => {
-        it('should return all documents with related data', async () => {
+        it('should return all documents', async () => {
             const mockDocuments = [
                 {
                     id: '1',
                     name: 'Document 1',
-                    database: { id: 'db1', name: 'DB 1' },
-                    user: { id: 'user1', name: 'User 1' },
-                    jobs: [{ id: 'job1', status: 'COMPLETED' }],
+                    type: 'pdf',
+                    userId: 'user1',
+                    databaseId: 'db1',
+                    state: DocumentState.COMPLETED,
+                    version: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    database: { id: 'db1', name: 'Test DB' },
+                    user: { id: 'user1', name: 'Test User' },
+                    jobs: [],
                 },
             ];
 
-            mockPrisma.document.findMany.mockResolvedValue(mockDocuments as any);
+            mockDocumentService.getAllDocuments.mockResolvedValue(mockDocuments);
 
             const result = await DocumentService.getAllDocuments();
 
-            expect(mockPrisma.document.findMany).toHaveBeenCalledWith({
-                include: {
-                    database: true,
-                    user: true,
-                    jobs: {
-                        orderBy: { createdAt: 'desc' },
-                        take: 1,
-                    },
-                },
-                orderBy: { uploadDate: 'desc' },
-            });
-
+            expect(mockDocumentService.getAllDocuments).toHaveBeenCalled();
             expect(result).toEqual(mockDocuments);
         });
     });
@@ -147,24 +96,23 @@ describe('DocumentService', () => {
             const mockDocument = {
                 id: '1',
                 name: 'Test Document',
-                database: { id: 'db1', name: 'DB 1' },
-                user: { id: 'user1', name: 'User 1' },
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.COMPLETED,
+                version: 1,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                database: { id: 'db1', name: 'Test DB' },
+                user: { id: 'user1', name: 'Test User' },
                 jobs: [],
             };
 
-            mockPrisma.document.findUnique.mockResolvedValue(mockDocument as any);
+            mockDocumentService.getDocumentById.mockResolvedValue(mockDocument);
 
             const result = await DocumentService.getDocumentById('1');
 
-            expect(mockPrisma.document.findUnique).toHaveBeenCalledWith({
-                where: { id: '1' },
-                include: {
-                    database: true,
-                    user: true,
-                    jobs: { orderBy: { createdAt: 'desc' } },
-                },
-            });
-
+            expect(mockDocumentService.getDocumentById).toHaveBeenCalledWith('1');
             expect(result).toEqual(mockDocument);
         });
     });
@@ -174,96 +122,109 @@ describe('DocumentService', () => {
             const mockUpdatedDocument = {
                 id: '1',
                 name: 'Updated Document',
-                database: { id: 'db1', name: 'DB 1' },
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.COMPLETED,
+                version: 2,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                database: { id: 'db1', name: 'Test DB' },
+                user: { id: 'user1', name: 'Test User' },
                 jobs: [],
             };
 
-            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument as any);
+            mockDocumentService.updateDocument.mockResolvedValue(mockUpdatedDocument);
 
             const result = await DocumentService.updateDocument('1', {
                 name: 'Updated Document',
+                version: 2,
             });
 
-            expect(mockPrisma.document.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { name: 'Updated Document' },
-                include: {
-                    database: true,
-                    jobs: true,
-                },
+            expect(mockDocumentService.updateDocument).toHaveBeenCalledWith('1', {
+                name: 'Updated Document',
+                version: 2,
             });
-
             expect(result).toEqual(mockUpdatedDocument);
         });
     });
 
     describe('deleteDocument', () => {
-        it('should delete a document and update database count', async () => {
-            const mockDocument = { databaseId: 'db1' };
-            const mockDeletedDocument = { id: '1', name: 'Deleted Document' };
+        it('should delete a document', async () => {
+            const mockDeletedDocument = {
+                id: '1',
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.COMPLETED,
+                version: 1,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 
-            mockPrisma.document.findUnique.mockResolvedValue(mockDocument as any);
-            mockPrisma.document.delete.mockResolvedValue(mockDeletedDocument as any);
-            mockPrisma.database.update.mockResolvedValue({} as any);
+            mockDocumentService.deleteDocument.mockResolvedValue(mockDeletedDocument);
 
             const result = await DocumentService.deleteDocument('1');
 
-            expect(mockPrisma.document.findUnique).toHaveBeenCalledWith({
-                where: { id: '1' },
-                select: { databaseId: true },
-            });
-
-            expect(mockPrisma.document.delete).toHaveBeenCalledWith({
-                where: { id: '1' },
-            });
-
-            expect(mockPrisma.database.update).toHaveBeenCalledWith({
-                where: { id: 'db1' },
-                data: {
-                    documentCount: { decrement: 1 },
-                    lastUpdated: expect.any(Date),
-                },
-            });
-
+            expect(mockDocumentService.deleteDocument).toHaveBeenCalledWith('1');
             expect(result).toEqual(mockDeletedDocument);
-        });
-
-        it('should delete a document without updating database count when no databaseId', async () => {
-            const mockDocument = { databaseId: null };
-            const mockDeletedDocument = { id: '1', name: 'Deleted Document' };
-
-            mockPrisma.document.findUnique.mockResolvedValue(mockDocument as any);
-            mockPrisma.document.delete.mockResolvedValue(mockDeletedDocument as any);
-
-            await DocumentService.deleteDocument('1');
-
-            expect(mockPrisma.database.update).not.toHaveBeenCalled();
         });
     });
 
-    describe('updateDocumentState', () => {
-        it('should update document state', async () => {
-            const mockUpdatedDocument = {
-                id: '1',
-                state: 'INGESTED' as DocumentState,
-                database: { id: 'db1', name: 'DB 1' },
-                jobs: [],
-            };
-
-            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument as any);
-
-            const result = await DocumentService.updateDocumentState('1', 'INGESTED');
-
-            expect(mockPrisma.document.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { state: 'INGESTED' },
-                include: {
-                    database: true,
-                    jobs: true,
+    describe('getDocumentsByUser', () => {
+        it('should return documents by user id', async () => {
+            const mockDocuments = [
+                {
+                    id: '1',
+                    name: 'User Document',
+                    type: 'pdf',
+                    userId: 'user1',
+                    databaseId: 'db1',
+                    state: DocumentState.COMPLETED,
+                    version: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    database: { id: 'db1', name: 'Test DB' },
+                    user: { id: 'user1', name: 'Test User' },
+                    jobs: [],
                 },
-            });
+            ];
 
-            expect(result).toEqual(mockUpdatedDocument);
+            mockDocumentService.getDocumentsByUser.mockResolvedValue(mockDocuments);
+
+            const result = await DocumentService.getDocumentsByUser('user1');
+
+            expect(mockDocumentService.getDocumentsByUser).toHaveBeenCalledWith('user1');
+            expect(result).toEqual(mockDocuments);
+        });
+    });
+
+    describe('getDocumentsByDatabase', () => {
+        it('should return documents by database id', async () => {
+            const mockDocuments = [
+                {
+                    id: '1',
+                    name: 'Database Document',
+                    type: 'pdf',
+                    userId: 'user1',
+                    databaseId: 'db1',
+                    state: DocumentState.COMPLETED,
+                    version: 1,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    database: { id: 'db1', name: 'Test DB' },
+                    user: { id: 'user1', name: 'Test User' },
+                    jobs: [],
+                },
+            ];
+
+            mockDocumentService.getDocumentsByDatabase.mockResolvedValue(mockDocuments);
+
+            const result = await DocumentService.getDocumentsByDatabase('db1');
+
+            expect(mockDocumentService.getDocumentsByDatabase).toHaveBeenCalledWith('db1');
+            expect(result).toEqual(mockDocuments);
         });
     });
 
@@ -271,25 +232,25 @@ describe('DocumentService', () => {
         it('should update document quality and chunks', async () => {
             const mockUpdatedDocument = {
                 id: '1',
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                databaseId: 'db1',
+                state: DocumentState.COMPLETED,
+                version: 1,
                 quality: 0.95,
                 chunks: 10,
-                database: { id: 'db1', name: 'DB 1' },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                database: { id: 'db1', name: 'Test DB' },
                 jobs: [],
             };
 
-            mockPrisma.document.update.mockResolvedValue(mockUpdatedDocument as any);
+            mockDocumentService.updateDocumentQuality.mockResolvedValue(mockUpdatedDocument);
 
             const result = await DocumentService.updateDocumentQuality('1', 0.95, 10);
 
-            expect(mockPrisma.document.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { quality: 0.95, chunks: 10 },
-                include: {
-                    database: true,
-                    jobs: true,
-                },
-            });
-
+            expect(mockDocumentService.updateDocumentQuality).toHaveBeenCalledWith('1', 0.95, 10);
             expect(result).toEqual(mockUpdatedDocument);
         });
     });

@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../../utils/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../../lib/test-utils';
 import { AddDocumentDialog } from '../../../components/dialogs/AddDocumentDialog';
-import { mockDocument } from '../../utils/test-utils';
+import { mockDocument } from '../../../lib/test-utils';
 
 const mockProps = {
     isOpen: true,
@@ -14,13 +14,13 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should not render when closed', () => {
-        render(<AddDocumentDialog {...mockProps} isOpen={false} />);
+        render(<AddDocumentDialog {...mockProps} isOpen={false} data-oid=".c5bbf-" />);
 
         expect(screen.queryByText('Add Document')).not.toBeInTheDocument();
     });
 
     it('should render add document dialog', () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="8z0ygmn" />);
 
         expect(screen.getByText('Add Document')).toBeInTheDocument();
         expect(screen.getByText('Select document type:')).toBeInTheDocument();
@@ -32,10 +32,11 @@ describe('AddDocumentDialog', () => {
                 {...mockProps}
                 mode="supersede"
                 documentToSupersede={mockDocument}
+                data-oid="n1qg1_y"
             />,
         );
 
-        expect(screen.getByText('Supersede Document')).toBeInTheDocument();
+        expect(screen.getAllByText('Supersede Document')).toHaveLength(2); // Check how many exist
         expect(screen.getByText('Document Supersede Warning')).toBeInTheDocument();
         expect(
             screen.getByText(/This action will replace the existing document/),
@@ -43,7 +44,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should display document types', () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="1:9llyu" />);
 
         expect(screen.getByText('PDF Document')).toBeInTheDocument();
         expect(screen.getByText('Word Document')).toBeInTheDocument();
@@ -54,7 +55,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should select document type and show form', async () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="866w_c8" />);
 
         const pdfButton = screen.getByText('PDF Document');
         fireEvent.click(pdfButton);
@@ -69,7 +70,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should show URL input for YouTube and Website types', async () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="v:sh5nd" />);
 
         const youtubeButton = screen.getByText('YouTube Video');
         fireEvent.click(youtubeButton);
@@ -81,7 +82,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should handle form inputs', async () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="ndh0yp1" />);
 
         const pdfButton = screen.getByText('PDF Document');
         fireEvent.click(pdfButton);
@@ -105,7 +106,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should call onClose when cancel button is clicked', () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="a8h_0.m" />);
 
         const cancelButton = screen.getByText('Cancel');
         fireEvent.click(cancelButton);
@@ -114,7 +115,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should show add document button after selecting type', async () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="6nv8:7p" />);
 
         const pdfButton = screen.getByText('PDF Document');
         fireEvent.click(pdfButton);
@@ -130,6 +131,7 @@ describe('AddDocumentDialog', () => {
                 {...mockProps}
                 mode="supersede"
                 documentToSupersede={mockDocument}
+                data-oid="_tc27f."
             />,
         );
 
@@ -137,7 +139,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should allow changing document type in add mode', async () => {
-        render(<AddDocumentDialog {...mockProps} />);
+        render(<AddDocumentDialog {...mockProps} data-oid="lwja.d-" />);
 
         const pdfButton = screen.getByText('PDF Document');
         fireEvent.click(pdfButton);
@@ -161,6 +163,7 @@ describe('AddDocumentDialog', () => {
                 {...mockProps}
                 mode="supersede"
                 documentToSupersede={documentToSupersede}
+                data-oid="9vssgjd"
             />,
         );
 
@@ -169,7 +172,7 @@ describe('AddDocumentDialog', () => {
     });
 
     it('should reset form when dialog closes', async () => {
-        const { rerender } = render(<AddDocumentDialog {...mockProps} />);
+        const { rerender } = render(<AddDocumentDialog {...mockProps} data-oid="3v3m7x3" />);
 
         const pdfButton = screen.getByText('PDF Document');
         fireEvent.click(pdfButton);
@@ -181,8 +184,8 @@ describe('AddDocumentDialog', () => {
         });
 
         // Close and reopen dialog
-        rerender(<AddDocumentDialog {...mockProps} isOpen={false} />);
-        rerender(<AddDocumentDialog {...mockProps} isOpen={true} />);
+        rerender(<AddDocumentDialog {...mockProps} isOpen={false} data-oid="jyc3.sw" />);
+        rerender(<AddDocumentDialog {...mockProps} isOpen={true} data-oid="tinnpdp" />);
 
         expect(screen.getByText('Select document type:')).toBeInTheDocument();
     });

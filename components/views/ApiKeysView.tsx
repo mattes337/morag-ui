@@ -1,6 +1,7 @@
 'use client';
 
 import { ApiKey } from '../../types';
+import { Key, Plus } from 'lucide-react';
 
 interface ApiKeysViewProps {
     apiKeys: ApiKey[];
@@ -8,6 +9,29 @@ interface ApiKeysViewProps {
 }
 
 export function ApiKeysView({ apiKeys, onGenerateApiKey }: ApiKeysViewProps) {
+    // Show empty state when no API keys exist
+    if (apiKeys.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="bg-gray-100 rounded-full p-6 mb-6">
+                    <Key className="w-16 h-16 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No API keys yet</h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md">
+                    Generate API keys to access your databases and documents programmatically. API
+                    keys provide secure authentication for external applications and integrations.
+                </p>
+                <button
+                    onClick={onGenerateApiKey}
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Generate Your First API Key
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">

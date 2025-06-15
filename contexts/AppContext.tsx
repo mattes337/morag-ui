@@ -110,98 +110,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         autoSave: true,
     });
 
-    const [servers, setServers] = useState<DatabaseServer[]>([
-        {
-            id: '1',
-            name: 'Primary Qdrant',
-            type: 'qdrant',
-            host: 'localhost',
-            port: 6333,
-            collection: 'documents',
-            isActive: true,
-            createdAt: '2024-01-01T00:00:00Z',
-            lastConnected: '2024-01-15T10:30:00Z',
-        },
-        {
-            id: '2',
-            name: 'Neo4j Knowledge Graph',
-            type: 'neo4j',
-            host: 'localhost',
-            port: 7687,
-            username: 'neo4j',
-            database: 'neo4j',
-            isActive: false,
-            createdAt: '2024-01-05T00:00:00Z',
-        },
-    ]);
+    const [servers, setServers] = useState<DatabaseServer[]>([]);
 
     // Data state
-    const [databases, setDatabases] = useState<Database[]>([
-        {
-            id: '1',
-            name: 'Research Papers',
-            description: 'Academic papers and research documents',
-            documentCount: 24,
-            lastUpdated: '2024-01-15',
-        },
-        {
-            id: '2',
-            name: 'Company Knowledge Base',
-            description: 'Internal documentation and procedures',
-            documentCount: 156,
-            lastUpdated: '2024-01-14',
-        },
-    ]);
+    const [databases, setDatabases] = useState<Database[]>([]);
 
-    const [documents, setDocuments] = useState<Document[]>([
-        {
-            id: '1',
-            name: 'Machine Learning Fundamentals.pdf',
-            type: 'PDF',
-            state: 'ingested',
-            version: 2,
-            chunks: 45,
-            quality: 0.92,
-            uploadDate: '2024-01-10',
-        },
-        {
-            id: '2',
-            name: 'AI Ethics Lecture',
-            type: 'YouTube',
-            state: 'ingesting',
-            version: 1,
-            chunks: 0,
-            quality: 0,
-            uploadDate: '2024-01-15',
-        },
-        {
-            id: '3',
-            name: 'Company Website Analysis',
-            type: 'Website',
-            state: 'ingested',
-            version: 1,
-            chunks: 23,
-            quality: 0.87,
-            uploadDate: '2024-01-12',
-        },
-    ]);
+    const [documents, setDocuments] = useState<Document[]>([]);
 
-    const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-        {
-            id: '1',
-            name: 'Production Workflow',
-            key: 'mk_prod_****************************',
-            created: '2024-01-01',
-            lastUsed: '2024-01-15',
-        },
-        {
-            id: '2',
-            name: 'Development Environment',
-            key: 'mk_dev_****************************',
-            created: '2024-01-10',
-            lastUsed: '2024-01-14',
-        },
-    ]);
+    const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
 
     const [jobs, setJobs] = useState<Job[]>([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
@@ -248,7 +164,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Check authentication status
                 console.log('🔐 [AppContext] Checking authentication');
                 const authResponse = await fetch('/api/auth/me');
-                
+
                 if (authResponse.ok) {
                     const authData = await authResponse.json();
                     setUser(authData.user);
@@ -637,11 +553,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setIsDataLoading(true);
 
             // Reload all data
-            const [databasesResponse, documentsResponse, jobsResponse] = await Promise.all([
-                fetch('/api/databases'),
-                fetch('/api/documents'),
-                fetch('/api/jobs'),
-            ]);
+            const [serversResponse, databasesResponse, documentsResponse, jobsResponse] =
+                await Promise.all([
+                    fetch('/api/servers'),
+                    fetch('/api/databases'),
+                    fetch('/api/documents'),
+                    fetch('/api/jobs'),
+                ]);
+
+            if (serversResponse.ok) {
+                const serversData = await serversResponse.json();
+                const formattedServers = serversData.map((server: any) => ({
+                    id: server.id,
+                    name: server.name,
+                    type: server.type.toLowerCase(),
+                    host: server.host,
+                    port: server.port,
+                    username: server.username,
+                    password: server.password,
+                    apiKey: server.apiKey,
+                    database: server.database,
+                    collection: server.collection,
+                    isActive: server.isActive,
+                    createdAt: server.createdAt,
+                    lastConnected: server.lastConnected,
+                }));
+                setServers(formattedServers);
+            }
 
             if (databasesResponse.ok) {
                 const databasesData = await databasesResponse.json();
@@ -783,7 +721,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshData,
     };
 
-    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return (
+        <AppContext.Provider value={value} data-oid="jh1sm3g">
+            {children}
+        </AppContext.Provider>
+    );
 }
 
 export function useApp() {

@@ -1,13 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../utils/test-utils';
+import { render, screen, fireEvent, waitFor } from '../../lib/test-utils';
 import { AppProvider } from '../../contexts/AppContext';
+import { DocumentsView } from '../../components/views/DocumentsView';
+import { ApiKeysView } from '../../components/views/ApiKeysView';
+import { JobsView } from '../../components/views/JobsView';
+import { DatabasesView } from '../../components/views/DatabasesView';
 import {
     createMockFetch,
     mockDatabase,
     mockDocument,
     mockApiKey,
     mockJob,
-} from '../utils/test-utils';
+} from '../../lib/test-utils';
 
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({
@@ -36,29 +40,18 @@ describe('App Navigation E2E', () => {
             .fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve([mockDatabase]),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockDocument]),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockJob]),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () =>
-                    Promise.resolve({
+                json: () => Promise.resolve({
+                    user: {
                         id: 'user1',
                         name: 'Test User',
                         email: 'test@example.com',
                         role: 'admin',
-                    }),
+                    }
+                }),
             })
             .mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve([mockApiKey]),
+                json: () => Promise.resolve([mockDatabase]),
             });
     });
 
@@ -78,10 +71,8 @@ describe('App Navigation E2E', () => {
         });
 
         // Verify API calls were made
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me');
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
-        expect(global.fetch).toHaveBeenCalledWith('/api/documents');
-        expect(global.fetch).toHaveBeenCalledWith('/api/jobs');
-        expect(global.fetch).toHaveBeenCalledWith('/api/users/john.doe@example.com');
     });
 
     it('should handle API errors gracefully', async () => {

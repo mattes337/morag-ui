@@ -1,6 +1,7 @@
 'use client';
 
 import { Database, Document } from '../../types';
+import { FileText, Plus } from 'lucide-react';
 
 interface DocumentsViewProps {
     documents: Document[];
@@ -35,6 +36,35 @@ export function DocumentsView({
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    // Show empty state when no documents exist
+    if (documents.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+                <button
+                    onClick={onBackToDatabases}
+                    className="text-blue-600 hover:text-blue-800 text-sm self-start mb-8"
+                >
+                    ← Back to Databases
+                </button>
+                <div className="bg-gray-100 rounded-full p-6 mb-6">
+                    <FileText className="w-16 h-16 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No documents yet</h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md">
+                    Start building your knowledge base by adding your first document. Upload PDFs,
+                    text files, or other documents to enable AI-powered search and analysis.
+                </p>
+                <button
+                    onClick={onAddDocument}
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add Your First Document
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

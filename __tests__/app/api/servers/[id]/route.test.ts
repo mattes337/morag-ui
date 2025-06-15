@@ -7,8 +7,16 @@ import { requireAuth } from '../../../../../lib/auth';
 jest.mock('../../../../../lib/services/databaseServerService');
 jest.mock('../../../../../lib/auth');
 
-const mockDatabaseServerService = DatabaseServerService as jest.Mocked<typeof DatabaseServerService>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+
+// Mock static methods
+const mockGetDatabaseServerById = jest.fn();
+const mockUpdateDatabaseServer = jest.fn();
+const mockDeleteDatabaseServer = jest.fn();
+
+(DatabaseServerService.getDatabaseServerById as jest.Mock) = mockGetDatabaseServerById;
+(DatabaseServerService.updateDatabaseServer as jest.Mock) = mockUpdateDatabaseServer;
+(DatabaseServerService.deleteDatabaseServer as jest.Mock) = mockDeleteDatabaseServer;
 
 describe('/api/servers/[id]', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com' };
@@ -35,7 +43,7 @@ describe('/api/servers/[id]', () => {
                 userId: 'user1',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(mockServer as any);
+            mockGetDatabaseServerById.mockResolvedValue(mockServer as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1');
             const response = await GET(mockRequest, { params: mockParams });
@@ -43,11 +51,11 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockServer);
-            expect(mockDatabaseServerService.getDatabaseServerById).toHaveBeenCalledWith('server1');
+            expect(mockGetDatabaseServerById).toHaveBeenCalledWith('server1');
         });
 
         it('should return 404 if the server does not exist', async () => {
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(null);
+            mockGetDatabaseServerById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/nonexistent');
             const response = await GET(mockRequest, { params: mockParams });
@@ -72,7 +80,7 @@ describe('/api/servers/[id]', () => {
                 userId: 'different-user',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(mockServer as any);
+            mockGetDatabaseServerById.mockResolvedValue(mockServer as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1');
             const response = await GET(mockRequest, { params: mockParams });
@@ -96,7 +104,7 @@ describe('/api/servers/[id]', () => {
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseServerService.getDatabaseServerById.mockRejectedValue(new Error('Database error'));
+            mockGetDatabaseServerById.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1');
             const response = await GET(mockRequest, { params: mockParams });
@@ -129,8 +137,8 @@ describe('/api/servers/[id]', () => {
                 port: 27018,
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
-            mockDatabaseServerService.updateDatabaseServer.mockResolvedValue(updatedServer as any);
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockUpdateDatabaseServer.mockResolvedValue(updatedServer as any);
 
             const updateData = {
                 name: 'Updated Server',
@@ -147,11 +155,11 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(updatedServer);
-            expect(mockDatabaseServerService.updateDatabaseServer).toHaveBeenCalledWith('server1', updateData);
+            expect(mockUpdateDatabaseServer).toHaveBeenCalledWith('server1', updateData);
         });
 
         it('should return 404 if the server does not exist', async () => {
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(null);
+            mockGetDatabaseServerById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/nonexistent', {
                 method: 'PUT',
@@ -163,7 +171,7 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(404);
             expect(data).toEqual({ error: 'Server not found' });
-            expect(mockDatabaseServerService.updateDatabaseServer).not.toHaveBeenCalled();
+            expect(mockUpdateDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should return 403 if the server belongs to a different user', async () => {
@@ -176,7 +184,7 @@ describe('/api/servers/[id]', () => {
                 userId: 'different-user',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1', {
                 method: 'PUT',
@@ -188,7 +196,7 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(403);
             expect(data).toEqual({ error: 'Unauthorized access' });
-            expect(mockDatabaseServerService.updateDatabaseServer).not.toHaveBeenCalled();
+            expect(mockUpdateDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
@@ -201,8 +209,8 @@ describe('/api/servers/[id]', () => {
                 userId: 'user1',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
-            mockDatabaseServerService.updateDatabaseServer.mockRejectedValue(new Error('Database error'));
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockUpdateDatabaseServer.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1', {
                 method: 'PUT',
@@ -228,8 +236,8 @@ describe('/api/servers/[id]', () => {
                 userId: 'user1',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
-            mockDatabaseServerService.deleteDatabaseServer.mockResolvedValue(undefined);
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockDeleteDatabaseServer.mockResolvedValue(undefined);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1', {
                 method: 'DELETE',
@@ -240,11 +248,11 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual({ success: true });
-            expect(mockDatabaseServerService.deleteDatabaseServer).toHaveBeenCalledWith('server1');
+            expect(mockDeleteDatabaseServer).toHaveBeenCalledWith('server1');
         });
 
         it('should return 404 if the server does not exist', async () => {
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(null);
+            mockGetDatabaseServerById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/nonexistent', {
                 method: 'DELETE',
@@ -255,7 +263,7 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(404);
             expect(data).toEqual({ error: 'Server not found' });
-            expect(mockDatabaseServerService.deleteDatabaseServer).not.toHaveBeenCalled();
+            expect(mockDeleteDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should return 403 if the server belongs to a different user', async () => {
@@ -268,7 +276,7 @@ describe('/api/servers/[id]', () => {
                 userId: 'different-user',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1', {
                 method: 'DELETE',
@@ -279,7 +287,7 @@ describe('/api/servers/[id]', () => {
 
             expect(response.status).toBe(403);
             expect(data).toEqual({ error: 'Unauthorized access' });
-            expect(mockDatabaseServerService.deleteDatabaseServer).not.toHaveBeenCalled();
+            expect(mockDeleteDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
@@ -292,8 +300,8 @@ describe('/api/servers/[id]', () => {
                 userId: 'user1',
             };
 
-            mockDatabaseServerService.getDatabaseServerById.mockResolvedValue(existingServer as any);
-            mockDatabaseServerService.deleteDatabaseServer.mockRejectedValue(new Error('Database error'));
+            mockGetDatabaseServerById.mockResolvedValue(existingServer as any);
+            mockDeleteDatabaseServer.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers/server1', {
                 method: 'DELETE',

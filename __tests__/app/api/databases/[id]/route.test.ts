@@ -1,11 +1,19 @@
 import { NextRequest } from 'next/server';
+
+// Mock the database service functions
+jest.mock('../../../../../lib/services/databaseService', () => ({
+    getDatabaseById: jest.fn(),
+    updateDatabase: jest.fn(),
+    deleteDatabase: jest.fn(),
+}));
+
+// Import AFTER mocking
 import { GET, PUT, DELETE } from '../../../../../app/api/databases/[id]/route';
-import { DatabaseService } from '../../../../../lib/services/databaseService';
+import { getDatabaseById, updateDatabase, deleteDatabase } from '../../../../../lib/services/databaseService';
 
-// Mock the DatabaseService
-jest.mock('../../../../../lib/services/databaseService');
-
-const mockDatabaseService = DatabaseService as jest.Mocked<typeof DatabaseService>;
+const mockGetDatabaseById = getDatabaseById as jest.MockedFunction<typeof getDatabaseById>;
+const mockUpdateDatabase = updateDatabase as jest.MockedFunction<typeof updateDatabase>;
+const mockDeleteDatabase = deleteDatabase as jest.MockedFunction<typeof deleteDatabase>;
 
 describe('/api/databases/[id]', () => {
     const mockParams = { id: 'db1' };
@@ -25,7 +33,7 @@ describe('/api/databases/[id]', () => {
                 _count: { documents: 5 },
             };
 
-            mockDatabaseService.getDatabaseById.mockResolvedValue(mockDatabase as any);
+            mockGetDatabaseById.mockResolvedValue(mockDatabase as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1');
             const response = await GET(mockRequest, { params: mockParams });
@@ -33,11 +41,11 @@ describe('/api/databases/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDatabase);
-            expect(mockDatabaseService.getDatabaseById).toHaveBeenCalledWith('db1');
+            expect(mockGetDatabaseById).toHaveBeenCalledWith('db1');
         });
 
         it('should return 404 if the database does not exist', async () => {
-            mockDatabaseService.getDatabaseById.mockResolvedValue(null);
+            mockGetDatabaseById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/nonexistent');
             const response = await GET(mockRequest, { params: mockParams });
@@ -48,7 +56,7 @@ describe('/api/databases/[id]', () => {
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseService.getDatabaseById.mockRejectedValue(new Error('Database error'));
+            mockGetDatabaseById.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1');
             const response = await GET(mockRequest, { params: mockParams });
@@ -70,7 +78,7 @@ describe('/api/databases/[id]', () => {
                 _count: { documents: 5 },
             };
 
-            mockDatabaseService.updateDatabase.mockResolvedValue(mockDatabase as any);
+            mockUpdateDatabase.mockResolvedValue(mockDatabase as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1', {
                 method: 'PUT',
@@ -85,14 +93,14 @@ describe('/api/databases/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDatabase);
-            expect(mockDatabaseService.updateDatabase).toHaveBeenCalledWith('db1', {
+            expect(mockUpdateDatabase).toHaveBeenCalledWith('db1', {
                 name: 'Updated Database',
                 description: 'Updated description'
             });
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseService.updateDatabase.mockRejectedValue(new Error('Database error'));
+            mockUpdateDatabase.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1', {
                 method: 'PUT',
@@ -112,7 +120,7 @@ describe('/api/databases/[id]', () => {
 
     describe('DELETE', () => {
         it('should delete the database', async () => {
-            mockDatabaseService.deleteDatabase.mockResolvedValue(undefined);
+            mockDeleteDatabase.mockResolvedValue(undefined);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1');
             const response = await DELETE(mockRequest, { params: mockParams });
@@ -120,11 +128,11 @@ describe('/api/databases/[id]', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual({ success: true });
-            expect(mockDatabaseService.deleteDatabase).toHaveBeenCalledWith('db1');
+            expect(mockDeleteDatabase).toHaveBeenCalledWith('db1');
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseService.deleteDatabase.mockRejectedValue(new Error('Database error'));
+            mockDeleteDatabase.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1');
             const response = await DELETE(mockRequest, { params: mockParams });

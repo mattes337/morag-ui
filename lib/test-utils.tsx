@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { AppProvider } from '../../contexts/AppContext';
+import { AppProvider } from '../contexts/AppContext';
 
 // Mock data for testing
 export const mockUser = {

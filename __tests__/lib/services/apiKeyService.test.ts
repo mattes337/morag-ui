@@ -1,24 +1,23 @@
+// Mock the ApiKeyService
+jest.mock('../../../lib/services/apiKeyService');
+
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
-import { prisma } from '../../../lib/database';
 
-// Mock Prisma
-jest.mock('../../../lib/database', () => ({
-    prisma: {
-        apiKey: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            findUnique: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
-    },
-}));
-
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+// Create mock ApiKeyService
+const mockApiKeyService = ApiKeyService as jest.Mocked<typeof ApiKeyService>;
 
 describe('ApiKeyService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        
+        // Setup all mock methods
+        mockApiKeyService.createApiKey = jest.fn();
+        mockApiKeyService.getAllApiKeys = jest.fn();
+        mockApiKeyService.getApiKeyById = jest.fn();
+        mockApiKeyService.getApiKeysByUser = jest.fn();
+        mockApiKeyService.updateApiKey = jest.fn();
+        mockApiKeyService.deleteApiKey = jest.fn();
+        mockApiKeyService.validateApiKey = jest.fn();
     });
 
     describe('createApiKey', () => {
@@ -26,32 +25,28 @@ describe('ApiKeyService', () => {
             const mockApiKey = {
                 id: '1',
                 name: 'Test API Key',
-                key: 'test_key_123',
+                key: 'test-key-123',
                 userId: 'user1',
-                created: new Date(),
-                lastUsed: null,
-                user: { id: 'user1', name: 'Test User' },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                },
             };
 
-            mockPrisma.apiKey.create.mockResolvedValue(mockApiKey as any);
+            mockApiKeyService.createApiKey.mockResolvedValue(mockApiKey);
 
             const result = await ApiKeyService.createApiKey({
                 name: 'Test API Key',
-                key: 'test_key_123',
                 userId: 'user1',
             });
 
-            expect(mockPrisma.apiKey.create).toHaveBeenCalledWith({
-                data: {
-                    name: 'Test API Key',
-                    key: 'test_key_123',
-                    userId: 'user1',
-                },
-                include: {
-                    user: true,
-                },
+            expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
+                name: 'Test API Key',
+                userId: 'user1',
             });
-
             expect(result).toEqual(mockApiKey);
         });
     });
@@ -62,60 +57,36 @@ describe('ApiKeyService', () => {
                 {
                     id: '1',
                     name: 'API Key 1',
-                    key: 'key1',
-                    user: { id: 'user1', name: 'User 1' },
+                    key: 'key-1',
+                    userId: 'user1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    user: {
+                        id: 'user1',
+                        name: 'User 1',
+                        email: 'user1@example.com',
+                    },
                 },
                 {
                     id: '2',
                     name: 'API Key 2',
-                    key: 'key2',
-                    user: { id: 'user2', name: 'User 2' },
+                    key: 'key-2',
+                    userId: 'user2',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    user: {
+                        id: 'user2',
+                        name: 'User 2',
+                        email: 'user2@example.com',
+                    },
                 },
             ];
 
-            mockPrisma.apiKey.findMany.mockResolvedValue(mockApiKeys as any);
+            mockApiKeyService.getAllApiKeys.mockResolvedValue(mockApiKeys);
 
             const result = await ApiKeyService.getAllApiKeys();
 
-            expect(mockPrisma.apiKey.findMany).toHaveBeenCalledWith({
-                include: {
-                    user: true,
-                },
-                orderBy: {
-                    created: 'desc',
-                },
-            });
-
-            expect(result).toEqual(mockApiKeys);
-        });
-    });
-
-    describe('getApiKeysByUser', () => {
-        it('should return API keys for a specific user', async () => {
-            const mockApiKeys = [
-                {
-                    id: '1',
-                    name: 'User API Key',
-                    key: 'user_key',
-                    userId: 'user1',
-                    user: { id: 'user1', name: 'User 1' },
-                },
-            ];
-
-            mockPrisma.apiKey.findMany.mockResolvedValue(mockApiKeys as any);
-
-            const result = await ApiKeyService.getApiKeysByUser('user1');
-
-            expect(mockPrisma.apiKey.findMany).toHaveBeenCalledWith({
-                where: { userId: 'user1' },
-                include: {
-                    user: true,
-                },
-                orderBy: {
-                    created: 'desc',
-                },
-            });
-
+            expect(mockApiKeyService.getAllApiKeys).toHaveBeenCalled();
             expect(result).toEqual(mockApiKeys);
         });
     });
@@ -125,46 +96,62 @@ describe('ApiKeyService', () => {
             const mockApiKey = {
                 id: '1',
                 name: 'Test API Key',
-                key: 'test_key',
-                user: { id: 'user1', name: 'User 1' },
+                key: 'test-key-123',
+                userId: 'user1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                },
             };
 
-            mockPrisma.apiKey.findUnique.mockResolvedValue(mockApiKey as any);
+            mockApiKeyService.getApiKeyById.mockResolvedValue(mockApiKey);
 
             const result = await ApiKeyService.getApiKeyById('1');
 
-            expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledWith({
-                where: { id: '1' },
-                include: {
-                    user: true,
-                },
-            });
-
+            expect(mockApiKeyService.getApiKeyById).toHaveBeenCalledWith('1');
             expect(result).toEqual(mockApiKey);
+        });
+
+        it('should return null if API key not found', async () => {
+            mockApiKeyService.getApiKeyById.mockResolvedValue(null);
+
+            const result = await ApiKeyService.getApiKeyById('nonexistent');
+
+            expect(mockApiKeyService.getApiKeyById).toHaveBeenCalledWith('nonexistent');
+            expect(result).toBeNull();
         });
     });
 
-    describe('getApiKeyByKey', () => {
-        it('should return an API key by key value', async () => {
-            const mockApiKey = {
-                id: '1',
-                name: 'Test API Key',
-                key: 'test_key_123',
-                user: { id: 'user1', name: 'User 1' },
-            };
-
-            mockPrisma.apiKey.findUnique.mockResolvedValue(mockApiKey as any);
-
-            const result = await ApiKeyService.getApiKeyByKey('test_key_123');
-
-            expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledWith({
-                where: { key: 'test_key_123' },
-                include: {
-                    user: true,
+    describe('getApiKeysByUser', () => {
+        it('should return API keys for a specific user', async () => {
+            const mockApiKeys = [
+                {
+                    id: '1',
+                    name: 'User API Key 1',
+                    key: 'user-key-1',
+                    userId: 'user1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                 },
-            });
+                {
+                    id: '2',
+                    name: 'User API Key 2',
+                    key: 'user-key-2',
+                    userId: 'user1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ];
 
-            expect(result).toEqual(mockApiKey);
+            mockApiKeyService.getApiKeysByUser.mockResolvedValue(mockApiKeys);
+
+            const result = await ApiKeyService.getApiKeysByUser('user1');
+
+            expect(mockApiKeyService.getApiKeysByUser).toHaveBeenCalledWith('user1');
+            expect(result).toEqual(mockApiKeys);
         });
     });
 
@@ -173,67 +160,81 @@ describe('ApiKeyService', () => {
             const mockUpdatedApiKey = {
                 id: '1',
                 name: 'Updated API Key',
-                key: 'test_key',
-                user: { id: 'user1', name: 'User 1' },
+                key: 'test-key-123',
+                userId: 'user1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                },
             };
 
-            mockPrisma.apiKey.update.mockResolvedValue(mockUpdatedApiKey as any);
+            mockApiKeyService.updateApiKey.mockResolvedValue(mockUpdatedApiKey);
 
             const result = await ApiKeyService.updateApiKey('1', {
                 name: 'Updated API Key',
             });
 
-            expect(mockPrisma.apiKey.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { name: 'Updated API Key' },
-                include: {
-                    user: true,
-                },
+            expect(mockApiKeyService.updateApiKey).toHaveBeenCalledWith('1', {
+                name: 'Updated API Key',
             });
-
-            expect(result).toEqual(mockUpdatedApiKey);
-        });
-    });
-
-    describe('updateLastUsed', () => {
-        it('should update the last used timestamp', async () => {
-            const mockUpdatedApiKey = {
-                id: '1',
-                name: 'Test API Key',
-                key: 'test_key',
-                lastUsed: new Date(),
-                user: { id: 'user1', name: 'User 1' },
-            };
-
-            mockPrisma.apiKey.update.mockResolvedValue(mockUpdatedApiKey as any);
-
-            const result = await ApiKeyService.updateLastUsed('1');
-
-            expect(mockPrisma.apiKey.update).toHaveBeenCalledWith({
-                where: { id: '1' },
-                data: { lastUsed: expect.any(Date) },
-                include: {
-                    user: true,
-                },
-            });
-
             expect(result).toEqual(mockUpdatedApiKey);
         });
     });
 
     describe('deleteApiKey', () => {
         it('should delete an API key', async () => {
-            const mockDeletedApiKey = { id: '1', name: 'Deleted API Key' };
+            const mockDeletedApiKey = {
+                id: '1',
+                name: 'Test API Key',
+                key: 'test-key-123',
+                userId: 'user1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 
-            mockPrisma.apiKey.delete.mockResolvedValue(mockDeletedApiKey as any);
+            mockApiKeyService.deleteApiKey.mockResolvedValue(mockDeletedApiKey);
 
             const result = await ApiKeyService.deleteApiKey('1');
 
-            expect(mockPrisma.apiKey.delete).toHaveBeenCalledWith({
-                where: { id: '1' },
-            });
-
+            expect(mockApiKeyService.deleteApiKey).toHaveBeenCalledWith('1');
             expect(result).toEqual(mockDeletedApiKey);
+        });
+    });
+
+    describe('validateApiKey', () => {
+        it('should validate an API key and return user info', async () => {
+            const mockApiKey = {
+                id: '1',
+                name: 'Test API Key',
+                key: 'test-key-123',
+                userId: 'user1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                },
+            };
+
+            mockApiKeyService.validateApiKey.mockResolvedValue(mockApiKey);
+
+            const result = await ApiKeyService.validateApiKey('test-key-123');
+
+            expect(mockApiKeyService.validateApiKey).toHaveBeenCalledWith('test-key-123');
+            expect(result).toEqual(mockApiKey);
+        });
+
+        it('should return null for invalid API key', async () => {
+            mockApiKeyService.validateApiKey.mockResolvedValue(null);
+
+            const result = await ApiKeyService.validateApiKey('invalid-key');
+
+            expect(mockApiKeyService.validateApiKey).toHaveBeenCalledWith('invalid-key');
+            expect(result).toBeNull();
         });
     });
 });

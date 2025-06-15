@@ -1,11 +1,19 @@
 import { NextRequest } from 'next/server';
+
+// Mock the DocumentService
+jest.mock('../../../../../lib/services/documentService', () => ({
+    DocumentService: {
+        getDocumentById: jest.fn(),
+        updateDocument: jest.fn(),
+        deleteDocument: jest.fn(),
+    },
+}));
+
+// Import AFTER mocking
 import { GET, PUT, DELETE } from '../../../../../app/api/documents/[id]/route';
 import { DocumentService } from '../../../../../lib/services/documentService';
 
-// Mock the DocumentService
-jest.mock('../../../../../lib/services/documentService');
-
-const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
+const mockDocumentService = jest.mocked(DocumentService);
 
 describe('/api/documents/[id]', () => {
     const mockParams = { id: 'doc1' };

@@ -7,8 +7,14 @@ import { requireAuth } from '../../../../lib/auth';
 jest.mock('../../../../lib/services/databaseServerService');
 jest.mock('../../../../lib/auth');
 
-const mockDatabaseServerService = DatabaseServerService as jest.Mocked<typeof DatabaseServerService>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+
+// Mock static methods
+const mockCreateDatabaseServer = jest.fn();
+const mockGetDatabaseServersByUser = jest.fn();
+
+(DatabaseServerService.createDatabaseServer as jest.Mock) = mockCreateDatabaseServer;
+(DatabaseServerService.getDatabaseServersByUser as jest.Mock) = mockGetDatabaseServersByUser;
 
 describe('/api/servers', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com' };
@@ -36,7 +42,7 @@ describe('/api/servers', () => {
                 },
             ];
 
-            mockDatabaseServerService.getDatabaseServersByUser.mockResolvedValue(mockServers as any);
+            mockGetDatabaseServersByUser.mockResolvedValue(mockServers as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers');
             const response = await GET(mockRequest);
@@ -44,7 +50,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockServers);
-            expect(mockDatabaseServerService.getDatabaseServersByUser).toHaveBeenCalledWith('user1');
+            expect(mockGetDatabaseServersByUser).toHaveBeenCalledWith('user1');
             expect(mockRequireAuth).toHaveBeenCalledWith(mockRequest);
         });
 
@@ -59,11 +65,11 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(401);
             expect(data).toEqual({ error: 'Authentication required' });
-            expect(mockDatabaseServerService.getDatabaseServersByUser).not.toHaveBeenCalled();
+            expect(mockGetDatabaseServersByUser).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseServerService.getDatabaseServersByUser.mockRejectedValue(new Error('Database error'));
+            mockGetDatabaseServersByUser.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers');
             const response = await GET(mockRequest);
@@ -90,7 +96,7 @@ describe('/api/servers', () => {
                 userId: 'user1',
             };
 
-            mockDatabaseServerService.createDatabaseServer.mockResolvedValue(mockServer as any);
+            mockCreateDatabaseServer.mockResolvedValue(mockServer as any);
 
             const requestBody = {
                 name: 'New Server',
@@ -113,7 +119,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(201);
             expect(data).toEqual(mockServer);
-            expect(mockDatabaseServerService.createDatabaseServer).toHaveBeenCalledWith({
+            expect(mockCreateDatabaseServer).toHaveBeenCalledWith({
                 ...requestBody,
                 userId: 'user1',
             });
@@ -133,7 +139,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(400);
             expect(data).toEqual({ error: 'Name, type, host, and port are required' });
-            expect(mockDatabaseServerService.createDatabaseServer).not.toHaveBeenCalled();
+            expect(mockCreateDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should handle authentication errors', async () => {
@@ -156,11 +162,11 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(401);
             expect(data).toEqual({ error: 'Authentication required' });
-            expect(mockDatabaseServerService.createDatabaseServer).not.toHaveBeenCalled();
+            expect(mockCreateDatabaseServer).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseServerService.createDatabaseServer.mockRejectedValue(new Error('Database error'));
+            mockCreateDatabaseServer.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers', {
                 method: 'POST',

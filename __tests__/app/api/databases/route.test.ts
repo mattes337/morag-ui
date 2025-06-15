@@ -1,14 +1,29 @@
 import { NextRequest } from 'next/server';
-import { GET, POST } from '../../../../app/api/databases/route';
-import { DatabaseService } from '../../../../lib/services/databaseService';
 
-// Mock the DatabaseService
-jest.mock('../../../../lib/services/databaseService');
-const mockDatabaseService = DatabaseService as jest.Mocked<typeof DatabaseService>;
+// Mock the database service functions and auth
+jest.mock('../../../../lib/services/databaseService', () => ({
+    getDatabasesByUser: jest.fn(),
+    createDatabase: jest.fn(),
+}));
+jest.mock('../../../../lib/auth', () => ({
+    requireAuth: jest.fn(),
+}));
+
+// Import AFTER mocking
+import { GET, POST } from '../../../../app/api/databases/route';
+import { getDatabasesByUser, createDatabase } from '../../../../lib/services/databaseService';
+import { requireAuth } from '../../../../lib/auth';
+
+const mockGetDatabasesByUser = getDatabasesByUser as jest.MockedFunction<typeof getDatabasesByUser>;
+const mockCreateDatabase = createDatabase as jest.MockedFunction<typeof createDatabase>;
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/databases', () => {
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+    
     beforeEach(() => {
         jest.clearAllMocks();
+        mockRequireAuth.mockReturnValue(mockUser);
     });
 
     describe('GET', () => {
@@ -24,20 +39,22 @@ describe('/api/databases', () => {
                 },
             ];
 
-            mockDatabaseService.getAllDatabases.mockResolvedValue(mockDatabases as any);
+            mockGetDatabasesByUser.mockResolvedValue(mockDatabases as any);
 
-            const response = await GET();
+            const mockRequest = new NextRequest('http://localhost:3000/api/databases');
+            const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDatabases);
-            expect(mockDatabaseService.getAllDatabases).toHaveBeenCalledTimes(1);
+            expect(mockGetDatabasesByUser).toHaveBeenCalledWith('user1');
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseService.getAllDatabases.mockRejectedValue(new Error('Database error'));
+            mockGetDatabasesByUser.mockRejectedValue(new Error('Database error'));
 
-            const response = await GET();
+            const mockRequest = new NextRequest('http://localhost:3000/api/databases');
+            const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(500);
@@ -56,7 +73,7 @@ describe('/api/databases', () => {
                 _count: { documents: 0 },
             };
 
-            mockDatabaseService.createDatabase.mockResolvedValue(mockDatabase as any);
+            mockCreateDatabase.mockResolvedValue(mockDatabase as any);
 
             const request = new NextRequest('http://localhost:3000/api/databases', {
                 method: 'POST',
@@ -73,10 +90,10 @@ describe('/api/databases', () => {
 
             expect(response.status).toBe(201);
             expect(data).toEqual(mockDatabase);
-            expect(mockDatabaseService.createDatabase).toHaveBeenCalledWith({
+            expect(mockCreateDatabase).toHaveBeenCalledWith({
                 name: 'New Database',
                 description: 'New description',
-                userId: 'user1',
+                userId: 'user1', // This comes from requireAuth, not request body
                 serverId: 'server1',
             });
         });
@@ -86,7 +103,7 @@ describe('/api/databases', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Database',
-                    // Missing description, userId, and serverId
+                    // Missing description and serverId
                 }),
             });
 
@@ -94,12 +111,12 @@ describe('/api/databases', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name, description, userId, and serverId are required' });
-            expect(mockDatabaseService.createDatabase).not.toHaveBeenCalled();
+            expect(data).toEqual({ error: 'Name, description, and serverId are required' });
+            expect(mockCreateDatabase).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
-            mockDatabaseService.createDatabase.mockRejectedValue(new Error('Database error'));
+            mockCreateDatabase.mockRejectedValue(new Error('Database error'));
 
             const request = new NextRequest('http://localhost:3000/api/databases', {
                 method: 'POST',

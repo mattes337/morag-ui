@@ -42,7 +42,10 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                 );
 
                 if (contextDocument) {
-                    console.log('✅ [DocumentDetailPage] Found document in context:', contextDocument.name);
+                    console.log(
+                        '✅ [DocumentDetailPage] Found document in context:',
+                        contextDocument.name,
+                    );
                     setDocument(contextDocument);
                     setIsLoading(false);
                     return;
@@ -81,7 +84,10 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     uploadDate: new Date(docData.uploadDate).toISOString().split('T')[0],
                 };
 
-                console.log('✅ [DocumentDetailPage] Successfully loaded document from API:', formattedDoc.name);
+                console.log(
+                    '✅ [DocumentDetailPage] Successfully loaded document from API:',
+                    formattedDoc.name,
+                );
                 setDocument(formattedDoc);
             } catch (err) {
                 console.error('❌ [DocumentDetailPage] Failed to load document:', err);
@@ -136,10 +142,15 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Loading state
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-96">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading document...</p>
+            <div className="flex items-center justify-center min-h-96" data-oid="fl._5qc">
+                <div className="text-center" data-oid="-bpnv.j">
+                    <div
+                        className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+                        data-oid="nwa4y2c"
+                    ></div>
+                    <p className="text-gray-600" data-oid="hlg7gay">
+                        Loading document...
+                    </p>
                 </div>
             </div>
         );
@@ -148,12 +159,20 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Error state
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-96">
-                <div className="text-center">
-                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <p className="text-sm text-gray-500">Redirecting to documents...</p>
+            <div className="flex items-center justify-center min-h-96" data-oid="l_hm87s">
+                <div className="text-center" data-oid="9_oy9g:">
+                    <div className="text-red-500 text-6xl mb-4" data-oid="aqr.t75">
+                        ⚠️
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="rt1tv6.">
+                        Error
+                    </h2>
+                    <p className="text-gray-600 mb-4" data-oid="23wudt-">
+                        {error}
+                    </p>
+                    <p className="text-sm text-gray-500" data-oid="nqfo80g">
+                        Redirecting to documents...
+                    </p>
                 </div>
             </div>
         );
@@ -162,16 +181,21 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     // Document not found
     if (!document) {
         return (
-            <div className="flex items-center justify-center min-h-96">
-                <div className="text-center">
-                    <div className="text-gray-400 text-6xl mb-4">📄</div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Document Not Found</h2>
-                    <p className="text-gray-600 mb-4">
+            <div className="flex items-center justify-center min-h-96" data-oid="f9od37k">
+                <div className="text-center" data-oid="l2flp.g">
+                    <div className="text-gray-400 text-6xl mb-4" data-oid="jyyrdxk">
+                        📄
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="u-7r3em">
+                        Document Not Found
+                    </h2>
+                    <p className="text-gray-600 mb-4" data-oid="g0wdbm4">
                         The document you&apos;re looking for doesn&apos;t exist.
                     </p>
                     <button
                         onClick={() => router.push('/documents')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        data-oid="0of7ekw"
                     >
                         Back to Documents
                     </button>
@@ -187,6 +211,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
             onReingest={handleReingestDocument}
             onSupersede={handleSupersedeDocument}
             onDelete={handleDeleteDocument}
+            data-oid="1e07g3x"
         />
     );
 }

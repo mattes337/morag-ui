@@ -1,13 +1,13 @@
-import { NextRequest } from 'next/server';
 import { POST } from '../../../../../app/api/auth/login/route';
 import { UserService } from '../../../../../lib/services/userService';
 import { sign } from 'jsonwebtoken';
+import { NextRequest } from 'next/server';
 
 // Mock the UserService and jsonwebtoken
 jest.mock('../../../../../lib/services/userService');
 jest.mock('jsonwebtoken');
 
-const mockUserService = UserService as jest.Mocked<typeof UserService>;
+const mockUserService = jest.mocked(UserService);
 const mockSign = sign as jest.MockedFunction<typeof sign>;
 
 describe('/api/auth/login', () => {

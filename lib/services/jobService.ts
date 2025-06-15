@@ -1,5 +1,5 @@
-import { prisma } from '../database';
 import { Job, JobStatus } from '@prisma/client';
+import { prisma } from '../database';
 export class JobService {
     static async createJob(data: {
         documentId: string;

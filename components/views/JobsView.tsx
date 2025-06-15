@@ -1,6 +1,7 @@
 'use client';
 
 import { Job } from '../../types';
+import { Clock } from 'lucide-react';
 
 interface JobsViewProps {
     jobs: Job[];
@@ -48,6 +49,22 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
     const canCancelJob = (status: string) => {
         return status === 'pending' || status === 'waiting-for-remote-worker';
     };
+
+    // Show empty state when no jobs exist
+    if (jobs.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="bg-gray-100 rounded-full p-6 mb-6">
+                    <Clock className="w-16 h-16 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs yet</h3>
+                <p className="text-gray-600 text-center mb-8 max-w-md">
+                    Jobs are automatically created when you upload documents or trigger reingestion.
+                    They&apos;ll appear here so you can monitor their progress and status.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -193,14 +210,6 @@ export function JobsView({ jobs, onCancelJob, onViewJobDetail }: JobsViewProps) 
                     </tbody>
                 </table>
             </div>
-
-            {jobs.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="text-gray-500">
-                        No jobs found. Jobs are created when documents are uploaded or reingested.
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

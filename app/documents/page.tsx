@@ -31,6 +31,7 @@ export default function DocumentsPage() {
             onAddDocument={() => setShowAddDocumentDialog(true)}
             onPromptDocument={handlePromptDocument}
             onViewDocumentDetail={handleViewDocumentDetail}
+            data-oid="f__.a_s"
         />
     );
 }

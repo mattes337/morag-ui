@@ -5,7 +5,7 @@ import { UserService } from '../../../../../lib/services/userService';
 // Mock the UserService
 jest.mock('../../../../../lib/services/userService');
 
-const mockUserService = UserService as jest.Mocked<typeof UserService>;
+const mockUserService = jest.mocked(UserService);
 
 describe('/api/users/[email]', () => {
     const mockParams = { email: 'test@example.com' };
