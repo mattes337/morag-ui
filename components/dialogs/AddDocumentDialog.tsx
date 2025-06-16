@@ -3,11 +3,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DocumentType, Document } from '../../types';
 
-interface AddDocumentDialogProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AddDocumentDialogProps {
     isOpen: boolean;
     onClose: () => void;
     mode?: 'add' | 'supersede';
     documentToSupersede?: Document | null;
+    'data-oid'?: string;
+    [key: string]: any;
 }
 
 export function AddDocumentDialog({
@@ -15,7 +17,7 @@ export function AddDocumentDialog({
     onClose,
     mode = 'add',
     documentToSupersede,
-    ...htmlProps
+    ...props
 }: AddDocumentDialogProps) {
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
     const [chunkSize, setChunkSize] = useState('1000');
@@ -96,7 +98,7 @@ export function AddDocumentDialog({
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            {...htmlProps}
+            {...props}
         >
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4" data-oid="kl9:7of">
                 <h3 className="text-lg font-semibold mb-4" data-oid="mpg8vik">

@@ -1,4 +1,7 @@
-interface LoadingSpinnerProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface LoadingSpinnerProps {
+    'data-oid'?: string;
+    [key: string]: any;
+}
 
 export function LoadingSpinner(props: LoadingSpinnerProps) {
     return (
