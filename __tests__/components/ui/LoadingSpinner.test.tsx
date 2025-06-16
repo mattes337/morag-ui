@@ -2,6 +2,8 @@ import React from 'react';
 import { render, screen } from '../../../lib/test-utils';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 
+import '@testing-library/jest-dom'
+
 describe('LoadingSpinner', () => {
     it('should render loading spinner', () => {
         render(<LoadingSpinner data-oid="t.m3pw-" />);

@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '../../../lib/test-utils';
 import { DocumentsView } from '../../../components/views/DocumentsView';
 import { mockDatabase, mockDocument } from '../../../lib/test-utils';
 
+import '@testing-library/jest-dom'
+
 const mockProps = {
     documents: [mockDocument],
     selectedDatabase: mockDatabase,
