@@ -77,4 +77,12 @@ export class ApiKeyService {
             where: { id },
         });
     }
+
+    static async validateApiKey(key: string) {
+        const apiKey = await this.getApiKeyByKey(key);
+        if (!apiKey) return null;
+        
+        // Update last used timestamp
+        return await this.updateLastUsed(apiKey.id);
+    }
 }

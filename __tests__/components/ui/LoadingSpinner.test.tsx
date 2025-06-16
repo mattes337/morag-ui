@@ -19,9 +19,9 @@ describe('LoadingSpinner', () => {
     });
 
     it('should have correct container styling', () => {
-        const { container } = render(<LoadingSpinner data-oid="_najmlg" />);
+        render(<LoadingSpinner data-testid="spinner-container" />);
 
-        const spinnerContainer = container.firstChild;
+        const spinnerContainer = screen.getByTestId('spinner-container');
         expect(spinnerContainer).toHaveClass('flex', 'items-center', 'justify-center', 'p-8');
     });
 });

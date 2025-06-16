@@ -14,6 +14,8 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
+import { DatabaseType } from '@prisma/client';
+
 // Mock the databaseService module to ensure proper function exports
 jest.mock('../../../lib/services/databaseService', () => ({
     createDatabase: jest.fn(),
@@ -69,6 +71,8 @@ describe('Database Service', () => {
             const mockResult = {
                 id: 'db123',
                 ...mockData,
+                documentCount: 0,
+                lastUpdated: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 documents: [],
@@ -82,7 +86,23 @@ describe('Database Service', () => {
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
                 },
-                server: { id: 'server123', name: 'Test Server' },
+                server: { 
+                    id: 'server123', 
+                    name: 'Test Server',
+                    type: DatabaseType.QDRANT,
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                 _count: { documents: 0 },
             };
 
@@ -117,7 +137,23 @@ describe('Database Service', () => {
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
                 },
-                    server: { id: 'server1', name: 'Server 1' },
+                    server: { 
+                    id: 'server1', 
+                    name: 'Server 1',
+                    type: DatabaseType.QDRANT,
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                     _count: { documents: 0 },
                 },
                 {
@@ -139,7 +175,23 @@ describe('Database Service', () => {
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
                 },
-                    server: { id: 'server2', name: 'Server 2' },
+                    server: { 
+                    id: 'server2', 
+                    name: 'Server 2',
+                    type: DatabaseType.QDRANT,
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                     _count: { documents: 1 },
                 },
             ];
@@ -175,7 +227,23 @@ describe('Database Service', () => {
                         role: 'USER' as const,
                         theme: 'LIGHT' as const,
                     },
-                    server: { id: 'server1', name: 'Server 1' },
+                    server: { 
+                    id: 'server1', 
+                    name: 'Server 1',
+                    type: DatabaseType.QDRANT,
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                     _count: { documents: 0 },
                 },
             ];
@@ -210,7 +278,23 @@ describe('Database Service', () => {
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
                 },
-                server: { id: 'server123', name: 'Test Server' },
+                server: { 
+                    id: 'server123', 
+                    name: 'Test Server',
+                    type: DatabaseType.QDRANT,
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                 _count: { documents: 0 },
             };
 
@@ -236,6 +320,8 @@ describe('Database Service', () => {
                 description: 'An updated database',
                 userId: 'user123',
                 serverId: 'server123',
+                documentCount: 0,
+                lastUpdated: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 documents: [],
@@ -249,7 +335,23 @@ describe('Database Service', () => {
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
                 },
-                server: { id: 'server123', name: 'Test Server' },
+                server: { 
+                    id: 'server123', 
+                    name: 'Test Server',
+                    type: 'MYSQL',
+                    host: 'localhost',
+                    port: 3306,
+                    username: 'testuser',
+                    password: 'testpass',
+                    apiKey: null,
+                    database: 'testdb',
+                    collection: null,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastConnected: new Date(),
+                    userId: 'user123'
+                },
                 _count: { documents: 0 },
             };
 
@@ -270,6 +372,8 @@ describe('Database Service', () => {
                 description: 'A test database',
                 userId: 'user123',
                 serverId: 'server123',
+                documentCount: 0,
+                lastUpdated: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -292,6 +396,8 @@ describe('Database Service', () => {
                 description: 'A test database',
                 userId: 'user123',
                 serverId: 'server123',
+                documentCount: mockCount,
+                lastUpdated: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 documents: [],

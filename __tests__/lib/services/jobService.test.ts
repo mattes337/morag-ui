@@ -53,7 +53,7 @@ describe('JobService', () => {
                 id: '1',
                 ...mockData,
                 percentage: 0,
-                summary: null,
+                summary: '',
                 startDate: new Date(),
                 endDate: null,
                 createdAt: new Date(),
@@ -104,7 +104,7 @@ describe('JobService', () => {
                     userId: 'user1',
                     status: 'PENDING' as JobStatus,
                     percentage: 0,
-                    summary: null,
+                    summary: '',
                     startDate: new Date(),
                     endDate: null,
                     createdAt: new Date(),
@@ -156,7 +156,7 @@ describe('JobService', () => {
                     userId: 'user1',
                     status: 'PENDING' as JobStatus,
                     percentage: 0,
-                    summary: null,
+                    summary: '',
                     startDate: new Date(),
                     endDate: null,
                     createdAt: new Date(),
@@ -208,7 +208,7 @@ describe('JobService', () => {
                     userId: 'user1',
                     status: 'PENDING' as JobStatus,
                     percentage: 0,
-                    summary: null,
+                    summary: '',
                     startDate: new Date(),
                     endDate: null,
                     createdAt: new Date(),
@@ -259,7 +259,7 @@ describe('JobService', () => {
                 userId: 'user1',
                 status: 'PENDING' as JobStatus,
                 percentage: 0,
-                summary: null,
+                summary: '',
                 startDate: new Date(),
                 endDate: null,
                 createdAt: new Date(),
@@ -302,7 +302,7 @@ describe('JobService', () => {
     describe('updateJob', () => {
         test('updateJob should update a job', async () => {
             const updateData = {
-                status: 'COMPLETED' as JobStatus,
+                status: 'FINISHED' as JobStatus,
                 percentage: 100,
             };
 
@@ -312,9 +312,9 @@ describe('JobService', () => {
                 documentName: 'Test Document.pdf',
                 documentType: 'PDF',
                 userId: 'user1',
-                status: 'COMPLETED' as JobStatus,
+                status: 'FINISHED' as JobStatus,
                 percentage: 100,
-                summary: null,
+                summary: '',
                 startDate: new Date(),
                 endDate: new Date(),
                 createdAt: new Date(),
@@ -412,9 +412,9 @@ describe('JobService', () => {
                 documentName: 'Test Document.pdf',
                 documentType: 'PDF',
                 userId: 'user1',
-                status: 'COMPLETED' as JobStatus,
+                status: 'FINISHED' as JobStatus,
                 percentage: 100,
-                summary: null,
+                summary: '',
                 startDate: new Date(),
                 endDate: new Date(),
                 createdAt: new Date(),
@@ -447,9 +447,9 @@ describe('JobService', () => {
 
             mockedJobService.updateJobStatus.mockResolvedValue(mockUpdatedJob);
 
-            const result = await JobService.updateJobStatus('1', 'COMPLETED', new Date());
+            const result = await JobService.updateJobStatus('1', 'FINISHED', new Date());
 
-            expect(mockedJobService.updateJobStatus).toHaveBeenCalledWith('1', 'COMPLETED', expect.any(Date));
+            expect(mockedJobService.updateJobStatus).toHaveBeenCalledWith('1', 'FINISHED', expect.any(Date));
             expect(result).toEqual(mockUpdatedJob);
         });
     });
@@ -464,7 +464,7 @@ describe('JobService', () => {
                 userId: 'user1',
                 status: 'PENDING' as JobStatus,
                 percentage: 0,
-                summary: null,
+                summary: '',
                 startDate: new Date(),
                 endDate: null,
                 createdAt: new Date(),
@@ -491,7 +491,7 @@ describe('JobService', () => {
                     userId: 'user1',
                     status: 'PROCESSING' as JobStatus,
                     percentage: 50,
-                    summary: null,
+                    summary: '',
                     startDate: new Date(),
                     endDate: null,
                     createdAt: new Date(),
