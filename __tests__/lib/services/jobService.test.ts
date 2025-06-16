@@ -80,6 +80,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
             };
 
@@ -130,6 +131,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
                 },
             ];
@@ -181,6 +183,7 @@ describe('JobService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                 },
             ];
@@ -232,6 +235,7 @@ describe('JobService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                 },
             ];
@@ -282,6 +286,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
             };
 
@@ -336,6 +341,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
             };
 
@@ -385,6 +391,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
             };
 
@@ -434,6 +441,7 @@ describe('JobService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
             };
 
@@ -510,6 +518,7 @@ describe('JobService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                 },
             ];

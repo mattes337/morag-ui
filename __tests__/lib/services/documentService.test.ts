@@ -43,6 +43,7 @@ describe('DocumentService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
                 jobs: [],
             };
@@ -93,6 +94,7 @@ describe('DocumentService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                     jobs: [],
                 },
@@ -128,6 +130,7 @@ describe('DocumentService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
                 jobs: [],
             };
@@ -162,6 +165,7 @@ describe('DocumentService', () => {
                     updatedAt: new Date(),
                     avatar: null,
                     role: 'USER' as const,
+                    theme: 'LIGHT' as const,
                 },
                 jobs: [],
             };
@@ -226,6 +230,7 @@ describe('DocumentService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                     jobs: [],
                 },
@@ -262,6 +267,7 @@ describe('DocumentService', () => {
                         updatedAt: new Date(),
                         avatar: null,
                         role: 'USER' as const,
+                        theme: 'LIGHT' as const,
                     },
                     jobs: [],
                 },
