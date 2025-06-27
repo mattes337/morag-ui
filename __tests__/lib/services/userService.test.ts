@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { UserService } from '@/lib/services/userService';
-import { mockPrisma } from '../../mocks/prisma';
+import { prisma } from '../../../lib/database';
 import { User, Role, UserSettings } from '@prisma/client';
 
 // Mock the database

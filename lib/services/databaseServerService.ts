@@ -8,6 +8,7 @@ export class DatabaseServerService {
         host: string;
         port: number;
         userId: string;
+        realmId: string;
         username?: string;
         password?: string;
         apiKey?: string;
@@ -20,6 +21,7 @@ export class DatabaseServerService {
             data,
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
@@ -28,6 +30,7 @@ export class DatabaseServerService {
         return await prisma.databaseServer.findMany({
             include: {
                 user: true,
+                realm: true,
             },
             orderBy: {
                 createdAt: 'desc',
@@ -35,11 +38,17 @@ export class DatabaseServerService {
         });
     }
 
-    static async getDatabaseServersByUser(userId: string) {
+    static async getDatabaseServersByUser(userId: string, realmId?: string) {
+        const where: any = { userId };
+        if (realmId) {
+            where.realmId = realmId;
+        }
+        
         return await prisma.databaseServer.findMany({
-            where: { userId },
+            where,
             include: {
                 user: true,
+                realm: true,
             },
             orderBy: {
                 createdAt: 'desc',
@@ -52,6 +61,7 @@ export class DatabaseServerService {
             where: { id },
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
@@ -62,6 +72,7 @@ export class DatabaseServerService {
             data,
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
@@ -88,6 +99,7 @@ export class DatabaseServerService {
             },
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
