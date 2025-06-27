@@ -10,6 +10,8 @@ interface DocumentsViewProps {
     onAddDocument: () => void;
     onPromptDocument: (document: Document) => void;
     onViewDocumentDetail: (document: Document) => void;
+    'data-oid'?: string;
+    [key: string]: any;
 }
 
 export function DocumentsView({
@@ -19,6 +21,7 @@ export function DocumentsView({
     onAddDocument,
     onPromptDocument,
     onViewDocumentDetail,
+    ...props
 }: DocumentsViewProps) {
     const getStateColor = (state: string) => {
         switch (state) {
@@ -40,7 +43,7 @@ export function DocumentsView({
     // Show empty state when no documents exist
     if (documents.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="flex flex-col items-center justify-center py-16 px-4" {...props}>
                 <button
                     onClick={onBackToDatabases}
                     className="text-blue-600 hover:text-blue-800 text-sm self-start mb-8"
@@ -67,7 +70,7 @@ export function DocumentsView({
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" {...props}>
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">

@@ -97,7 +97,11 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children }: { children: ReactNode }) {
+interface AppProviderProps extends React.HTMLAttributes<HTMLDivElement> {
+    children: ReactNode;
+}
+
+export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
 
     // User & Settings state
@@ -722,9 +726,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AppContext.Provider value={value} data-oid="jh1sm3g">
-            {children}
-        </AppContext.Provider>
+        <div {...htmlProps}>
+            <AppContext.Provider value={value}>
+                {children}
+            </AppContext.Provider>
+        </div>
     );
 }
 

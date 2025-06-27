@@ -23,7 +23,17 @@ describe('/api/api-keys/[id]', () => {
 
     describe('DELETE', () => {
         it('should delete the API key', async () => {
-            mockApiKeyService.deleteApiKey.mockResolvedValue(undefined);
+            const mockApiKey = {
+                id: 'apikey1',
+                name: 'Test API Key',
+                key: 'test-key-123',
+                created: new Date(),
+                lastUsed: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                userId: 'user1'
+            };
+            mockApiKeyService.deleteApiKey.mockResolvedValue(mockApiKey);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/api-keys/apikey1');
             const response = await DELETE(mockRequest, { params: mockParams });

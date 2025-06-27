@@ -122,7 +122,21 @@ describe('/api/documents/[id]', () => {
 
     describe('DELETE', () => {
         it('should delete the document', async () => {
-            mockDocumentService.deleteDocument.mockResolvedValue(undefined);
+            const mockDocument = {
+                id: 'doc1',
+                name: 'Test Document',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                userId: 'user1',
+                type: 'PDF',
+                state: 'ingested' as any,
+                version: 1,
+                chunks: 10,
+                quality: 0.9,
+                uploadDate: new Date(),
+                databaseId: 'db1'
+            };
+            mockDocumentService.deleteDocument.mockResolvedValue(mockDocument);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/documents/doc1');
             const response = await DELETE(mockRequest, { params: mockParams });

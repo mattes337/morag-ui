@@ -13,6 +13,8 @@ import {
     mockJob,
 } from '../../lib/test-utils';
 
+import '@testing-library/jest-dom'
+
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({
     checkApiHealth: jest.fn().mockResolvedValue(true),

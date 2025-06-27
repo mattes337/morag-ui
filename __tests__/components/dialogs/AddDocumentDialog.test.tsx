@@ -3,6 +3,8 @@ import { render, screen, fireEvent, waitFor } from '../../../lib/test-utils';
 import { AddDocumentDialog } from '../../../components/dialogs/AddDocumentDialog';
 import { mockDocument } from '../../../lib/test-utils';
 
+import '@testing-library/jest-dom'
+
 const mockProps = {
     isOpen: true,
     onClose: jest.fn(),

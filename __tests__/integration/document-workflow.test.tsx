@@ -6,6 +6,8 @@ import { AddDocumentDialog } from '../../components/dialogs/AddDocumentDialog';
 import { DeleteConfirmDialog } from '../../components/dialogs/DeleteConfirmDialog';
 import { createMockFetch, mockDatabase, mockDocument } from '../../lib/test-utils';
 
+import '@testing-library/jest-dom'
+
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({
     checkApiHealth: jest.fn().mockResolvedValue(true),
@@ -53,7 +55,7 @@ describe('Document Workflow Integration', () => {
 
         const TestComponent = () => {
             const [showAddDialog, setShowAddDialog] = React.useState(false);
-            const [selectedDocument, setSelectedDocument] = React.useState(null);
+            const [selectedDocument, setSelectedDocument] = React.useState<any>(null);
 
             return (
                 <AppProvider>

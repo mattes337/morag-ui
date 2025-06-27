@@ -120,7 +120,18 @@ describe('/api/databases/[id]', () => {
 
     describe('DELETE', () => {
         it('should delete the database', async () => {
-            mockDeleteDatabase.mockResolvedValue(undefined);
+            const mockDatabase = {
+                id: 'db1',
+                name: 'Test Database',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                userId: 'user1',
+                description: 'Test description',
+                documentCount: 0,
+                lastUpdated: new Date(),
+                serverId: 'server1'
+            };
+            mockDeleteDatabase.mockResolvedValue(mockDatabase);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases/db1');
             const response = await DELETE(mockRequest, { params: mockParams });

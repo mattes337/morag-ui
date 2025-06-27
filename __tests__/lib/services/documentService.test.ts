@@ -1,25 +1,25 @@
-// Mock the DocumentService
-jest.mock('../../../lib/services/documentService');
-
 import { DocumentService } from '../../../lib/services/documentService';
 import { DocumentState } from '@prisma/client';
 
-// Create mock DocumentService
+// Mock the DocumentService class
+jest.mock('../../../lib/services/documentService', () => ({
+    DocumentService: {
+        createDocument: jest.fn(),
+        getAllDocuments: jest.fn(),
+        getDocumentById: jest.fn(),
+        updateDocument: jest.fn(),
+        deleteDocument: jest.fn(),
+        getDocumentsByUser: jest.fn(),
+        getDocumentsByDatabase: jest.fn(),
+        updateDocumentQuality: jest.fn(),
+    },
+}));
+
 const mockDocumentService = DocumentService as jest.Mocked<typeof DocumentService>;
 
 describe('DocumentService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        
-        // Setup all mock methods
-        mockDocumentService.createDocument = jest.fn();
-        mockDocumentService.getAllDocuments = jest.fn();
-        mockDocumentService.getDocumentById = jest.fn();
-        mockDocumentService.updateDocument = jest.fn();
-        mockDocumentService.deleteDocument = jest.fn();
-        mockDocumentService.getDocumentsByUser = jest.fn();
-        mockDocumentService.getDocumentsByDatabase = jest.fn();
-        mockDocumentService.updateDocumentQuality = jest.fn();
     });
 
     describe('createDocument', () => {
@@ -32,10 +32,32 @@ describe('DocumentService', () => {
                 databaseId: 'db1',
                 state: DocumentState.PENDING,
                 version: 1,
+                chunks: 0,
+                quality: 0.0,
+                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                    theme: 'LIGHT' as const,
+                },
                 jobs: [],
             };
 
@@ -72,12 +94,34 @@ describe('DocumentService', () => {
                     type: 'pdf',
                     userId: 'user1',
                     databaseId: 'db1',
-                    state: DocumentState.COMPLETED,
+                    state: DocumentState.INGESTED,
                     version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                        theme: 'LIGHT' as const,
+                    },
                     jobs: [],
                 },
             ];
@@ -99,12 +143,34 @@ describe('DocumentService', () => {
                 type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
-                state: DocumentState.COMPLETED,
+                state: DocumentState.INGESTED,
                 version: 1,
+                chunks: 0,
+                quality: 0.0,
+                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                    theme: 'LIGHT' as const,
+                },
                 jobs: [],
             };
 
@@ -125,12 +191,34 @@ describe('DocumentService', () => {
                 type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
-                state: DocumentState.COMPLETED,
+                state: DocumentState.INGESTED,
                 version: 2,
+                chunks: 0,
+                quality: 0.0,
+                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { id: 'db1', name: 'Test DB' },
-                user: { id: 'user1', name: 'Test User' },
+                database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                user: {
+                    id: 'user1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    avatar: null,
+                    role: 'USER' as const,
+                    theme: 'LIGHT' as const,
+                },
                 jobs: [],
             };
 
@@ -157,8 +245,11 @@ describe('DocumentService', () => {
                 type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
-                state: DocumentState.COMPLETED,
+                state: DocumentState.INGESTED,
                 version: 1,
+                chunks: 0,
+                quality: 0.0,
+                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -181,12 +272,34 @@ describe('DocumentService', () => {
                     type: 'pdf',
                     userId: 'user1',
                     databaseId: 'db1',
-                    state: DocumentState.COMPLETED,
+                    state: DocumentState.INGESTED,
                     version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                        theme: 'LIGHT' as const,
+                    },
                     jobs: [],
                 },
             ];
@@ -209,12 +322,34 @@ describe('DocumentService', () => {
                     type: 'pdf',
                     userId: 'user1',
                     databaseId: 'db1',
-                    state: DocumentState.COMPLETED,
+                    state: DocumentState.INGESTED,
                     version: 1,
+                    chunks: 0,
+                    quality: 0.0,
+                    uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { id: 'db1', name: 'Test DB' },
-                    user: { id: 'user1', name: 'Test User' },
+                    database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
+                    user: {
+                        id: 'user1',
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        avatar: null,
+                        role: 'USER' as const,
+                        theme: 'LIGHT' as const,
+                    },
                     jobs: [],
                 },
             ];
@@ -236,13 +371,24 @@ describe('DocumentService', () => {
                 type: 'pdf',
                 userId: 'user1',
                 databaseId: 'db1',
-                state: DocumentState.COMPLETED,
+                state: DocumentState.INGESTED,
                 version: 1,
                 quality: 0.95,
                 chunks: 10,
+                uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { id: 'db1', name: 'Test DB' },
+                database: { 
+                    id: 'db1', 
+                    name: 'Test DB',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    userId: 'user1',
+                    description: 'Test Database',
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    serverId: 'server1'
+                },
                 jobs: [],
             };
 
