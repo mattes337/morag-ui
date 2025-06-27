@@ -14,8 +14,12 @@ export class RealmService {
             data: {
                 name: data.name,
                 description: data.description,
-                ownerId: data.ownerId,
                 isDefault: false,
+                owner: {
+                    connect: {
+                        id: data.ownerId
+                    }
+                },
                 userRealms: {
                     create: {
                         userId: data.ownerId,
@@ -31,8 +35,12 @@ export class RealmService {
             data: {
                 name: 'Default',
                 description: 'Default realm for user',
-                ownerId: userId,
                 isDefault: true,
+                owner: {
+                    connect: {
+                        id: userId
+                    }
+                },
                 userRealms: {
                     create: {
                         userId: userId,

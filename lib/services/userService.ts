@@ -1,5 +1,6 @@
-import { prisma } from '../database';
 import { User, UserSettings } from '../../types';
+import { prisma } from '../database';
+import { RealmService } from './realmService';
 
 export class UserService {
     private static db = prisma;
@@ -9,13 +10,24 @@ export class UserService {
         avatar?: string;
         role?: 'ADMIN' | 'USER' | 'VIEWER';
     }) {
-        return await this.db.user.create({
+        // Create user first
+        const user = await this.db.user.create({
             data,
             include: {
                 userSettings: true,
                 apiKeys: true,
             },
         });
+
+        // Create default realm for the new user
+        try {
+            await RealmService.createDefaultRealm(user.id);
+        } catch (error) {
+            console.error('Failed to create default realm for user:', error);
+            // Don't fail user creation if realm creation fails
+        }
+
+        return user;
     }
 
     static async getUserById(id: string) {

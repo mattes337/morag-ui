@@ -96,6 +96,8 @@ interface AppContextType {
     setShowSettingsDialog: (show: boolean) => void;
     showServersDialog: boolean;
     setShowServersDialog: (show: boolean) => void;
+    showRealmManagementDialog: boolean;
+    setShowRealmManagementDialog: (show: boolean) => void;
 
     // Prompt state
     promptText: string;
@@ -163,6 +165,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showServersDialog, setShowServersDialog] = useState(false);
+    const [showRealmManagementDialog, setShowRealmManagementDialog] = useState(false);
 
     // Prompt state
     const [promptText, setPromptText] = useState('');
@@ -211,88 +214,107 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             }
         };
 
-        const loadUserData = async () => {
-            try {
-                // Load databases
-                console.log('🗄️ [AppContext] Loading databases');
-                const databasesResponse = await fetch('/api/databases');
-                if (databasesResponse.ok) {
-                    const databasesData = await databasesResponse.json();
-                    const formattedDatabases = databasesData.map((db: any) => ({
-                        id: db.id,
-                        name: db.name,
-                        description: db.description,
-                        documentCount: db._count?.documents || 0,
-                        lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
-                    }));
-                    console.log('✅ [AppContext] Loaded', formattedDatabases.length, 'databases');
-                    setDatabases(formattedDatabases);
-                }
-
-                // Load documents
-                console.log('📄 [AppContext] Loading documents');
-                const documentsResponse = await fetch('/api/documents');
-                if (documentsResponse.ok) {
-                    const documentsData = await documentsResponse.json();
-                    const formattedDocuments = documentsData.map((doc: any) => ({
-                        id: doc.id,
-                        name: doc.name,
-                        type: doc.type,
-                        state: doc.state.toLowerCase() as Document['state'],
-                        version: doc.version,
-                        chunks: doc.chunks,
-                        quality: doc.quality,
-                        uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
-                    }));
-                    console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents');
-                    setDocuments(formattedDocuments);
-                }
-
-                // Load API keys
-                console.log('🔑 [AppContext] Loading API keys');
-                const apiKeysResponse = await fetch('/api/api-keys');
-                if (apiKeysResponse.ok) {
-                    const apiKeysData = await apiKeysResponse.json();
-                    const formattedApiKeys = apiKeysData.map((key: any) => ({
-                        id: key.id,
-                        name: key.name,
-                        key: key.key,
-                        created: new Date(key.created).toISOString().split('T')[0],
-                        lastUsed: key.lastUsed
-                            ? new Date(key.lastUsed).toISOString().split('T')[0]
-                            : '',
-                    }));
-                    setApiKeys(formattedApiKeys);
-                }
-
-                // Load jobs
-                const jobsResponse = await fetch('/api/jobs');
-                if (jobsResponse.ok) {
-                    const jobsData = await jobsResponse.json();
-                    const formattedJobs = jobsData.map((job: any) => ({
-                        id: job.id,
-                        documentId: job.documentId,
-                        documentName: job.documentName,
-                        documentType: job.documentType,
-                        startDate: new Date(job.startDate).toISOString(),
-                        endDate: job.endDate ? new Date(job.endDate).toISOString() : undefined,
-                        status: job.status.toLowerCase().replace('_', '-') as Job['status'],
-                        progress: {
-                            percentage: job.percentage,
-                            summary: job.summary,
-                        },
-                        createdAt: new Date(job.createdAt).toISOString(),
-                        updatedAt: new Date(job.updatedAt).toISOString(),
-                    }));
-                    setJobs(formattedJobs);
-                }
-            } catch (error) {
-                console.error('❌ [AppContext] Failed to load user data:', error);
-            }
-        };
-
         checkAuthAndLoadData();
     }, []);
+
+    // Reload data when realm changes
+    useEffect(() => {
+        if (user && currentRealm) {
+            console.log('🏰 [AppContext] Realm changed, reloading data for realm:', currentRealm.name);
+            loadUserData();
+        }
+    }, [currentRealm?.id, user]);
+
+    const loadUserData = async () => {
+        try {
+            // Build query parameters for realm filtering
+            const realmParam = currentRealm ? `?realmId=${currentRealm.id}` : '';
+
+            // Load databases
+            console.log('🗄️ [AppContext] Loading databases for realm:', currentRealm?.name || 'default');
+            const databasesResponse = await fetch(`/api/databases${realmParam}`);
+            if (databasesResponse.ok) {
+                const databasesData = await databasesResponse.json();
+                const formattedDatabases = databasesData.map((db: any) => ({
+                    id: db.id,
+                    name: db.name,
+                    description: db.description,
+                    documentCount: db._count?.documents || 0,
+                    lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
+                }));
+                console.log('✅ [AppContext] Loaded', formattedDatabases.length, 'databases');
+                setDatabases(formattedDatabases);
+            }
+
+            // Load documents
+            console.log('📄 [AppContext] Loading documents for realm:', currentRealm?.name || 'default');
+            const documentsResponse = await fetch(`/api/documents${realmParam}`);
+            if (documentsResponse.ok) {
+                const documentsData = await documentsResponse.json();
+                const formattedDocuments = documentsData.map((doc: any) => ({
+                    id: doc.id,
+                    name: doc.name,
+                    type: doc.type,
+                    state: doc.state.toLowerCase() as Document['state'],
+                    version: doc.version,
+                    chunks: doc.chunks,
+                    quality: doc.quality,
+                    uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
+                }));
+                console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents');
+                setDocuments(formattedDocuments);
+            }
+
+            // Load API keys
+            console.log('🔑 [AppContext] Loading API keys for realm:', currentRealm?.name || 'default');
+            const apiKeysResponse = await fetch(`/api/api-keys${realmParam}`);
+            if (apiKeysResponse.ok) {
+                const apiKeysData = await apiKeysResponse.json();
+                const formattedApiKeys = apiKeysData.map((key: any) => ({
+                    id: key.id,
+                    name: key.name,
+                    key: key.key,
+                    created: new Date(key.created).toISOString().split('T')[0],
+                    lastUsed: key.lastUsed
+                        ? new Date(key.lastUsed).toISOString().split('T')[0]
+                        : '',
+                }));
+                setApiKeys(formattedApiKeys);
+            }
+
+            // Load jobs
+            const jobsResponse = await fetch(`/api/jobs${realmParam}`);
+            if (jobsResponse.ok) {
+                const jobsData = await jobsResponse.json();
+                const formattedJobs = jobsData.map((job: any) => ({
+                    id: job.id,
+                    documentId: job.documentId,
+                    documentName: job.documentName,
+                    documentType: job.documentType,
+                    startDate: new Date(job.startDate).toISOString(),
+                    endDate: job.endDate ? new Date(job.endDate).toISOString() : undefined,
+                    status: job.status.toLowerCase().replace('_', '-') as Job['status'],
+                    progress: {
+                        percentage: job.percentage,
+                        summary: job.summary,
+                    },
+                    createdAt: new Date(job.createdAt).toISOString(),
+                    updatedAt: new Date(job.updatedAt).toISOString(),
+                }));
+                setJobs(formattedJobs);
+            }
+        } catch (error) {
+            console.error('❌ [AppContext] Failed to load user data:', error);
+        }
+    };
+
+    // Reload data when realm changes
+    useEffect(() => {
+        if (user && currentRealm) {
+            console.log('🏰 [AppContext] Realm changed, reloading data for realm:', currentRealm.name);
+            loadUserData();
+        }
+    }, [currentRealm?.id, user]);
 
     const loadCurrentRealm = async () => {
         try {
@@ -752,6 +774,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setShowSettingsDialog,
         showServersDialog,
         setShowServersDialog,
+        showRealmManagementDialog,
+        setShowRealmManagementDialog,
         promptText,
         setPromptText,
         numDocuments,

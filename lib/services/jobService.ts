@@ -23,6 +23,23 @@ export class JobService {
             orderBy: { createdAt: 'desc' },
         });
     }
+
+    static async getJobsByUserId(userId: string, realmId?: string | null) {
+        const whereClause: any = { userId };
+        if (realmId) {
+            whereClause.document = {
+                database: {
+                    realmId: realmId,
+                },
+            };
+        }
+        
+        return await prisma.job.findMany({
+            where: whereClause,
+            include: { document: true, user: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     static async getJobsByDocument(documentId: string) {
         return await prisma.job.findMany({
             where: { documentId },

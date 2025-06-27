@@ -2,31 +2,45 @@ import { NextRequest } from 'next/server';
 
 // Mock the database service functions and auth
 jest.mock('../../../../lib/services/databaseService', () => ({
-    getDatabasesByUser: jest.fn(),
+    DatabaseService: {
+        getDatabasesByUserId: jest.fn(),
+    },
     createDatabase: jest.fn(),
 }));
 jest.mock('../../../../lib/auth', () => ({
-    requireAuth: jest.fn(),
+    getAuthUser: jest.fn(),
 }));
 
 // Import AFTER mocking
 import { GET, POST } from '../../../../app/api/databases/route';
-import { getDatabasesByUser, createDatabase } from '../../../../lib/services/databaseService';
-import { requireAuth } from '../../../../lib/auth';
+import { DatabaseService, createDatabase } from '../../../../lib/services/databaseService';
+import { getAuthUser } from '../../../../lib/auth';
 
-const mockGetDatabasesByUser = getDatabasesByUser as jest.MockedFunction<typeof getDatabasesByUser>;
+const mockGetDatabasesByUserId = DatabaseService.getDatabasesByUserId as jest.MockedFunction<typeof DatabaseService.getDatabasesByUserId>;
 const mockCreateDatabase = createDatabase as jest.MockedFunction<typeof createDatabase>;
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockGetAuthUser = getAuthUser as jest.MockedFunction<typeof getAuthUser>;
 
 describe('/api/databases', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
+        mockGetAuthUser.mockResolvedValue(mockUser);
     });
 
     describe('GET', () => {
+        it('should handle unauthorized access', async () => {
+            mockGetAuthUser.mockResolvedValue(null);
+
+            const mockRequest = new NextRequest('http://localhost:3000/api/databases');
+            const response = await GET(mockRequest);
+            const data = await response.json();
+
+            expect(response.status).toBe(401);
+            expect(data).toEqual({ error: 'Unauthorized' });
+            expect(mockGetDatabasesByUserId).not.toHaveBeenCalled();
+        });
+
         it('should return all databases', async () => {
             const mockDatabases = [
                 {
@@ -39,7 +53,7 @@ describe('/api/databases', () => {
                 },
             ];
 
-            mockGetDatabasesByUser.mockResolvedValue(mockDatabases as any);
+            mockGetDatabasesByUserId.mockResolvedValue(mockDatabases as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases');
             const response = await GET(mockRequest);
@@ -47,11 +61,11 @@ describe('/api/databases', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDatabases);
-            expect(mockGetDatabasesByUser).toHaveBeenCalledWith('user1');
+            expect(mockGetDatabasesByUserId).toHaveBeenCalledWith('user1', null);
         });
 
         it('should handle service errors', async () => {
-            mockGetDatabasesByUser.mockRejectedValue(new Error('Database error'));
+            mockGetDatabasesByUserId.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/databases');
             const response = await GET(mockRequest);
@@ -63,6 +77,25 @@ describe('/api/databases', () => {
     });
 
     describe('POST', () => {
+        it('should handle unauthorized access', async () => {
+            mockGetAuthUser.mockResolvedValue(null);
+
+            const request = new NextRequest('http://localhost:3000/api/databases', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: 'New Database',
+                    description: 'New description',
+                }),
+            });
+
+            const response = await POST(request);
+            const data = await response.json();
+
+            expect(response.status).toBe(401);
+            expect(data).toEqual({ error: 'Unauthorized' });
+            expect(mockCreateDatabase).not.toHaveBeenCalled();
+        });
+
         it('should create a new database', async () => {
             const mockDatabase = {
                 id: '1',
@@ -80,8 +113,6 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
-                    userId: 'user1',
-                    serverId: 'server1',
                 }),
             });
 
@@ -93,8 +124,8 @@ describe('/api/databases', () => {
             expect(mockCreateDatabase).toHaveBeenCalledWith({
                 name: 'New Database',
                 description: 'New description',
-                userId: 'user1', // This comes from requireAuth, not request body
-                serverId: 'server1',
+                userId: 'user1', // This comes from getAuthUser
+                serverId: 'default-server', // Default value
             });
         });
 
@@ -102,8 +133,7 @@ describe('/api/databases', () => {
             const request = new NextRequest('http://localhost:3000/api/databases', {
                 method: 'POST',
                 body: JSON.stringify({
-                    name: 'New Database',
-                    // Missing description and serverId
+                    // Missing name - required field
                 }),
             });
 
@@ -111,8 +141,40 @@ describe('/api/databases', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name, description, and serverId are required' });
+            expect(data.error).toBe('Invalid input');
+            expect(data.details).toBeDefined();
             expect(mockCreateDatabase).not.toHaveBeenCalled();
+        });
+
+        it('should accept valid input with optional description', async () => {
+            const mockDatabase = {
+                id: 'db1',
+                name: 'New Database',
+                description: '',
+                userId: 'user1',
+                serverId: 'default-server',
+            };
+            mockCreateDatabase.mockResolvedValue(mockDatabase);
+
+            const request = new NextRequest('http://localhost:3000/api/databases', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: 'New Database',
+                    // description is optional
+                }),
+            });
+
+            const response = await POST(request);
+            const data = await response.json();
+
+            expect(response.status).toBe(201);
+            expect(data).toEqual(mockDatabase);
+            expect(mockCreateDatabase).toHaveBeenCalledWith({
+                name: 'New Database',
+                description: '',
+                userId: 'user1',
+                serverId: 'default-server',
+            });
         });
 
         it('should handle service errors', async () => {
@@ -123,8 +185,6 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
-                    userId: 'user1',
-                    serverId: 'server1',
                 }),
             });
 

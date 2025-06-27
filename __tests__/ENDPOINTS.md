@@ -23,6 +23,45 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Description: Log out user
 - Response: Success message
 
+## Realm Endpoints
+
+### GET /api/realms
+- Description: Get all realms for authenticated user
+- Response: `{ realms: Array<Realm> }`
+- Error cases:
+  - 401: Authentication required
+  - 500: Failed to fetch realms
+
+### POST /api/realms
+- Description: Create new realm
+- Request body: `{ name: string, description?: string }`
+- Response: `{ realm: Realm }`
+- Error cases:
+  - 400: Validation error (name required, max 100 chars)
+  - 401: Authentication required
+  - 500: Failed to create realm
+
+### PUT /api/realms/[id]
+- Description: Update existing realm
+- Request body: `{ name?: string, description?: string }`
+- Response: `{ realm: Realm }`
+- Error cases:
+  - 400: Validation error
+  - 401: Authentication required
+  - 403: Not authorized to update this realm
+  - 404: Realm not found
+  - 500: Failed to update realm
+
+### DELETE /api/realms/[id]
+- Description: Delete realm
+- Response: Success message
+- Error cases:
+  - 400: Cannot delete default realm
+  - 401: Authentication required
+  - 403: Not authorized to delete this realm
+  - 404: Realm not found
+  - 500: Failed to delete realm
+
 ## Database Endpoints
 
 ### GET /api/databases

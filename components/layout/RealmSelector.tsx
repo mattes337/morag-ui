@@ -25,7 +25,7 @@ export interface Realm {
 }
 
 export function RealmSelector() {
-    const { currentRealm, setCurrentRealm } = useApp();
+    const { currentRealm, setCurrentRealm, setShowRealmManagementDialog } = useApp();
     const [realms, setRealms] = useState<Realm[]>([]);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -186,13 +186,12 @@ export function RealmSelector() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => {
-                        // TODO: Open create realm dialog
-                        toast.info('Create realm functionality coming soon');
+                        setShowRealmManagementDialog(true);
                     }}
                     className="flex items-center space-x-2 p-3 cursor-pointer"
                 >
                     <PlusIcon className="h-4 w-4" />
-                    <span>Create New Realm</span>
+                    <span>Manage Realms</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

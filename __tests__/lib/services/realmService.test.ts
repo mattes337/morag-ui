@@ -65,8 +65,12 @@ describe('RealmService', () => {
                 data: {
                     name: 'Test Realm',
                     description: 'Test Description',
-                    ownerId: 'user1',
                     isDefault: false,
+                    owner: {
+                        connect: {
+                            id: 'user1'
+                        }
+                    },
                     userRealms: {
                         create: {
                             userId: 'user1',
@@ -106,8 +110,12 @@ describe('RealmService', () => {
                 data: {
                     name: 'Default',
                     description: 'Default realm for user',
-                    ownerId: 'user1',
                     isDefault: true,
+                    owner: {
+                        connect: {
+                            id: 'user1'
+                        }
+                    },
                     userRealms: {
                         create: {
                             userId: 'user1',

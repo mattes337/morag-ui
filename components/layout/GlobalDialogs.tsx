@@ -6,6 +6,7 @@ import { CreateDatabaseDialog } from '../dialogs/CreateDatabaseDialog';
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
 import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
+import { RealmManagementDialog } from '../dialogs/RealmManagementDialog';
 import { ApiConfig } from '../ApiConfig';
 
 export function GlobalDialogs() {
@@ -30,6 +31,8 @@ export function GlobalDialogs() {
         setShowDeleteConfirmDialog,
         documentToDelete,
         setDocumentToDelete,
+        showRealmManagementDialog,
+        setShowRealmManagementDialog,
     } = useApp();
 
     return (
@@ -93,6 +96,11 @@ export function GlobalDialogs() {
                 }}
                 document={documentToDelete}
                 data-oid=".f9lboi"
+            />
+
+            <RealmManagementDialog
+                isOpen={showRealmManagementDialog}
+                onClose={() => setShowRealmManagementDialog(false)}
             />
 
             <ApiConfig

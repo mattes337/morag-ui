@@ -34,6 +34,23 @@ export class ApiKeyService {
         });
     }
 
+    static async getApiKeysByUserId(userId: string, realmId?: string | null) {
+        const whereClause: any = { userId };
+        if (realmId) {
+            whereClause.realmId = realmId;
+        }
+        
+        return await prisma.apiKey.findMany({
+            where: whereClause,
+            include: {
+                user: true,
+            },
+            orderBy: {
+                created: 'desc',
+            },
+        });
+    }
+
     static async getApiKeyById(id: string) {
         return await prisma.apiKey.findUnique({
             where: { id },

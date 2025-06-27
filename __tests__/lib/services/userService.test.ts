@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { UserService } from '@/lib/services/userService';
+import { RealmService } from '@/lib/services/realmService';
 import { prisma } from '../../../lib/database';
 import { User, Role, UserSettings } from '@prisma/client';
 
@@ -22,7 +23,15 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
+// Mock RealmService
+jest.mock('@/lib/services/realmService', () => ({
+    RealmService: {
+        createDefaultRealm: jest.fn(),
+    },
+}));
+
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockRealmService = RealmService as jest.Mocked<typeof RealmService>;
 
 describe('UserService', () => {
     beforeEach(() => {
@@ -30,7 +39,7 @@ describe('UserService', () => {
     });
 
     describe('createUser', () => {
-        it('should create a user successfully', async () => {
+        it('should create a user successfully and create default realm', async () => {
             const mockUser = {
                 id: 'user1',
                 name: 'Test User',
@@ -43,7 +52,17 @@ describe('UserService', () => {
                 apiKeys: [],
             };
 
+            const mockRealm = {
+                id: 'realm1',
+                name: 'Default',
+                description: 'Default realm for user',
+                isDefault: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
             mockPrisma.user.create.mockResolvedValue(mockUser as any);
+            mockRealmService.createDefaultRealm.mockResolvedValue(mockRealm as any);
 
             const result = await UserService.createUser({
                 name: 'Test User',
@@ -61,6 +80,48 @@ describe('UserService', () => {
                     apiKeys: true,
                 },
             });
+            expect(mockRealmService.createDefaultRealm).toHaveBeenCalledWith('user1');
+        });
+
+        it('should create a user successfully even if default realm creation fails', async () => {
+            const mockUser = {
+                id: 'user1',
+                name: 'Test User',
+                email: 'test@example.com',
+                role: 'USER',
+                avatar: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                userSettings: null,
+                apiKeys: [],
+            };
+
+            mockPrisma.user.create.mockResolvedValue(mockUser as any);
+            mockRealmService.createDefaultRealm.mockRejectedValue(new Error('Realm creation failed'));
+
+            // Mock console.error to avoid test output pollution
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const result = await UserService.createUser({
+                name: 'Test User',
+                email: 'test@example.com',
+            });
+
+            expect(result).toEqual(mockUser);
+            expect(mockPrisma.user.create).toHaveBeenCalledWith({
+                data: {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                },
+                include: {
+                    userSettings: true,
+                    apiKeys: true,
+                },
+            });
+            expect(mockRealmService.createDefaultRealm).toHaveBeenCalledWith('user1');
+            expect(consoleSpy).toHaveBeenCalledWith('Failed to create default realm for user:', expect.any(Error));
+            
+            consoleSpy.mockRestore();
         });
 
         it('should create a user with optional fields', async () => {

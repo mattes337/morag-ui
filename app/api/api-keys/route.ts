@@ -1,24 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
-import { requireAuth } from '../../../lib/auth';
+import { getAuthUser, requireAuth } from '../../../lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
-        const user = requireAuth(request);
-        const apiKeys = await ApiKeyService.getApiKeysByUser(user.userId);
+        const user = await getAuthUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const realmId = searchParams.get('realmId');
+
+        const apiKeys = await ApiKeyService.getApiKeysByUserId(user.userId, realmId);
         return NextResponse.json(apiKeys);
     } catch (error) {
-        if (error instanceof Error && error.message === 'Authentication required') {
-            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-        }
-        console.error('Failed to fetch API keys:', error);
-        return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 });
+        console.error('Error fetching API keys:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch API keys' },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const user = requireAuth(request);
+        const user = await requireAuth(request);
         const body = await request.json();
         const { name, key } = body;
 
