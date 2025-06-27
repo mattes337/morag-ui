@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { NextRequest } from 'next/server';
 import { extractSSOHeaders, validateSSOUser, getAuthUser, requireAuth, requireRole } from '../../lib/auth';
 import { UserService } from '../../lib/services/userService';

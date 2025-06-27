@@ -1,7 +1,11 @@
+/**
+ * @jest-environment node
+ */
 import { POST } from '../../../../../app/api/auth/login/route';
 import { UserService } from '../../../../../lib/services/userService';
 import { sign } from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
+import { compare } from 'bcryptjs';
 
 // Mock the UserService and jsonwebtoken
 jest.mock('../../../../../lib/services/userService');

@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { NextRequest } from 'next/server';
 import { GET, PUT, DELETE } from '../../../../../app/api/servers/[id]/route';
 import { DatabaseServerService } from '../../../../../lib/services/databaseServerService';

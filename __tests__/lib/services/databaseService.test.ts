@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 // Mock the database module
 jest.mock('../../../lib/database', () => ({
     prisma: {

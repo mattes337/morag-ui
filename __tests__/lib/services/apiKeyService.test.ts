@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 // Mock the ApiKeyService
 import { ApiKeyService } from '../../../lib/services/apiKeyService';
 

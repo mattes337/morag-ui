@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { prisma } from '../../../lib/database';
 import { RealmService } from '../../../lib/services/realmService';
 
