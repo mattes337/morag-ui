@@ -44,8 +44,9 @@ describe('/api/auth/login', () => {
                     id: 'user1',
                     name: 'Admin User',
                     email: 'admin@example.com',
-                    role: 'ADMIN'
-                }
+                    role: 'admin'
+                },
+                authMethod: 'jwt'
             });
 
             // Check that the cookie was set
@@ -54,7 +55,7 @@ describe('/api/auth/login', () => {
 
             expect(mockUserService.getUserByEmail).toHaveBeenCalledWith('admin@example.com');
             expect(mockSign).toHaveBeenCalledWith(
-                { userId: 'user1', email: 'admin@example.com', role: 'ADMIN' },
+                { userId: 'user1', email: 'admin@example.com', role: 'ADMIN', name: 'Admin User' },
                 expect.any(String),
                 { expiresIn: '24h' }
             );

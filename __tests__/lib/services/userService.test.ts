@@ -121,7 +121,7 @@ describe('UserService', () => {
                 userSettings: {
                     id: 'settings1',
                     userId: 'user1',
-                    theme: 'dark',
+                    theme: 'DARK',
                     language: 'en',
                 },
                 apiKeys: [
@@ -303,7 +303,7 @@ describe('UserService', () => {
             const mockSettings = {
                 id: 'settings1',
                 userId: 'user1',
-                theme: 'dark',
+                theme: 'DARK',
                 language: 'en',
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -333,7 +333,7 @@ describe('UserService', () => {
             const mockSettings = {
                 id: 'settings1',
                 userId: 'user1',
-                theme: 'dark',
+                theme: 'DARK',
                 language: 'en',
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -342,7 +342,7 @@ describe('UserService', () => {
             mockPrisma.userSettings.upsert.mockResolvedValue(mockSettings as any);
 
             const result = await UserService.createOrUpdateUserSettings('user1', {
-                theme: 'dark',
+                theme: 'DARK',
                 language: 'en',
             });
 
@@ -350,12 +350,12 @@ describe('UserService', () => {
             expect(mockPrisma.userSettings.upsert).toHaveBeenCalledWith({
                 where: { userId: 'user1' },
                 update: {
-                    theme: 'dark',
+                    theme: 'DARK',
                     language: 'en',
                 },
                 create: {
                     userId: 'user1',
-                    theme: 'dark',
+                    theme: 'DARK',
                     language: 'en',
                 },
             });
@@ -367,7 +367,7 @@ describe('UserService', () => {
             const mockSettings = {
                 id: 'settings1',
                 userId: 'user1',
-                theme: 'light',
+                theme: 'LIGHT',
                 language: 'es',
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -376,7 +376,7 @@ describe('UserService', () => {
             mockPrisma.userSettings.upsert.mockResolvedValue(mockSettings as any);
 
             const result = await UserService.updateUserSettings('user1', {
-                theme: 'light',
+                theme: 'LIGHT',
                 language: 'es',
             });
 
@@ -384,12 +384,12 @@ describe('UserService', () => {
             expect(mockPrisma.userSettings.upsert).toHaveBeenCalledWith({
                 where: { userId: 'user1' },
                 update: {
-                    theme: 'light',
+                    theme: 'LIGHT',
                     language: 'es',
                 },
                 create: {
                     userId: 'user1',
-                    theme: 'light',
+                    theme: 'LIGHT',
                     language: 'es',
                 },
             });

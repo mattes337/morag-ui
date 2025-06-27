@@ -165,11 +165,16 @@ export interface DatabaseServer {
 }
 
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'system';
+    id: string;
+    userId: string;
+    theme: 'LIGHT' | 'DARK' | 'SYSTEM';
     language: string;
     notifications: boolean;
     autoSave: boolean;
     defaultDatabase?: string;
+    currentRealmId?: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface User {
@@ -177,7 +182,9 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    role: 'admin' | 'user' | 'viewer';
+    role: 'ADMIN' | 'USER' | 'VIEWER';
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface Job {
