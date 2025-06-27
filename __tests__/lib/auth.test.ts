@@ -217,6 +217,11 @@ describe('Auth Functions', () => {
         });
 
         it('should throw error when not authenticated', async () => {
+            // Ensure JWT verify throws an error for invalid/missing tokens
+            mockJwt.verify.mockImplementation(() => {
+                throw new Error('Invalid token');
+            });
+            
             const request = new NextRequest('http://localhost:3000');
 
             await expect(requireAuth(request)).rejects.toThrow('Authentication required');
@@ -271,6 +276,11 @@ describe('Auth Functions', () => {
         });
 
         it('should throw error when not authenticated', async () => {
+            // Ensure JWT verify throws an error for invalid/missing tokens
+            mockJwt.verify.mockImplementation(() => {
+                throw new Error('Invalid token');
+            });
+            
             const request = new NextRequest('http://localhost:3000');
 
             await expect(requireRole(request, ['ADMIN'])).rejects.toThrow('Authentication required');

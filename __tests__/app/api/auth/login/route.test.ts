@@ -44,7 +44,7 @@ describe('/api/auth/login', () => {
                     id: 'user1',
                     name: 'Admin User',
                     email: 'admin@example.com',
-                    role: 'admin'
+                    role: 'ADMIN'
                 }
             });
 

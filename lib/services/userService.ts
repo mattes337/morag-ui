@@ -1,5 +1,5 @@
-import { User, UserSettings } from '@prisma/client';
 import { prisma } from '../database';
+import { User, UserSettings } from '../../types';
 
 export class UserService {
     private static db = prisma;

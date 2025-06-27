@@ -1,11 +1,5 @@
-import { PrismaClient, Realm, UserRealm, RealmRole } from '@prisma/client';
-import { database } from '../database';
-
-export interface CreateRealmData {
-    name: string;
-    description?: string;
-    ownerId: string;
-}
+import { prisma } from '../database';
+import { Realm, RealmRole, CreateRealmData, UpdateRealmData } from '../../types';
 
 export interface RealmWithUserRole extends Realm {
     userRole?: RealmRole;
@@ -13,7 +7,7 @@ export interface RealmWithUserRole extends Realm {
 }
 
 export class RealmService {
-    private static db = database;
+    private static db = prisma;
 
     static async createRealm(data: CreateRealmData): Promise<Realm> {
         return await this.db.realm.create({

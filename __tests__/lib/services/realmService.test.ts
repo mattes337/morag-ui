@@ -1,9 +1,9 @@
+import { prisma } from '../../../lib/database';
 import { RealmService } from '../../../lib/services/realmService';
-import { database } from '../../../lib/database';
 
 // Mock the database
 jest.mock('../../../lib/database', () => ({
-    database: {
+    prisma: {
         realm: {
             create: jest.fn(),
             findMany: jest.fn(),
@@ -23,7 +23,7 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
-const mockDatabase = database as jest.Mocked<typeof database>;
+const mockDatabase = prisma as jest.Mocked<typeof prisma>;
 
 describe('RealmService', () => {
     beforeEach(() => {
@@ -49,24 +49,29 @@ describe('RealmService', () => {
                 joinedAt: new Date(),
             };
 
-            mockDatabase.$transaction.mockImplementation(async (callback) => {
-                return callback({
-                    realm: {
-                        create: jest.fn().mockResolvedValue(mockRealm),
-                    },
-                    userRealm: {
-                        create: jest.fn().mockResolvedValue(mockUserRealm),
-                    },
-                } as any);
-            });
+            mockDatabase.realm.create.mockResolvedValue(mockRealm as any);
 
             const result = await RealmService.createRealm({
                 name: 'Test Realm',
                 description: 'Test Description',
-            }, 'user1');
+                ownerId: 'user1'
+            });
 
             expect(result).toEqual(mockRealm);
-            expect(mockDatabase.$transaction).toHaveBeenCalled();
+            expect(mockDatabase.realm.create).toHaveBeenCalledWith({
+                data: {
+                    name: 'Test Realm',
+                    description: 'Test Description',
+                    ownerId: 'user1',
+                    isDefault: false,
+                    userRealms: {
+                        create: {
+                            userId: 'user1',
+                            role: 'OWNER'
+                        }
+                    }
+                }
+            });
         });
     });
 
@@ -89,21 +94,25 @@ describe('RealmService', () => {
                 joinedAt: new Date(),
             };
 
-            mockDatabase.$transaction.mockImplementation(async (callback) => {
-                return callback({
-                    realm: {
-                        create: jest.fn().mockResolvedValue(mockRealm),
-                    },
-                    userRealm: {
-                        create: jest.fn().mockResolvedValue(mockUserRealm),
-                    },
-                } as any);
-            });
+            mockDatabase.realm.create.mockResolvedValue(mockRealm as any);
 
             const result = await RealmService.createDefaultRealm('user1');
 
             expect(result).toEqual(mockRealm);
-            expect(mockDatabase.$transaction).toHaveBeenCalled();
+            expect(mockDatabase.realm.create).toHaveBeenCalledWith({
+                data: {
+                    name: 'Default',
+                    description: 'Default realm for user',
+                    ownerId: 'user1',
+                    isDefault: true,
+                    userRealms: {
+                        create: {
+                            userId: 'user1',
+                            role: 'OWNER'
+                        }
+                    }
+                }
+            });
         });
     });
 
@@ -123,6 +132,7 @@ describe('RealmService', () => {
                         isDefault: true,
                         createdAt: new Date(),
                         updatedAt: new Date(),
+                        _count: { userRealms: 5 }
                     },
                 },
                 {
@@ -138,6 +148,7 @@ describe('RealmService', () => {
                         isDefault: false,
                         createdAt: new Date(),
                         updatedAt: new Date(),
+                        _count: { userRealms: 5 }
                     },
                 },
             ];
@@ -153,16 +164,22 @@ describe('RealmService', () => {
                 name: 'Test Realm 1',
                 description: 'Description 1',
                 isDefault: true,
+                createdAt: mockUserRealms[0].realm.createdAt,
+                updatedAt: mockUserRealms[0].realm.updatedAt,
                 userRole: 'OWNER',
                 userCount: 5,
+                _count: { userRealms: 5 }
             });
             expect(result[1]).toEqual({
                 id: 'realm2',
                 name: 'Test Realm 2',
                 description: 'Description 2',
                 isDefault: false,
+                createdAt: mockUserRealms[1].realm.createdAt,
+                updatedAt: mockUserRealms[1].realm.updatedAt,
                 userRole: 'ADMIN',
                 userCount: 5,
+                _count: { userRealms: 5 }
             });
         });
     });
@@ -193,6 +210,7 @@ describe('RealmService', () => {
                 isDefault: false,
                 createdAt: mockUserRealm.realm.createdAt,
                 updatedAt: mockUserRealm.realm.updatedAt,
+                _count: { userRealms: 5 },
                 userRole: 'OWNER',
                 userCount: 5
             };

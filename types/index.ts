@@ -210,3 +210,26 @@ export interface Job {
         warnings?: string[];
     };
 }
+
+export interface Realm {
+    id: string;
+    name: string;
+    description?: string;
+    isDefault: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type RealmRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+
+export interface CreateRealmData {
+    name: string;
+    description?: string;
+    ownerId: string;
+}
+
+export interface UpdateRealmData {
+    name?: string;
+    description?: string;
+    isActive?: boolean;
+}
