@@ -67,11 +67,13 @@ export class RealmService {
             ]
         });
 
-        return userRealms.map(ur => ({
-            ...ur.realm,
-            userRole: ur.role,
-            userCount: ur.realm._count.userRealms
-        }));
+        return userRealms
+            .filter(ur => ur.realm) // Filter out entries where realm is null/undefined
+            .map(ur => ({
+                ...ur.realm,
+                userRole: ur.role,
+                userCount: ur.realm._count.userRealms
+            }));
     }
 
     static async getRealmById(realmId: string, userId: string): Promise<RealmWithUserRole | null> {
