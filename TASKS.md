@@ -5,6 +5,10 @@
   - Corrected Jest configuration (moduleNameMapping → moduleNameMapper)
   - Fixed import path for test-utils
   - Simplified failing metadata test to check for basic table structure
+- ✅ Fixed authentication issue in /api/servers endpoint
+  - Added missing NextRequest and NextResponse imports
+  - Fixed missing await keyword for requireAuth() calls
+  - Resolved "User ID is missing from authentication" error
 
 ## Pending Tasks
 

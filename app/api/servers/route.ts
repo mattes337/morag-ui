@@ -6,7 +6,15 @@ import { RealmService } from '../../../lib/services/realmService';
 
 export async function GET(request: NextRequest) {
     try {
-        const user = requireAuth(request);
+        const user = await requireAuth(request);
+        
+        // Debug logging to identify the issue
+        console.log('GET /api/servers - User object:', JSON.stringify(user, null, 2));
+        
+        if (!user.userId) {
+            console.error('GET /api/servers - user.userId is undefined:', user);
+            throw new Error('User ID is missing from authentication');
+        }
         
         // Get current realm for the user
         const userSettings = await UserService.getUserSettings(user.userId);
@@ -37,7 +45,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const user = requireAuth(request);
+        const user = await requireAuth(request);
+        
+        // Debug logging to identify the issue
+        console.log('POST /api/servers - User object:', JSON.stringify(user, null, 2));
+        
+        if (!user.userId) {
+            console.error('POST /api/servers - user.userId is undefined:', user);
+            throw new Error('User ID is missing from authentication');
+        }
         const body = await request.json();
         const { name, type, host, port, username, password, apiKey, database, collection } = body;
         

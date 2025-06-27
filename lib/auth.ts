@@ -57,6 +57,16 @@ export async function validateSSOUser(headerData: HeaderAuthData): Promise<AuthU
                 email,
                 role: role as any
             });
+            
+            if (!user || !user.id) {
+                console.error('Failed to create SSO user or user.id is missing:', { user, headerData });
+                return null;
+            }
+        }
+
+        if (!user.id) {
+            console.error('User object missing id field:', user);
+            return null;
         }
 
         return {
@@ -91,6 +101,11 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
         }
 
         const decoded = verify(token, JWT_SECRET) as any;
+        
+        if (!decoded.userId) {
+            console.error('JWT token missing userId field:', decoded);
+            return null;
+        }
         
         return {
             userId: decoded.userId,
