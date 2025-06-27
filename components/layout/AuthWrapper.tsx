@@ -1,16 +1,47 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 import { Header } from './Header';
 import { Navigation } from './Navigation';
 import { GlobalDialogs } from './GlobalDialogs';
 
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
-    const { user } = useApp();
+    const { user, setUser } = useApp();
     const pathname = usePathname();
+    const router = useRouter();
 
     const isLoginPage = pathname === '/login';
+
+    useEffect(() => {
+        // Check for header authentication on mount
+        const checkHeaderAuth = async () => {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data.user);
+                    
+                    // If on login page and authenticated, redirect to home
+                    if (isLoginPage) {
+                        router.push('/');
+                    }
+                }
+            } catch (error) {
+                console.error('Header auth check failed:', error);
+            }
+        };
+        
+        // Only check header auth if no user is set and not already on public pages
+        if (!user) {
+            checkHeaderAuth();
+        }
+    }, [user, setUser, isLoginPage, router]);
 
     // If user is not logged in and not on login page, show login page content
     if (!user && !isLoginPage) {

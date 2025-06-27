@@ -4,6 +4,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { Database, Document, ApiKey, DatabaseServer, UserSettings, User, Job } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
 
+export interface Realm {
+    id: string;
+    name: string;
+    description?: string;
+    isDefault: boolean;
+    userRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+    userCount?: number;
+}
+
 interface AppContextType {
     // API Health
     apiHealthy: boolean | null;
@@ -15,6 +24,12 @@ interface AppContextType {
     setUserSettings: (settings: UserSettings) => void;
     servers: DatabaseServer[];
     setServers: (servers: DatabaseServer[]) => void;
+
+    // Realm Management
+    currentRealm: Realm | null;
+    setCurrentRealm: (realm: Realm | null) => void;
+    realms: Realm[];
+    setRealms: (realms: Realm[]) => void;
 
     // Data
     databases: Database[];
@@ -116,6 +131,10 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
     const [servers, setServers] = useState<DatabaseServer[]>([]);
 
+    // Realm state
+    const [currentRealm, setCurrentRealm] = useState<Realm | null>(null);
+    const [realms, setRealms] = useState<Realm[]>([]);
+
     // Data state
     const [databases, setDatabases] = useState<Database[]>([]);
 
@@ -174,6 +193,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     setUser(authData.user);
                     console.log('✅ [AppContext] User authenticated:', authData.user.email);
 
+                    // Load current realm first
+                    await loadCurrentRealm();
+                    
                     // Load user-specific data
                     await loadUserData();
                 } else {
@@ -271,6 +293,30 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
         checkAuthAndLoadData();
     }, []);
+
+    const loadCurrentRealm = async () => {
+        try {
+            console.log('🏰 [AppContext] Loading current realm');
+            const response = await fetch('/api/realms/current');
+            if (response.ok) {
+                const data = await response.json();
+                setCurrentRealm(data.currentRealm);
+                console.log('✅ [AppContext] Current realm loaded:', data.currentRealm.name);
+                
+                // Also load all realms
+                const realmsResponse = await fetch('/api/realms');
+                if (realmsResponse.ok) {
+                    const realmsData = await realmsResponse.json();
+                    setRealms(realmsData.realms || []);
+                    console.log('✅ [AppContext] All realms loaded:', realmsData.realms?.length || 0);
+                }
+            } else {
+                console.error('❌ [AppContext] Failed to load current realm');
+            }
+        } catch (error) {
+            console.error('❌ [AppContext] Error loading current realm:', error);
+        }
+    };
 
     // Data operation functions
     const createDatabase = async (data: {
@@ -663,6 +709,10 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setUserSettings,
         servers,
         setServers,
+        currentRealm,
+        setCurrentRealm,
+        realms,
+        setRealms,
         databases,
         setDatabases,
         documents,

@@ -4,6 +4,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { RealmSelector } from './RealmSelector';
 
 export function Header() {
     const {
@@ -74,6 +75,11 @@ export function Header() {
                             Management Interface
                         </span>
                     </div>
+                    
+                    <div className="flex items-center space-x-4" data-oid="realm-selector">
+                        <RealmSelector />
+                    </div>
+                    
                     <div className="flex items-center space-x-4" data-oid="99-xicp">
                         <span className="text-sm text-gray-600" data-oid="zinkjfp">
                             Vector Database & RAG Management

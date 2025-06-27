@@ -1,14 +1,15 @@
-import { prisma } from '../database';
 import { User, UserSettings } from '@prisma/client';
+import { prisma } from '../database';
 
 export class UserService {
+    private static db = prisma;
     static async createUser(data: {
         name: string;
         email: string;
         avatar?: string;
         role?: 'ADMIN' | 'USER' | 'VIEWER';
     }) {
-        return await prisma.user.create({
+        return await this.db.user.create({
             data,
             include: {
                 userSettings: true,
@@ -18,7 +19,7 @@ export class UserService {
     }
 
     static async getUserById(id: string) {
-        return await prisma.user.findUnique({
+        return await this.db.user.findUnique({
             where: { id },
             include: {
                 userSettings: true,
@@ -33,7 +34,7 @@ export class UserService {
     }
 
     static async getUserByEmail(email: string) {
-        return await prisma.user.findUnique({
+        return await this.db.user.findUnique({
             where: { email },
             include: {
                 userSettings: true,
@@ -43,7 +44,7 @@ export class UserService {
     }
 
     static async updateUser(id: string, data: Partial<User>) {
-        return await prisma.user.update({
+        return await this.db.user.update({
             where: { id },
             data,
             include: {
@@ -54,13 +55,13 @@ export class UserService {
     }
 
     static async deleteUser(id: string) {
-        return await prisma.user.delete({
+        return await this.db.user.delete({
             where: { id },
         });
     }
 
     static async createOrUpdateUserSettings(userId: string, settings: Partial<UserSettings>) {
-        return await prisma.userSettings.upsert({
+        return await this.db.userSettings.upsert({
             where: { userId },
             update: settings,
             create: {
@@ -71,8 +72,19 @@ export class UserService {
     }
 
     static async getUserSettings(userId: string) {
-        return await prisma.userSettings.findUnique({
+        return await this.db.userSettings.findUnique({
             where: { userId },
+        });
+    }
+
+    static async updateUserSettings(userId: string, settings: Partial<UserSettings>) {
+        return await this.db.userSettings.upsert({
+            where: { userId },
+            update: settings,
+            create: {
+                userId,
+                ...settings,
+            },
         });
     }
 }
