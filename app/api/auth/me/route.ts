@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
         const authUser = await getAuthUser(request);
         
         if (!authUser) {
-            return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Get full user data from database

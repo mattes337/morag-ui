@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const realm = await RealmService.getRealmById(params.id, user.id);
+        const realm = await RealmService.getRealmById(params.id, user.userId);
         if (!realm) {
             return NextResponse.json({ error: 'Realm not found' }, { status: 404 });
         }
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         const body = await request.json();
         const validatedData = updateRealmSchema.parse(body);
 
-        const realm = await RealmService.updateRealm(params.id, user.id, validatedData);
+        const realm = await RealmService.updateRealm(params.id, user.userId, validatedData);
         if (!realm) {
             return NextResponse.json({ error: 'Realm not found' }, { status: 404 });
         }
@@ -73,7 +73,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await RealmService.deleteRealm(params.id, user.id);
+        await RealmService.deleteRealm(params.id, user.userId);
         return NextResponse.json({ success: true });
     } catch (error) {
         if (error instanceof Error) {

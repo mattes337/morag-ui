@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const realms = await RealmService.getUserRealms(user.id);
+        const realms = await RealmService.getUserRealms(user.userId);
         return NextResponse.json({ realms });
     } catch (error) {
         console.error('Error fetching realms:', error);
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
         const realm = await RealmService.createRealm({
             ...validatedData,
-            ownerId: user.id
+            ownerId: user.userId
         });
 
         return NextResponse.json({ realm }, { status: 201 });

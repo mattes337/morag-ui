@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         const { realmId } = switchRealmSchema.parse(body);
 
         // Verify user has access to the realm
-        const realm = await RealmService.getRealmById(realmId, user.id);
+        const realm = await RealmService.getRealmById(realmId, user.userId);
         if (!realm) {
             return NextResponse.json(
                 { error: 'Realm not found or access denied' },
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update user's current realm
-        await UserService.updateUserSettings(user.id, {
+        await UserService.updateUserSettings(user.userId, {
             currentRealmId: realmId
         });
 

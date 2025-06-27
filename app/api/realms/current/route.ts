@@ -11,25 +11,25 @@ export async function GET(request: NextRequest) {
         }
 
         // Get user settings to find current realm
-        const userSettings = await UserService.getUserSettings(user.id);
+        const userSettings = await UserService.getUserSettings(user.userId);
         let currentRealm = null;
 
         if (userSettings?.currentRealmId) {
             // Try to get the specified current realm
-            currentRealm = await RealmService.getRealmById(userSettings.currentRealmId, user.id);
+            currentRealm = await RealmService.getRealmById(userSettings.currentRealmId, user.userId);
         }
 
         // If no current realm or user doesn't have access, get/create default realm
         if (!currentRealm) {
-            currentRealm = await RealmService.ensureUserHasDefaultRealm(user.id);
+            currentRealm = await RealmService.ensureUserHasDefaultRealm(user.userId);
             
             // Update user settings to point to default realm
-            await UserService.updateUserSettings(user.id, {
+            await UserService.updateUserSettings(user.userId, {
                 currentRealmId: currentRealm.id
             });
             
             // Add user role info
-            const realmWithRole = await RealmService.getRealmById(currentRealm.id, user.id);
+            const realmWithRole = await RealmService.getRealmById(currentRealm.id, user.userId);
             currentRealm = realmWithRole || currentRealm;
         }
 
