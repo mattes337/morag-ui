@@ -9,10 +9,17 @@ export class UserService {
         email: string;
         avatar?: string;
         role?: 'ADMIN' | 'USER' | 'VIEWER';
+        password?: string;
     }) {
         // Create user first
         const user = await this.db.user.create({
-            data,
+            data: {
+                name: data.name,
+                email: data.email,
+                avatar: data.avatar,
+                password: data.password,
+                role: data.role || 'USER',
+            },
             include: {
                 userSettings: true,
                 apiKeys: true,

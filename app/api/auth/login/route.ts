@@ -70,16 +70,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get user from database or create if not exists
+        // Get user from database
         let user = await UserService.getUserByEmail(email);
         
         if (!user) {
             // For demo purposes, create admin user if credentials match
             if (email === 'admin@example.com' && password === 'admin123') {
+                const hashedPassword = await bcrypt.hash('admin123', 12);
                 user = await UserService.createUser({
                     name: 'Admin User',
                     email: 'admin@example.com',
-                    role: 'ADMIN'
+                    role: 'ADMIN',
+                    password: hashedPassword
                 });
             } else {
                 return NextResponse.json(
@@ -89,19 +91,31 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // TODO: Implement proper password verification
-        // This should verify the password against the hashed password in the database
-        // For now, we'll accept any password until proper authentication is implemented
-        console.log('⚠️ [Auth] Password verification not yet implemented');
-        
-        // Future implementation would look like:
-        // const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
-        // if (!isValidPassword) {
-        //     return NextResponse.json(
-        //         { error: 'Invalid credentials' },
-        //         { status: 401 }
-        //     );
-        // }
+        // Verify password against hashed password in database
+        if (!user.password) {
+            // Check if this is the admin user with correct credentials
+            if (email === 'admin@example.com' && password === 'admin123') {
+                // Update the existing admin user with a password
+                const hashedPassword = await bcrypt.hash('admin123', 12);
+                user = await UserService.updateUser(user.id, {
+                    password: hashedPassword
+                });
+            } else {
+                // User doesn't have a password set (SSO user or legacy user)
+                return NextResponse.json(
+                    { error: 'Password authentication not available for this user' },
+                    { status: 401 }
+                );
+            }
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return NextResponse.json(
+                { error: 'Invalid credentials' },
+                { status: 401 }
+            );
+        }
 
         // Create JWT token
         const token = sign(

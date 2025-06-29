@@ -74,6 +74,9 @@ describe('UserService', () => {
                 data: {
                     name: 'Test User',
                     email: 'test@example.com',
+                    avatar: undefined,
+                    password: undefined,
+                    role: 'USER',
                 },
                 include: {
                     userSettings: true,
@@ -112,6 +115,9 @@ describe('UserService', () => {
                 data: {
                     name: 'Test User',
                     email: 'test@example.com',
+                    avatar: undefined,
+                    password: undefined,
+                    role: 'USER',
                 },
                 include: {
                     userSettings: true,
@@ -152,6 +158,7 @@ describe('UserService', () => {
                     name: 'Admin User',
                     email: 'admin@example.com',
                     avatar: 'https://example.com/avatar.jpg',
+                    password: undefined,
                     role: 'ADMIN',
                 },
                 include: {

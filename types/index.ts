@@ -183,6 +183,7 @@ export interface User {
     email: string;
     avatar?: string;
     role: 'ADMIN' | 'USER' | 'VIEWER';
+    password?: string;
     createdAt: Date;
     updatedAt: Date;
 }
