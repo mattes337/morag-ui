@@ -43,11 +43,20 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
         }
     }, [user, setUser, isLoginPage, router]);
 
-    // If user is not logged in and not on login page, show login page content
+    // If user is not logged in and not on login page, redirect to login
+    useEffect(() => {
+        if (!user && !isLoginPage) {
+            router.push('/login');
+        }
+    }, [user, isLoginPage, router]);
+
     if (!user && !isLoginPage) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="5yrqv.3">
-                {children}
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-oid="5yrqv.3">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Redirecting to login...</p>
+                </div>
             </div>
         );
     }

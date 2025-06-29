@@ -9,6 +9,17 @@
   - Added missing NextRequest and NextResponse imports
   - Fixed missing await keyword for requireAuth() calls
   - Resolved "User ID is missing from authentication" error
+- ✅ Fixed realm switching layout issue
+  - Removed window.location.reload() from RealmSelector component
+  - Now uses AppContext's automatic data reloading when realm changes
+  - Preserves header and navigation layout during realm switching
+- ✅ Fixed authentication redirect issue
+  - Updated AuthWrapper component to properly redirect unauthenticated users to login
+  - Prevents pages from rendering without header/frame when not authenticated
+  - Added loading spinner during redirect for better UX
+  - Ensures all protected routes require authentication
+  - Fixed SSR compatibility issue by moving router.push() into useEffect
+  - Resolved 'location is not defined' error during server-side rendering
 
 ## Pending Tasks
 

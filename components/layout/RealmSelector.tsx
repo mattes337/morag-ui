@@ -69,8 +69,8 @@ export function RealmSelector() {
                 toast.success(`Switched to realm: ${data.currentRealm.name}`);
                 setIsOpen(false);
                 
-                // Refresh the page to reload data for the new realm
-                window.location.reload();
+                // The useEffect in AppContext will automatically reload data when currentRealm changes
+                // No need for window.location.reload() which breaks the layout
             } else {
                 const error = await response.json();
                 toast.error(error.error || 'Failed to switch realm');
