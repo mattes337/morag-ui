@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
             collection,
             userId: user.userId,
             realmId: currentRealm.id,
+            isActive: true,
         });
         
         return NextResponse.json(server, { status: 201 });

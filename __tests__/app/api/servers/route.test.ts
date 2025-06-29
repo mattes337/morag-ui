@@ -162,6 +162,7 @@ describe('/api/servers', () => {
                 ...requestBody,
                 userId: 'user1',
                 realmId: 'realm1',
+                isActive: true,
             });
         });
 
