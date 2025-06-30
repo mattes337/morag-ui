@@ -15,16 +15,34 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     const isLoginPage = pathname === '/login';
 
     useEffect(() => {
-        // Check for header authentication on mount
-        const checkHeaderAuth = async () => {
+        // Check for authentication on mount and page refresh
+        const checkAuth = async () => {
             try {
-                const response = await fetch('/api/auth/login', {
+                // First try header auth (for SSO)
+                const headerResponse = await fetch('/api/auth/login', {
                     method: 'GET',
                     credentials: 'include'
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
+                if (headerResponse.ok) {
+                    const data = await headerResponse.json();
+                    setUser(data.user);
+                    
+                    // If on login page and authenticated, redirect to home
+                    if (isLoginPage) {
+                        router.push('/');
+                    }
+                    return;
+                }
+                
+                // If header auth fails, try JWT auth
+                const jwtResponse = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (jwtResponse.ok) {
+                    const data = await jwtResponse.json();
                     setUser(data.user);
                     
                     // If on login page and authenticated, redirect to home
@@ -33,13 +51,14 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
                     }
                 }
             } catch (error) {
-                console.error('Header auth check failed:', error);
+                console.error('Auth check failed:', error);
             }
         };
         
-        // Only check header auth if no user is set and not already on public pages
+        // Always check auth on mount, regardless of current user state
+        // This ensures session persistence across browser refreshes
         if (!user) {
-            checkHeaderAuth();
+            checkAuth();
         }
     }, [user, setUser, isLoginPage, router]);
 

@@ -20,6 +20,12 @@
   - Ensures all protected routes require authentication
   - Fixed SSR compatibility issue by moving router.push() into useEffect
   - Resolved 'location is not defined' error during server-side rendering
+- ✅ Fixed session persistence across browser refreshes
+  - Updated AppContext to include credentials in /api/auth/me calls
+  - Enhanced AuthWrapper to check both header auth and JWT auth on mount
+  - Ensured authentication state persists when user refreshes browser
+  - Updated test expectations to match new authentication call format
+  - All tests passing with improved session management
 
 ## Pending Tasks
 

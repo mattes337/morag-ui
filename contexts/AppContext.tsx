@@ -187,9 +187,12 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 setApiHealthy(healthy);
                 console.log('✅ [AppContext] API health check completed:', healthy);
 
-                // Check authentication status
+                // Check authentication status with credentials to include cookies
                 console.log('🔐 [AppContext] Checking authentication');
-                const authResponse = await fetch('/api/auth/me');
+                const authResponse = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
 
                 if (authResponse.ok) {
                     const authData = await authResponse.json();

@@ -73,7 +73,10 @@ describe('App Navigation E2E', () => {
         });
 
         // Verify API calls were made
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me');
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include'
+        });
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
     });
 

@@ -88,7 +88,10 @@ describe('AppContext', () => {
             expect(result.current.isDataLoading).toBe(false);
         });
 
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me');
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include'
+        });
         expect(global.fetch).toHaveBeenCalledWith('/api/realms/current');
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
         expect(global.fetch).toHaveBeenCalledWith('/api/documents');

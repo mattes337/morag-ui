@@ -1,10 +1,27 @@
 import { DatabaseServer, DatabaseType } from '@prisma/client';
 import { prisma } from '../database';
 
+// Type mapping between frontend and database
+const typeMapping: Record<string, DatabaseType> = {
+    'qdrant': 'QDRANT',
+    'neo4j': 'NEO4J',
+    'pinecone': 'PINECONE',
+    'weaviate': 'WEAVIATE',
+    'chroma': 'CHROMA'
+};
+
+function mapDatabaseType(frontendType: string): DatabaseType {
+    const mappedType = typeMapping[frontendType.toLowerCase()];
+    if (!mappedType) {
+        throw new Error(`Invalid database type: ${frontendType}`);
+    }
+    return mappedType;
+}
+
 export class DatabaseServerService {
     static async createDatabaseServer(data: {
         name: string;
-        type: DatabaseType;
+        type: string;
         host: string;
         port: number;
         userId: string;
@@ -17,8 +34,12 @@ export class DatabaseServerService {
         isActive?: boolean;
     }) {
         console.log('🖥️ [DatabaseServerService] Creating database server:', data.name);
+        const mappedData = {
+            ...data,
+            type: mapDatabaseType(data.type)
+        };
         return await prisma.databaseServer.create({
-            data,
+            data: mappedData,
             include: {
                 user: true,
                 realm: true,
@@ -66,10 +87,18 @@ export class DatabaseServerService {
         });
     }
 
-    static async updateDatabaseServer(id: string, data: Partial<DatabaseServer>) {
+    static async updateDatabaseServer(id: string, data: any) {
+        // Filter out relational fields and foreign keys that shouldn't be updated
+        const { user, realm, userId, realmId, createdAt, updatedAt, ...updateData } = data;
+        
+        const mappedData = { ...updateData };
+        if (updateData.type) {
+            mappedData.type = mapDatabaseType(updateData.type);
+        }
+        
         return await prisma.databaseServer.update({
             where: { id },
-            data,
+            data: mappedData,
             include: {
                 user: true,
                 realm: true,

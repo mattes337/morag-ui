@@ -350,6 +350,15 @@ export default function ServersPage() {
                     )}
                 </div>
             </div>
+            
+            <TestConnectionModal
+                isOpen={showTestModal}
+                onClose={() => {
+                    setShowTestModal(false);
+                    setTestingServer(null);
+                }}
+                server={testingServer}
+            />
         </div>
     );
 }
@@ -620,14 +629,5 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                 </div>
             </form>
         </div>
-        
-        <TestConnectionModal
-            isOpen={showTestModal}
-            onClose={() => {
-                setShowTestModal(false);
-                setTestingServer(null);
-            }}
-            server={testingServer}
-        />
     );
 }
