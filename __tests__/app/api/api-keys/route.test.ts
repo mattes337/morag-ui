@@ -6,6 +6,7 @@ jest.mock('../../../../../lib/services/apiKeyService', () => ({
         createApiKey: jest.fn(),
         getAllApiKeys: jest.fn(),
         getApiKeysByUser: jest.fn(),
+        getApiKeysByUserId: jest.fn(),
         getApiKeyById: jest.fn(),
         getApiKeyByKey: jest.fn(),
         updateApiKey: jest.fn(),
@@ -16,15 +17,17 @@ jest.mock('../../../../../lib/services/apiKeyService', () => ({
 
 jest.mock('../../../../../lib/auth', () => ({
     requireAuth: jest.fn(),
+    getAuthUser: jest.fn(),
 }));
 
 // Import AFTER mocking
 import { GET, POST } from '../../../../app/api/api-keys/route';
 import { ApiKeyService } from '../../../../lib/services/apiKeyService';
-import { requireAuth } from '../../../../lib/auth';
+import { requireAuth, getAuthUser } from '../../../../lib/auth';
 
 const mockApiKeyService = jest.mocked(ApiKeyService);
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireAuth = jest.mocked(requireAuth);
+const mockGetAuthUser = jest.mocked(getAuthUser);
 
 describe('/api/api-keys', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
@@ -32,6 +35,7 @@ describe('/api/api-keys', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockRequireAuth.mockReturnValue(mockUser);
+        mockGetAuthUser.mockResolvedValue({ userId: 'user1', email: 'test@example.com' });
     });
 
     describe('GET', () => {
@@ -46,7 +50,7 @@ describe('/api/api-keys', () => {
                 },
             ];
 
-            mockApiKeyService.getApiKeysByUser.mockResolvedValue(mockApiKeys as any);
+            mockApiKeyService.getApiKeysByUserId.mockResolvedValue(mockApiKeys as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/api-keys');
             const response = await GET(mockRequest);
@@ -54,24 +58,22 @@ describe('/api/api-keys', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockApiKeys);
-            expect(mockApiKeyService.getApiKeysByUser).toHaveBeenCalledWith('user1');
+            expect(mockApiKeyService.getApiKeysByUserId).toHaveBeenCalledWith('user1', null);
         });
 
         it('should handle authentication errors', async () => {
-            mockRequireAuth.mockImplementation(() => {
-                throw new Error('Authentication required');
-            });
+            mockGetAuthUser.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/api-keys');
             const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(401);
-            expect(data).toEqual({ error: 'Authentication required' });
+            expect(data).toEqual({ error: 'Unauthorized' });
         });
 
         it('should handle service errors', async () => {
-            mockApiKeyService.getApiKeysByUser.mockRejectedValue(new Error('Database error'));
+            mockApiKeyService.getApiKeysByUserId.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/api-keys');
             const response = await GET(mockRequest);

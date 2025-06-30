@@ -1,10 +1,34 @@
 import { prisma } from '../database';
 
+export const DatabaseService = {
+    getDatabasesByUserId: async (userId: string, realmId?: string | null) => {
+        const whereClause: any = { userId };
+        if (realmId) {
+            whereClause.realmId = realmId;
+        }
+        
+        return await prisma.database.findMany({
+            where: whereClause,
+            include: {
+                documents: true,
+                user: true,
+                server: true,
+                _count: {
+                    select: {
+                        documents: true,
+                    },
+                },
+            },
+        });
+    },
+};
+
 export async function createDatabase(data: {
     name: string;
     description: string;
     userId: string;
     serverId: string;
+    realmId: string;
 }) {
     return await prisma.database.create({
         data,

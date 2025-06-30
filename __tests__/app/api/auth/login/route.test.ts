@@ -1,19 +1,28 @@
+/**
+ * @jest-environment node
+ */
 import { POST } from '../../../../../app/api/auth/login/route';
 import { UserService } from '../../../../../lib/services/userService';
 import { sign } from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
+import { compare, hash } from 'bcryptjs';
 
-// Mock the UserService and jsonwebtoken
+// Mock the UserService, jsonwebtoken, and bcryptjs
 jest.mock('../../../../../lib/services/userService');
 jest.mock('jsonwebtoken');
+jest.mock('bcryptjs');
 
 const mockUserService = jest.mocked(UserService);
 const mockSign = sign as jest.MockedFunction<typeof sign>;
+const mockCompare = compare as jest.MockedFunction<typeof compare>;
+const mockHash = hash as jest.MockedFunction<typeof hash>;
 
 describe('/api/auth/login', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         (mockSign as any).mockReturnValue('mock-token');
+        mockCompare.mockResolvedValue(true);
+        mockHash.mockResolvedValue('hashed-password');
     });
 
     describe('POST', () => {
@@ -22,7 +31,8 @@ describe('/api/auth/login', () => {
                 id: 'user1',
                 name: 'Admin User',
                 email: 'admin@example.com',
-                role: 'ADMIN'
+                role: 'ADMIN',
+                password: 'hashed-password'
             };
 
             mockUserService.getUserByEmail.mockResolvedValue(mockUser as any);
@@ -45,7 +55,8 @@ describe('/api/auth/login', () => {
                     name: 'Admin User',
                     email: 'admin@example.com',
                     role: 'admin'
-                }
+                },
+                authMethod: 'jwt'
             });
 
             // Check that the cookie was set
@@ -54,7 +65,7 @@ describe('/api/auth/login', () => {
 
             expect(mockUserService.getUserByEmail).toHaveBeenCalledWith('admin@example.com');
             expect(mockSign).toHaveBeenCalledWith(
-                { userId: 'user1', email: 'admin@example.com', role: 'ADMIN' },
+                { userId: 'user1', email: 'admin@example.com', role: 'ADMIN', name: 'Admin User' },
                 expect.any(String),
                 { expiresIn: '24h' }
             );
@@ -65,7 +76,8 @@ describe('/api/auth/login', () => {
                 id: 'user1',
                 name: 'Admin User',
                 email: 'admin@example.com',
-                role: 'ADMIN'
+                role: 'ADMIN',
+                password: 'hashed-password'
             };
 
             mockUserService.getUserByEmail.mockResolvedValue(null);
@@ -86,7 +98,8 @@ describe('/api/auth/login', () => {
             expect(mockUserService.createUser).toHaveBeenCalledWith({
                 name: 'Admin User',
                 email: 'admin@example.com',
-                role: 'ADMIN'
+                role: 'ADMIN',
+                password: expect.any(String)
             });
         });
 

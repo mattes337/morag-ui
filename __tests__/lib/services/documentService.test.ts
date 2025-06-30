@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { DocumentService } from '../../../lib/services/documentService';
 import { DocumentState } from '@prisma/client';
 

@@ -21,7 +21,21 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 describe('AppContext', () => {
     beforeEach(() => {
-        global.fetch = createMockFetch({});
+        global.fetch = jest.fn().mockImplementation((url: string) => {
+            const responses: Record<string, any> = {
+                '/api/servers': [],
+                '/api/databases': [],
+                '/api/documents': [],
+                '/api/api-keys': [],
+                '/api/jobs': [],
+                '/api/auth/me': { id: 'user1', name: 'Test User', email: 'test@example.com' }
+            };
+            
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(responses[url] || {})
+            });
+        });
     });
 
     afterEach(() => {
@@ -46,6 +60,18 @@ describe('AppContext', () => {
             .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ user: mockUser }) }) // /api/auth/me
             .mockResolvedValueOnce({
                 ok: true,
+                json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
+            }) // /api/realms/current
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ realms: [] }),
+            }) // /api/realms
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([]),
+            }) // /api/servers
+            .mockResolvedValueOnce({
+                ok: true,
                 json: () => Promise.resolve([mockDatabase]),
             }) // /api/databases
             .mockResolvedValueOnce({
@@ -67,6 +93,12 @@ describe('AppContext', () => {
             expect(result.current.isDataLoading).toBe(false);
         });
 
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        expect(global.fetch).toHaveBeenCalledWith('/api/realms/current');
+        expect(global.fetch).toHaveBeenCalledWith('/api/servers');
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
         expect(global.fetch).toHaveBeenCalledWith('/api/documents');
         expect(global.fetch).toHaveBeenCalledWith('/api/api-keys');
@@ -83,6 +115,18 @@ describe('AppContext', () => {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve({ user: mockUser }),
+                });
+            }
+            if (url === '/api/realms/current') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
+                });
+            }
+            if (url === '/api/realms') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ realms: [] }),
                 });
             }
             if (url === '/api/databases' && options?.method === 'POST') {
@@ -146,6 +190,7 @@ describe('AppContext', () => {
                 name: 'New Database',
                 description: 'New database description',
                 serverId: '1',
+                realmId: '1',
             }),
         });
     });
@@ -227,7 +272,20 @@ describe('AppContext', () => {
     });
 
     it('should delete a document', async () => {
-        global.fetch = createMockFetch({});
+        global.fetch = jest.fn().mockImplementation((url: string) => {
+            const responses: Record<string, any> = {
+                '/api/databases': [],
+                '/api/documents': [],
+                '/api/api-keys': [],
+                '/api/jobs': [],
+                '/api/auth/me': { id: 'user1', name: 'Test User', email: 'test@example.com' }
+            };
+            
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve(responses[url] || {})
+            });
+        });
 
         const { result } = renderHook(() => useApp(), { wrapper });
 

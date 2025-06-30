@@ -4,11 +4,14 @@ import { useApp } from '../../contexts/AppContext';
 import { DatabaseServer } from '../../types';
 import { useState } from 'react';
 import { Server, Plus } from 'lucide-react';
+import { TestConnectionModal } from '../../components/modals/TestConnectionModal';
 
 export default function ServersPage() {
     const { servers, setServers } = useApp();
     const [editingServer, setEditingServer] = useState<DatabaseServer | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [testingServer, setTestingServer] = useState<DatabaseServer | null>(null);
+    const [showTestModal, setShowTestModal] = useState(false);
 
     const handleAddServer = () => {
         setEditingServer({
@@ -130,8 +133,8 @@ export default function ServersPage() {
     };
 
     const testConnection = async (server: DatabaseServer) => {
-        // Dummy connection test
-        alert(`Testing connection to ${server.name}... Connection successful!`);
+        setTestingServer(server);
+        setShowTestModal(true);
     };
 
     return (
@@ -347,6 +350,15 @@ export default function ServersPage() {
                     )}
                 </div>
             </div>
+            
+            <TestConnectionModal
+                isOpen={showTestModal}
+                onClose={() => {
+                    setShowTestModal(false);
+                    setTestingServer(null);
+                }}
+                server={testingServer}
+            />
         </div>
     );
 }

@@ -72,6 +72,32 @@ export class DocumentService {
         });
     }
 
+    static async getDocumentsByUserId(userId: string, realmId?: string | null) {
+        const whereClause: any = { userId };
+        if (realmId) {
+            whereClause.database = {
+                realmId: realmId,
+            };
+        }
+        
+        return await prisma.document.findMany({
+            where: whereClause,
+            include: {
+                database: true,
+                user: true,
+                jobs: {
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    take: 1,
+                },
+            },
+            orderBy: {
+                uploadDate: 'desc',
+            },
+        });
+    }
+
     static async getDocumentById(id: string) {
         return await prisma.document.findUnique({
             where: { id },

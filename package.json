@@ -28,7 +28,9 @@
         "db:switch:mysql": "node scripts/switch-db.js mysql"
     },
     "dependencies": {
+        "@heroicons/react": "^2.2.0",
         "@prisma/client": "^5.7.1",
+        "@radix-ui/react-dropdown-menu": "^2.1.15",
         "@radix-ui/react-slot": "^1.1.0",
         "@types/bcryptjs": "^2.4.6",
         "@types/jsonwebtoken": "^9.0.9",
@@ -40,8 +42,10 @@
         "next": "14.2.23",
         "react": "^18",
         "react-dom": "^18",
+        "sonner": "^2.0.5",
         "tailwind-merge": "^2.5.2",
-        "tailwindcss-animate": "^1.0.7"
+        "tailwindcss-animate": "^1.0.7",
+        "zod": "^3.25.67"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.5",

@@ -1,12 +1,44 @@
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Mock Next.js server components
 jest.mock('next/server', () => ({
     NextRequest: jest.fn().mockImplementation((url, init) => {
+        const headersMap = new Map(Object.entries(init?.headers || {}));
+        
+        // Parse cookies from Cookie header
+        const cookieHeader = headersMap.get('Cookie') || '';
+        const cookiesMap = new Map();
+        if (cookieHeader) {
+            cookieHeader.split(';').forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                if (name && value) {
+                    cookiesMap.set(name, value);
+                }
+            });
+        }
+        
         const request = {
             url,
             method: init?.method || 'GET',
-            headers: new Map(Object.entries(init?.headers || {})),
+            headers: {
+                get: jest.fn().mockImplementation((name) => headersMap.get(name) || null),
+                has: jest.fn().mockImplementation((name) => headersMap.has(name)),
+                set: jest.fn().mockImplementation((name, value) => headersMap.set(name, value)),
+                delete: jest.fn().mockImplementation((name) => headersMap.delete(name)),
+                forEach: jest.fn().mockImplementation((callback) => headersMap.forEach(callback)),
+                entries: jest.fn().mockImplementation(() => headersMap.entries()),
+                keys: jest.fn().mockImplementation(() => headersMap.keys()),
+                values: jest.fn().mockImplementation(() => headersMap.values()),
+            },
+            cookies: {
+                get: jest.fn().mockImplementation((name) => {
+                    const value = cookiesMap.get(name);
+                    return value ? { value } : undefined;
+                }),
+                has: jest.fn().mockImplementation((name) => cookiesMap.has(name)),
+                set: jest.fn().mockImplementation((name, value) => cookiesMap.set(name, value)),
+                delete: jest.fn().mockImplementation((name) => cookiesMap.delete(name)),
+            },
             json: jest.fn().mockResolvedValue(JSON.parse(init?.body || '{}')),
             text: jest.fn().mockResolvedValue(init?.body || ''),
         };
@@ -80,10 +112,7 @@ global.console = {
 
 // Prisma mock is handled in individual test files
 
-// Mock Auth
-jest.mock('./lib/auth', () => ({
-    requireAuth: jest.fn(),
-}));
+// Auth module is not mocked globally - individual tests can mock as needed
 
 // Mock Services
 jest.mock('./lib/services/apiKeyService', () => ({
@@ -122,16 +151,7 @@ jest.mock('./lib/services/documentService', () => ({
     },
 }));
 
-jest.mock('./lib/services/userService', () => ({
-    UserService: {
-        createUser: jest.fn(),
-        getAllUsers: jest.fn(),
-        getUserById: jest.fn(),
-        getUserByEmail: jest.fn(),
-        updateUser: jest.fn(),
-        deleteUser: jest.fn(),
-    },
-}));
+// UserService is not mocked globally - individual tests can mock as needed
 
 jest.mock('./lib/services/jobService', () => ({
     JobService: {

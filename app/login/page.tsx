@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 
@@ -9,8 +9,39 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [headerAuthEnabled, setHeaderAuthEnabled] = useState(false);
     const router = useRouter();
     const { setUser } = useApp();
+
+    useEffect(() => {
+        // Check if header auth is enabled
+        const checkAuthMode = async () => {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // User is already authenticated via headers
+                    setUser(data.user);
+                    router.push('/');
+                    return;
+                } else if (response.status === 403) {
+                    // Header auth enabled but user not enabled
+                    setHeaderAuthEnabled(true);
+                } else {
+                    setHeaderAuthEnabled(false);
+                }
+            } catch (error) {
+                console.error('Auth mode check failed:', error);
+                setHeaderAuthEnabled(false);
+            }
+        };
+        
+        checkAuthMode();
+    }, [setUser, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,6 +55,7 @@ export default function LoginPage() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ email, password }),
+                credentials: 'include'
             });
 
             const data = await response.json();
@@ -52,6 +84,29 @@ export default function LoginPage() {
         setEmail(email);
         setPassword(password);
     };
+
+    // Don't show login form if header auth is enabled
+    if (headerAuthEnabled) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                    <div className="text-center">
+                        <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+                            SSO Authentication
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Please authenticate through your organization's SSO system.
+                        </p>
+                        <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <p className="text-sm text-yellow-800">
+                                You are not authorized to access this system. Please contact your administrator.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

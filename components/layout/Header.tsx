@@ -4,6 +4,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { RealmSelector } from './RealmSelector';
 
 export function Header() {
     const {
@@ -15,6 +16,7 @@ export function Header() {
         setShowUserMenu,
         setShowSettingsDialog,
         setShowServersDialog,
+        setShowRealmManagementDialog,
     } = useApp();
 
     const userMenuRef = useRef<HTMLDivElement>(null);
@@ -54,11 +56,12 @@ export function Header() {
 
     return (
         <header className="bg-white border-b border-gray-200" data-oid="y-e3plu">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-oid="rangy5h">
-                <div className="flex justify-between items-center py-6" data-oid="7p66tub">
-                    <div className="flex items-center space-x-4" data-oid="_hejhji">
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8" data-oid="rangy5h">
+                <div className="flex justify-between items-center py-3 sm:py-4 lg:py-6" data-oid="7p66tub">
+                    {/* Logo and Title Section */}
+                    <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-shrink-0" data-oid="_hejhji">
                         <Image
-                            className="w-[50px] h-auto"
+                            className="w-8 h-8 sm:w-10 sm:h-10 lg:w-[50px] lg:h-auto flex-shrink-0"
                             src="/images/Generated image 2-logo.png"
                             alt="MoRAG Logo"
                             width={50}
@@ -66,24 +69,30 @@ export function Header() {
                             data-oid="7i27.dk"
                         />
 
-                        <h1 className="text-3xl font-bold text-gray-900" data-oid="c042e18">
-                            MoRAG
-                        </h1>
-
-                        <span className="text-sm text-gray-500" data-oid="hu37al6">
-                            Management Interface
-                        </span>
+                        <div className="min-w-0">
+                            <h1 className="text-lg sm:text-xl lg:text-3xl font-bold text-gray-900 truncate" data-oid="c042e18">
+                                MoRAG
+                            </h1>
+                            <span className="hidden sm:block text-xs lg:text-sm text-gray-500 truncate" data-oid="hu37al6">
+                                Management Interface
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex items-center space-x-4" data-oid="99-xicp">
-                        <span className="text-sm text-gray-600" data-oid="zinkjfp">
-                            Vector Database & RAG Management
-                        </span>
-                        <div className="flex items-center space-x-2" data-oid="ik:3xiz">
+                    
+                    {/* Realm Selector - Hidden on mobile, shown on tablet+ */}
+                    <div className="hidden md:flex items-center space-x-4 flex-shrink-0" data-oid="realm-selector">
+                        <RealmSelector />
+                    </div>
+                    
+                    {/* Right Section - API Status and User Menu */}
+                    <div className="flex items-center space-x-2 sm:space-x-4 min-w-0" data-oid="99-xicp">
+                        {/* API Status - Simplified on mobile */}
+                        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0" data-oid="ik:3xiz">
                             <div
                                 className={`w-2 h-2 rounded-full ${apiHealthy === true ? 'bg-green-500' : apiHealthy === false ? 'bg-red-500' : 'bg-yellow-500'}`}
                                 data-oid="ewwt1_x"
                             ></div>
-                            <span className="text-xs text-gray-500" data-oid="29h079h">
+                            <span className="hidden sm:inline text-xs text-gray-500" data-oid="29h079h">
                                 API{' '}
                                 {apiHealthy === true
                                     ? 'Connected'
@@ -93,30 +102,31 @@ export function Header() {
                             </span>
                             <button
                                 onClick={() => setShowApiConfigDialog(true)}
-                                className="text-xs text-blue-600 hover:text-blue-800"
+                                className="text-xs text-blue-600 hover:text-blue-800 hidden sm:inline"
                                 data-oid="di2ll40"
                             >
                                 Configure
                             </button>
                         </div>
 
-                        <div className="relative" ref={userMenuRef} data-oid="6j6f0-t">
+                        {/* User Menu */}
+                        <div className="relative flex-shrink-0" ref={userMenuRef} data-oid="6j6f0-t">
                             <button
                                 onClick={() => setShowUserMenu(!showUserMenu)}
-                                className="flex items-center space-x-2 text-sm text-gray-700 hover:text-gray-900 focus:outline-none"
+                                className="flex items-center space-x-1 sm:space-x-2 text-sm text-gray-700 hover:text-gray-900 focus:outline-none"
                                 data-oid="29_tg5r"
                             >
                                 <div
-                                    className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm"
                                     data-oid="m30m346"
                                 >
                                     {user?.name?.charAt(0) || 'U'}
                                 </div>
-                                <span className="hidden md:block" data-oid="322c5dz">
+                                <span className="hidden lg:block truncate max-w-24" data-oid="322c5dz">
                                     {user?.name || 'User'}
                                 </span>
                                 <svg
-                                    className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
+                                    className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''} hidden sm:block`}
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -134,7 +144,7 @@ export function Header() {
 
                             {showUserMenu && (
                                 <div
-                                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                                    className="absolute right-0 mt-2 w-44 sm:w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
                                     data-oid="v.g5qzp"
                                 >
                                     <div
@@ -151,6 +161,32 @@ export function Header() {
                                             {user?.email}
                                         </p>
                                     </div>
+
+                                    {/* API Configuration - Mobile only */}
+                                    <button
+                                        onClick={() => {
+                                            setShowApiConfigDialog(true);
+                                            setShowUserMenu(false);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 sm:hidden"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
+                                                />
+                                            </svg>
+                                            <span>API Configuration</span>
+                                        </div>
+                                    </button>
 
                                     <button
                                         onClick={() => {
@@ -219,6 +255,31 @@ export function Header() {
                                                 />
                                             </svg>
                                             <span data-oid="1gpy-rb">Servers</span>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowRealmManagementDialog(true);
+                                            setShowUserMenu(false);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                                                />
+                                            </svg>
+                                            <span>Manage Realms</span>
                                         </div>
                                     </button>
 

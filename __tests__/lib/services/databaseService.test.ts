@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 // Mock the database module
 jest.mock('../../../lib/database', () => ({
     prisma: {
@@ -66,6 +70,7 @@ describe('Database Service', () => {
                 description: 'A test database',
                 userId: 'user123',
                 serverId: 'server123',
+                realmId: 'realm123',
             };
 
             const mockResult = {

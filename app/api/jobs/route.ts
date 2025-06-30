@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JobService } from '../../../lib/services/jobService';
+import { getAuthUser } from '../../../lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
-        const jobs = await JobService.getAllJobs();
+        const user = await getAuthUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const realmId = searchParams.get('realmId');
+
+        const jobs = await JobService.getJobsByUserId(user.userId, realmId);
         return NextResponse.json(jobs);
     } catch (error) {
-        console.error('Failed to fetch jobs:', error);
-        return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
+        console.error('Error fetching jobs:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch jobs' },
+            { status: 500 }
+        );
     }
 }
 

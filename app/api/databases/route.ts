@@ -1,47 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabasesByUser, createDatabase } from '../../../lib/services/databaseService';
-import { requireAuth } from '../../../lib/auth';
+import { getAuthUser } from '@/lib/auth';
+import { DatabaseService, createDatabase } from '@/lib/services/databaseService';
+import { z } from 'zod';
+
+const createDatabaseSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().optional(),
+    realmId: z.string().min(1, 'Realm ID is required'),
+});
 
 export async function GET(request: NextRequest) {
     try {
-        const user = requireAuth(request);
-        const databases = await getDatabasesByUser(user.userId);
+        const user = await getAuthUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const realmId = searchParams.get('realmId');
+
+        const databases = await DatabaseService.getDatabasesByUserId(user.userId, realmId);
         return NextResponse.json(databases);
     } catch (error) {
-        if (error instanceof Error && error.message === 'Authentication required') {
-            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-        }
-        console.error('Failed to fetch databases:', error);
-        return NextResponse.json({ error: 'Failed to fetch databases' }, { status: 500 });
+        console.error('Error fetching databases:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch databases' },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const user = requireAuth(request);
-        const body = await request.json();
-        const { name, description, serverId } = body;
-        
-        if (!name || !description || !serverId) {
-            return NextResponse.json(
-                { error: 'Name, description, and serverId are required' },
-                { status: 400 },
-            );
+        const user = await getAuthUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const body = await request.json();
+        const validatedData = createDatabaseSchema.parse(body);
         
+        // For now, we'll use a default serverId since it's not in the schema
+        // This should be updated based on your actual requirements
         const database = await createDatabase({
-            name,
-            description,
-            userId: user.userId, // Use authenticated user's ID
-            serverId,
+            name: validatedData.name,
+            description: validatedData.description || '',
+            userId: user.userId,
+            serverId: 'default-server', // This should be updated based on your requirements
+            realmId: validatedData.realmId,
         });
         
         return NextResponse.json(database, { status: 201 });
     } catch (error) {
-        if (error instanceof Error && error.message === 'Authentication required') {
-            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Invalid input', details: error.errors },
+                { status: 400 }
+            );
         }
-        console.error('Failed to create database:', error);
-        return NextResponse.json({ error: 'Failed to create database' }, { status: 500 });
+        console.error('Error creating database:', error);
+        return NextResponse.json(
+            { error: 'Failed to create database' },
+            { status: 500 }
+        );
     }
 }

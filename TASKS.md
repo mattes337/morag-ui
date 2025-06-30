@@ -5,6 +5,43 @@
   - Corrected Jest configuration (moduleNameMapping → moduleNameMapper)
   - Fixed import path for test-utils
   - Simplified failing metadata test to check for basic table structure
+- ✅ Fixed authentication issue in /api/servers endpoint
+  - Added missing NextRequest and NextResponse imports
+  - Fixed missing await keyword for requireAuth() calls
+  - Resolved "User ID is missing from authentication" error
+- ✅ Fixed realm switching layout issue
+  - Removed window.location.reload() from RealmSelector component
+  - Now uses AppContext's automatic data reloading when realm changes
+  - Preserves header and navigation layout during realm switching
+- ✅ Fixed authentication redirect issue
+  - Updated AuthWrapper component to properly redirect unauthenticated users to login
+  - Prevents pages from rendering without header/frame when not authenticated
+  - Added loading spinner during redirect for better UX
+  - Ensures all protected routes require authentication
+  - Fixed SSR compatibility issue by moving router.push() into useEffect
+  - Resolved 'location is not defined' error during server-side rendering
+- ✅ Fixed session persistence across browser refreshes
+  - Updated AppContext to include credentials in /api/auth/me calls
+  - Enhanced AuthWrapper to check both header auth and JWT auth on mount
+  - Ensured authentication state persists when user refreshes browser
+  - Updated test expectations to match new authentication call format
+  - All tests passing with improved session management
+- ✅ Fixed session persistence on page reload (F5)
+  - Modified AuthWrapper to always run auth check on mount, not just when user is null
+  - Added proper loading state to prevent premature redirects to login
+  - Enhanced auth check logic to prevent redirect loops
+  - Users now stay logged in across browser refreshes and direct page access
+- ✅ Verified navigation URL changes work correctly
+  - Navigation component uses Next.js Link components properly
+  - Browser URL updates correctly when clicking menu items
+  - Direct page access via URLs works as expected
+  - All routing functionality working as intended
+- ✅ Fixed database creation Prisma validation error
+  - Added missing realmId field to Database model requirements
+  - Updated createDatabase API endpoint to require and handle realmId
+  - Modified AppContext to automatically include current realm ID in database creation
+  - Updated all related tests to include realmId parameter
+  - Resolved "Argument `user` is missing" Prisma validation error
 
 ## Pending Tasks
 

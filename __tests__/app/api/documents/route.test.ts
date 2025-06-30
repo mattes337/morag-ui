@@ -4,20 +4,23 @@ import { NextRequest } from 'next/server';
 jest.mock("../../../../lib/services/documentService", () => ({
     DocumentService: {
         getDocumentsByUser: jest.fn(),
+        getDocumentsByUserId: jest.fn(),
         createDocument: jest.fn(),
     },
 }));
-jest.mock("../../../../lib/auth", () => ({
+jest.mock('../../../../lib/auth', () => ({
     requireAuth: jest.fn(),
+    getAuthUser: jest.fn(),
 }));
 
 // Import AFTER mocking
 import { GET, POST } from "../../../../app/api/documents/route";
 import { DocumentService } from "../../../../lib/services/documentService";
-import { requireAuth } from "../../../../lib/auth";
+import { requireAuth, getAuthUser } from "../../../../lib/auth";
 
 const mockDocumentService = jest.mocked(DocumentService);
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireAuth = jest.mocked(requireAuth);
+const mockGetAuthUser = jest.mocked(getAuthUser);
 
 describe('/api/documents', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
@@ -25,6 +28,7 @@ describe('/api/documents', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockRequireAuth.mockReturnValue(mockUser);
+        mockGetAuthUser.mockResolvedValue(mockUser);
     });
 
     describe('GET', () => {
@@ -42,7 +46,7 @@ describe('/api/documents', () => {
                 },
             ];
 
-            mockDocumentService.getDocumentsByUser.mockResolvedValue(mockDocuments as any);
+            mockDocumentService.getDocumentsByUserId.mockResolvedValue(mockDocuments as any);
 
             const request = new NextRequest('http://localhost/api/documents');
             const response = await GET(request as any);
@@ -50,11 +54,11 @@ describe('/api/documents', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockDocuments);
-            expect(mockDocumentService.getDocumentsByUser).toHaveBeenCalledWith('user1');
+            expect(mockDocumentService.getDocumentsByUserId).toHaveBeenCalledWith('user1', null);
         });
 
         it('should handle service errors', async () => {
-            mockDocumentService.getDocumentsByUser.mockRejectedValue(new Error('Database error'));
+            mockDocumentService.getDocumentsByUserId.mockRejectedValue(new Error('Database error'));
 
             const request = new NextRequest('http://localhost/api/documents');
             const response = await GET(request as any);

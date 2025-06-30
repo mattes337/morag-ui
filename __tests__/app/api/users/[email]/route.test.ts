@@ -1,4 +1,7 @@
 import { NextRequest } from 'next/server';
+/**
+ * @jest-environment node
+ */
 import { GET } from '../../../../../app/api/users/[email]/route';
 import { UserService } from '../../../../../lib/services/userService';
 

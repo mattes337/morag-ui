@@ -50,11 +50,35 @@ describe('App Navigation E2E', () => {
                         role: 'admin',
                     }
                 }),
-            })
+            }) // /api/auth/me
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
+            }) // /api/realms/current
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ realms: [] }),
+            }) // /api/realms
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([]),
+            }) // /api/servers
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockDatabase]),
-            });
+            }) // /api/databases
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([]),
+            }) // /api/documents
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([]),
+            }) // /api/api-keys
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([]),
+            }); // /api/jobs
     });
 
     it('should handle app initialization and data loading', async () => {
@@ -73,7 +97,11 @@ describe('App Navigation E2E', () => {
         });
 
         // Verify API calls were made
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me');
+        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        expect(global.fetch).toHaveBeenCalledWith('/api/servers');
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
     });
 

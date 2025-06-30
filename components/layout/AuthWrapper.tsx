@@ -1,22 +1,87 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 import { Header } from './Header';
 import { Navigation } from './Navigation';
 import { GlobalDialogs } from './GlobalDialogs';
 
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
-    const { user } = useApp();
+    const { user, setUser } = useApp();
     const pathname = usePathname();
+    const router = useRouter();
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
 
     const isLoginPage = pathname === '/login';
 
-    // If user is not logged in and not on login page, show login page content
-    if (!user && !isLoginPage) {
+    useEffect(() => {
+        // Check for authentication on mount and page refresh
+        const checkAuth = async () => {
+            setIsAuthChecking(true);
+            try {
+                // First try header auth (for SSO)
+                const headerResponse = await fetch('/api/auth/login', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (headerResponse.ok) {
+                    const data = await headerResponse.json();
+                    setUser(data.user);
+                    
+                    // If on login page and authenticated, redirect to home
+                    if (isLoginPage) {
+                        router.push('/');
+                    }
+                    return;
+                }
+                
+                // If header auth fails, try JWT auth
+                const jwtResponse = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (jwtResponse.ok) {
+                    const data = await jwtResponse.json();
+                    setUser(data.user);
+                    
+                    // If on login page and authenticated, redirect to home
+                    if (isLoginPage) {
+                        router.push('/');
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            } finally {
+                setIsAuthChecking(false);
+            }
+        };
+        
+        // Always check auth on mount to ensure session persistence
+        // This runs on every page load/refresh
+        checkAuth();
+    }, [setUser, isLoginPage, router]); // Removed user dependency to always run auth check
+
+    // If user is not logged in and not on login page, redirect to login
+    // Only redirect after auth check is complete to prevent premature redirects
+    useEffect(() => {
+        if (!isAuthChecking && !user && !isLoginPage) {
+            router.push('/login');
+        }
+    }, [isAuthChecking, user, isLoginPage, router]);
+
+    // Show loading while checking auth or if redirecting to login
+    if (isAuthChecking || (!user && !isLoginPage)) {
         return (
-            <div className="min-h-screen bg-gray-50" data-oid="5yrqv.3">
-                {children}
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-oid="5yrqv.3">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">
+                        {isAuthChecking ? 'Checking authentication...' : 'Redirecting to login...'}
+                    </p>
+                </div>
             </div>
         );
     }

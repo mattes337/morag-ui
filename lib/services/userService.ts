@@ -1,24 +1,44 @@
+import { User, UserSettings } from '../../types';
 import { prisma } from '../database';
-import { User, UserSettings } from '@prisma/client';
+import { RealmService } from './realmService';
 
 export class UserService {
+    private static db = prisma;
     static async createUser(data: {
         name: string;
         email: string;
         avatar?: string;
         role?: 'ADMIN' | 'USER' | 'VIEWER';
+        password?: string;
     }) {
-        return await prisma.user.create({
-            data,
+        // Create user first
+        const user = await this.db.user.create({
+            data: {
+                name: data.name,
+                email: data.email,
+                avatar: data.avatar,
+                password: data.password,
+                role: data.role || 'USER',
+            },
             include: {
                 userSettings: true,
                 apiKeys: true,
             },
         });
+
+        // Create default realm for the new user
+        try {
+            await RealmService.createDefaultRealm(user.id);
+        } catch (error) {
+            console.error('Failed to create default realm for user:', error);
+            // Don't fail user creation if realm creation fails
+        }
+
+        return user;
     }
 
     static async getUserById(id: string) {
-        return await prisma.user.findUnique({
+        return await this.db.user.findUnique({
             where: { id },
             include: {
                 userSettings: true,
@@ -33,7 +53,7 @@ export class UserService {
     }
 
     static async getUserByEmail(email: string) {
-        return await prisma.user.findUnique({
+        return await this.db.user.findUnique({
             where: { email },
             include: {
                 userSettings: true,
@@ -43,7 +63,7 @@ export class UserService {
     }
 
     static async updateUser(id: string, data: Partial<User>) {
-        return await prisma.user.update({
+        return await this.db.user.update({
             where: { id },
             data,
             include: {
@@ -54,13 +74,13 @@ export class UserService {
     }
 
     static async deleteUser(id: string) {
-        return await prisma.user.delete({
+        return await this.db.user.delete({
             where: { id },
         });
     }
 
     static async createOrUpdateUserSettings(userId: string, settings: Partial<UserSettings>) {
-        return await prisma.userSettings.upsert({
+        return await this.db.userSettings.upsert({
             where: { userId },
             update: settings,
             create: {
@@ -71,8 +91,19 @@ export class UserService {
     }
 
     static async getUserSettings(userId: string) {
-        return await prisma.userSettings.findUnique({
+        return await this.db.userSettings.findUnique({
             where: { userId },
+        });
+    }
+
+    static async updateUserSettings(userId: string, settings: Partial<UserSettings>) {
+        return await this.db.userSettings.upsert({
+            where: { userId },
+            update: settings,
+            create: {
+                userId,
+                ...settings,
+            },
         });
     }
 }

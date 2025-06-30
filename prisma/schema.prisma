@@ -15,6 +15,7 @@ model User {
   name      String
   email     String   @unique
   avatar    String?
+  password  String?
   role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -26,6 +27,8 @@ model User {
   jobs            Job[]
   databaseServers DatabaseServer[]
   userSettings    UserSettings?
+  realms          Realm[]
+  userRealms      UserRealm[]
 
   @@map("users")
 }
@@ -38,6 +41,7 @@ model UserSettings {
   notifications    Boolean @default(true)
   autoSave         Boolean @default(true)
   defaultDatabase  String?
+  currentRealmId   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -45,6 +49,46 @@ model UserSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model Realm {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign keys
+  ownerId     String
+
+  // Relations
+  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  userRealms      UserRealm[]
+  databases       Database[]
+  documents       Document[]
+  apiKeys         ApiKey[]
+  jobs            Job[]
+  databaseServers DatabaseServer[]
+
+  @@unique([name, ownerId])
+  @@map("realms")
+}
+
+model UserRealm {
+  id        String   @id @default(uuid())
+  userId    String
+  realmId   String
+  role      RealmRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm Realm @relation(fields: [realmId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, realmId])
+  @@map("user_realms")
 }
 
 model Database {
@@ -59,13 +103,15 @@ model Database {
   // Foreign keys
   userId        String
   serverId      String
+  realmId       String
 
   // Relations
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   server    DatabaseServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  realm     Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade)
   documents Document[]
 
-  @@unique([name, userId])
+  @@unique([name, userId, realmId])
   @@map("databases")
 }
 
@@ -84,10 +130,12 @@ model Document {
   // Foreign keys
   userId     String
   databaseId String?
+  realmId    String
 
   // Relations
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   database Database? @relation(fields: [databaseId], references: [id], onDelete: SetNull)
+  realm    Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
   jobs     Job[]
 
   @@map("documents")
@@ -104,9 +152,11 @@ model ApiKey {
   
   // Foreign keys
   userId    String
+  realmId   String
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm Realm @relation(fields: [realmId], references: [id], onDelete: Cascade)
 
   @@map("api_keys")
 }
@@ -129,9 +179,11 @@ model DatabaseServer {
   
   // Foreign keys
   userId        String
+  realmId       String
 
   // Relations
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm     Realm      @relation(fields: [realmId], references: [id], onDelete: Cascade)
   databases Database[]
 
   @@map("database_servers")
@@ -152,10 +204,12 @@ model Job {
   // Foreign keys
   documentId   String
   userId       String
+  realmId      String
 
   // Relations
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
 
   @@map("jobs")
 }
@@ -164,6 +218,13 @@ model Job {
 enum UserRole {
   ADMIN
   USER
+  VIEWER
+}
+
+enum RealmRole {
+  OWNER
+  ADMIN
+  MEMBER
   VIEWER
 }
 

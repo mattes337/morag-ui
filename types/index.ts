@@ -165,11 +165,16 @@ export interface DatabaseServer {
 }
 
 export interface UserSettings {
-    theme: 'light' | 'dark' | 'system';
+    id: string;
+    userId: string;
+    theme: 'LIGHT' | 'DARK' | 'SYSTEM';
     language: string;
     notifications: boolean;
     autoSave: boolean;
     defaultDatabase?: string;
+    currentRealmId?: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface User {
@@ -177,7 +182,10 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    role: 'admin' | 'user' | 'viewer';
+    role: 'ADMIN' | 'USER' | 'VIEWER';
+    password?: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface Job {
@@ -209,4 +217,27 @@ export interface Job {
         errorMessage?: string;
         warnings?: string[];
     };
+}
+
+export interface Realm {
+    id: string;
+    name: string;
+    description?: string;
+    isDefault: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type RealmRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+
+export interface CreateRealmData {
+    name: string;
+    description?: string;
+    ownerId: string;
+}
+
+export interface UpdateRealmData {
+    name?: string;
+    description?: string;
+    isActive?: boolean;
 }
