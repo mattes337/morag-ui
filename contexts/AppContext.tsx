@@ -233,6 +233,30 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             // Build query parameters for realm filtering
             const realmParam = currentRealm ? `?realmId=${currentRealm.id}` : '';
 
+            // Load servers
+            console.log('🖥️ [AppContext] Loading servers for realm:', currentRealm?.name || 'default');
+            const serversResponse = await fetch(`/api/servers${realmParam}`);
+            if (serversResponse.ok) {
+                const serversData = await serversResponse.json();
+                const formattedServers = serversData.map((server: any) => ({
+                    id: server.id,
+                    name: server.name,
+                    type: server.type.toLowerCase(),
+                    host: server.host,
+                    port: server.port,
+                    username: server.username,
+                    password: server.password,
+                    apiKey: server.apiKey,
+                    database: server.database,
+                    collection: server.collection,
+                    isActive: server.isActive,
+                    createdAt: server.createdAt,
+                    lastConnected: server.lastConnected,
+                }));
+                console.log('✅ [AppContext] Loaded', formattedServers.length, 'servers');
+                setServers(formattedServers);
+            }
+
             // Load databases
             console.log('🗄️ [AppContext] Loading databases for realm:', currentRealm?.name || 'default');
             const databasesResponse = await fetch(`/api/databases${realmParam}`);

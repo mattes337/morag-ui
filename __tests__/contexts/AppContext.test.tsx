@@ -23,6 +23,7 @@ describe('AppContext', () => {
     beforeEach(() => {
         global.fetch = jest.fn().mockImplementation((url: string) => {
             const responses: Record<string, any> = {
+                '/api/servers': [],
                 '/api/databases': [],
                 '/api/documents': [],
                 '/api/api-keys': [],
@@ -67,6 +68,10 @@ describe('AppContext', () => {
             }) // /api/realms
             .mockResolvedValueOnce({
                 ok: true,
+                json: () => Promise.resolve([]),
+            }) // /api/servers
+            .mockResolvedValueOnce({
+                ok: true,
                 json: () => Promise.resolve([mockDatabase]),
             }) // /api/databases
             .mockResolvedValueOnce({
@@ -93,6 +98,7 @@ describe('AppContext', () => {
             credentials: 'include'
         });
         expect(global.fetch).toHaveBeenCalledWith('/api/realms/current');
+        expect(global.fetch).toHaveBeenCalledWith('/api/servers');
         expect(global.fetch).toHaveBeenCalledWith('/api/databases');
         expect(global.fetch).toHaveBeenCalledWith('/api/documents');
         expect(global.fetch).toHaveBeenCalledWith('/api/api-keys');
