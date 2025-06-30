@@ -28,6 +28,7 @@ export async function createDatabase(data: {
     description: string;
     userId: string;
     serverId: string;
+    realmId: string;
 }) {
     return await prisma.database.create({
         data,

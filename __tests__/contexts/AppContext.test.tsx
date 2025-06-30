@@ -190,6 +190,7 @@ describe('AppContext', () => {
                 name: 'New Database',
                 description: 'New database description',
                 serverId: '1',
+                realmId: '1',
             }),
         });
     });

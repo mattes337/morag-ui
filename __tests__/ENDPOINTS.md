@@ -73,7 +73,7 @@ This document lists all API endpoints used in the application. The error `Foreig
 
 ### POST /api/databases
 - Description: Create new database
-- Request body: `{ name: string, description: string, serverId: string }`
+- Request body: `{ name: string, description: string, serverId: string, realmId: string }`
 - Response: Created database object
 - Error cases:
   - 400: Missing required fields

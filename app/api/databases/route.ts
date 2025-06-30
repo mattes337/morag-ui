@@ -6,6 +6,7 @@ import { z } from 'zod';
 const createDatabaseSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string().optional(),
+    realmId: z.string().min(1, 'Realm ID is required'),
 });
 
 export async function GET(request: NextRequest) {
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
             description: validatedData.description || '',
             userId: user.userId,
             serverId: 'default-server', // This should be updated based on your requirements
+            realmId: validatedData.realmId,
         });
         
         return NextResponse.json(database, { status: 201 });

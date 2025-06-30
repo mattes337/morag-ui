@@ -85,6 +85,7 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    realmId: 'realm1',
                 }),
             });
 
@@ -113,6 +114,7 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    realmId: 'realm1',
                 }),
             });
 
@@ -126,6 +128,7 @@ describe('/api/databases', () => {
                 description: 'New description',
                 userId: 'user1', // This comes from getAuthUser
                 serverId: 'default-server', // Default value
+                realmId: 'realm1',
             });
         });
 
@@ -133,7 +136,7 @@ describe('/api/databases', () => {
             const request = new NextRequest('http://localhost:3000/api/databases', {
                 method: 'POST',
                 body: JSON.stringify({
-                    // Missing name - required field
+                    // Missing name and realmId - required fields
                 }),
             });
 
@@ -160,6 +163,7 @@ describe('/api/databases', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Database',
+                    realmId: 'realm1',
                     // description is optional
                 }),
             });
@@ -174,6 +178,7 @@ describe('/api/databases', () => {
                 description: '',
                 userId: 'user1',
                 serverId: 'default-server',
+                realmId: 'realm1',
             });
         });
 
@@ -185,6 +190,7 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    realmId: 'realm1',
                 }),
             });
 

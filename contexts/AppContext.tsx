@@ -375,11 +375,15 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     }) => {
         try {
             if (!user) throw new Error('No user logged in');
+            if (!currentRealm) throw new Error('No realm selected');
 
             const response = await fetch('/api/databases', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data), // userId is now handled by authentication
+                body: JSON.stringify({
+                    ...data,
+                    realmId: currentRealm.id
+                }),
             });
 
             if (!response.ok) {
