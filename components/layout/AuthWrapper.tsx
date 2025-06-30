@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 import { Header } from './Header';
@@ -11,12 +11,14 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     const { user, setUser } = useApp();
     const pathname = usePathname();
     const router = useRouter();
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
 
     const isLoginPage = pathname === '/login';
 
     useEffect(() => {
         // Check for authentication on mount and page refresh
         const checkAuth = async () => {
+            setIsAuthChecking(true);
             try {
                 // First try header auth (for SSO)
                 const headerResponse = await fetch('/api/auth/login', {
@@ -52,29 +54,33 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
+            } finally {
+                setIsAuthChecking(false);
             }
         };
         
-        // Always check auth on mount, regardless of current user state
-        // This ensures session persistence across browser refreshes
-        if (!user) {
-            checkAuth();
-        }
-    }, [user, setUser, isLoginPage, router]);
+        // Always check auth on mount to ensure session persistence
+        // This runs on every page load/refresh
+        checkAuth();
+    }, [setUser, isLoginPage, router]); // Removed user dependency to always run auth check
 
     // If user is not logged in and not on login page, redirect to login
+    // Only redirect after auth check is complete to prevent premature redirects
     useEffect(() => {
-        if (!user && !isLoginPage) {
+        if (!isAuthChecking && !user && !isLoginPage) {
             router.push('/login');
         }
-    }, [user, isLoginPage, router]);
+    }, [isAuthChecking, user, isLoginPage, router]);
 
-    if (!user && !isLoginPage) {
+    // Show loading while checking auth or if redirecting to login
+    if (isAuthChecking || (!user && !isLoginPage)) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-oid="5yrqv.3">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Redirecting to login...</p>
+                    <p className="mt-2 text-gray-600">
+                        {isAuthChecking ? 'Checking authentication...' : 'Redirecting to login...'}
+                    </p>
                 </div>
             </div>
         );

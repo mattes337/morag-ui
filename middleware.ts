@@ -17,19 +17,22 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // Only run middleware logic if header authentication is explicitly enabled
+    if (!authConfig.enableHeaderAuth) {
+        return NextResponse.next();
+    }
+
     // Handle header authentication
-    if (authConfig.enableHeaderAuth) {
-        const user = await getAuthUser(request);
-        
-        // If on login page and user is authenticated via headers, redirect to home
-        if (pathname === '/login' && user && user.authMethod === 'header') {
-            return NextResponse.redirect(new URL('/', request.url));
-        }
-        
-        // If not authenticated via headers and not on login page, redirect to login
-        if (!user && pathname !== '/login') {
-            return NextResponse.redirect(new URL('/login', request.url));
-        }
+    const user = await getAuthUser(request);
+    
+    // If on login page and user is authenticated via headers, redirect to home
+    if (pathname === '/login' && user && user.authMethod === 'header') {
+        return NextResponse.redirect(new URL('/', request.url));
+    }
+    
+    // If not authenticated via headers and not on login page, redirect to login
+    if (!user && pathname !== '/login') {
+        return NextResponse.redirect(new URL('/login', request.url));
     }
 
     return NextResponse.next();

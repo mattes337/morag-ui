@@ -26,6 +26,16 @@
   - Ensured authentication state persists when user refreshes browser
   - Updated test expectations to match new authentication call format
   - All tests passing with improved session management
+- ✅ Fixed session persistence on page reload (F5)
+  - Modified AuthWrapper to always run auth check on mount, not just when user is null
+  - Added proper loading state to prevent premature redirects to login
+  - Enhanced auth check logic to prevent redirect loops
+  - Users now stay logged in across browser refreshes and direct page access
+- ✅ Verified navigation URL changes work correctly
+  - Navigation component uses Next.js Link components properly
+  - Browser URL updates correctly when clicking menu items
+  - Direct page access via URLs works as expected
+  - All routing functionality working as intended
 
 ## Pending Tasks
 
