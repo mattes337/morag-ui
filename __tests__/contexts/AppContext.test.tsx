@@ -4,11 +4,21 @@ import { AppProvider, useApp } from '../../contexts/AppContext';
 import {
     createMockFetch,
     mockUser,
-    mockDatabase,
     mockDocument,
     mockApiKey,
     mockJob,
 } from '../../lib/test-utils';
+
+const mockDatabase = {
+    id: '1',
+    name: 'Test Database',
+    description: 'Test database description',
+    _count: { documents: 5 },
+    updatedAt: '2024-01-15T10:00:00.000Z',
+    ingestionPrompt: null,
+    systemPrompt: null,
+    databaseServers: []
+};
 
 // Mock the vector search module
 jest.mock('../../lib/vectorSearch', () => ({
@@ -51,58 +61,132 @@ describe('AppContext', () => {
         expect(result.current.apiKeys).toEqual([]); // No initial mock data
         expect(result.current.servers).toEqual([]); // No initial mock data
         expect(result.current.jobs).toEqual([]);
-        expect(result.current.isDataLoading).toBe(true);
+        expect(result.current.isDataLoading).toBe(false);
     });
 
-    it('should load initial data on mount', async () => {
-        global.fetch = jest
-            .fn()
-            .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ user: mockUser }) }) // /api/auth/me
-            .mockResolvedValueOnce({
+    it('should load initial data when user is set', async () => {
+        // Mock API responses for data loading
+        const mockFetch = jest.fn();
+        
+        mockFetch.mockImplementation((url, options) => {
+            console.log('Mock fetch called with:', url, options);
+            
+            if (url === '/api/realms/current') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } })
+                });
+            }
+            if (url === '/api/realms') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ realms: [] })
+                });
+            }
+            if (url === '/api/servers' || url === '/api/servers?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
+            if (url === '/api/databases' || url === '/api/databases?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([mockDatabase])
+                });
+            }
+            if (url === '/api/documents' || url === '/api/documents?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([mockDocument])
+                });
+            }
+            if (url === '/api/api-keys' || url === '/api/api-keys?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([mockApiKey])
+                });
+            }
+            if (url === '/api/jobs' || url === '/api/jobs?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([mockJob])
+                });
+            }
+            
+            // Default response
+            return Promise.resolve({
                 ok: true,
-                json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
-            }) // /api/realms/current
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve({ realms: [] }),
-            }) // /api/realms
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([]),
-            }) // /api/servers
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockDatabase]),
-            }) // /api/databases
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockDocument]),
-            }) // /api/documents
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockApiKey]),
-            }) // /api/api-keys
-            .mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve([mockJob]),
-            }); // /api/jobs
+                json: () => Promise.resolve({})
+            });
+        });
+        
+        global.fetch = mockFetch;
 
         const { result } = renderHook(() => useApp(), { wrapper });
+
+        // Manually set the user to trigger data loading
+        await act(async () => {
+            result.current.setUser(mockUser);
+        });
 
         await waitFor(() => {
             expect(result.current.isDataLoading).toBe(false);
         });
 
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', {
-            method: 'GET',
+        expect(result.current.databases).toEqual([{
+            id: '1',
+            name: 'Test Database',
+            description: 'Test database description',
+            documentCount: 5,
+            lastUpdated: '2024-01-15',
+            ingestionPrompt: null,
+            systemPrompt: null,
+            servers: []
+        }]);
+        expect(result.current.documents).toEqual([{
+            id: '1',
+            name: 'Test Document.pdf',
+            type: 'PDF',
+            state: 'ingested',
+            version: 1,
+            chunks: 10,
+            quality: 0.95,
+            uploadDate: '2024-01-15'
+        }]);
+        expect(result.current.apiKeys).toEqual([mockApiKey]);
+        expect(result.current.jobs).toEqual([{
+            id: '1',
+            documentId: '1',
+            documentName: 'Test Document.pdf',
+            documentType: 'PDF',
+            startDate: '2024-01-15T10:00:00.000Z',
+            endDate: undefined,
+            status: 'processing',
+            progress: {
+                percentage: undefined,
+                summary: undefined
+            },
+            createdAt: '2024-01-15T10:00:00.000Z',
+            updatedAt: '2024-01-15T10:30:00.000Z'
+        }]);
+
+        // Verify fetch calls - realm loading and data loading
+        expect(global.fetch).toHaveBeenCalledWith('/api/realms/current', {
             credentials: 'include'
         });
-        expect(global.fetch).toHaveBeenCalledWith('/api/realms/current');
-        expect(global.fetch).toHaveBeenCalledWith('/api/servers');
-        expect(global.fetch).toHaveBeenCalledWith('/api/databases');
-        expect(global.fetch).toHaveBeenCalledWith('/api/documents');
-        expect(global.fetch).toHaveBeenCalledWith('/api/api-keys');
-        expect(global.fetch).toHaveBeenCalledWith('/api/jobs');
+        expect(global.fetch).toHaveBeenCalledWith('/api/realms', {
+            credentials: 'include'
+        });
+        expect(global.fetch).toHaveBeenCalledWith('/api/servers', {
+            credentials: 'include'
+        });
+        
+        // Check that we have the expected number of calls
+        console.log('Total fetch calls:', global.fetch.mock.calls.length);
+        global.fetch.mock.calls.forEach((call, index) => {
+            console.log(`Call ${index + 1}:`, call[0], call[1]);
+        });
     });
 
     it('should create a new database', async () => {
@@ -111,12 +195,6 @@ describe('AppContext', () => {
 
         // Mock all initialization calls
         mockFetch.mockImplementation((url, options) => {
-            if (url === '/api/auth/me') {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ user: mockUser }),
-                });
-            }
             if (url === '/api/realms/current') {
                 return Promise.resolve({
                     ok: true,
@@ -159,6 +237,12 @@ describe('AppContext', () => {
                     json: () => Promise.resolve([]),
                 });
             }
+            if (url === '/api/servers') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
             // Default response
             return Promise.resolve({
                 ok: true,
@@ -170,7 +254,12 @@ describe('AppContext', () => {
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
-        // Wait for initial data loading to complete
+        // Manually set the user to simulate AuthWrapper setting it
+        await act(async () => {
+            result.current.setUser(mockUser);
+        });
+
+        // Wait for data loading to complete
         await act(async () => {
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
@@ -200,13 +289,19 @@ describe('AppContext', () => {
         const mockFetch = jest.fn();
 
         mockFetch.mockImplementation((url, options) => {
-            if (url === '/api/auth/me') {
+            if (url === '/api/realms/current') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve({ user: mockUser }),
+                    json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
                 });
             }
-            if (url === '/api/databases') {
+            if (url === '/api/realms') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ realms: [] }),
+                });
+            }
+            if (url === '/api/databases?realmId=1') {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
@@ -218,19 +313,25 @@ describe('AppContext', () => {
                     json: () => Promise.resolve(mockDocument),
                 });
             }
-            if (url === '/api/documents' && !options?.method) {
+            if (url === '/api/documents?realmId=1' && !options?.method) {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
                 });
             }
-            if (url === '/api/api-keys') {
+            if (url === '/api/api-keys?realmId=1') {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
                 });
             }
-            if (url === '/api/jobs') {
+            if (url === '/api/jobs?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/servers?realmId=1') {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
@@ -247,7 +348,12 @@ describe('AppContext', () => {
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
-        // Wait for initial data loading to complete
+        // Manually set the user to simulate AuthWrapper setting it
+        await act(async () => {
+            result.current.setUser(mockUser);
+        });
+
+        // Wait for data loading to complete
         await act(async () => {
             await new Promise((resolve) => setTimeout(resolve, 100));
         });
@@ -272,69 +378,53 @@ describe('AppContext', () => {
     });
 
     it('should delete a document', async () => {
-        global.fetch = jest.fn().mockImplementation((url: string) => {
-            const responses: Record<string, any> = {
-                '/api/databases': [],
-                '/api/documents': [],
-                '/api/api-keys': [],
-                '/api/jobs': [],
-                '/api/auth/me': { id: 'user1', name: 'Test User', email: 'test@example.com' }
-            };
-            
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(responses[url] || {})
-            });
-        });
-
-        const { result } = renderHook(() => useApp(), { wrapper });
-
-        await act(async () => {
-            await result.current.deleteDocument('1');
-        });
-
-        expect(global.fetch).toHaveBeenCalledWith('/api/documents/1', {
-            method: 'DELETE',
-        });
-    });
-
-    it('should create an API key', async () => {
-        // Mock all fetch calls for initialization and API key creation
+        // Mock all fetch calls for initialization and document deletion
         const mockFetch = jest.fn();
 
-        // Mock all initialization calls
         mockFetch.mockImplementation((url, options) => {
-            if (url === '/api/auth/me') {
+            if (url === '/api/realms/current') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve({ user: mockUser }),
+                    json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
                 });
             }
-            if (url === '/api/databases') {
+            if (url === '/api/realms') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve([]),
+                    json: () => Promise.resolve({ realms: [] }),
                 });
             }
-            if (url === '/api/documents') {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve([]),
-                });
-            }
-            if (url === '/api/api-keys' && options?.method === 'POST') {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(mockApiKey),
-                });
-            }
-            if (url === '/api/api-keys' && !options?.method) {
+            if (url === '/api/databases?realmId=1') {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
                 });
             }
-            if (url === '/api/jobs') {
+            if (url === '/api/documents/1' && options?.method === 'DELETE') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({}),
+                });
+            }
+            if (url === '/api/documents?realmId=1' && !options?.method) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/api-keys?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/jobs?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/servers?realmId=1') {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve([]),
@@ -351,7 +441,96 @@ describe('AppContext', () => {
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
-        // Wait for initial data loading to complete
+        // Manually set the user to simulate AuthWrapper setting it
+        await act(async () => {
+            result.current.setUser(mockUser);
+        });
+
+        // Wait for data loading to complete
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        });
+
+        await act(async () => {
+            await result.current.deleteDocument('1');
+        });
+
+        expect(global.fetch).toHaveBeenCalledWith('/api/documents/1', {
+            method: 'DELETE',
+        });
+    });
+
+    it('should create an API key', async () => {
+        // Mock all fetch calls for initialization and API key creation
+        const mockFetch = jest.fn();
+
+        // Mock all initialization calls
+        mockFetch.mockImplementation((url, options) => {
+            if (url === '/api/realms/current') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ currentRealm: { id: '1', name: 'Test Realm' } }),
+                });
+            }
+            if (url === '/api/realms') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ realms: [] }),
+                });
+            }
+            if (url === '/api/databases?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/documents?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/api-keys' && options?.method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve(mockApiKey),
+                });
+            }
+            if (url === '/api/api-keys?realmId=1' && !options?.method) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/jobs?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            if (url === '/api/servers?realmId=1') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                });
+            }
+            // Default response
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({}),
+            });
+        });
+
+        global.fetch = mockFetch;
+
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        // Manually set the user to simulate AuthWrapper setting it
+        await act(async () => {
+            result.current.setUser(mockUser);
+        });
+
+        // Wait for data loading to complete
         await act(async () => {
             await new Promise((resolve) => setTimeout(resolve, 100));
         });

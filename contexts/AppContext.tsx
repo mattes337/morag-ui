@@ -176,51 +176,46 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [promptResponse, setPromptResponse] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Load initial data
+    // Check API health on mount
     useEffect(() => {
-        const checkAuthAndLoadData = async () => {
-            console.log('🔄 [AppContext] Checking authentication and loading data');
+        const checkHealth = async () => {
+            console.log('🏥 [AppContext] Checking API health');
+            const healthy = await checkApiHealth();
+            setApiHealthy(healthy);
+            console.log('✅ [AppContext] API health check completed:', healthy);
+        };
+        
+        checkHealth();
+    }, []);
+
+    // Load data when user becomes authenticated
+    useEffect(() => {
+        const loadInitialData = async () => {
+            if (!user) {
+                console.log('👤 [AppContext] No user, skipping data load');
+                setIsDataLoading(false);
+                return;
+            }
+
+            console.log('🔄 [AppContext] User authenticated, loading data for:', user.email);
             setIsDataLoading(true);
 
             try {
-                // Check API health first
-                console.log('🏥 [AppContext] Checking API health');
-                const healthy = await checkApiHealth();
-                setApiHealthy(healthy);
-                console.log('✅ [AppContext] API health check completed:', healthy);
-
-                // Check authentication status with credentials to include cookies
-                console.log('🔐 [AppContext] Checking authentication');
-                const authResponse = await fetch('/api/auth/me', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (authResponse.ok) {
-                    const authData = await authResponse.json();
-                    setUser(authData.user);
-                    console.log('✅ [AppContext] User authenticated:', authData.user.email);
-
-                    // Load current realm first
-                    await loadCurrentRealm();
-                    
-                    // Load user-specific data
-                    await loadUserData();
-                } else {
-                    console.log('❌ [AppContext] User not authenticated');
-                    setUser(null);
-                }
+                // Load current realm first
+                await loadCurrentRealm();
+                
+                // Load user-specific data
+                await loadUserData();
             } catch (error) {
-                console.error('❌ [AppContext] Failed to check auth or load data:', error);
-                setUser(null);
+                console.error('❌ [AppContext] Failed to load user data:', error);
             } finally {
-                console.log('✅ [AppContext] Auth check and data load completed');
+                console.log('✅ [AppContext] Data load completed');
                 setIsDataLoading(false);
             }
         };
 
-        checkAuthAndLoadData();
-    }, []);
+        loadInitialData();
+    }, [user?.id]); // Only trigger when user changes from null to authenticated
 
     // Reload data when realm changes
     useEffect(() => {
@@ -231,13 +226,20 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     }, [currentRealm?.id, user]);
 
     const loadUserData = async () => {
+        if (!user) {
+            console.log('👤 [AppContext] No user available for data loading');
+            return;
+        }
+
         try {
             // Build query parameters for realm filtering
             const realmParam = currentRealm ? `?realmId=${currentRealm.id}` : '';
 
             // Load servers
             console.log('🖥️ [AppContext] Loading servers for realm:', currentRealm?.name || 'default');
-            const serversResponse = await fetch(`/api/servers${realmParam}`);
+            const serversResponse = await fetch(`/api/servers${realmParam}`, {
+                credentials: 'include'
+            });
             if (serversResponse.ok) {
                 const serversData = await serversResponse.json();
                 const formattedServers = serversData.map((server: any) => ({
@@ -261,7 +263,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             // Load databases
             console.log('🗄️ [AppContext] Loading databases for realm:', currentRealm?.name || 'default');
-            const databasesResponse = await fetch(`/api/databases${realmParam}`);
+            const databasesResponse = await fetch(`/api/databases${realmParam}`, {
+                credentials: 'include'
+            });
             if (databasesResponse.ok) {
                 const databasesData = await databasesResponse.json();
                 const formattedDatabases = databasesData.map((db: any) => ({
@@ -280,7 +284,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             // Load documents
             console.log('📄 [AppContext] Loading documents for realm:', currentRealm?.name || 'default');
-            const documentsResponse = await fetch(`/api/documents${realmParam}`);
+            const documentsResponse = await fetch(`/api/documents${realmParam}`, {
+                credentials: 'include'
+            });
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
                 const formattedDocuments = documentsData.map((doc: any) => ({
@@ -299,7 +305,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             // Load API keys
             console.log('🔑 [AppContext] Loading API keys for realm:', currentRealm?.name || 'default');
-            const apiKeysResponse = await fetch(`/api/api-keys${realmParam}`);
+            const apiKeysResponse = await fetch(`/api/api-keys${realmParam}`, {
+                credentials: 'include'
+            });
             if (apiKeysResponse.ok) {
                 const apiKeysData = await apiKeysResponse.json();
                 const formattedApiKeys = apiKeysData.map((key: any) => ({
@@ -315,7 +323,10 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             }
 
             // Load jobs
-            const jobsResponse = await fetch(`/api/jobs${realmParam}`);
+            console.log('💼 [AppContext] Loading jobs for realm:', currentRealm?.name || 'default');
+            const jobsResponse = await fetch(`/api/jobs${realmParam}`, {
+                credentials: 'include'
+            });
             if (jobsResponse.ok) {
                 const jobsData = await jobsResponse.json();
                 const formattedJobs = jobsData.map((job: any) => ({
@@ -351,24 +362,37 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const loadCurrentRealm = async () => {
         try {
             console.log('🏰 [AppContext] Loading current realm');
-            const response = await fetch('/api/realms/current');
+            const response = await fetch('/api/realms/current', {
+                credentials: 'include'
+            });
+            
             if (response.ok) {
                 const data = await response.json();
                 setCurrentRealm(data.currentRealm);
                 console.log('✅ [AppContext] Current realm loaded:', data.currentRealm.name);
                 
                 // Also load all realms
-                const realmsResponse = await fetch('/api/realms');
+                const realmsResponse = await fetch('/api/realms', {
+                    credentials: 'include'
+                });
                 if (realmsResponse.ok) {
                     const realmsData = await realmsResponse.json();
                     setRealms(realmsData.realms || []);
                     console.log('✅ [AppContext] All realms loaded:', realmsData.realms?.length || 0);
+                } else {
+                    console.error('❌ [AppContext] Failed to load all realms:', realmsResponse.status);
                 }
             } else {
-                console.error('❌ [AppContext] Failed to load current realm');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ [AppContext] Failed to load current realm:', response.status, errorData.error);
+                throw new Error(`Failed to load current realm: ${errorData.error}`);
             }
         } catch (error) {
             console.error('❌ [AppContext] Error loading current realm:', error);
+            // Set empty state so UI can show appropriate error state
+            setCurrentRealm(null);
+            setRealms([]);
+            throw error;
         }
     };
 

@@ -25,26 +25,26 @@ export interface Realm {
 }
 
 export function RealmSelector() {
-    const { currentRealm, setCurrentRealm, setShowRealmManagementDialog } = useApp();
+    const { currentRealm, setCurrentRealm, setShowRealmManagementDialog, realms: contextRealms, isDataLoading } = useApp();
     const [realms, setRealms] = useState<Realm[]>([]);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    // Use realms from context instead of fetching separately
     useEffect(() => {
-        fetchRealms();
-    }, []);
-
-    const fetchRealms = async () => {
-        try {
-            const response = await fetch('/api/realms');
-            if (response.ok) {
-                const data = await response.json();
-                setRealms(data.realms || []);
-            }
-        } catch (error) {
-            console.error('Error fetching realms:', error);
+        if (contextRealms) {
+            setRealms(contextRealms);
+            setError(null);
         }
-    };
+    }, [contextRealms]);
+
+    // Show error state if no realms and not loading
+    useEffect(() => {
+        if (!isDataLoading && !currentRealm && realms.length === 0) {
+            setError('Failed to load realms. Please refresh the page.');
+        }
+    }, [isDataLoading, currentRealm, realms.length]);
 
     const switchRealm = async (realmId: string) => {
         if (realmId === currentRealm?.id) return;
@@ -98,10 +98,41 @@ export function RealmSelector() {
         }
     };
 
-    if (!currentRealm) {
+    // Show loading state while data is loading
+    if (isDataLoading || (!currentRealm && !error)) {
         return (
             <div className="flex items-center space-x-2">
                 <div className="h-8 w-32 bg-gray-200 animate-pulse rounded"></div>
+                <span className="text-sm text-gray-500">Loading realms...</span>
+            </div>
+        );
+    }
+
+    // Show error state if realm loading failed
+    if (error) {
+        return (
+            <div className="flex items-center space-x-2">
+                <Button
+                    variant="outline"
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    onClick={() => window.location.reload()}
+                >
+                    ⚠️ Realm Error - Click to Refresh
+                </Button>
+            </div>
+        );
+    }
+
+    // Show fallback if no current realm but no error
+    if (!currentRealm) {
+        return (
+            <div className="flex items-center space-x-2">
+                <Button
+                    variant="outline"
+                    onClick={() => setShowRealmManagementDialog(true)}
+                >
+                    No Realm Selected
+                </Button>
             </div>
         );
     }
@@ -119,14 +150,6 @@ export function RealmSelector() {
                             <span className="text-sm font-medium truncate">
                                 {currentRealm.name}
                             </span>
-                            {currentRealm.userRole && (
-                                <Badge
-                                    variant="secondary"
-                                    className={`text-xs ${getRoleColor(currentRealm.userRole)}`}
-                                >
-                                    {currentRealm.userRole}
-                                </Badge>
-                            )}
                         </div>
                     </div>
                     <ChevronDownIcon className="h-4 w-4 flex-shrink-0" />
