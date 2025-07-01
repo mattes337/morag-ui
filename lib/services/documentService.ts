@@ -6,7 +6,7 @@ export class DocumentService {
         name: string;
         type: string;
         userId: string;
-        databaseId?: string;
+        databaseId: string;
         state?: DocumentState;
         version?: number;
     }) {
@@ -20,17 +20,15 @@ export class DocumentService {
         });
 
         // Update database document count
-        if (data.databaseId) {
-            await prisma.database.update({
-                where: { id: data.databaseId },
-                data: {
-                    documentCount: {
-                        increment: 1,
-                    },
-                    lastUpdated: new Date(),
+        await prisma.database.update({
+            where: { id: data.databaseId },
+            data: {
+                documentCount: {
+                    increment: 1,
                 },
-            });
-        }
+                lastUpdated: new Date(),
+            },
+        });
 
         return document;
     }

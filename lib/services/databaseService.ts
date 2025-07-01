@@ -12,7 +12,11 @@ export const DatabaseService = {
             include: {
                 documents: true,
                 user: true,
-                server: true,
+                databaseServers: {
+                    include: {
+                        databaseServer: true,
+                    },
+                },
                 _count: {
                     select: {
                         documents: true,
@@ -26,16 +30,34 @@ export const DatabaseService = {
 export async function createDatabase(data: {
     name: string;
     description: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
     userId: string;
-    serverId: string;
+    serverIds: string[]; // Array of server IDs
     realmId: string;
 }) {
+    const { serverIds, userId, ...databaseData } = data;
+    
     return await prisma.database.create({
-        data,
+        data: {
+            ...databaseData,
+            user: {
+                connect: { id: userId }
+            },
+            databaseServers: {
+                create: serverIds.map(serverId => ({
+                    databaseServerId: serverId,
+                })),
+            },
+        },
         include: {
             documents: true,
             user: true,
-            server: true,
+            databaseServers: {
+                include: {
+                    databaseServer: true,
+                },
+            },
             _count: {
                 select: {
                     documents: true,
@@ -50,7 +72,11 @@ export async function getAllDatabases() {
         include: {
             documents: true,
             user: true,
-            server: true,
+            databaseServers: {
+                include: {
+                    databaseServer: true,
+                },
+            },
             _count: {
                 select: {
                     documents: true,
@@ -66,7 +92,11 @@ export async function getDatabasesByUser(userId: string) {
         include: {
             documents: true,
             user: true,
-            server: true,
+            databaseServers: {
+                include: {
+                    databaseServer: true,
+                },
+            },
             _count: {
                 select: {
                     documents: true,
@@ -82,7 +112,11 @@ export async function getDatabaseById(id: string) {
         include: {
             documents: true,
             user: true,
-            server: true,
+            databaseServers: {
+                include: {
+                    databaseServer: true,
+                },
+            },
             _count: {
                 select: {
                     documents: true,
@@ -97,6 +131,8 @@ export async function updateDatabase(
     data: {
         name?: string;
         description?: string;
+        ingestionPrompt?: string;
+        systemPrompt?: string;
     }
 ) {
     return await prisma.database.update({
@@ -105,7 +141,11 @@ export async function updateDatabase(
         include: {
             documents: true,
             user: true,
-            server: true,
+            databaseServers: {
+                include: {
+                    databaseServer: true,
+                },
+            },
             _count: {
                 select: {
                     documents: true,
@@ -130,4 +170,39 @@ export async function updateDocumentCount(databaseId: string) {
         where: { id: databaseId },
         data: { documentCount: count },
     });
+}
+
+export async function addServerToDatabase(databaseId: string, serverId: string) {
+    return await prisma.databaseServerLink.create({
+        data: {
+            databaseId,
+            databaseServerId: serverId,
+        },
+        include: {
+            database: true,
+            databaseServer: true,
+        },
+    });
+}
+
+export async function removeServerFromDatabase(databaseId: string, serverId: string) {
+    return await prisma.databaseServerLink.delete({
+        where: {
+            databaseId_databaseServerId: {
+                databaseId,
+                databaseServerId: serverId,
+            },
+        },
+    });
+}
+
+export async function getDatabaseServers(databaseId: string) {
+    const links = await prisma.databaseServerLink.findMany({
+        where: { databaseId },
+        include: {
+            databaseServer: true,
+        },
+    });
+    
+    return links.map(link => link.databaseServer);
 }

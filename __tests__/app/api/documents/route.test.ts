@@ -122,7 +122,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name and type are required' });
+            expect(data).toEqual({ error: 'Name, type, and databaseId are required' });
             expect(mockDocumentService.createDocument).not.toHaveBeenCalled();
         });
 
@@ -134,6 +134,7 @@ describe('/api/documents', () => {
                 body: JSON.stringify({
                     name: 'New Document.pdf',
                     type: 'PDF',
+                    databaseId: 'db1',
                     userId: 'user1',
                 }),
             });

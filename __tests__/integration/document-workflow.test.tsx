@@ -109,7 +109,7 @@ describe('Document Workflow Integration', () => {
         fireEvent.click(pdfButton);
 
         await waitFor(() => {
-            expect(screen.getByText('File')).toBeInTheDocument();
+            expect(screen.getByText('File *')).toBeInTheDocument();
             const addButtons = screen.getAllByRole('button', { name: 'Add Document' });
             expect(addButtons.length).toBeGreaterThan(0);
         });

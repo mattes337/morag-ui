@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { name, type, databaseId } = body;
         
-        if (!name || !type) {
+        if (!name || !type || !databaseId) {
             return NextResponse.json(
-                { error: 'Name and type are required' },
+                { error: 'Name, type, and databaseId are required' },
                 { status: 400 },
             );
         }

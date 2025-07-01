@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { DocumentType, Document } from '../../types';
+import { useApp } from '../../contexts/AppContext';
 
 interface AddDocumentDialogProps {
     isOpen: boolean;
@@ -19,11 +20,17 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
+    const { databases, createDocument } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
+    const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
+    const [documentName, setDocumentName] = useState('');
+    const [documentUrl, setDocumentUrl] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [chunkSize, setChunkSize] = useState('1000');
     const [chunkingMethod, setChunkingMethod] = useState('Semantic');
     const [gpuProcessing, setGpuProcessing] = useState(false);
     const [contextualEmbedding, setContextualEmbedding] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const documentTypes: DocumentType[] = useMemo(
         () => [
@@ -77,6 +84,10 @@ export function AddDocumentDialog({
     useEffect(() => {
         if (isOpen && mode === 'add') {
             setSelectedDocumentType(null);
+            setSelectedDatabaseId('');
+            setDocumentName('');
+            setDocumentUrl('');
+            setSelectedFile(null);
             setChunkSize('1000');
             setChunkingMethod('Semantic');
             setGpuProcessing(false);
@@ -86,12 +97,52 @@ export function AddDocumentDialog({
 
     const handleClose = () => {
         setSelectedDocumentType(null);
+        setSelectedDatabaseId('');
+        setDocumentName('');
+        setDocumentUrl('');
+        setSelectedFile(null);
         setChunkSize('1000');
         setChunkingMethod('Semantic');
         setGpuProcessing(false);
         setContextualEmbedding(false);
+        setIsSubmitting(false);
         onClose();
     };
+
+    const handleSubmit = async () => {
+        if (!selectedDocumentType || !selectedDatabaseId) return;
+        
+        let name = documentName;
+        if (!name) {
+            if (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') {
+                name = documentUrl || 'Untitled Document';
+            } else if (selectedFile) {
+                name = selectedFile.name;
+            } else {
+                name = 'Untitled Document';
+            }
+        }
+
+        try {
+            setIsSubmitting(true);
+            await createDocument({
+                name,
+                type: selectedDocumentType.type,
+                databaseId: selectedDatabaseId,
+            });
+            handleClose();
+        } catch (error) {
+            console.error('Failed to create document:', error);
+            // TODO: Show error message to user
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const isFormValid = selectedDocumentType && selectedDatabaseId && (
+        (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') ? documentUrl :
+        selectedFile || documentName
+    );
 
     if (!isOpen) return null;
 
@@ -175,6 +226,45 @@ export function AddDocumentDialog({
                             )}
                         </div>
 
+                        <div data-oid="database-selection">
+                            <label
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                                data-oid="database-label"
+                            >
+                                Database *
+                            </label>
+                            <select
+                                value={selectedDatabaseId}
+                                onChange={(e) => setSelectedDatabaseId(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-oid="database-select"
+                            >
+                                <option value="">Select a database...</option>
+                                {databases.map((database) => (
+                                    <option key={database.id} value={database.id}>
+                                        {database.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div data-oid="document-name">
+                            <label
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                                data-oid="name-label"
+                            >
+                                Document Name (optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={documentName}
+                                onChange={(e) => setDocumentName(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Enter document name..."
+                                data-oid="name-input"
+                            />
+                        </div>
+
                         <div data-oid=":q:96kt">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -182,13 +272,15 @@ export function AddDocumentDialog({
                             >
                                 {selectedDocumentType.type === 'youtube' ||
                                 selectedDocumentType.type === 'website'
-                                    ? 'URL'
-                                    : 'File'}
+                                    ? 'URL *'
+                                    : 'File *'}
                             </label>
                             {selectedDocumentType.type === 'youtube' ||
                             selectedDocumentType.type === 'website' ? (
                                 <input
                                     type="url"
+                                    value={documentUrl}
+                                    onChange={(e) => setDocumentUrl(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter URL..."
                                     data-oid="v2borhw"
@@ -196,6 +288,7 @@ export function AddDocumentDialog({
                             ) : (
                                 <input
                                     type="file"
+                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     data-oid="v9oo-ew"
                                 />
@@ -324,14 +417,22 @@ export function AddDocumentDialog({
                     </button>
                     {(selectedDocumentType || mode === 'supersede') && (
                         <button
+                            onClick={handleSubmit}
+                            disabled={!isFormValid || isSubmitting}
                             className={`px-4 py-2 text-white rounded-md ${
-                                mode === 'supersede'
+                                !isFormValid || isSubmitting
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : mode === 'supersede'
                                     ? 'bg-yellow-600 hover:bg-yellow-700'
                                     : 'bg-blue-600 hover:bg-blue-700'
                             }`}
                             data-oid="fr567.8"
                         >
-                            {mode === 'supersede' ? 'Supersede Document' : 'Add Document'}
+                            {isSubmitting
+                                ? 'Creating...'
+                                : mode === 'supersede'
+                                ? 'Supersede Document'
+                                : 'Add Document'}
                         </button>
                     )}
                 </div>

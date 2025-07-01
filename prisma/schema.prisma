@@ -92,24 +92,25 @@ model UserRealm {
 }
 
 model Database {
-  id            String   @id @default(uuid())
-  name          String
-  description   String
-  documentCount Int      @default(0)
-  lastUpdated   DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  description     String
+  ingestionPrompt String?  // Optional prompt for document ingestion
+  systemPrompt    String?  // Optional prompt for user queries
+  documentCount   Int      @default(0)
+  lastUpdated     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   
   // Foreign keys
-  userId        String
-  serverId      String
-  realmId       String
+  userId          String
+  realmId         String
 
   // Relations
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  server    DatabaseServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  realm     Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  documents Document[]
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  documents       Document[]
+  databaseServers DatabaseServerLink[] // Many-to-many relationship with servers
 
   @@unique([name, userId, realmId])
   @@map("databases")
@@ -129,13 +130,13 @@ model Document {
   
   // Foreign keys
   userId     String
-  databaseId String?
+  databaseId String        // Required - each document must belong to exactly one database
   realmId    String
 
   // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  database Database? @relation(fields: [databaseId], references: [id], onDelete: SetNull)
-  realm    Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  database Database @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+  realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
   jobs     Job[]
 
   @@map("documents")
@@ -162,7 +163,7 @@ model ApiKey {
 }
 
 model DatabaseServer {
-  id            String           @id @default(uuid())
+  id            String               @id @default(uuid())
   name          String
   type          DatabaseType
   host          String
@@ -172,19 +173,19 @@ model DatabaseServer {
   apiKey        String?
   database      String?
   collection    String?
-  isActive      Boolean          @default(false)
-  createdAt     DateTime         @default(now())
+  isActive      Boolean              @default(false)
+  createdAt     DateTime             @default(now())
   lastConnected DateTime?
-  updatedAt     DateTime         @updatedAt
+  updatedAt     DateTime             @updatedAt
   
   // Foreign keys
   userId        String
   realmId       String
 
   // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm     Realm      @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  databases Database[]
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  databaseServers DatabaseServerLink[] // Many-to-many relationship with databases
 
   @@map("database_servers")
 }
@@ -212,6 +213,21 @@ model Job {
   realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
 
   @@map("jobs")
+}
+
+model DatabaseServerLink {
+  id               String   @id @default(uuid())
+  databaseId       String
+  databaseServerId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  database       Database       @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+  databaseServer DatabaseServer @relation(fields: [databaseServerId], references: [id], onDelete: Cascade)
+
+  @@unique([databaseId, databaseServerId])
+  @@map("database_server_links")
 }
 
 // Enums

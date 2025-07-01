@@ -85,6 +85,7 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    serverIds: ['server1'],
                     realmId: 'realm1',
                 }),
             });
@@ -111,9 +112,13 @@ describe('/api/databases', () => {
 
             const request = new NextRequest('http://localhost:3000/api/databases', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    serverIds: ['server1'],
                     realmId: 'realm1',
                 }),
             });
@@ -121,14 +126,19 @@ describe('/api/databases', () => {
             const response = await POST(request);
             const data = await response.json();
 
+            // If we get a 400, it's likely a validation error - let's check what the error is
+            if (response.status === 400) {
+                throw new Error(`Validation failed: ${JSON.stringify(data)}`);
+            }
+
             expect(response.status).toBe(201);
             expect(data).toEqual(mockDatabase);
             expect(mockCreateDatabase).toHaveBeenCalledWith({
                 name: 'New Database',
                 description: 'New description',
-                userId: 'user1', // This comes from getAuthUser
-                serverId: 'default-server', // Default value
+                serverIds: ['server1'],
                 realmId: 'realm1',
+                userId: 'user1',
             });
         });
 
@@ -155,7 +165,7 @@ describe('/api/databases', () => {
                 name: 'New Database',
                 description: '',
                 userId: 'user1',
-                serverId: 'default-server',
+                serverIds: ['default-server'],
             };
             mockCreateDatabase.mockResolvedValue(mockDatabase);
 
@@ -163,6 +173,7 @@ describe('/api/databases', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Database',
+                    serverIds: ['default-server'],
                     realmId: 'realm1',
                     // description is optional
                 }),
@@ -177,7 +188,7 @@ describe('/api/databases', () => {
                 name: 'New Database',
                 description: '',
                 userId: 'user1',
-                serverId: 'default-server',
+                serverIds: ['default-server'],
                 realmId: 'realm1',
             });
         });
@@ -190,6 +201,7 @@ describe('/api/databases', () => {
                 body: JSON.stringify({
                     name: 'New Database',
                     description: 'New description',
+                    serverIds: ['default-server'],
                     realmId: 'realm1',
                 }),
             });

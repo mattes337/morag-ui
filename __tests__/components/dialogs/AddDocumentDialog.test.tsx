@@ -1,9 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '../../../lib/test-utils';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AddDocumentDialog } from '../../../components/dialogs/AddDocumentDialog';
 import { mockDocument } from '../../../lib/test-utils';
+import { useApp } from '../../../contexts/AppContext';
 
 import '@testing-library/jest-dom'
+
+// Mock the useApp hook
+jest.mock('../../../contexts/AppContext', () => ({
+    useApp: jest.fn(),
+}));
+
+const mockUseApp = useApp as jest.MockedFunction<typeof useApp>;
 
 const mockProps = {
     isOpen: true,
@@ -13,6 +21,15 @@ const mockProps = {
 describe('AddDocumentDialog', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        
+        // Mock the useApp hook with required data
+        mockUseApp.mockReturnValue({
+            databases: [
+                { id: 'db1', name: 'Test Database 1', description: 'Test DB 1' },
+                { id: 'db2', name: 'Test Database 2', description: 'Test DB 2' },
+            ],
+            createDocument: jest.fn().mockResolvedValue({}),
+        } as any);
     });
 
     it('should not render when closed', () => {
@@ -63,7 +80,7 @@ describe('AddDocumentDialog', () => {
         fireEvent.click(pdfButton);
 
         await waitFor(() => {
-            expect(screen.getByText('File')).toBeInTheDocument();
+            expect(screen.getByText('File *')).toBeInTheDocument();
             expect(screen.getByLabelText('Chunk Size')).toBeInTheDocument();
             expect(screen.getByLabelText('Chunking Method')).toBeInTheDocument();
             expect(screen.getByLabelText('GPU Processing')).toBeInTheDocument();
@@ -78,7 +95,7 @@ describe('AddDocumentDialog', () => {
         fireEvent.click(youtubeButton);
 
         await waitFor(() => {
-            expect(screen.getByText('URL')).toBeInTheDocument();
+            expect(screen.getByText('URL *')).toBeInTheDocument();
             expect(screen.getByPlaceholderText('Enter URL...')).toBeInTheDocument();
         });
     });

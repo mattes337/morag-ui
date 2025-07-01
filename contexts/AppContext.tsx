@@ -46,11 +46,13 @@ interface AppContextType {
     createDatabase: (data: {
         name: string;
         description: string;
-        serverId: string;
+        serverIds: string[];
+        ingestionPrompt?: string;
+        systemPrompt?: string;
     }) => Promise<void>;
     updateDatabase: (id: string, data: Partial<Database>) => Promise<void>;
     deleteDatabase: (id: string) => Promise<void>;
-    createDocument: (data: { name: string; type: string; databaseId?: string }) => Promise<void>;
+    createDocument: (data: { name: string; type: string; databaseId: string }) => Promise<void>;
     updateDocument: (id: string, data: Partial<Document>) => Promise<void>;
     deleteDocument: (id: string) => Promise<void>;
     createApiKey: (data: { name: string; key: string }) => Promise<void>;
@@ -268,6 +270,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     description: db.description,
                     documentCount: db._count?.documents || 0,
                     lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
+                    ingestionPrompt: db.ingestionPrompt,
+                    systemPrompt: db.systemPrompt,
+                    servers: db.databaseServers?.map((ds: any) => ds.databaseServer) || [],
                 }));
                 console.log('✅ [AppContext] Loaded', formattedDatabases.length, 'databases');
                 setDatabases(formattedDatabases);
@@ -371,7 +376,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const createDatabase = async (data: {
         name: string;
         description: string;
-        serverId: string;
+        serverIds: string[];
+        ingestionPrompt?: string;
+        systemPrompt?: string;
     }) => {
         try {
             if (!user) throw new Error('No user logged in');
@@ -398,6 +405,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 description: newDb.description,
                 documentCount: newDb._count?.documents || 0,
                 lastUpdated: new Date(newDb.updatedAt).toISOString().split('T')[0],
+                ingestionPrompt: newDb.ingestionPrompt,
+                systemPrompt: newDb.systemPrompt,
+                servers: newDb.databaseServers?.map((ds: any) => ds.databaseServer) || [],
             };
             setDatabases((prev) => [...prev, formattedDb]);
         } catch (error) {
@@ -423,6 +433,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 description: updatedDb.description,
                 documentCount: updatedDb._count?.documents || 0,
                 lastUpdated: new Date(updatedDb.updatedAt).toISOString().split('T')[0],
+                ingestionPrompt: updatedDb.ingestionPrompt,
+                systemPrompt: updatedDb.systemPrompt,
+                servers: updatedDb.databaseServers?.map((ds: any) => ds.databaseServer) || [],
             };
             setDatabases((prev) => prev.map((db) => (db.id === id ? formattedDb : db)));
         } catch (error) {
@@ -446,7 +459,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         }
     };
 
-    const createDocument = async (data: { name: string; type: string; databaseId?: string }) => {
+    const createDocument = async (data: { name: string; type: string; databaseId: string }) => {
         try {
             if (!user) throw new Error('No user logged in');
 
@@ -692,6 +705,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     description: db.description,
                     documentCount: db._count?.documents || 0,
                     lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
+                    ingestionPrompt: db.ingestionPrompt,
+                    systemPrompt: db.systemPrompt,
+                    servers: db.databaseServers?.map((ds: any) => ds.databaseServer) || [],
                 }));
                 setDatabases(formattedDatabases);
             }

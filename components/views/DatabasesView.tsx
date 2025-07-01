@@ -58,7 +58,41 @@ export function DatabasesView({
                         className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
                     >
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">{db.name}</h3>
-                        <p className="text-gray-600 text-sm mb-4">{db.description}</p>
+                        <p className="text-gray-600 text-sm mb-3">{db.description}</p>
+                        
+                        {/* Display associated servers */}
+                        {db.servers && db.servers.length > 0 && (
+                            <div className="mb-3">
+                                <p className="text-xs font-medium text-gray-700 mb-1">Servers:</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {db.servers.map((server) => (
+                                        <span
+                                            key={server.id}
+                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                                        >
+                                            {server.name} ({server.type.toLowerCase()})
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Display prompts if they exist */}
+                        {(db.ingestionPrompt || db.systemPrompt) && (
+                            <div className="mb-3 text-xs text-gray-600">
+                                {db.ingestionPrompt && (
+                                    <div className="mb-1">
+                                        <span className="font-medium">Ingestion:</span> {db.ingestionPrompt.substring(0, 50)}{db.ingestionPrompt.length > 50 ? '...' : ''}
+                                    </div>
+                                )}
+                                {db.systemPrompt && (
+                                    <div>
+                                        <span className="font-medium">System:</span> {db.systemPrompt.substring(0, 50)}{db.systemPrompt.length > 50 ? '...' : ''}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
                         <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
                             <span>{db.documentCount} documents</span>
                             <span>Updated {db.lastUpdated}</span>

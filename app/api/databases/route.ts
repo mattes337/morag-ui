@@ -6,6 +6,9 @@ import { z } from 'zod';
 const createDatabaseSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string().optional(),
+    ingestionPrompt: z.string().optional(),
+    systemPrompt: z.string().optional(),
+    serverIds: z.array(z.string()).min(1, 'At least one server is required'),
     realmId: z.string().min(1, 'Realm ID is required'),
 });
 
@@ -40,13 +43,13 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const validatedData = createDatabaseSchema.parse(body);
         
-        // For now, we'll use a default serverId since it's not in the schema
-        // This should be updated based on your actual requirements
         const database = await createDatabase({
             name: validatedData.name,
             description: validatedData.description || '',
+            ingestionPrompt: validatedData.ingestionPrompt,
+            systemPrompt: validatedData.systemPrompt,
             userId: user.userId,
-            serverId: 'default-server', // This should be updated based on your requirements
+            serverIds: validatedData.serverIds,
             realmId: validatedData.realmId,
         });
         

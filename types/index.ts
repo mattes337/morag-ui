@@ -2,8 +2,11 @@ export interface Database {
     id: string;
     name: string;
     description: string;
+    ingestionPrompt?: string; // Optional prompt for document ingestion
+    systemPrompt?: string;    // Optional prompt for user queries
     documentCount: number;
     lastUpdated: string;
+    servers?: DatabaseServer[]; // Associated servers for this database
 }
 
 export interface DocumentMetadata {
