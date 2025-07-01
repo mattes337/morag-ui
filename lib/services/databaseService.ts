@@ -36,13 +36,16 @@ export async function createDatabase(data: {
     serverIds: string[]; // Array of server IDs
     realmId: string;
 }) {
-    const { serverIds, userId, ...databaseData } = data;
+    const { serverIds, userId, realmId, ...databaseData } = data;
     
     return await prisma.database.create({
         data: {
             ...databaseData,
             user: {
                 connect: { id: userId }
+            },
+            realm: {
+                connect: { id: realmId }
             },
             databaseServers: {
                 create: serverIds.map(serverId => ({
