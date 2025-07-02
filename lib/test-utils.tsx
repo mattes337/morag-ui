@@ -74,6 +74,21 @@ export const mockSearchResult = {
     chunk: 1,
 };
 
+export const mockServer = {
+    id: '1',
+    name: 'Test Server',
+    type: 'mongodb',
+    host: 'localhost',
+    port: 27017,
+    username: 'test',
+    password: 'test',
+    database: 'test_db',
+    collection: 'test_collection',
+    isActive: true,
+    createdAt: '2024-01-15T10:00:00.000Z',
+    lastConnected: '2024-01-15T10:00:00.000Z',
+};
+
 // Custom render function that includes providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     return <AppProvider>{children}</AppProvider>;

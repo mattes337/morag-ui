@@ -24,7 +24,7 @@ describe('AddDocumentDialog', () => {
         
         // Mock the useApp hook with required data
         mockUseApp.mockReturnValue({
-            databases: [
+            servers: [
                 { id: 'db1', name: 'Test Database 1', description: 'Test DB 1' },
                 { id: 'db2', name: 'Test Database 2', description: 'Test DB 2' },
             ],

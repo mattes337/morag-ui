@@ -4,7 +4,7 @@ import { AppProvider } from '../../contexts/AppContext';
 import { DocumentsView } from '../../components/views/DocumentsView';
 import { AddDocumentDialog } from '../../components/dialogs/AddDocumentDialog';
 import { DeleteConfirmDialog } from '../../components/dialogs/DeleteConfirmDialog';
-import { createMockFetch, mockRealm, mockDocument } from '../../lib/test-utils';
+import { createMockFetch, mockRealm, mockDocument, mockServer } from '../../lib/test-utils';
 
 import '@testing-library/jest-dom'
 
@@ -29,6 +29,10 @@ describe('Document Workflow Integration', () => {
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockRealm]),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([mockServer]),
             })
             .mockResolvedValueOnce({
                 ok: true,
@@ -149,6 +153,10 @@ describe('Document Workflow Integration', () => {
             .mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve([mockRealm]),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve([mockServer]),
             })
             .mockResolvedValueOnce({
                 ok: true,

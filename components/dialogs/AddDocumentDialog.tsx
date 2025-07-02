@@ -20,7 +20,7 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { databases, createDocument } = useApp();
+    const { servers, createDocument } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
     const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
     const [documentName, setDocumentName] = useState('');
@@ -240,12 +240,12 @@ export function AddDocumentDialog({
                                 data-oid="database-select"
                             >
                                 <option value="">Select a database...</option>
-                                {databases.map((database) => (
-                                    <option key={database.id} value={database.id}>
-                                        {database.name}
-                                    </option>
-                                ))}
-                            </select>
+                                {servers.map((server) => (
+                                     <option key={server.id} value={server.id}>
+                                         {server.name}
+                                     </option>
+                                 ))}
+                             </select>
                         </div>
 
                         <div data-oid="document-name">
