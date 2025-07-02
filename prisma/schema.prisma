@@ -21,7 +21,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  databases       Database[]
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
@@ -52,24 +51,27 @@ model UserSettings {
 }
 
 model Realm {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  ingestionPrompt String?  // Optional prompt for document ingestion
+  systemPrompt    String?  // Optional prompt for user queries
+  documentCount   Int      @default(0)
+  isDefault       Boolean  @default(false)
+  lastUpdated     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   
   // Foreign keys
-  ownerId     String
+  ownerId         String
 
   // Relations
   owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   userRealms      UserRealm[]
-  databases       Database[]
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
-  databaseServers DatabaseServer[]
+  databaseServers RealmServerLink[] // Many-to-many relationship with servers
 
   @@unique([name, ownerId])
   @@map("realms")
@@ -91,30 +93,7 @@ model UserRealm {
   @@map("user_realms")
 }
 
-model Database {
-  id              String   @id @default(uuid())
-  name            String
-  description     String
-  ingestionPrompt String?  // Optional prompt for document ingestion
-  systemPrompt    String?  // Optional prompt for user queries
-  documentCount   Int      @default(0)
-  lastUpdated     DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Foreign keys
-  userId          String
-  realmId         String
 
-  // Relations
-  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  documents       Document[]
-  databaseServers DatabaseServerLink[] // Many-to-many relationship with servers
-
-  @@unique([name, userId, realmId])
-  @@map("databases")
-}
 
 model Document {
   id         String        @id @default(uuid())
@@ -130,12 +109,10 @@ model Document {
   
   // Foreign keys
   userId     String
-  databaseId String        // Required - each document must belong to exactly one database
   realmId    String
 
   // Relations
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  database Database @relation(fields: [databaseId], references: [id], onDelete: Cascade)
   realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
   jobs     Job[]
 
@@ -185,7 +162,7 @@ model DatabaseServer {
   // Relations
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  databaseServers DatabaseServerLink[] // Many-to-many relationship with databases
+  realmServers    RealmServerLink[] // Many-to-many relationship with realms
 
   @@map("database_servers")
 }
@@ -215,19 +192,19 @@ model Job {
   @@map("jobs")
 }
 
-model DatabaseServerLink {
+model RealmServerLink {
   id               String   @id @default(uuid())
-  databaseId       String
+  realmId          String
   databaseServerId String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Relations
-  database       Database       @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+  realm          Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade)
   databaseServer DatabaseServer @relation(fields: [databaseServerId], references: [id], onDelete: Cascade)
 
-  @@unique([databaseId, databaseServerId])
-  @@map("database_server_links")
+  @@unique([realmId, databaseServerId])
+  @@map("realm_server_links")
 }
 
 // Enums

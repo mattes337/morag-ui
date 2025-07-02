@@ -30,7 +30,7 @@ describe('vectorSearch', () => {
             expect(results[0]).toHaveProperty('id');
             expect(results[0]).toHaveProperty('content');
             expect(results[0]).toHaveProperty('document');
-            expect(results[0]).toHaveProperty('database');
+            expect(results[0]).toHaveProperty('realm');
             expect(results[0]).toHaveProperty('similarity');
             expect(results[0]).toHaveProperty('chunk');
         });

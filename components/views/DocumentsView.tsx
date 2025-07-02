@@ -1,12 +1,12 @@
 'use client';
 
-import { Database, Document } from '../../types';
+import { Realm, Document } from '../../types';
 import { FileText, Plus } from 'lucide-react';
 
 interface DocumentsViewProps {
     documents: Document[];
-    selectedDatabase: Database | null;
-    onBackToDatabases: () => void;
+    selectedRealm: Realm | null;
+    onBackToRealms: () => void;
     onAddDocument: () => void;
     onPromptDocument: (document: Document) => void;
     onViewDocumentDetail: (document: Document) => void;
@@ -16,8 +16,8 @@ interface DocumentsViewProps {
 
 export function DocumentsView({
     documents,
-    selectedDatabase,
-    onBackToDatabases,
+    selectedRealm,
+    onBackToRealms,
     onAddDocument,
     onPromptDocument,
     onViewDocumentDetail,
@@ -45,10 +45,10 @@ export function DocumentsView({
         return (
             <div className="flex flex-col items-center justify-center py-16 px-4" {...props}>
                 <button
-                    onClick={onBackToDatabases}
+                    onClick={onBackToRealms}
                     className="text-blue-600 hover:text-blue-800 text-sm self-start mb-8"
                 >
-                    ← Back to Databases
+                    ← Back to Realms
                 </button>
                 <div className="bg-gray-100 rounded-full p-6 mb-6">
                     <FileText className="w-16 h-16 text-gray-400" />
@@ -74,13 +74,13 @@ export function DocumentsView({
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">
-                        Documents {selectedDatabase && `- ${selectedDatabase.name}`}
+                        Documents {selectedRealm && `- ${selectedRealm.name}`}
                     </h2>
                     <button
-                        onClick={onBackToDatabases}
+                        onClick={onBackToRealms}
                         className="text-blue-600 hover:text-blue-800 text-sm"
                     >
-                        ← Back to Databases
+                        ← Back to Realms
                     </button>
                 </div>
                 <button

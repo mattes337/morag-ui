@@ -28,9 +28,7 @@ export class JobService {
         const whereClause: any = { userId };
         if (realmId) {
             whereClause.document = {
-                database: {
-                    realmId: realmId,
-                },
+                realmId: realmId,
             };
         }
         
@@ -48,11 +46,11 @@ export class JobService {
         });
     }
 
-    static async getJobsByDatabase(databaseId: string) {
+    static async getJobsByRealm(realmId: string) {
         return await prisma.job.findMany({
             where: {
                 document: {
-                    databaseId: databaseId,
+                    realmId: realmId,
                 },
             },
             include: { document: true, user: true },

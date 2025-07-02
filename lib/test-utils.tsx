@@ -20,6 +20,17 @@ export const mockDatabase = {
     _count: { documents: 5 },
 };
 
+export const mockRealm = {
+    id: '1',
+    name: 'Test Realm',
+    description: 'Test realm description',
+    isDefault: false,
+    documentCount: 5,
+    lastUpdated: '2024-01-15',
+    createdAt: '2024-01-15T10:00:00.000Z',
+    updatedAt: '2024-01-15T10:00:00.000Z',
+};
+
 export const mockDocument = {
     id: '1',
     name: 'Test Document.pdf',
@@ -58,7 +69,7 @@ export const mockSearchResult = {
     id: '1',
     content: 'Test search result content',
     document: 'Test Document.pdf',
-    database: 'Test Database',
+    realm: 'Test Realm',
     similarity: 0.95,
     chunk: 1,
 };

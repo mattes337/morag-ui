@@ -13,7 +13,7 @@ jest.mock('../../../lib/services/documentService', () => ({
         updateDocument: jest.fn(),
         deleteDocument: jest.fn(),
         getDocumentsByUser: jest.fn(),
-        getDocumentsByDatabase: jest.fn(),
+        getDocumentsByRealm: jest.fn(),
         updateDocumentQuality: jest.fn(),
     },
 }));
@@ -32,7 +32,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.PENDING,
                 version: 1,
                 chunks: 0,
@@ -40,16 +40,16 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                 user: {
                     id: 'user1',
@@ -70,7 +70,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.PENDING,
                 version: 1,
             });
@@ -79,7 +79,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.PENDING,
                 version: 1,
             });
@@ -96,7 +96,7 @@ describe('DocumentService', () => {
                     name: 'Document 1',
                     type: 'pdf',
                     userId: 'user1',
-                    databaseId: 'db1',
+                    realmId: 'realm1',
                     state: DocumentState.INGESTED,
                     version: 1,
                     chunks: 0,
@@ -104,16 +104,16 @@ describe('DocumentService', () => {
                     uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                    realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                     user: {
                         id: 'user1',
@@ -145,7 +145,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.INGESTED,
                 version: 1,
                 chunks: 0,
@@ -153,16 +153,16 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                 user: {
                     id: 'user1',
@@ -193,7 +193,7 @@ describe('DocumentService', () => {
                 name: 'Updated Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.INGESTED,
                 version: 2,
                 chunks: 0,
@@ -201,16 +201,16 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                 user: {
                     id: 'user1',
@@ -247,7 +247,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.INGESTED,
                 version: 1,
                 chunks: 0,
@@ -274,7 +274,7 @@ describe('DocumentService', () => {
                     name: 'User Document',
                     type: 'pdf',
                     userId: 'user1',
-                    databaseId: 'db1',
+                    realmId: 'realm1',
                     state: DocumentState.INGESTED,
                     version: 1,
                     chunks: 0,
@@ -282,16 +282,16 @@ describe('DocumentService', () => {
                     uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                    realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                     user: {
                         id: 'user1',
@@ -316,15 +316,15 @@ describe('DocumentService', () => {
         });
     });
 
-    describe('getDocumentsByDatabase', () => {
-        it('should return documents by database id', async () => {
+    describe('getDocumentsByRealm', () => {
+        it('should return documents by realm id', async () => {
             const mockDocuments = [
                 {
                     id: '1',
-                    name: 'Database Document',
+                    name: 'Realm Document',
                     type: 'pdf',
                     userId: 'user1',
-                    databaseId: 'db1',
+                    realmId: 'realm1',
                     state: DocumentState.INGESTED,
                     version: 1,
                     chunks: 0,
@@ -332,16 +332,16 @@ describe('DocumentService', () => {
                     uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                    realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                     user: {
                         id: 'user1',
@@ -357,11 +357,11 @@ describe('DocumentService', () => {
                 },
             ];
 
-            mockDocumentService.getDocumentsByDatabase.mockResolvedValue(mockDocuments);
+            mockDocumentService.getDocumentsByRealm.mockResolvedValue(mockDocuments);
 
-            const result = await DocumentService.getDocumentsByDatabase('db1');
+            const result = await DocumentService.getDocumentsByRealm('realm1');
 
-            expect(mockDocumentService.getDocumentsByDatabase).toHaveBeenCalledWith('db1');
+            expect(mockDocumentService.getDocumentsByRealm).toHaveBeenCalledWith('realm1');
             expect(result).toEqual(mockDocuments);
         });
     });
@@ -373,7 +373,7 @@ describe('DocumentService', () => {
                 name: 'Test Document',
                 type: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
                 state: DocumentState.INGESTED,
                 version: 1,
                 quality: 0.95,
@@ -381,16 +381,16 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                database: { 
-                    id: 'db1', 
-                    name: 'Test DB',
+                realm: { 
+                    id: 'realm1', 
+                    name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    userId: 'user1',
-                    description: 'Test Database',
+                    ownerId: 'user1',
+                    description: 'Test Realm',
                     documentCount: 1,
                     lastUpdated: new Date(),
-                    serverId: 'server1'
+                    isDefault: false
                 },
                 jobs: [],
             };

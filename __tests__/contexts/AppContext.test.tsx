@@ -9,15 +9,15 @@ import {
     mockJob,
 } from '../../lib/test-utils';
 
-const mockDatabase = {
+const mockRealm = {
     id: '1',
-    name: 'Test Database',
-    description: 'Test database description',
-    _count: { documents: 5 },
-    updatedAt: '2024-01-15T10:00:00.000Z',
+    name: 'Test Realm',
+    description: 'Test realm description',
+    documentCount: 5,
+    lastUpdated: '2024-01-15',
+    servers: [],
     ingestionPrompt: null,
     systemPrompt: null,
-    databaseServers: []
 };
 
 // Mock the vector search module
@@ -56,7 +56,7 @@ describe('AppContext', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
 
         expect(result.current.user).toBeNull();
-        expect(result.current.databases).toEqual([]); // No initial mock data
+        expect(result.current.realms).toEqual([]); // No initial mock data
         expect(result.current.documents).toEqual([]); // No initial mock data
         expect(result.current.apiKeys).toEqual([]); // No initial mock data
         expect(result.current.servers).toEqual([]); // No initial mock data
@@ -80,7 +80,7 @@ describe('AppContext', () => {
             if (url === '/api/realms') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve({ realms: [] })
+                    json: () => Promise.resolve({ realms: [mockRealm] })
                 });
             }
             if (url === '/api/servers' || url === '/api/servers?realmId=1') {
@@ -92,7 +92,7 @@ describe('AppContext', () => {
             if (url === '/api/databases' || url === '/api/databases?realmId=1') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve([mockDatabase])
+                    json: () => Promise.resolve([mockRealm])
                 });
             }
             if (url === '/api/documents' || url === '/api/documents?realmId=1') {
@@ -134,15 +134,15 @@ describe('AppContext', () => {
             expect(result.current.isDataLoading).toBe(false);
         });
 
-        expect(result.current.databases).toEqual([{
+        expect(result.current.realms).toEqual([{
             id: '1',
-            name: 'Test Database',
-            description: 'Test database description',
+            name: 'Test Realm',
+            description: 'Test realm description',
             documentCount: 5,
             lastUpdated: '2024-01-15',
+            servers: [],
             ingestionPrompt: null,
             systemPrompt: null,
-            servers: []
         }]);
         expect(result.current.documents).toEqual([{
             id: '1',
@@ -189,8 +189,8 @@ describe('AppContext', () => {
         });
     });
 
-    it('should create a new database', async () => {
-        // Mock all fetch calls for initialization and database creation
+    it('should update a realm', async () => {
+        // Mock all fetch calls for initialization and realm update
         const mockFetch = jest.fn();
 
         // Mock all initialization calls
@@ -207,10 +207,10 @@ describe('AppContext', () => {
                     json: () => Promise.resolve({ realms: [] }),
                 });
             }
-            if (url === '/api/databases' && options?.method === 'POST') {
+            if (url === '/api/realms/1' && options?.method === 'PUT') {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve(mockDatabase),
+                    json: () => Promise.resolve({}),
                 });
             }
             if (url === '/api/databases' && !options?.method) {
@@ -265,21 +265,18 @@ describe('AppContext', () => {
         });
 
         await act(async () => {
-            await result.current.createDatabase({
-                name: 'New Database',
-                description: 'New database description',
-                serverId: '1',
+            await result.current.updateRealm('1', {
+                name: 'Updated Realm',
+                description: 'Updated realm description',
             });
         });
 
-        expect(global.fetch).toHaveBeenCalledWith('/api/databases', {
-            method: 'POST',
+        expect(global.fetch).toHaveBeenCalledWith('/api/realms/1', {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name: 'New Database',
-                description: 'New database description',
-                serverId: '1',
-                realmId: '1',
+                name: 'Updated Realm',
+                description: 'Updated realm description',
             }),
         });
     });
@@ -562,10 +559,10 @@ describe('AppContext', () => {
         expect(result.current.showAddDocumentDialog).toBe(true);
 
         act(() => {
-            result.current.setShowCreateDatabaseDialog(true);
+            result.current.setShowCreateRealmDialog(true);
         });
 
-        expect(result.current.showCreateDatabaseDialog).toBe(true);
+        expect(result.current.showCreateRealmDialog).toBe(true);
     });
 
     it('should handle prompt state changes', () => {

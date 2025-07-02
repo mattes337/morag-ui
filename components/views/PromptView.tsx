@@ -1,9 +1,9 @@
 'use client';
 
-import { Database, Document, SearchResult } from '../../types';
+import { Realm, Document, SearchResult } from '../../types';
 
 interface PromptViewProps {
-    selectedDatabase: Database | null;
+    selectedRealm: Realm | null;
     selectedDocument: Document | null;
     promptText: string;
     numDocuments: number;
@@ -14,11 +14,11 @@ interface PromptViewProps {
     onNumDocumentsChange: (num: number) => void;
     onSubmitPrompt: () => void;
     onClearDocumentFilter: () => void;
-    onClearDatabaseFilter: () => void;
+    onClearRealmFilter: () => void;
 }
 
 export function PromptView({
-    selectedDatabase,
+    selectedRealm,
     selectedDocument,
     promptText,
     numDocuments,
@@ -29,7 +29,7 @@ export function PromptView({
     onNumDocumentsChange,
     onSubmitPrompt,
     onClearDocumentFilter,
-    onClearDatabaseFilter,
+    onClearRealmFilter,
 }: PromptViewProps) {
     return (
         <div className="space-y-6" data-oid="_:-nvoa">
@@ -41,9 +41,9 @@ export function PromptView({
                     <p className="text-sm text-gray-600 mt-1" data-oid="r9g_w-w">
                         {selectedDocument
                             ? `Searching within: ${selectedDocument.name}`
-                            : selectedDatabase
-                              ? `Searching in database: ${selectedDatabase.name}`
-                              : 'Searching across all databases'}
+                            : selectedRealm
+                              ? `Searching in realm: ${selectedRealm.name}`
+                              : 'Searching across all realms'}
                     </p>
                 </div>
                 <div className="flex items-center space-x-4" data-oid="y9wxrch">
@@ -56,13 +56,13 @@ export function PromptView({
                             ← Clear document filter
                         </button>
                     )}
-                    {selectedDatabase && !selectedDocument && (
+                    {selectedRealm && !selectedDocument && (
                         <button
-                            onClick={onClearDatabaseFilter}
+                            onClick={onClearRealmFilter}
                             className="text-blue-600 hover:text-blue-800 text-sm"
                             data-oid="ir9xv25"
                         >
-                            ← Clear database filter
+                            ← Clear realm filter
                         </button>
                     )}
                 </div>
@@ -162,7 +162,7 @@ export function PromptView({
                                             className="text-sm text-gray-500 ml-2"
                                             data-oid="n-f_van"
                                         >
-                                            ({result.database})
+                                            ({result.realm})
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-2" data-oid="zkehcwe">

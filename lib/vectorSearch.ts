@@ -3,7 +3,7 @@ export interface SearchResult {
     id: string;
     content: string;
     document: string;
-    database: string;
+    realm: string;
     similarity: number;
     chunk: number;
     metadata?: Record<string, any>;
@@ -12,7 +12,7 @@ export interface SearchResult {
 export interface VectorSearchOptions {
     query: string;
     numResults: number;
-    databaseId?: string;
+    realmId?: string;
     documentId?: string;
     minSimilarity?: number;
 }
@@ -35,9 +35,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 // Vector search function that queries the actual database
 export async function performVectorSearch(options: VectorSearchOptions): Promise<SearchResult[]> {
-    const { query, numResults, databaseId, documentId, minSimilarity = 0.7 } = options;
+    const { query, numResults, realmId, documentId, minSimilarity = 0.7 } = options;
 
-    console.log('🔍 [VectorSearch] Performing vector search:', { query, numResults, databaseId, documentId });
+    console.log('🔍 [VectorSearch] Performing vector search:', { query, numResults, realmId, documentId });
 
     try {
         // Generate embedding for the query
@@ -56,7 +56,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
                 id: '1',
                 content: 'Machine learning is a subset of artificial intelligence that focuses on algorithms.',
                 document: 'ML Fundamentals.pdf',
-                database: 'Research Papers',
+                realm: 'Research Papers',
                 similarity: 0.95,
                 chunk: 1,
             },
@@ -64,7 +64,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
                 id: '2',
                 content: 'Deep learning uses neural networks with multiple layers.',
                 document: 'Deep Learning Guide.pdf',
-                database: 'Research Papers',
+                realm: 'Research Papers',
                 similarity: 0.87,
                 chunk: 2,
             },
@@ -72,7 +72,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
                 id: '3',
                 content: 'Natural language processing enables computers to understand human language.',
                 document: 'NLP Handbook.pdf',
-                database: 'Research Papers',
+                realm: 'Research Papers',
                 similarity: 0.82,
                 chunk: 1,
             },
@@ -80,7 +80,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
                 id: '4',
                 content: 'Computer vision allows machines to interpret visual information.',
                 document: 'Computer Vision.pdf',
-                database: 'Research Papers',
+                realm: 'Research Papers',
                 similarity: 0.78,
                 chunk: 3,
             },
@@ -88,7 +88,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
                 id: '5',
                 content: 'Reinforcement learning trains agents through rewards and penalties.',
                 document: 'RL Concepts.pdf',
-                database: 'Research Papers',
+                realm: 'Research Papers',
                 similarity: 0.75,
                 chunk: 1,
             },
@@ -103,12 +103,12 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
         return filteredResults.slice(0, numResults).sort((a, b) => b.similarity - a.similarity);
         
         // Future implementation would look like:
-        // const vectorDB = await getVectorDatabaseConnection(databaseId);
+        // const vectorDB = await getVectorDatabaseConnection(realmId);
         // const results = await vectorDB.search({
         //     vector: queryEmbedding,
         //     limit: numResults,
         //     filter: {
-        //         databaseId,
+        //         realmId,
         //         documentId,
         //         similarity: { $gte: minSimilarity }
         //     }
@@ -117,7 +117,7 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
         //     id: result.id,
         //     content: result.payload.content,
         //     document: result.payload.document,
-        //     database: result.payload.database,
+        //     realm: result.payload.realm,
         //     similarity: result.score,
         //     chunk: result.payload.chunk,
         //     metadata: result.payload.metadata
@@ -139,7 +139,7 @@ export async function executePromptWithContext(options: PromptOptions): Promise<
         const contextString = context
             .map(
                 (result, index) =>
-                    `[${index + 1}] From "${result.document}" (${result.database}):\n${result.content}`,
+                    `[${index + 1}] From "${result.document}" (${result.realm}):\n${result.content}`,
             )
             .join('\n\n');
 

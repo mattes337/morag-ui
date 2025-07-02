@@ -6,10 +6,10 @@ import { performVectorSearch, executePromptWithContext } from '../../lib/vectorS
 
 export default function PromptPage() {
     const {
-        selectedDatabase,
+        selectedRealm,
         selectedDocument,
         setSelectedDocument,
-        setSelectedDatabase,
+        setSelectedRealm,
         promptText,
         setPromptText,
         numDocuments,
@@ -33,7 +33,7 @@ export default function PromptPage() {
                 query: promptText,
                 numResults: numDocuments,
                 documentId: selectedDocument?.id?.toString(),
-                databaseId: selectedDatabase?.id?.toString(),
+                realmId: selectedRealm?.id?.toString(),
             };
 
             const results = await performVectorSearch(searchOptions);
@@ -61,13 +61,13 @@ export default function PromptPage() {
         setSelectedDocument(null);
     };
 
-    const handleClearDatabaseFilter = () => {
-        setSelectedDatabase(null);
+    const handleClearRealmFilter = () => {
+        setSelectedRealm(null);
     };
 
     return (
         <PromptView
-            selectedDatabase={selectedDatabase}
+            selectedRealm={selectedRealm}
             selectedDocument={selectedDocument}
             promptText={promptText}
             numDocuments={numDocuments}
@@ -78,7 +78,7 @@ export default function PromptPage() {
             onNumDocumentsChange={setNumDocuments}
             onSubmitPrompt={handlePromptSubmit}
             onClearDocumentFilter={handleClearDocumentFilter}
-            onClearDatabaseFilter={handleClearDatabaseFilter}
+            onClearRealmFilter={handleClearRealmFilter}
             data-oid="edb_lg-"
         />
     );

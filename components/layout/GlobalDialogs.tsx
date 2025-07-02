@@ -2,7 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { AddDocumentDialog } from '../dialogs/AddDocumentDialog';
-import { CreateDatabaseDialog } from '../dialogs/CreateDatabaseDialog';
+// CreateDatabaseDialog removed - replaced by RealmManagementDialog
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
 import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
@@ -18,8 +18,8 @@ export function GlobalDialogs() {
         setShowSupersedeDocumentDialog,
         documentToSupersede,
         setDocumentToSupersede,
-        showCreateDatabaseDialog,
-        setShowCreateDatabaseDialog,
+        showCreateRealmDialog,
+        setShowCreateRealmDialog,
         showApiKeyDialog,
         setShowApiKeyDialog,
         showApiConfigDialog,
@@ -59,10 +59,9 @@ export function GlobalDialogs() {
                 data-oid="85-z0i5"
             />
 
-            <CreateDatabaseDialog
-                isOpen={showCreateDatabaseDialog}
-                onClose={() => setShowCreateDatabaseDialog(false)}
-                data-oid="f:qfnnc"
+            <RealmManagementDialog
+                isOpen={showCreateRealmDialog}
+                onClose={() => setShowCreateRealmDialog(false)}
             />
 
             <ApiKeyDialog

@@ -128,16 +128,7 @@ jest.mock('./lib/services/apiKeyService', () => ({
     },
 }));
 
-jest.mock('./lib/services/databaseService', () => ({
-    DatabaseService: {
-        createDatabase: jest.fn(),
-        getAllDatabases: jest.fn(),
-        getDatabasesByUser: jest.fn(),
-        getDatabaseById: jest.fn(),
-        updateDatabase: jest.fn(),
-        deleteDatabase: jest.fn(),
-    },
-}));
+// DatabaseService has been replaced by RealmService
 
 jest.mock('./lib/services/documentService', () => ({
     DocumentService: {

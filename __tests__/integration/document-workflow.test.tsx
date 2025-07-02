@@ -4,7 +4,7 @@ import { AppProvider } from '../../contexts/AppContext';
 import { DocumentsView } from '../../components/views/DocumentsView';
 import { AddDocumentDialog } from '../../components/dialogs/AddDocumentDialog';
 import { DeleteConfirmDialog } from '../../components/dialogs/DeleteConfirmDialog';
-import { createMockFetch, mockDatabase, mockDocument } from '../../lib/test-utils';
+import { createMockFetch, mockRealm, mockDocument } from '../../lib/test-utils';
 
 import '@testing-library/jest-dom'
 
@@ -28,7 +28,7 @@ describe('Document Workflow Integration', () => {
             .fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve([mockDatabase]),
+                json: () => Promise.resolve([mockRealm]),
             })
             .mockResolvedValueOnce({
                 ok: true,
@@ -62,8 +62,8 @@ describe('Document Workflow Integration', () => {
                     <div>
                         <DocumentsView
                             documents={[mockDocument]}
-                            selectedDatabase={mockDatabase}
-                            onBackToDatabases={() => {}}
+                            selectedRealm={mockRealm}
+                            onBackToRealms={() => {}}
                             onAddDocument={() => setShowAddDialog(true)}
                             onPromptDocument={(doc) => setSelectedDocument(doc)}
                             onViewDocumentDetail={(doc) => setSelectedDocument(doc)}
@@ -88,7 +88,7 @@ describe('Document Workflow Integration', () => {
 
         // Wait for initial load
         await waitFor(() => {
-            expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
+            expect(screen.getByText('Documents - Test Realm')).toBeInTheDocument();
         });
 
         // Test document display
@@ -148,7 +148,7 @@ describe('Document Workflow Integration', () => {
             .fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: () => Promise.resolve([mockDatabase]),
+                json: () => Promise.resolve([mockRealm]),
             })
             .mockResolvedValueOnce({
                 ok: true,

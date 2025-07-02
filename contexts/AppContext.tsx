@@ -1,17 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Database, Document, ApiKey, DatabaseServer, UserSettings, User, Job } from '../types';
+import { Document, ApiKey, DatabaseServer, UserSettings, User, Job, Realm } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
-
-export interface Realm {
-    id: string;
-    name: string;
-    description?: string;
-    isDefault: boolean;
-    userRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-    userCount?: number;
-}
 
 interface AppContextType {
     // API Health
@@ -32,8 +23,6 @@ interface AppContextType {
     setRealms: (realms: Realm[]) => void;
 
     // Data
-    databases: Database[];
-    setDatabases: (databases: Database[]) => void;
     documents: Document[];
     setDocuments: (documents: Document[]) => void;
     apiKeys: ApiKey[];
@@ -42,17 +31,9 @@ interface AppContextType {
     setJobs: (jobs: Job[]) => void;
     isDataLoading: boolean;
 
-    // Data operations
-    createDatabase: (data: {
-        name: string;
-        description: string;
-        serverIds: string[];
-        ingestionPrompt?: string;
-        systemPrompt?: string;
-    }) => Promise<void>;
-    updateDatabase: (id: string, data: Partial<Database>) => Promise<void>;
-    deleteDatabase: (id: string) => Promise<void>;
-    createDocument: (data: { name: string; type: string; databaseId: string }) => Promise<void>;
+    // Realm operations
+    updateRealm: (id: string, data: Partial<Realm>) => Promise<void>;
+    createDocument: (data: { name: string; type: string; realmId: string }) => Promise<void>;
     updateDocument: (id: string, data: Partial<Document>) => Promise<void>;
     deleteDocument: (id: string) => Promise<void>;
     createApiKey: (data: { name: string; key: string }) => Promise<void>;
@@ -66,8 +47,6 @@ interface AppContextType {
     refreshData: () => Promise<void>;
 
     // Selected items
-    selectedDatabase: Database | null;
-    setSelectedDatabase: (database: Database | null) => void;
     selectedDocument: Document | null;
     setSelectedDocument: (document: Document | null) => void;
 
@@ -78,8 +57,8 @@ interface AppContextType {
     setShowSupersedeDocumentDialog: (show: boolean) => void;
     documentToSupersede: Document | null;
     setDocumentToSupersede: (document: Document | null) => void;
-    showCreateDatabaseDialog: boolean;
-    setShowCreateDatabaseDialog: (show: boolean) => void;
+    showCreateRealmDialog: boolean;
+    setShowCreateRealmDialog: (show: boolean) => void;
     showApiKeyDialog: boolean;
     setShowApiKeyDialog: (show: boolean) => void;
     showApiConfigDialog: boolean;
@@ -98,12 +77,11 @@ interface AppContextType {
     setShowSettingsDialog: (show: boolean) => void;
     showServersDialog: boolean;
     setShowServersDialog: (show: boolean) => void;
-    showRealmManagementDialog: boolean;
-    setShowRealmManagementDialog: (show: boolean) => void;
+
     showEditPromptDialog: boolean;
     setShowEditPromptDialog: (show: boolean) => void;
-    editPromptData: { database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null;
-    setEditPromptData: (data: { database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null) => void;
+    editPromptData: { realm: Realm | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null;
+    setEditPromptData: (data: { realm: Realm | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null) => void;
 
     // Prompt state
     promptText: string;
@@ -144,8 +122,6 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [realms, setRealms] = useState<Realm[]>([]);
 
     // Data state
-    const [databases, setDatabases] = useState<Database[]>([]);
-
     const [documents, setDocuments] = useState<Document[]>([]);
 
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -154,14 +130,13 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     // Selected items
-    const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
     // Dialog states
     const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
     const [showSupersedeDocumentDialog, setShowSupersedeDocumentDialog] = useState(false);
     const [documentToSupersede, setDocumentToSupersede] = useState<Document | null>(null);
-    const [showCreateDatabaseDialog, setShowCreateDatabaseDialog] = useState(false);
+    const [showCreateRealmDialog, setShowCreateRealmDialog] = useState(false);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [showApiConfigDialog, setShowApiConfigDialog] = useState(false);
     const [showReingestConfirmDialog, setShowReingestConfirmDialog] = useState(false);
@@ -171,9 +146,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showServersDialog, setShowServersDialog] = useState(false);
-    const [showRealmManagementDialog, setShowRealmManagementDialog] = useState(false);
+
     const [showEditPromptDialog, setShowEditPromptDialog] = useState(false);
-    const [editPromptData, setEditPromptData] = useState<{ database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null>(null);
+    const [editPromptData, setEditPromptData] = useState<{ realm: Realm | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null>(null);
 
     // Prompt state
     const [promptText, setPromptText] = useState('');
@@ -267,26 +242,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 setServers(formattedServers);
             }
 
-            // Load databases
-            console.log('🗄️ [AppContext] Loading databases for realm:', currentRealm?.name || 'default');
-            const databasesResponse = await fetch(`/api/databases${realmParam}`, {
-                credentials: 'include'
-            });
-            if (databasesResponse.ok) {
-                const databasesData = await databasesResponse.json();
-                const formattedDatabases = databasesData.map((db: any) => ({
-                    id: db.id,
-                    name: db.name,
-                    description: db.description,
-                    documentCount: db._count?.documents || 0,
-                    lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
-                    ingestionPrompt: db.ingestionPrompt,
-                    systemPrompt: db.systemPrompt,
-                    servers: db.databaseServers?.map((ds: any) => ds.databaseServer) || [],
-                }));
-                console.log('✅ [AppContext] Loaded', formattedDatabases.length, 'databases');
-                setDatabases(formattedDatabases);
-            }
+            // Database functionality is now part of realms - no separate loading needed
 
             // Load documents
             console.log('📄 [AppContext] Loading documents for realm:', currentRealm?.name || 'default');
@@ -402,94 +358,31 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         }
     };
 
-    // Data operation functions
-    const createDatabase = async (data: {
-        name: string;
-        description: string;
-        serverIds: string[];
-        ingestionPrompt?: string;
-        systemPrompt?: string;
-    }) => {
+    // Realm operation functions
+    const updateRealm = async (id: string, data: Partial<Realm>) => {
         try {
-            if (!user) throw new Error('No user logged in');
-            if (!currentRealm) throw new Error('No realm selected');
-
-            const response = await fetch('/api/databases', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...data,
-                    realmId: currentRealm.id
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create database');
-            }
-
-            const newDb = await response.json();
-            const formattedDb = {
-                id: newDb.id,
-                name: newDb.name,
-                description: newDb.description,
-                documentCount: newDb._count?.documents || 0,
-                lastUpdated: new Date(newDb.updatedAt).toISOString().split('T')[0],
-                ingestionPrompt: newDb.ingestionPrompt,
-                systemPrompt: newDb.systemPrompt,
-                servers: newDb.databaseServers?.map((ds: any) => ds.databaseServer) || [],
-            };
-            setDatabases((prev) => [...prev, formattedDb]);
-        } catch (error) {
-            console.error('Failed to create database:', error);
-            throw error;
-        }
-    };
-
-    const updateDatabase = async (id: string, data: Partial<Database>) => {
-        try {
-            const response = await fetch(`/api/databases/${id}`, {
+            const response = await fetch(`/api/realms/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) throw new Error('Failed to update database');
+            if (!response.ok) throw new Error('Failed to update realm');
 
-            const updatedDb = await response.json();
-            const formattedDb = {
-                id: updatedDb.id,
-                name: updatedDb.name,
-                description: updatedDb.description,
-                documentCount: updatedDb._count?.documents || 0,
-                lastUpdated: new Date(updatedDb.updatedAt).toISOString().split('T')[0],
-                ingestionPrompt: updatedDb.ingestionPrompt,
-                systemPrompt: updatedDb.systemPrompt,
-                servers: updatedDb.databaseServers?.map((ds: any) => ds.databaseServer) || [],
-            };
-            setDatabases((prev) => prev.map((db) => (db.id === id ? formattedDb : db)));
+            const updatedRealm = await response.json();
+            setRealms((prev) => prev.map((realm) => (realm.id === id ? updatedRealm : realm)));
+            
+            // Update current realm if it's the one being updated
+            if (currentRealm?.id === id) {
+                setCurrentRealm(updatedRealm);
+            }
         } catch (error) {
-            console.error('Failed to update database:', error);
+            console.error('Failed to update realm:', error);
             throw error;
         }
     };
 
-    const deleteDatabase = async (id: string) => {
-        try {
-            const response = await fetch(`/api/databases/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) throw new Error('Failed to delete database');
-
-            setDatabases((prev) => prev.filter((db) => db.id !== id));
-        } catch (error) {
-            console.error('Failed to delete database:', error);
-            throw error;
-        }
-    };
-
-    const createDocument = async (data: { name: string; type: string; databaseId: string }) => {
+    const createDocument = async (data: { name: string; type: string; realmId: string }) => {
         try {
             if (!user) throw new Error('No user logged in');
 
@@ -517,8 +410,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             };
             setDocuments((prev) => [...prev, formattedDoc]);
 
-            // Refresh databases to update document count
-            if (data.databaseId) {
+            // Refresh realms to update document count
+            if (data.realmId) {
                 await refreshData();
             }
         } catch (error) {
@@ -565,7 +458,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             setDocuments((prev) => prev.filter((doc) => doc.id !== id));
 
-            // Refresh databases to update document count
+            // Refresh realms to update document count
             await refreshData();
         } catch (error) {
             console.error('Failed to delete document:', error);
@@ -699,10 +592,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             setIsDataLoading(true);
 
             // Reload all data
-            const [serversResponse, databasesResponse, documentsResponse, jobsResponse] =
+            const [serversResponse, documentsResponse, jobsResponse] =
                 await Promise.all([
                     fetch('/api/servers'),
-                    fetch('/api/databases'),
                     fetch('/api/documents'),
                     fetch('/api/jobs'),
                 ]);
@@ -727,20 +619,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 setServers(formattedServers);
             }
 
-            if (databasesResponse.ok) {
-                const databasesData = await databasesResponse.json();
-                const formattedDatabases = databasesData.map((db: any) => ({
-                    id: db.id,
-                    name: db.name,
-                    description: db.description,
-                    documentCount: db._count?.documents || 0,
-                    lastUpdated: new Date(db.updatedAt).toISOString().split('T')[0],
-                    ingestionPrompt: db.ingestionPrompt,
-                    systemPrompt: db.systemPrompt,
-                    servers: db.databaseServers?.map((ds: any) => ds.databaseServer) || [],
-                }));
-                setDatabases(formattedDatabases);
-            }
+            // Database functionality is now part of realms
 
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
@@ -812,8 +691,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setCurrentRealm,
         realms,
         setRealms,
-        databases,
-        setDatabases,
+
         documents,
         setDocuments,
         apiKeys,
@@ -821,8 +699,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         jobs,
         setJobs,
         isDataLoading,
-        selectedDatabase,
-        setSelectedDatabase,
+
         selectedDocument,
         setSelectedDocument,
         showAddDocumentDialog,
@@ -831,8 +708,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setShowSupersedeDocumentDialog,
         documentToSupersede,
         setDocumentToSupersede,
-        showCreateDatabaseDialog,
-        setShowCreateDatabaseDialog,
+        showCreateRealmDialog,
+        setShowCreateRealmDialog,
         showApiKeyDialog,
         setShowApiKeyDialog,
         showApiConfigDialog,
@@ -851,8 +728,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setShowSettingsDialog,
         showServersDialog,
         setShowServersDialog,
-        showRealmManagementDialog,
-        setShowRealmManagementDialog,
+
         showEditPromptDialog,
         setShowEditPromptDialog,
         editPromptData,
@@ -867,9 +743,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setPromptResponse,
         isLoading,
         setIsLoading,
-        createDatabase,
-        updateDatabase,
-        deleteDatabase,
+        updateRealm,
         createDocument,
         updateDocument,
         deleteDocument,

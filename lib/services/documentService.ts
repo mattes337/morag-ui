@@ -6,22 +6,22 @@ export class DocumentService {
         name: string;
         type: string;
         userId: string;
-        databaseId: string;
+        realmId: string;
         state?: DocumentState;
         version?: number;
     }) {
         const document = await prisma.document.create({
             data,
             include: {
-                database: true,
+                realm: true,
                 user: true,
                 jobs: true,
             },
         });
 
-        // Update database document count
-        await prisma.database.update({
-            where: { id: data.databaseId },
+        // Update realm document count
+        await prisma.realm.update({
+            where: { id: data.realmId },
             data: {
                 documentCount: {
                     increment: 1,
@@ -36,7 +36,7 @@ export class DocumentService {
     static async getAllDocuments() {
         return await prisma.document.findMany({
             include: {
-                database: true,
+                realm: true,
                 user: true,
                 jobs: {
                     orderBy: {
@@ -55,7 +55,7 @@ export class DocumentService {
         return await prisma.document.findMany({
             where: { userId },
             include: {
-                database: true,
+                realm: true,
                 user: true,
                 jobs: {
                     orderBy: {
@@ -73,15 +73,13 @@ export class DocumentService {
     static async getDocumentsByUserId(userId: string, realmId?: string | null) {
         const whereClause: any = { userId };
         if (realmId) {
-            whereClause.database = {
-                realmId: realmId,
-            };
+            whereClause.realmId = realmId;
         }
         
         return await prisma.document.findMany({
             where: whereClause,
             include: {
-                database: true,
+                realm: true,
                 user: true,
                 jobs: {
                     orderBy: {
@@ -100,7 +98,7 @@ export class DocumentService {
         return await prisma.document.findUnique({
             where: { id },
             include: {
-                database: true,
+                realm: true,
                 user: true,
                 jobs: {
                     orderBy: {
@@ -111,9 +109,9 @@ export class DocumentService {
         });
     }
 
-    static async getDocumentsByDatabase(databaseId: string) {
+    static async getDocumentsByRealm(realmId: string) {
         return await prisma.document.findMany({
-            where: { databaseId },
+            where: { realmId },
             include: {
                 jobs: {
                     orderBy: {
@@ -133,7 +131,7 @@ export class DocumentService {
             where: { id },
             data,
             include: {
-                database: true,
+                realm: true,
                 jobs: true,
             },
         });
@@ -142,17 +140,17 @@ export class DocumentService {
     static async deleteDocument(id: string) {
         const document = await prisma.document.findUnique({
             where: { id },
-            select: { databaseId: true },
+            select: { realmId: true },
         });
 
         const deletedDocument = await prisma.document.delete({
             where: { id },
         });
 
-        // Update database document count
-        if (document?.databaseId) {
-            await prisma.database.update({
-                where: { id: document.databaseId },
+        // Update realm document count
+        if (document?.realmId) {
+            await prisma.realm.update({
+                where: { id: document.realmId },
                 data: {
                     documentCount: {
                         decrement: 1,
@@ -170,7 +168,7 @@ export class DocumentService {
             where: { id },
             data: { state },
             include: {
-                database: true,
+                realm: true,
                 jobs: true,
             },
         });
@@ -181,7 +179,7 @@ export class DocumentService {
             where: { id },
             data: { quality, chunks },
             include: {
-                database: true,
+                realm: true,
                 jobs: true,
             },
         });

@@ -7,7 +7,7 @@ export function Navigation() {
     const pathname = usePathname();
 
     const tabs = [
-        { id: 'databases', label: 'Databases', href: '/' },
+        { id: 'realms', label: 'Realms', href: '/' },
         { id: 'documents', label: 'Documents', href: '/documents' },
         { id: 'jobs', label: 'Jobs', href: '/jobs' },
         { id: 'prompt', label: 'Prompt', href: '/prompt' },

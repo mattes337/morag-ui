@@ -1,12 +1,13 @@
+// Database functionality is now part of Realm - this interface is kept for backward compatibility
 export interface Database {
     id: string;
     name: string;
     description: string;
-    ingestionPrompt?: string; // Optional prompt for document ingestion
-    systemPrompt?: string;    // Optional prompt for user queries
+    ingestionPrompt?: string;
+    systemPrompt?: string;
     documentCount: number;
     lastUpdated: string;
-    servers?: DatabaseServer[]; // Associated servers for this database
+    servers?: DatabaseServer[];
 }
 
 export interface DocumentMetadata {
@@ -145,7 +146,7 @@ export interface DocumentType {
 export interface SearchResult {
     id: string;
     document: string;
-    database: string;
+    realm: string; // Changed from database to realm
     similarity: number;
     chunk: number;
     content: string;
@@ -227,6 +228,13 @@ export interface Realm {
     name: string;
     description?: string;
     isDefault: boolean;
+    ingestionPrompt?: string; // Optional prompt for document ingestion
+    systemPrompt?: string;    // Optional prompt for user queries
+    documentCount?: number;
+    lastUpdated?: string;
+    servers?: DatabaseServer[]; // Associated servers for this realm
+    userRole?: RealmRole; // User's role in this realm
+    userCount?: number; // Number of users in this realm
     createdAt: Date;
     updatedAt: Date;
 }

@@ -1,14 +1,14 @@
 import React from 'react';
 import { render, screen, fireEvent } from '../../../lib/test-utils';
 import { DocumentsView } from '../../../components/views/DocumentsView';
-import { mockDatabase, mockDocument } from '../../../lib/test-utils';
+import { mockRealm, mockDocument } from '../../../lib/test-utils';
 
 import '@testing-library/jest-dom'
 
 const mockProps = {
     documents: [mockDocument],
-    selectedDatabase: mockDatabase,
-    onBackToDatabases: jest.fn(),
+    selectedRealm: mockRealm,
+    onBackToRealms: jest.fn(),
     onAddDocument: jest.fn(),
     onPromptDocument: jest.fn(),
     onViewDocumentDetail: jest.fn(),
@@ -22,27 +22,27 @@ describe('DocumentsView', () => {
     it('should render documents table', () => {
         render(<DocumentsView {...mockProps} data-oid="k_3r.6a" />);
 
-        expect(screen.getByText('Documents - Test Database')).toBeInTheDocument();
+        expect(screen.getByText('Documents - Test Realm')).toBeInTheDocument();
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
         expect(screen.getByText('PDF')).toBeInTheDocument();
         expect(screen.getByText('ingested')).toBeInTheDocument();
         expect(screen.getByText('v1')).toBeInTheDocument();
     });
 
-    it('should render without selected database', () => {
-        render(<DocumentsView {...mockProps} selectedDatabase={null} data-oid="2fh8lnu" />);
+    it('should render without selected realm', () => {
+        render(<DocumentsView {...mockProps} selectedRealm={null} data-oid="2fh8lnu" />);
 
         expect(screen.getByText('Documents')).toBeInTheDocument();
-        expect(screen.queryByText('- Test Database')).not.toBeInTheDocument();
+        expect(screen.queryByText('- Test Realm')).not.toBeInTheDocument();
     });
 
-    it('should call onBackToDatabases when back button is clicked', () => {
+    it('should call onBackToRealms when back button is clicked', () => {
         render(<DocumentsView {...mockProps} data-oid="y:z54a1" />);
 
-        const backButton = screen.getByText('← Back to Databases');
+        const backButton = screen.getByText('← Back to Realms');
         fireEvent.click(backButton);
 
-        expect(mockProps.onBackToDatabases).toHaveBeenCalledTimes(1);
+        expect(mockProps.onBackToRealms).toHaveBeenCalledTimes(1);
     });
 
     it('should call onAddDocument when add button is clicked', () => {

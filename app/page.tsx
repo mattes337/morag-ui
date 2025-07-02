@@ -2,19 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useApp } from '../contexts/AppContext';
-import { DatabasesView } from '../components/views/DatabasesView';
+import { RealmsView } from '../components/views/RealmsView';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useEffect } from 'react';
 
-export default function DatabasesPage() {
+export default function RealmsPage() {
     const router = useRouter();
     const {
         user,
-        databases,
+        realms,
         isDataLoading,
-        setSelectedDatabase,
+        setCurrentRealm,
         setSelectedDocument,
-        setShowCreateDatabaseDialog,
+        setShowRealmManagementDialog,
     } = useApp();
 
     useEffect(() => {
@@ -31,28 +31,28 @@ export default function DatabasesPage() {
         return null; // or a loading spinner
     }
 
-    const handleSelectDatabase = (database: any) => {
-        setSelectedDatabase(database);
+    const handleSelectRealm = (realm: any) => {
+        setCurrentRealm(realm);
         router.push('/documents');
     };
 
-    const handlePromptDatabase = (database: any) => {
-        setSelectedDatabase(database);
+    const handlePromptRealm = (realm: any) => {
+        setCurrentRealm(realm);
         setSelectedDocument(null);
         router.push('/prompt');
     };
 
-    const handleViewDatabase = (database: any) => {
-        router.push(`/databases/${database.id}`);
+    const handleViewRealm = (realm: any) => {
+        router.push(`/realms/${realm.id}`);
     };
 
     return (
-        <DatabasesView
-            databases={databases}
-            onCreateDatabase={() => setShowCreateDatabaseDialog(true)}
-            onSelectDatabase={handleSelectDatabase}
-            onPromptDatabase={handlePromptDatabase}
-            onViewDatabase={handleViewDatabase}
+        <RealmsView
+            realms={realms}
+            onCreateRealm={() => setShowRealmManagementDialog(true)}
+            onSelectRealm={handleSelectRealm}
+            onPromptRealm={handlePromptRealm}
+            onViewRealm={handleViewRealm}
             data-oid="bs7d6n9"
         />
     );
