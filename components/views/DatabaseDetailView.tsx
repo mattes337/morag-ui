@@ -4,7 +4,7 @@ import { Database, Document, Job } from '../../types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { ArrowLeft, Database as DatabaseIcon, FileText, Briefcase, Settings, Server } from 'lucide-react';
+import { ArrowLeft, Database as DatabaseIcon, FileText, Briefcase, Settings, Server, Edit, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 interface DatabaseDetailViewProps {
@@ -13,6 +13,11 @@ interface DatabaseDetailViewProps {
     jobs: Job[];
     onBack: () => void;
     onRefresh: () => void;
+    onAddDocument?: () => void;
+    onDeleteDocument?: (document: Document) => void;
+    onReingestDocument?: (document: Document) => void;
+    onEditIngestionPrompt?: () => void;
+    onEditSystemPrompt?: () => void;
 }
 
 export function DatabaseDetailView({
@@ -21,6 +26,11 @@ export function DatabaseDetailView({
     jobs,
     onBack,
     onRefresh,
+    onAddDocument,
+    onDeleteDocument,
+    onReingestDocument,
+    onEditIngestionPrompt,
+    onEditSystemPrompt,
 }: DatabaseDetailViewProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -188,8 +198,20 @@ export function DatabaseDetailView({
                 <TabsContent value="documents" className="mt-6">
                     <div className="bg-white rounded-lg border">
                         <div className="p-6 border-b">
-                            <h3 className="text-lg font-semibold">Documents</h3>
-                            <p className="text-gray-600">All documents in this database</p>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-lg font-semibold">Documents</h3>
+                                    <p className="text-gray-600">All documents in this database</p>
+                                </div>
+                                <div className="flex space-x-2">
+                                    {onAddDocument && (
+                                        <Button onClick={onAddDocument} size="sm" className="flex items-center space-x-2">
+                                            <Plus className="w-4 h-4" />
+                                            <span>Add Document</span>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                         <div className="p-6">
                             {documents.length > 0 ? (
@@ -210,6 +232,30 @@ export function DatabaseDetailView({
                                                     {document.state}
                                                 </Badge>
                                                 <p className="text-sm text-gray-600">{formatDate(document.uploadDate)}</p>
+                                                <div className="flex space-x-2">
+                                                    {onReingestDocument && (
+                                                        <Button
+                                                            onClick={() => onReingestDocument(document)}
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="flex items-center space-x-1"
+                                                        >
+                                                            <RefreshCw className="w-3 h-3" />
+                                                            <span>Re-ingest</span>
+                                                        </Button>
+                                                    )}
+                                                    {onDeleteDocument && (
+                                                        <Button
+                                                            onClick={() => onDeleteDocument(document)}
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                            <span>Delete</span>
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -228,7 +274,20 @@ export function DatabaseDetailView({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Ingestion Prompt */}
                         <div className="bg-white rounded-lg border p-6">
-                            <h3 className="text-lg font-semibold mb-4">Ingestion Prompt</h3>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold">Ingestion Prompt</h3>
+                                {onEditIngestionPrompt && (
+                                    <Button
+                                        onClick={onEditIngestionPrompt}
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        <span>Edit</span>
+                                    </Button>
+                                )}
+                            </div>
                             <div className="bg-gray-50 rounded-lg p-4">
                                 {database.ingestionPrompt ? (
                                     <p className="text-gray-900 whitespace-pre-wrap">{database.ingestionPrompt}</p>
@@ -240,7 +299,20 @@ export function DatabaseDetailView({
 
                         {/* System Prompt */}
                         <div className="bg-white rounded-lg border p-6">
-                            <h3 className="text-lg font-semibold mb-4">System Prompt</h3>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold">System Prompt</h3>
+                                {onEditSystemPrompt && (
+                                    <Button
+                                        onClick={onEditSystemPrompt}
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex items-center space-x-2"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        <span>Edit</span>
+                                    </Button>
+                                )}
+                            </div>
                             <div className="bg-gray-50 rounded-lg p-4">
                                 {database.systemPrompt ? (
                                     <p className="text-gray-900 whitespace-pre-wrap">{database.systemPrompt}</p>

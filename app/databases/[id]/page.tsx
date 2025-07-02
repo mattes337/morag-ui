@@ -15,7 +15,17 @@ interface DatabaseDetailPageProps {
 
 export default function DatabaseDetailPage({ params }: DatabaseDetailPageProps) {
     const router = useRouter();
-    const { user, isDataLoading } = useApp();
+    const { 
+        user, 
+        isDataLoading, 
+        setShowAddDocumentDialog,
+        setShowDeleteConfirmDialog,
+        setShowReingestConfirmDialog,
+        setDocumentToDelete,
+        setDocumentToReingest,
+        setShowEditPromptDialog,
+        setEditPromptData
+    } = useApp();
     const [database, setDatabase] = useState<Database | null>(null);
     const [documents, setDocuments] = useState<Document[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -71,6 +81,42 @@ export default function DatabaseDetailPage({ params }: DatabaseDetailPageProps) 
         router.push('/');
     };
 
+    const handleAddDocument = () => {
+        setShowAddDocumentDialog(true);
+    };
+
+    const handleDeleteDocument = (document: Document) => {
+        setDocumentToDelete(document);
+        setShowDeleteConfirmDialog(true);
+    };
+
+    const handleReingestDocument = (document: Document) => {
+        setDocumentToReingest(document);
+        setShowReingestConfirmDialog(true);
+    };
+
+    const handleEditIngestionPrompt = () => {
+        if (database) {
+            setEditPromptData({
+                database,
+                promptType: 'ingestion',
+                currentPrompt: database.ingestionPrompt || ''
+            });
+            setShowEditPromptDialog(true);
+        }
+    };
+
+    const handleEditSystemPrompt = () => {
+        if (database) {
+            setEditPromptData({
+                database,
+                promptType: 'system',
+                currentPrompt: database.systemPrompt || ''
+            });
+            setShowEditPromptDialog(true);
+        }
+    };
+
     if (isDataLoading || isLoading) {
         return <LoadingSpinner />;
     }
@@ -115,6 +161,11 @@ export default function DatabaseDetailPage({ params }: DatabaseDetailPageProps) 
             jobs={jobs}
             onBack={handleBack}
             onRefresh={fetchDatabaseData}
+            onAddDocument={handleAddDocument}
+            onDeleteDocument={handleDeleteDocument}
+            onReingestDocument={handleReingestDocument}
+            onEditIngestionPrompt={handleEditIngestionPrompt}
+            onEditSystemPrompt={handleEditSystemPrompt}
         />
     );
 }

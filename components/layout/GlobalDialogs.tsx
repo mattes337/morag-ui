@@ -7,6 +7,7 @@ import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
 import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
 import { RealmManagementDialog } from '../dialogs/RealmManagementDialog';
+import { EditPromptDialog } from '../dialogs/EditPromptDialog';
 import { ApiConfig } from '../ApiConfig';
 
 export function GlobalDialogs() {
@@ -33,6 +34,10 @@ export function GlobalDialogs() {
         setDocumentToDelete,
         showRealmManagementDialog,
         setShowRealmManagementDialog,
+        showEditPromptDialog,
+        setShowEditPromptDialog,
+        editPromptData,
+        setEditPromptData,
     } = useApp();
 
     return (
@@ -102,6 +107,25 @@ export function GlobalDialogs() {
                 isOpen={showRealmManagementDialog}
                 onClose={() => setShowRealmManagementDialog(false)}
             />
+
+            {editPromptData && (
+                <EditPromptDialog
+                    isOpen={showEditPromptDialog}
+                    onClose={() => {
+                        setShowEditPromptDialog(false);
+                        setEditPromptData(null);
+                    }}
+                    onSave={async (prompt: string) => {
+                        // TODO: Implement API call to save prompt
+                        console.log('Saving prompt:', prompt, 'for database:', editPromptData.database?.id, 'type:', editPromptData.promptType);
+                        setShowEditPromptDialog(false);
+                        setEditPromptData(null);
+                    }}
+                    database={editPromptData.database!}
+                    promptType={editPromptData.promptType}
+                    currentPrompt={editPromptData.currentPrompt}
+                />
+            )}
 
             <ApiConfig
                 isOpen={showApiConfigDialog}

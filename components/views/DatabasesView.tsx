@@ -1,7 +1,7 @@
 'use client';
 
 import { Database } from '../../types';
-import { Database as DatabaseIcon, Plus } from 'lucide-react';
+import { Database as DatabaseIcon, Plus, FileText, Server, Clock, Activity } from 'lucide-react';
 
 interface DatabasesViewProps {
     databases: Database[];
@@ -57,69 +57,86 @@ export function DatabasesView({
                 {databases.map((db) => (
                     <div
                         key={db.id}
-                        className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                        onClick={() => onViewDatabase && onViewDatabase(db)}
+                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-blue-300 transition-all duration-200 cursor-pointer group"
                     >
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{db.name}</h3>
-                        <p className="text-gray-600 text-sm mb-3">{db.description}</p>
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
+                                    <DatabaseIcon className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{db.name}</h3>
+                                    <p className="text-gray-600 text-sm">{db.description}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                <Clock className="w-3 h-3" />
+                                <span>{db.lastUpdated}</span>
+                            </div>
+                        </div>
+
+                        {/* Statistics Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center space-x-2 mb-1">
+                                    <FileText className="w-4 h-4 text-blue-500" />
+                                    <span className="text-xs font-medium text-gray-700">Documents</span>
+                                </div>
+                                <div className="text-lg font-semibold text-gray-900">{db.documentCount || 0}</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center space-x-2 mb-1">
+                                    <Server className="w-4 h-4 text-green-500" />
+                                    <span className="text-xs font-medium text-gray-700">Servers</span>
+                                </div>
+                                <div className="text-lg font-semibold text-gray-900">{db.servers?.length || 0}</div>
+                            </div>
+                        </div>
                         
-                        {/* Display associated servers */}
+                        {/* Server Tags */}
                         {db.servers && db.servers.length > 0 && (
-                            <div className="mb-3">
-                                <p className="text-xs font-medium text-gray-700 mb-1">Servers:</p>
-                                <div className="flex flex-wrap gap-1">
-                                    {db.servers.map((server) => (
+                            <div className="mb-4">
+                                <div className="flex flex-wrap gap-2">
+                                    {db.servers.slice(0, 2).map((server) => (
                                         <span
                                             key={server.id}
-                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-50 text-blue-700 border border-blue-200"
                                         >
-                                            {server.name} ({server.type.toLowerCase()})
+                                            <Server className="w-3 h-3 mr-1" />
+                                            {server.name}
                                         </span>
                                     ))}
+                                    {db.servers.length > 2 && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-gray-100 text-gray-600">
+                                            +{db.servers.length - 2} more
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         )}
                         
-                        {/* Display prompts if they exist */}
-                        {(db.ingestionPrompt || db.systemPrompt) && (
-                            <div className="mb-3 text-xs text-gray-600">
-                                {db.ingestionPrompt && (
-                                    <div className="mb-1">
-                                        <span className="font-medium">Ingestion:</span> {db.ingestionPrompt.substring(0, 50)}{db.ingestionPrompt.length > 50 ? '...' : ''}
-                                    </div>
-                                )}
-                                {db.systemPrompt && (
-                                    <div>
-                                        <span className="font-medium">System:</span> {db.systemPrompt.substring(0, 50)}{db.systemPrompt.length > 50 ? '...' : ''}
-                                    </div>
-                                )}
+                        {/* Prompts Status */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-1">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                        db.ingestionPrompt ? 'bg-green-400' : 'bg-gray-300'
+                                    }`} />
+                                    <span className="text-xs text-gray-600">Ingestion</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                        db.systemPrompt ? 'bg-green-400' : 'bg-gray-300'
+                                    }`} />
+                                    <span className="text-xs text-gray-600">System</span>
+                                </div>
                             </div>
-                        )}
-                        
-                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                            <span>{db.documentCount} documents</span>
-                            <span>Updated {db.lastUpdated}</span>
-                        </div>
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={() => onPromptDatabase(db)}
-                                className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                            >
-                                Prompt
-                            </button>
-                            <button
-                                onClick={() => onSelectDatabase(db)}
-                                className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                                View Docs
-                            </button>
-                            {onViewDatabase && (
-                                <button
-                                    onClick={() => onViewDatabase(db)}
-                                    className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
-                                >
-                                    Details
-                                </button>
-                            )}
+                            <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                <Activity className="w-3 h-3" />
+                                <span>Active</span>
+                            </div>
                         </div>
                     </div>
                 ))}

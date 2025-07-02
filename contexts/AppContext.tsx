@@ -100,6 +100,10 @@ interface AppContextType {
     setShowServersDialog: (show: boolean) => void;
     showRealmManagementDialog: boolean;
     setShowRealmManagementDialog: (show: boolean) => void;
+    showEditPromptDialog: boolean;
+    setShowEditPromptDialog: (show: boolean) => void;
+    editPromptData: { database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null;
+    setEditPromptData: (data: { database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null) => void;
 
     // Prompt state
     promptText: string;
@@ -168,6 +172,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [showSettingsDialog, setShowSettingsDialog] = useState(false);
     const [showServersDialog, setShowServersDialog] = useState(false);
     const [showRealmManagementDialog, setShowRealmManagementDialog] = useState(false);
+    const [showEditPromptDialog, setShowEditPromptDialog] = useState(false);
+    const [editPromptData, setEditPromptData] = useState<{ database: Database | null; promptType: 'ingestion' | 'system'; currentPrompt: string } | null>(null);
 
     // Prompt state
     const [promptText, setPromptText] = useState('');
@@ -847,6 +853,10 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setShowServersDialog,
         showRealmManagementDialog,
         setShowRealmManagementDialog,
+        showEditPromptDialog,
+        setShowEditPromptDialog,
+        editPromptData,
+        setEditPromptData,
         promptText,
         setPromptText,
         numDocuments,
