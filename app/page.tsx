@@ -42,12 +42,17 @@ export default function DatabasesPage() {
         router.push('/prompt');
     };
 
+    const handleViewDatabase = (database: any) => {
+        router.push(`/databases/${database.id}`);
+    };
+
     return (
         <DatabasesView
             databases={databases}
             onCreateDatabase={() => setShowCreateDatabaseDialog(true)}
             onSelectDatabase={handleSelectDatabase}
             onPromptDatabase={handlePromptDatabase}
+            onViewDatabase={handleViewDatabase}
             data-oid="bs7d6n9"
         />
     );

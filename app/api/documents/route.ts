@@ -11,8 +11,15 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const realmId = searchParams.get('realmId');
+        const databaseId = searchParams.get('databaseId');
 
-        const documents = await DocumentService.getDocumentsByUserId(user.userId, realmId);
+        let documents;
+        if (databaseId) {
+            documents = await DocumentService.getDocumentsByDatabase(databaseId);
+        } else {
+            documents = await DocumentService.getDocumentsByUserId(user.userId, realmId);
+        }
+        
         return NextResponse.json(documents);
     } catch (error) {
         console.error('Error fetching documents:', error);

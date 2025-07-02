@@ -47,6 +47,18 @@ export class JobService {
             orderBy: { createdAt: 'desc' },
         });
     }
+
+    static async getJobsByDatabase(databaseId: string) {
+        return await prisma.job.findMany({
+            where: {
+                document: {
+                    databaseId: databaseId,
+                },
+            },
+            include: { document: true, user: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     static async getJobById(id: string) {
         return await prisma.job.findUnique({
             where: { id },
