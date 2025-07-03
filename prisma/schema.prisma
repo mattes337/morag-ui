@@ -154,14 +154,12 @@ model DatabaseServer {
   createdAt     DateTime             @default(now())
   lastConnected DateTime?
   updatedAt     DateTime             @updatedAt
-  
+
   // Foreign keys
   userId        String
-  realmId       String
 
   // Relations
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
   realmServers    RealmServerLink[] // Many-to-many relationship with realms
 
   @@map("database_servers")

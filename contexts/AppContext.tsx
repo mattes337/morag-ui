@@ -59,6 +59,10 @@ interface AppContextType {
     setDocumentToSupersede: (document: Document | null) => void;
     showCreateRealmDialog: boolean;
     setShowCreateRealmDialog: (show: boolean) => void;
+    showRealmManagementDialog: boolean;
+    setShowRealmManagementDialog: (show: boolean) => void;
+    realmManagementDialogMode: 'manage' | 'create' | 'edit';
+    setRealmManagementDialogMode: (mode: 'manage' | 'create' | 'edit') => void;
     showApiKeyDialog: boolean;
     setShowApiKeyDialog: (show: boolean) => void;
     showApiConfigDialog: boolean;
@@ -137,6 +141,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [showSupersedeDocumentDialog, setShowSupersedeDocumentDialog] = useState(false);
     const [documentToSupersede, setDocumentToSupersede] = useState<Document | null>(null);
     const [showCreateRealmDialog, setShowCreateRealmDialog] = useState(false);
+    const [showRealmManagementDialog, setShowRealmManagementDialog] = useState(false);
+    const [realmManagementDialogMode, setRealmManagementDialogMode] = useState<'manage' | 'create' | 'edit'>('manage');
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [showApiConfigDialog, setShowApiConfigDialog] = useState(false);
     const [showReingestConfirmDialog, setShowReingestConfirmDialog] = useState(false);
@@ -591,6 +597,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         try {
             setIsDataLoading(true);
 
+            // Reload realms first
+            await loadCurrentRealm();
+
             // Reload all data
             const [serversResponse, documentsResponse, jobsResponse] =
                 await Promise.all([
@@ -710,6 +719,10 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setDocumentToSupersede,
         showCreateRealmDialog,
         setShowCreateRealmDialog,
+        showRealmManagementDialog,
+        setShowRealmManagementDialog,
+        realmManagementDialogMode,
+        setRealmManagementDialogMode,
         showApiKeyDialog,
         setShowApiKeyDialog,
         showApiConfigDialog,

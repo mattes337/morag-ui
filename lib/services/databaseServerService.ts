@@ -34,24 +34,47 @@ export class DatabaseServerService {
         isActive?: boolean;
     }) {
         console.log('🖥️ [DatabaseServerService] Creating database server:', data.name);
+        console.log('🔗 [DatabaseServerService] Using many-to-many relationship for realm:', data.realmId);
+
+        // Create the server first (without realmId since it's no longer a direct field)
+        const { realmId, ...serverData } = data;
         const mappedData = {
-            ...data,
+            ...serverData,
             type: mapDatabaseType(data.type)
         };
-        return await prisma.databaseServer.create({
+
+        const server = await prisma.databaseServer.create({
             data: mappedData,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
         });
+
+        // Create the realm-server link
+        await prisma.realmServerLink.create({
+            data: {
+                realmId: data.realmId,
+                databaseServerId: server.id
+            }
+        });
+
+        return server;
     }
 
     static async getAllDatabaseServers() {
         return await prisma.databaseServer.findMany({
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -61,15 +84,25 @@ export class DatabaseServerService {
 
     static async getDatabaseServersByUser(userId: string, realmId?: string) {
         const where: any = { userId };
+
+        // If realmId is specified, filter by realm through the many-to-many relationship
         if (realmId) {
-            where.realmId = realmId;
+            where.realmServers = {
+                some: {
+                    realmId: realmId
+                }
+            };
         }
-        
+
         return await prisma.databaseServer.findMany({
             where,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -82,31 +115,44 @@ export class DatabaseServerService {
             where: { id },
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
         });
     }
 
     static async updateDatabaseServer(id: string, data: any) {
         // Filter out relational fields and foreign keys that shouldn't be updated
-        const { user, realm, userId, realmId, createdAt, updatedAt, ...updateData } = data;
-        
+        const { user, realm, userId, realmId, createdAt, updatedAt, realmServers, ...updateData } = data;
+
         const mappedData = { ...updateData };
         if (updateData.type) {
             mappedData.type = mapDatabaseType(updateData.type);
         }
-        
+
         return await prisma.databaseServer.update({
             where: { id },
             data: mappedData,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
         });
     }
 
     static async deleteDatabaseServer(id: string) {
+        // Delete realm-server links first (cascade should handle this, but being explicit)
+        await prisma.realmServerLink.deleteMany({
+            where: { databaseServerId: id }
+        });
+
         return await prisma.databaseServer.delete({
             where: { id },
         });
@@ -128,7 +174,11 @@ export class DatabaseServerService {
             },
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                }
             },
         });
     }

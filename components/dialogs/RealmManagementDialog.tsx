@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 interface RealmManagementDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    initialMode?: DialogMode;
 }
 
 type DialogMode = 'manage' | 'create' | 'edit';
@@ -17,25 +18,28 @@ type DialogMode = 'manage' | 'create' | 'edit';
 interface FormData {
     name: string;
     description: string;
+    ingestionPrompt: string;
+    systemPrompt: string;
+    selectedServerIds: string[];
 }
 
-export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialogProps) {
-    const { currentRealm, setCurrentRealm, realms, setRealms } = useApp();
+export function RealmManagementDialog({ isOpen, onClose, initialMode = 'manage' }: RealmManagementDialogProps) {
+    const { currentRealm, setCurrentRealm, realms, setRealms, servers } = useApp();
     const [mode, setMode] = useState<DialogMode>('manage');
     const [editingRealm, setEditingRealm] = useState<any>(null);
-    const [formData, setFormData] = useState<FormData>({ name: '', description: '' });
+    const [formData, setFormData] = useState<FormData>({ name: '', description: '', ingestionPrompt: '', systemPrompt: '', selectedServerIds: [] });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
         if (isOpen) {
-            setMode('manage');
+            setMode(initialMode);
             setEditingRealm(null);
-            setFormData({ name: '', description: '' });
+            setFormData({ name: '', description: '', ingestionPrompt: '', systemPrompt: '', selectedServerIds: [] });
             setError('');
             fetchRealms();
         }
-    }, [isOpen]);
+    }, [isOpen, initialMode]);
 
     const fetchRealms = async () => {
         try {
@@ -57,12 +61,20 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
         try {
             if (mode === 'create') {
+                // Validate that at least one server is selected
+                if (formData.selectedServerIds.length === 0) {
+                    throw new Error('Please select at least one server for the realm');
+                }
+
                 const response = await fetch('/api/realms', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: formData.name.trim(),
                         description: formData.description.trim() || undefined,
+                        ingestionPrompt: formData.ingestionPrompt.trim() || undefined,
+                        systemPrompt: formData.systemPrompt.trim() || undefined,
+                        serverIds: formData.selectedServerIds,
                     }),
                 });
 
@@ -79,6 +91,8 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                     body: JSON.stringify({
                         name: formData.name.trim(),
                         description: formData.description.trim() || undefined,
+                        ingestionPrompt: formData.ingestionPrompt.trim() || undefined,
+                        systemPrompt: formData.systemPrompt.trim() || undefined,
                     }),
                 });
 
@@ -92,7 +106,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
             await fetchRealms();
             setMode('manage');
-            setFormData({ name: '', description: '' });
+            setFormData({ name: '', description: '', ingestionPrompt: '', systemPrompt: '', selectedServerIds: [] });
             setEditingRealm(null);
         } catch (error: any) {
             setError(error.message);
@@ -103,7 +117,13 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
     const handleEdit = (realm: any) => {
         setEditingRealm(realm);
-        setFormData({ name: realm.name, description: realm.description || '' });
+        setFormData({
+            name: realm.name,
+            description: realm.description || '',
+            ingestionPrompt: realm.ingestionPrompt || '',
+            systemPrompt: realm.systemPrompt || '',
+            selectedServerIds: realm.serverIds || [] // Assuming realm has serverIds
+        });
         setMode('edit');
         setError('');
     };
@@ -177,7 +197,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
     const handleCancel = () => {
         setMode('manage');
-        setFormData({ name: '', description: '' });
+        setFormData({ name: '', description: '', ingestionPrompt: '', systemPrompt: '', selectedServerIds: [] });
         setEditingRealm(null);
         setError('');
     };
@@ -249,6 +269,94 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                                     />
                                 </div>
 
+                                {/* Ingestion Prompt */}
+                                <div>
+                                    <label htmlFor="ingestionPrompt" className="block text-sm font-medium text-gray-700">
+                                        Ingestion Prompt
+                                    </label>
+                                    <textarea
+                                        id="ingestionPrompt"
+                                        value={formData.ingestionPrompt}
+                                        onChange={(e) => setFormData({ ...formData, ingestionPrompt: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Enter prompt for document ingestion (optional)"
+                                        rows={3}
+                                        maxLength={1000}
+                                        disabled={isSubmitting}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">This prompt will be used when processing documents in this realm.</p>
+                                </div>
+
+                                {/* System Prompt */}
+                                <div>
+                                    <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700">
+                                        System Prompt
+                                    </label>
+                                    <textarea
+                                        id="systemPrompt"
+                                        value={formData.systemPrompt}
+                                        onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="Enter system prompt for user queries (optional)"
+                                        rows={3}
+                                        maxLength={1000}
+                                        disabled={isSubmitting}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">This prompt will be used when users query documents in this realm.</p>
+                                </div>
+
+                                {/* Server Selection */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Servers *
+                                    </label>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
+                                        {servers.length === 0 ? (
+                                            <p className="text-sm text-gray-500">No servers available. Please create servers first.</p>
+                                        ) : (
+                                            servers.map((server) => (
+                                                <label key={server.id} className="flex items-center space-x-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.selectedServerIds.includes(server.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    selectedServerIds: [...formData.selectedServerIds, server.id]
+                                                                });
+                                                            } else {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    selectedServerIds: formData.selectedServerIds.filter(id => id !== server.id)
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium text-gray-900">{server.name}</div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {server.type} • {server.host}:{server.port}
+                                                        </div>
+                                                    </div>
+                                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                                        server.isActive
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {server.isActive ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                    {formData.selectedServerIds.length === 0 && (
+                                        <p className="text-xs text-red-600 mt-1">Please select at least one server</p>
+                                    )}
+                                </div>
+
                                 <div className="flex justify-end space-x-3 pt-4">
                                     <button
                                         type="button"
@@ -261,7 +369,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                                     <button
                                         type="submit"
                                         className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                                        disabled={isSubmitting || !formData.name.trim()}
+                                        disabled={isSubmitting || !formData.name.trim() || (mode === 'create' && formData.selectedServerIds.length === 0)}
                                     >
                                         {isSubmitting ? 'Saving...' : (mode === 'create' ? 'Create' : 'Update')}
                                     </button>

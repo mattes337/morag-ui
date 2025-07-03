@@ -244,7 +244,10 @@ export type RealmRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
 export interface CreateRealmData {
     name: string;
     description?: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
     ownerId: string;
+    serverIds?: string[];
 }
 
 export interface UpdateRealmData {

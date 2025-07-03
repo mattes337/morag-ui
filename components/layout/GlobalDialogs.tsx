@@ -18,8 +18,7 @@ export function GlobalDialogs() {
         setShowSupersedeDocumentDialog,
         documentToSupersede,
         setDocumentToSupersede,
-        showCreateRealmDialog,
-        setShowCreateRealmDialog,
+
         showApiKeyDialog,
         setShowApiKeyDialog,
         showApiConfigDialog,
@@ -34,6 +33,7 @@ export function GlobalDialogs() {
         setDocumentToDelete,
         showRealmManagementDialog,
         setShowRealmManagementDialog,
+        realmManagementDialogMode,
         showEditPromptDialog,
         setShowEditPromptDialog,
         editPromptData,
@@ -57,11 +57,6 @@ export function GlobalDialogs() {
                 mode="supersede"
                 documentToSupersede={documentToSupersede}
                 data-oid="85-z0i5"
-            />
-
-            <RealmManagementDialog
-                isOpen={showCreateRealmDialog}
-                onClose={() => setShowCreateRealmDialog(false)}
             />
 
             <ApiKeyDialog
@@ -105,6 +100,7 @@ export function GlobalDialogs() {
             <RealmManagementDialog
                 isOpen={showRealmManagementDialog}
                 onClose={() => setShowRealmManagementDialog(false)}
+                initialMode={realmManagementDialogMode}
             />
 
             {editPromptData && (
@@ -116,11 +112,11 @@ export function GlobalDialogs() {
                     }}
                     onSave={async (prompt: string) => {
                         // TODO: Implement API call to save prompt
-                        console.log('Saving prompt:', prompt, 'for database:', editPromptData.database?.id, 'type:', editPromptData.promptType);
+                        console.log('Saving prompt:', prompt, 'for realm:', editPromptData.realm?.id, 'type:', editPromptData.promptType);
                         setShowEditPromptDialog(false);
                         setEditPromptData(null);
                     }}
-                    database={editPromptData.database!}
+                    database={editPromptData.realm!}
                     promptType={editPromptData.promptType}
                     currentPrompt={editPromptData.currentPrompt}
                 />

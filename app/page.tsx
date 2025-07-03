@@ -15,6 +15,7 @@ export default function RealmsPage() {
         setCurrentRealm,
         setSelectedDocument,
         setShowRealmManagementDialog,
+        setRealmManagementDialogMode,
     } = useApp();
 
     useEffect(() => {
@@ -46,10 +47,15 @@ export default function RealmsPage() {
         router.push(`/realms/${realm.id}`);
     };
 
+    const handleCreateRealm = () => {
+        setRealmManagementDialogMode('create');
+        setShowRealmManagementDialog(true);
+    };
+
     return (
         <RealmsView
             realms={realms}
-            onCreateRealm={() => setShowRealmManagementDialog(true)}
+            onCreateRealm={handleCreateRealm}
             onSelectRealm={handleSelectRealm}
             onPromptRealm={handlePromptRealm}
             onViewRealm={handleViewRealm}

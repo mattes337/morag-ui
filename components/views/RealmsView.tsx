@@ -93,9 +93,9 @@ export function RealmsView({
                             <div className="bg-gray-50 rounded-lg p-3">
                                 <div className="flex items-center space-x-2 mb-1">
                                     <Server className="w-4 h-4 text-green-500" />
-                                    <span className="text-xs font-medium text-gray-700">Members</span>
+                                    <span className="text-xs font-medium text-gray-700">Servers</span>
                                 </div>
-                                <div className="text-lg font-semibold text-gray-900">{realm.userCount || 1}</div>
+                                <div className="text-lg font-semibold text-gray-900">{(realm as any).servers?.length || 0}</div>
                             </div>
                         </div>
                         

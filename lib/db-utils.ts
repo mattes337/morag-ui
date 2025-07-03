@@ -21,15 +21,7 @@ export function convertPrismaUserSettingsToApp(prismaSettings: any) {
     };
 }
 
-export function convertPrismaDatabaseToApp(prismaDatabase: any) {
-    return {
-        id: prismaDatabase.id,
-        name: prismaDatabase.name,
-        description: prismaDatabase.description,
-        documentCount: prismaDatabase.documentCount,
-        lastUpdated: prismaDatabase.lastUpdated.toISOString().split('T')[0],
-    };
-}
+
 
 export function convertPrismaDocumentToApp(prismaDocument: any) {
     return {
@@ -92,12 +84,9 @@ export function convertPrismaJobToApp(prismaJob: any) {
 
 // Batch operations
 export async function getAllAppData() {
-    const [databases, documents, apiKeys, jobs, servers] = await Promise.all([
-        prisma.database.findMany({
-            include: { documents: true },
-        }),
+    const [documents, apiKeys, jobs, servers] = await Promise.all([
         prisma.document.findMany({
-            include: { database: true, jobs: true },
+            include: { jobs: true },
         }),
         prisma.apiKey.findMany({
             include: { user: true },
@@ -109,7 +98,6 @@ export async function getAllAppData() {
     ]);
 
     return {
-        databases: databases.map(convertPrismaDatabaseToApp),
         documents: documents.map(convertPrismaDocumentToApp),
         apiKeys: apiKeys.map(convertPrismaApiKeyToApp),
         jobs: jobs.map(convertPrismaJobToApp),

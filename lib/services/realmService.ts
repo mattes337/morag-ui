@@ -14,6 +14,8 @@ export class RealmService {
             data: {
                 name: data.name,
                 description: data.description,
+                ingestionPrompt: data.ingestionPrompt,
+                systemPrompt: data.systemPrompt,
                 isDefault: false,
                 owner: {
                     connect: {
@@ -25,7 +27,12 @@ export class RealmService {
                         userId: data.ownerId,
                         role: 'OWNER'
                     }
-                }
+                },
+                databaseServers: data.serverIds ? {
+                    create: data.serverIds.map(serverId => ({
+                        databaseServerId: serverId
+                    }))
+                } : undefined
             }
         });
     }
@@ -59,6 +66,11 @@ export class RealmService {
                     include: {
                         _count: {
                             select: { userRealms: true }
+                        },
+                        databaseServers: {
+                            include: {
+                                databaseServer: true
+                            }
                         }
                     }
                 }
@@ -74,7 +86,8 @@ export class RealmService {
             .map(ur => ({
                 ...ur.realm,
                 userRole: ur.role,
-                userCount: ur.realm._count.userRealms
+                userCount: ur.realm._count.userRealms,
+                servers: ur.realm.databaseServers?.map(rs => rs.databaseServer) || []
             }));
     }
 
@@ -124,7 +137,9 @@ export class RealmService {
             where: { id: realmId },
             data: {
                 name: data.name,
-                description: data.description
+                description: data.description,
+                ingestionPrompt: data.ingestionPrompt,
+                systemPrompt: data.systemPrompt
             }
         });
     }

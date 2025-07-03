@@ -5,7 +5,9 @@ import { z } from 'zod';
 
 const updateRealmSchema = z.object({
     name: z.string().min(1, 'Realm name is required').max(100, 'Realm name too long').optional(),
-    description: z.string().optional()
+    description: z.string().optional(),
+    ingestionPrompt: z.string().optional(),
+    systemPrompt: z.string().optional()
 });
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {

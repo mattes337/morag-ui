@@ -57,7 +57,8 @@ describe('RealmService', () => {
             const result = await RealmService.createRealm({
                 name: 'Test Realm',
                 description: 'Test Description',
-                ownerId: 'user1'
+                ownerId: 'user1',
+                serverIds: ['server1', 'server2']
             });
 
             expect(result).toEqual(mockRealm);
@@ -76,6 +77,12 @@ describe('RealmService', () => {
                             userId: 'user1',
                             role: 'OWNER'
                         }
+                    },
+                    databaseServers: {
+                        create: [
+                            { databaseServerId: 'server1' },
+                            { databaseServerId: 'server2' }
+                        ]
                     }
                 }
             });
@@ -179,6 +186,7 @@ describe('RealmService', () => {
                 updatedAt: mockUserRealms[0].realm.updatedAt,
                 userRole: 'OWNER',
                 userCount: 5,
+                servers: [],
                 _count: { userRealms: 5 }
             });
             expect(result[1]).toEqual({
@@ -190,6 +198,7 @@ describe('RealmService', () => {
                 updatedAt: mockUserRealms[1].realm.updatedAt,
                 userRole: 'ADMIN',
                 userCount: 5,
+                servers: [],
                 _count: { userRealms: 5 }
             });
         });
