@@ -128,7 +128,7 @@ export function AddDocumentDialog({
             await createDocument({
                 name,
                 type: selectedDocumentType.type,
-                databaseId: selectedDatabaseId,
+                realmId: selectedDatabaseId,
             });
             handleClose();
         } catch (error) {

@@ -27,19 +27,21 @@ export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth(request);
         const body = await request.json();
-        const { name, key } = body;
+        const { name, key, realmId } = body;
 
-        if (!name || !key) {
+        if (!name || !key || !realmId) {
             return NextResponse.json(
-                { error: 'Name and key are required' },
+                { error: 'Name, key, and realmId are required' },
                 { status: 400 },
             );
         }
 
-        const apiKey = await ApiKeyService.createApiKey({ 
-            name, 
-            key, 
-            userId: user.userId // Use authenticated user's ID
+        const authUser = await user;
+        const apiKey = await ApiKeyService.createApiKey({
+            name,
+            key,
+            userId: authUser.userId, // Use authenticated user's ID
+            realmId
         });
         
         return NextResponse.json(apiKey, { status: 201 });

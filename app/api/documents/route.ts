@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
 
         let documents;
         if (databaseId) {
-            documents = await DocumentService.getDocumentsByDatabase(databaseId);
+            // databaseId is now realmId in the new schema
+            documents = await DocumentService.getDocumentsByRealm(databaseId);
         } else {
-            documents = await DocumentService.getDocumentsByUserId(user.userId, realmId);
+            const authUser = await user;
+            documents = await DocumentService.getDocumentsByUserId(authUser.userId, realmId);
         }
         
         return NextResponse.json(documents);
@@ -38,16 +40,17 @@ export async function POST(request: NextRequest) {
         
         if (!name || !type || !databaseId) {
             return NextResponse.json(
-                { error: 'Name, type, and databaseId are required' },
+                { error: 'Name, type, and realmId are required' },
                 { status: 400 },
             );
         }
-        
-        const document = await DocumentService.createDocument({ 
-            name, 
-            type, 
-            databaseId, 
-            userId: user.userId // Use authenticated user's ID
+
+        const authUser = await user;
+        const document = await DocumentService.createDocument({
+            name,
+            type,
+            realmId: databaseId, // databaseId is now realmId in the new schema
+            userId: authUser.userId // Use authenticated user's ID
         });
         
         return NextResponse.json(document, { status: 201 });

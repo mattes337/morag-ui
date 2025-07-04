@@ -27,7 +27,7 @@ describe('/api/servers/[id]', () => {
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
+        mockRequireAuth.mockReturnValue(Promise.resolve(mockUser));
     });
 
     describe('GET', () => {

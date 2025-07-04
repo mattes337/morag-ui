@@ -68,19 +68,19 @@ export function SettingsDialog() {
                             onChange={(e) =>
                                 setLocalSettings({
                                     ...localSettings,
-                                    theme: e.target.value as 'light' | 'dark' | 'system',
+                                    theme: e.target.value as 'LIGHT' | 'DARK' | 'SYSTEM',
                                 })
                             }
                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             data-oid="m7t6aoo"
                         >
-                            <option value="light" data-oid="xfbcl62">
+                            <option value="LIGHT" data-oid="xfbcl62">
                                 Light
                             </option>
-                            <option value="dark" data-oid="66b8:d1">
+                            <option value="DARK" data-oid="66b8:d1">
                                 Dark
                             </option>
-                            <option value="system" data-oid="he4p0fa">
+                            <option value="SYSTEM" data-oid="he4p0fa">
                                 System
                             </option>
                         </select>

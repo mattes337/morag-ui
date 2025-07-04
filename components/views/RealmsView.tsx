@@ -1,6 +1,6 @@
 'use client';
 
-import { Realm } from '../../contexts/AppContext';
+import { Realm } from '../../types';
 import { Database as RealmIcon, Plus, FileText, Server, Clock, Activity } from 'lucide-react';
 
 interface RealmsViewProps {

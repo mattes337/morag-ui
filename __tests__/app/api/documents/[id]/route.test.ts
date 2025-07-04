@@ -137,7 +137,7 @@ describe('/api/documents/[id]', () => {
                 chunks: 10,
                 quality: 0.9,
                 uploadDate: new Date(),
-                databaseId: 'db1'
+                realmId: 'realm1'
             };
             mockDocumentService.deleteDocument.mockResolvedValue(mockDocument);
 

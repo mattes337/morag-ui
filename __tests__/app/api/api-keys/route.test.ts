@@ -31,11 +31,17 @@ const mockGetAuthUser = jest.mocked(getAuthUser);
 
 describe('/api/api-keys', () => {
     const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
-    
+
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
-        mockGetAuthUser.mockResolvedValue({ userId: 'user1', email: 'test@example.com' });
+        mockRequireAuth.mockReturnValue(Promise.resolve(mockUser));
+        mockGetAuthUser.mockResolvedValue({
+            userId: 'user1',
+            email: 'test@example.com',
+            role: 'ADMIN',
+            name: 'Test User',
+            authMethod: 'jwt'
+        });
     });
 
     describe('GET', () => {

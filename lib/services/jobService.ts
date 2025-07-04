@@ -6,6 +6,7 @@ export class JobService {
         documentName: string;
         documentType: string;
         userId: string;
+        realmId: string;
         status?: JobStatus;
     }) {
         return await prisma.job.create({ data, include: { document: true, user: true } });

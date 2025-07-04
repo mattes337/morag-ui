@@ -1,5 +1,6 @@
 import { prisma } from '../database';
 import { Realm, RealmRole, CreateRealmData, UpdateRealmData } from '../../types';
+import { UserRealm } from '@prisma/client';
 
 export interface RealmWithUserRole extends Realm {
     userRole?: RealmRole;
@@ -9,8 +10,20 @@ export interface RealmWithUserRole extends Realm {
 export class RealmService {
     private static db = prisma;
 
+    // Helper function to transform Prisma realm to our Realm type
+    private static transformRealm(prismaRealm: any): Realm {
+        return {
+            ...prismaRealm,
+            description: prismaRealm.description || undefined,
+            ingestionPrompt: prismaRealm.ingestionPrompt || undefined,
+            systemPrompt: prismaRealm.systemPrompt || undefined,
+            documentCount: prismaRealm.documentCount || 0,
+            lastUpdated: prismaRealm.lastUpdated?.toISOString() || prismaRealm.updatedAt?.toISOString(),
+        };
+    }
+
     static async createRealm(data: CreateRealmData): Promise<Realm> {
-        return await this.db.realm.create({
+        const prismaRealm = await this.db.realm.create({
             data: {
                 name: data.name,
                 description: data.description,
@@ -35,10 +48,11 @@ export class RealmService {
                 } : undefined
             }
         });
+        return this.transformRealm(prismaRealm);
     }
 
     static async createDefaultRealm(userId: string): Promise<Realm> {
-        return await this.db.realm.create({
+        const prismaRealm = await this.db.realm.create({
             data: {
                 name: 'Default',
                 description: 'Default realm for user',
@@ -56,6 +70,7 @@ export class RealmService {
                 }
             }
         });
+        return this.transformRealm(prismaRealm);
     }
 
     static async getUserRealms(userId: string): Promise<RealmWithUserRole[]> {
@@ -84,7 +99,7 @@ export class RealmService {
         return userRealms
             .filter(ur => ur.realm) // Filter out entries where realm is null/undefined
             .map(ur => ({
-                ...ur.realm,
+                ...this.transformRealm(ur.realm),
                 userRole: ur.role,
                 userCount: ur.realm._count.userRealms,
                 servers: ur.realm.databaseServers?.map(rs => rs.databaseServer) || []
@@ -113,7 +128,7 @@ export class RealmService {
         }
 
         return {
-            ...userRealm.realm,
+            ...this.transformRealm(userRealm.realm),
             userRole: userRealm.role,
             userCount: userRealm.realm._count.userRealms
         };
@@ -133,7 +148,7 @@ export class RealmService {
             throw new Error('Insufficient permissions to update realm');
         }
 
-        return await this.db.realm.update({
+        const updatedRealm = await this.db.realm.update({
             where: { id: realmId },
             data: {
                 name: data.name,
@@ -142,6 +157,7 @@ export class RealmService {
                 systemPrompt: data.systemPrompt
             }
         });
+        return this.transformRealm(updatedRealm);
     }
 
     static async deleteRealm(realmId: string, userId: string): Promise<void> {
@@ -238,7 +254,7 @@ export class RealmService {
             include: { realm: true }
         });
 
-        return userRealm?.realm || null;
+        return userRealm?.realm ? this.transformRealm(userRealm.realm) : null;
     }
 
     static async ensureUserHasDefaultRealm(userId: string): Promise<Realm> {

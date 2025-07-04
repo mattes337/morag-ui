@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Database } from '../../types';
+import { Realm } from '../../types';
 
 interface EditPromptDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (prompt: string) => void;
-    database: Database;
+    database: Realm;
     promptType: 'ingestion' | 'system';
     currentPrompt: string;
 }

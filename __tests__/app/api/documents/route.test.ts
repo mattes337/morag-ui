@@ -27,8 +27,12 @@ describe('/api/documents', () => {
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
-        mockGetAuthUser.mockResolvedValue(mockUser);
+        mockRequireAuth.mockReturnValue(Promise.resolve(mockUser));
+        mockGetAuthUser.mockResolvedValue({
+            ...mockUser,
+            name: 'Test User',
+            authMethod: 'jwt'
+        });
     });
 
     describe('GET', () => {

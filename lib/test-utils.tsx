@@ -7,7 +7,9 @@ export const mockUser = {
     id: '1',
     name: 'Test User',
     email: 'test@example.com',
-    role: 'admin' as const,
+    role: 'ADMIN' as const,
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    updatedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 export const mockDatabase = {
@@ -27,8 +29,8 @@ export const mockRealm = {
     isDefault: false,
     documentCount: 5,
     lastUpdated: '2024-01-15',
-    createdAt: '2024-01-15T10:00:00.000Z',
-    updatedAt: '2024-01-15T10:00:00.000Z',
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    updatedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 export const mockDocument = {

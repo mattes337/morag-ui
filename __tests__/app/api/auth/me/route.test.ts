@@ -18,7 +18,7 @@ describe('/api/auth/me', () => {
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockGetAuthUser.mockReturnValue(mockUser);
+        mockGetAuthUser.mockResolvedValue(mockUser);
     });
 
     describe('GET', () => {
@@ -31,7 +31,7 @@ describe('/api/auth/me', () => {
                 role: 'ADMIN'
             };
 
-            mockGetAuthUser.mockReturnValue(mockAuthUser);
+            mockGetAuthUser.mockResolvedValue(mockAuthUser);
             mockGetUserById.mockResolvedValue(mockUser as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
@@ -54,7 +54,7 @@ describe('/api/auth/me', () => {
         });
 
         it('should return 401 if user is not authenticated', async () => {
-            mockGetAuthUser.mockReturnValue(null);
+            mockGetAuthUser.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
             const response = await GET(mockRequest);
@@ -68,7 +68,7 @@ describe('/api/auth/me', () => {
         it('should return 404 if user not found', async () => {
             const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
             
-            mockGetAuthUser.mockReturnValue(mockAuthUser);
+            mockGetAuthUser.mockResolvedValue(mockAuthUser);
             mockGetUserById.mockResolvedValue(null);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');
@@ -84,7 +84,7 @@ describe('/api/auth/me', () => {
         it('should return 500 if there is an error', async () => {
             const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
             
-            mockGetAuthUser.mockReturnValue(mockAuthUser);
+            mockGetAuthUser.mockResolvedValue(mockAuthUser);
             mockGetUserById.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/auth/me');

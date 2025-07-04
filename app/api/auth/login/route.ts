@@ -109,6 +109,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        if (!user.password) {
+            return NextResponse.json(
+                { error: 'Password authentication not available for this user' },
+                { status: 401 }
+            );
+        }
+
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
             return NextResponse.json(

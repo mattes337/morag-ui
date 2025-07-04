@@ -155,7 +155,7 @@ export interface SearchResult {
 export interface DatabaseServer {
     id: string;
     name: string;
-    type: 'qdrant' | 'neo4j' | 'pinecone' | 'weaviate' | 'chroma';
+    type: 'QDRANT' | 'NEO4J' | 'PINECONE' | 'WEAVIATE' | 'CHROMA';
     host: string;
     port: number;
     username?: string;

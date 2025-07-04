@@ -182,11 +182,8 @@ describe('AppContext', () => {
             credentials: 'include'
         });
         
-        // Check that we have the expected number of calls
-        console.log('Total fetch calls:', global.fetch.mock.calls.length);
-        global.fetch.mock.calls.forEach((call, index) => {
-            console.log(`Call ${index + 1}:`, call[0], call[1]);
-        });
+        // Check that fetch was called for the expected endpoints
+        expect(global.fetch).toHaveBeenCalled();
     });
 
     it('should update a realm', async () => {
@@ -359,7 +356,7 @@ describe('AppContext', () => {
             await result.current.createDocument({
                 name: 'New Document.pdf',
                 type: 'PDF',
-                databaseId: '1',
+                realmId: '1',
             });
         });
 

@@ -56,7 +56,7 @@ describe('/api/servers', () => {
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
+        mockRequireAuth.mockReturnValue(Promise.resolve(mockUser));
         mockGetUserSettings.mockResolvedValue(mockUserSettings);
         mockGetRealmById.mockResolvedValue(mockRealm);
         mockEnsureUserHasDefaultRealm.mockResolvedValue(mockRealm);

@@ -31,7 +31,8 @@ describe('/api/api-keys/[id]', () => {
                 lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                userId: 'user1'
+                userId: 'user1',
+                realmId: 'realm1'
             };
             mockApiKeyService.deleteApiKey.mockResolvedValue(mockApiKey);
 

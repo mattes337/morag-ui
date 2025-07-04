@@ -6,10 +6,10 @@ import { performVectorSearch, executePromptWithContext } from '../../lib/vectorS
 
 export default function PromptPage() {
     const {
-        selectedRealm,
+        currentRealm,
         selectedDocument,
         setSelectedDocument,
-        setSelectedRealm,
+        setCurrentRealm,
         promptText,
         setPromptText,
         numDocuments,
@@ -33,7 +33,7 @@ export default function PromptPage() {
                 query: promptText,
                 numResults: numDocuments,
                 documentId: selectedDocument?.id?.toString(),
-                realmId: selectedRealm?.id?.toString(),
+                realmId: currentRealm?.id?.toString(),
             };
 
             const results = await performVectorSearch(searchOptions);
@@ -62,12 +62,12 @@ export default function PromptPage() {
     };
 
     const handleClearRealmFilter = () => {
-        setSelectedRealm(null);
+        setCurrentRealm(null);
     };
 
     return (
         <PromptView
-            selectedRealm={selectedRealm}
+            selectedRealm={currentRealm}
             selectedDocument={selectedDocument}
             promptText={promptText}
             numDocuments={numDocuments}

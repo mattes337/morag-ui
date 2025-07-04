@@ -4,7 +4,7 @@
 import { UserService } from '@/lib/services/userService';
 import { RealmService } from '@/lib/services/realmService';
 import { prisma } from '../../../lib/database';
-import { User, Role, UserSettings } from '@prisma/client';
+import { User, UserRole, UserSettings } from '@prisma/client';
 
 // Mock the database
 jest.mock('../../../lib/database', () => ({
