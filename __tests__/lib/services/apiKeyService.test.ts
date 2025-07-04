@@ -35,6 +35,7 @@ describe('ApiKeyService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 userId: 'user1',
+                realmId: 'realm1',
                 user: {
                     id: 'user1',
                     name: 'Test User',
@@ -42,6 +43,7 @@ describe('ApiKeyService', () => {
                     avatar: null,
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
+                    password: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -53,12 +55,14 @@ describe('ApiKeyService', () => {
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                realmId: 'realm1',
             });
 
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'Test API Key',
                 key: 'test-key-123',
                 userId: 'user1',
+                realmId: 'realm1',
             });
             expect(result).toEqual(mockApiKey);
         });
@@ -76,6 +80,7 @@ describe('ApiKeyService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     userId: 'user1',
+                    realmId: 'realm1',
                     user: {
                         id: 'user1',
                         email: 'user1@example.com',
@@ -83,6 +88,7 @@ describe('ApiKeyService', () => {
                         avatar: null,
                         role: 'USER' as const,
                         theme: 'LIGHT' as const,
+                        password: null,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
@@ -96,6 +102,7 @@ describe('ApiKeyService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     userId: 'user2',
+                    realmId: 'realm1',
                     user: {
                         id: 'user2',
                         email: 'user2@example.com',
@@ -103,6 +110,7 @@ describe('ApiKeyService', () => {
                         avatar: null,
                         role: 'USER' as const,
                         theme: 'LIGHT' as const,
+                        password: null,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
@@ -129,6 +137,7 @@ describe('ApiKeyService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 userId: 'user1',
+                realmId: 'realm1',
                 user: {
                     id: 'user1',
                     name: 'Test User',
@@ -136,6 +145,7 @@ describe('ApiKeyService', () => {
                     avatar: null,
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
+                    password: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -171,6 +181,7 @@ describe('ApiKeyService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     userId: 'user1',
+                    realmId: 'realm1',
                     user: {
                         id: 'user1',
                         name: 'Test User',
@@ -178,6 +189,7 @@ describe('ApiKeyService', () => {
                         avatar: null,
                         role: 'USER' as const,
                         theme: 'LIGHT' as const,
+                        password: null,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
@@ -191,12 +203,14 @@ describe('ApiKeyService', () => {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     userId: 'user1',
+                    realmId: 'realm1',
                     user: {
                         id: 'user1',
                         name: 'Test User',
                         email: 'test@example.com',
                         avatar: null,
                         role: 'USER' as const,
+                        password: null,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     },
@@ -221,6 +235,7 @@ describe('ApiKeyService', () => {
                 created: new Date(),
                 lastUsed: new Date(),
                 userId: 'user1',
+                realmId: 'realm1',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 user: {
@@ -230,6 +245,7 @@ describe('ApiKeyService', () => {
                     avatar: null,
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
+                    password: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -259,6 +275,7 @@ describe('ApiKeyService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 userId: 'user1',
+                realmId: 'realm1',
                 user: {
                     id: 'user1',
                     name: 'Test User',
@@ -266,6 +283,7 @@ describe('ApiKeyService', () => {
                     avatar: null,
                     role: 'USER' as const,
                     theme: 'LIGHT' as const,
+                    password: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -291,12 +309,14 @@ describe('ApiKeyService', () => {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 userId: 'user1',
+                realmId: 'realm1',
                 user: {
                     id: 'user1',
                     name: 'Test User',
                     email: 'test@example.com',
                     avatar: null,
                     role: 'USER' as const,
+                    password: null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },

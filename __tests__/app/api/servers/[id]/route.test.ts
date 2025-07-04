@@ -22,7 +22,7 @@ const mockDeleteDatabaseServer = jest.fn();
 (DatabaseServerService.deleteDatabaseServer as jest.Mock) = mockDeleteDatabaseServer;
 
 describe('/api/servers/[id]', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER', name: 'Test User', authMethod: 'jwt' as const };
     const mockParams = { id: 'server1' };
     
     beforeEach(() => {

@@ -14,8 +14,8 @@ jest.mock('bcryptjs');
 
 const mockUserService = jest.mocked(UserService);
 const mockSign = sign as jest.MockedFunction<typeof sign>;
-const mockCompare = jest.mocked(compare);
-const mockHash = jest.mocked(hash);
+const mockCompare = compare as jest.MockedFunction<typeof compare>;
+const mockHash = hash as jest.MockedFunction<typeof hash>;
 
 describe('/api/auth/login', () => {
     beforeEach(() => {

@@ -23,7 +23,7 @@ const mockRequireAuth = jest.mocked(requireAuth);
 const mockGetAuthUser = jest.mocked(getAuthUser);
 
 describe('/api/documents', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
     
     beforeEach(() => {
         jest.clearAllMocks();

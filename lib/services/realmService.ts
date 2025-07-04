@@ -102,7 +102,16 @@ export class RealmService {
                 ...this.transformRealm(ur.realm),
                 userRole: ur.role,
                 userCount: ur.realm._count.userRealms,
-                servers: ur.realm.databaseServers?.map(rs => rs.databaseServer) || []
+                servers: ur.realm.databaseServers?.map(rs => ({
+                    ...rs.databaseServer,
+                    username: rs.databaseServer.username || undefined,
+                    password: rs.databaseServer.password || undefined,
+                    apiKey: rs.databaseServer.apiKey || undefined,
+                    database: rs.databaseServer.database || undefined,
+                    collection: rs.databaseServer.collection || undefined,
+                    lastConnected: rs.databaseServer.lastConnected?.toISOString() || undefined,
+                    createdAt: rs.databaseServer.createdAt.toISOString()
+                })) || []
             }));
     }
 

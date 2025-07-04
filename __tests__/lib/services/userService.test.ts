@@ -61,7 +61,7 @@ describe('UserService', () => {
                 updatedAt: new Date(),
             };
 
-            mockPrisma.user.create.mockResolvedValue(mockUser as any);
+            (mockPrisma.user.create as jest.Mock).mockResolvedValue(mockUser);
             mockRealmService.createDefaultRealm.mockResolvedValue(mockRealm as any);
 
             const result = await UserService.createUser({
@@ -99,7 +99,7 @@ describe('UserService', () => {
                 apiKeys: [],
             };
 
-            mockPrisma.user.create.mockResolvedValue(mockUser as any);
+            (mockPrisma.user.create as jest.Mock).mockResolvedValue(mockUser);
             mockRealmService.createDefaultRealm.mockRejectedValue(new Error('Realm creation failed'));
 
             // Mock console.error to avoid test output pollution
@@ -143,7 +143,7 @@ describe('UserService', () => {
                 apiKeys: [],
             };
 
-            mockPrisma.user.create.mockResolvedValue(mockUser as any);
+            (mockPrisma.user.create as jest.Mock).mockResolvedValue(mockUser);
 
             const result = await UserService.createUser({
                 name: 'Admin User',
@@ -169,7 +169,7 @@ describe('UserService', () => {
         });
 
         it('should handle creation errors', async () => {
-            mockPrisma.user.create.mockRejectedValue(new Error('Email already exists'));
+            (mockPrisma.user.create as jest.Mock).mockRejectedValue(new Error('Email already exists'));
 
             await expect(
                 UserService.createUser({
@@ -220,7 +220,7 @@ describe('UserService', () => {
                 ],
             };
 
-            mockPrisma.user.findUnique.mockResolvedValue(mockUser as any);
+            (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
             const result = await UserService.getUserById('user1');
 
@@ -240,7 +240,7 @@ describe('UserService', () => {
         });
 
         it('should return null when user not found', async () => {
-            mockPrisma.user.findUnique.mockResolvedValue(null);
+            (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
             const result = await UserService.getUserById('nonexistent');
 
@@ -248,7 +248,7 @@ describe('UserService', () => {
         });
 
         it('should handle database errors', async () => {
-            mockPrisma.user.findUnique.mockRejectedValue(new Error('Database error'));
+            (mockPrisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('Database error'));
 
             await expect(UserService.getUserById('user1')).rejects.toThrow('Database error');
         });
@@ -268,7 +268,7 @@ describe('UserService', () => {
                 apiKeys: [],
             };
 
-            mockPrisma.user.findUnique.mockResolvedValue(mockUser as any);
+            (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
             const result = await UserService.getUserByEmail('test@example.com');
 
@@ -283,7 +283,7 @@ describe('UserService', () => {
         });
 
         it('should return null when user not found', async () => {
-            mockPrisma.user.findUnique.mockResolvedValue(null);
+            (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
             const result = await UserService.getUserByEmail('nonexistent@example.com');
 
@@ -305,7 +305,7 @@ describe('UserService', () => {
                 apiKeys: [],
             };
 
-            mockPrisma.user.update.mockResolvedValue(mockUpdatedUser as any);
+            (mockPrisma.user.update as jest.Mock).mockResolvedValue(mockUpdatedUser);
 
             const result = await UserService.updateUser('user1', {
                 name: 'Updated User',
@@ -331,7 +331,7 @@ describe('UserService', () => {
         });
 
         it('should handle update errors', async () => {
-            mockPrisma.user.update.mockRejectedValue(new Error('User not found'));
+            (mockPrisma.user.update as jest.Mock).mockRejectedValue(new Error('User not found'));
 
             await expect(
                 UserService.updateUser('nonexistent', {
@@ -353,7 +353,7 @@ describe('UserService', () => {
                 updatedAt: new Date(),
             };
 
-            mockPrisma.user.delete.mockResolvedValue(mockDeletedUser as any);
+            (mockPrisma.user.delete as jest.Mock).mockResolvedValue(mockDeletedUser);
 
             const result = await UserService.deleteUser('user1');
 
@@ -364,7 +364,7 @@ describe('UserService', () => {
         });
 
         it('should handle deletion errors', async () => {
-            mockPrisma.user.delete.mockRejectedValue(new Error('User not found'));
+            (mockPrisma.user.delete as jest.Mock).mockRejectedValue(new Error('User not found'));
 
             await expect(UserService.deleteUser('nonexistent')).rejects.toThrow('User not found');
         });
@@ -381,7 +381,7 @@ describe('UserService', () => {
                 updatedAt: new Date(),
             };
 
-            mockPrisma.userSettings.findUnique.mockResolvedValue(mockSettings as any);
+            (mockPrisma.userSettings.findUnique as jest.Mock).mockResolvedValue(mockSettings);
 
             const result = await UserService.getUserSettings('user1');
 
@@ -392,7 +392,7 @@ describe('UserService', () => {
         });
 
         it('should return null when settings not found', async () => {
-            mockPrisma.userSettings.findUnique.mockResolvedValue(null);
+            (mockPrisma.userSettings.findUnique as jest.Mock).mockResolvedValue(null);
 
             const result = await UserService.getUserSettings('nonexistent');
 
@@ -411,7 +411,7 @@ describe('UserService', () => {
                 updatedAt: new Date(),
             };
 
-            mockPrisma.userSettings.upsert.mockResolvedValue(mockSettings as any);
+            (mockPrisma.userSettings.upsert as jest.Mock).mockResolvedValue(mockSettings);
 
             const result = await UserService.createOrUpdateUserSettings('user1', {
                 theme: 'DARK',
@@ -445,7 +445,7 @@ describe('UserService', () => {
                 updatedAt: new Date(),
             };
 
-            mockPrisma.userSettings.upsert.mockResolvedValue(mockSettings as any);
+            (mockPrisma.userSettings.upsert as jest.Mock).mockResolvedValue(mockSettings);
 
             const result = await UserService.updateUserSettings('user1', {
                 theme: 'LIGHT',

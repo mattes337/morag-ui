@@ -52,7 +52,7 @@ describe('RealmService', () => {
                 joinedAt: new Date(),
             };
 
-            mockDatabase.realm.create.mockResolvedValue(mockRealm as any);
+            (mockDatabase.realm.create as jest.Mock).mockResolvedValue(mockRealm);
 
             const result = await RealmService.createRealm({
                 name: 'Test Realm',
@@ -108,7 +108,7 @@ describe('RealmService', () => {
                 joinedAt: new Date(),
             };
 
-            mockDatabase.realm.create.mockResolvedValue(mockRealm as any);
+            (mockDatabase.realm.create as jest.Mock).mockResolvedValue(mockRealm);
 
             const result = await RealmService.createDefaultRealm('user1');
 
@@ -171,8 +171,8 @@ describe('RealmService', () => {
                 },
             ];
 
-            mockDatabase.userRealm.findMany.mockResolvedValue(mockUserRealms as any);
-            mockDatabase.userRealm.count.mockResolvedValue(5);
+            (mockDatabase.userRealm.findMany as jest.Mock).mockResolvedValue(mockUserRealms);
+            (mockDatabase.userRealm.count as jest.Mock).mockResolvedValue(5);
 
             const result = await RealmService.getUserRealms('user1');
 
@@ -235,7 +235,7 @@ describe('RealmService', () => {
                 userCount: 5
             };
 
-            mockDatabase.userRealm.findFirst.mockResolvedValue(mockUserRealm as any);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(mockUserRealm);
 
             const result = await RealmService.getRealmById('realm1', 'user1');
 
@@ -243,7 +243,7 @@ describe('RealmService', () => {
         });
 
         it('should return null when user realm not found', async () => {
-            mockDatabase.userRealm.findFirst.mockResolvedValue(null);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(null);
 
             const result = await RealmService.getRealmById('nonexistent', 'user1');
 
@@ -268,8 +268,8 @@ describe('RealmService', () => {
                 updatedAt: new Date(),
             };
 
-            mockDatabase.userRealm.findFirst.mockResolvedValue(mockUserRealm as any);
-            mockDatabase.realm.update.mockResolvedValue(mockUpdatedRealm as any);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(mockUserRealm);
+            (mockDatabase.realm.update as jest.Mock).mockResolvedValue(mockUpdatedRealm);
 
             const result = await RealmService.updateRealm('realm1', 'user1', {
                 name: 'Updated Realm',
@@ -280,7 +280,7 @@ describe('RealmService', () => {
         });
 
         it('should throw error when user has insufficient permissions', async () => {
-            mockDatabase.userRealm.findFirst.mockResolvedValue(null);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(null);
 
             await expect(RealmService.updateRealm('realm1', 'user1', {
                 name: 'Updated Realm'
@@ -305,8 +305,8 @@ describe('RealmService', () => {
                 }
             };
 
-            mockDatabase.userRealm.findFirst.mockResolvedValue(mockUserRealm as any);
-            mockDatabase.realm.delete.mockResolvedValue(undefined);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(mockUserRealm);
+            (mockDatabase.realm.delete as jest.Mock).mockResolvedValue(undefined);
 
             await RealmService.deleteRealm('realm1', 'user1');
 
@@ -326,7 +326,7 @@ describe('RealmService', () => {
         });
 
         it('should throw error when user is not owner', async () => {
-            mockDatabase.userRealm.findFirst.mockResolvedValue(null);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(null);
 
             await expect(RealmService.deleteRealm('realm1', 'user1')).rejects.toThrow('Only realm owners can delete realms');
         });
@@ -344,7 +344,7 @@ describe('RealmService', () => {
                 }
             };
 
-            mockDatabase.userRealm.findFirst.mockResolvedValue(mockUserRealm as any);
+            (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(mockUserRealm);
 
             await expect(RealmService.deleteRealm('realm1', 'user1')).rejects.toThrow('Cannot delete default realm');
         });

@@ -32,7 +32,7 @@ const mockEnsureUserHasDefaultRealm = jest.fn();
 (RealmService.ensureUserHasDefaultRealm as jest.Mock) = mockEnsureUserHasDefaultRealm;
 
 describe('/api/servers', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER', name: 'Test User', authMethod: 'jwt' as const };
     const mockRealm = {
         id: 'realm1',
         name: 'Default Realm',

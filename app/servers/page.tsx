@@ -17,7 +17,7 @@ export default function ServersPage() {
         setEditingServer({
             id: '',
             name: '',
-            type: 'qdrant',
+            type: 'QDRANT',
             host: 'localhost',
             port: 6333,
             isActive: false,
@@ -506,7 +506,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         />
                     </div>
 
-                    {(formData.type === 'neo4j' || formData.type === 'weaviate') && (
+                    {(formData.type === 'NEO4J' || formData.type === 'WEAVIATE') && (
                         <>
                             <div data-oid="zh2vkfr">
                                 <label
@@ -546,7 +546,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         </>
                     )}
 
-                    {formData.type === 'pinecone' && (
+                    {formData.type === 'PINECONE' && (
                         <div className="md:col-span-2" data-oid="npv27hy">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -566,7 +566,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         </div>
                     )}
 
-                    {(formData.type === 'qdrant' || formData.type === 'chroma') && (
+                    {(formData.type === 'QDRANT' || formData.type === 'CHROMA') && (
                         <div data-oid="_qv1tcc">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -586,7 +586,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                         </div>
                     )}
 
-                    {formData.type === 'neo4j' && (
+                    {formData.type === 'NEO4J' && (
                         <div data-oid="5psd3-u">
                             <label
                                 className="block text-sm font-medium text-gray-700 mb-2"

@@ -16,7 +16,7 @@ export function ServersDialog() {
         setEditingServer({
             id: '',
             name: '',
-            type: 'qdrant',
+            type: 'QDRANT',
             host: 'localhost',
             port: 6333,
             isActive: false,
@@ -403,7 +403,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                     />
                 </div>
 
-                {(formData.type === 'neo4j' || formData.type === 'weaviate') && (
+                {(formData.type === 'NEO4J' || formData.type === 'WEAVIATE') && (
                     <>
                         <div data-oid="snm2w5w">
                             <label
@@ -443,7 +443,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                     </>
                 )}
 
-                {formData.type === 'pinecone' && (
+                {formData.type === 'PINECONE' && (
                     <div className="col-span-2" data-oid="rqrisq:">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"
@@ -461,7 +461,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                     </div>
                 )}
 
-                {(formData.type === 'qdrant' || formData.type === 'chroma') && (
+                {(formData.type === 'QDRANT' || formData.type === 'CHROMA') && (
                     <div data-oid="d3-sx41">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"
@@ -481,7 +481,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
                     </div>
                 )}
 
-                {formData.type === 'neo4j' && (
+                {formData.type === 'NEO4J' && (
                     <div data-oid="68v2nf3">
                         <label
                             className="block text-sm font-medium text-gray-700 mb-1"

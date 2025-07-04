@@ -11,7 +11,7 @@ const mockGetAuthUser = getAuthUser as jest.MockedFunction<typeof getAuthUser>;
 const mockUserService = UserService as jest.Mocked<typeof UserService>;
 
 describe('/api/auth/me', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
     
     const mockGetUserById = jest.fn();
     (UserService.getUserById as jest.Mock) = mockGetUserById;
@@ -23,7 +23,7 @@ describe('/api/auth/me', () => {
 
     describe('GET', () => {
         it('should return the authenticated user', async () => {
-            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
             const mockUser = {
                 id: 'user1',
                 name: 'Test User',
@@ -66,7 +66,7 @@ describe('/api/auth/me', () => {
         });
 
         it('should return 404 if user not found', async () => {
-            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
             
             mockGetAuthUser.mockResolvedValue(mockAuthUser);
             mockGetUserById.mockResolvedValue(null);
@@ -82,7 +82,7 @@ describe('/api/auth/me', () => {
         });
 
         it('should return 500 if there is an error', async () => {
-            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+            const mockAuthUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
             
             mockGetAuthUser.mockResolvedValue(mockAuthUser);
             mockGetUserById.mockRejectedValue(new Error('Database error'));
