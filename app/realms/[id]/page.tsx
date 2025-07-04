@@ -15,15 +15,29 @@ interface RealmDetailPageProps {
 
 export default function RealmDetailPage({ params }: RealmDetailPageProps) {
     const router = useRouter();
-    const { realms, documents, jobs, isDataLoading, setCurrentRealm, createDocument, updateDocument, deleteDocument } = useApp();
+    const {
+        realms,
+        documents,
+        jobs,
+        isDataLoading,
+        setCurrentRealm,
+        createDocument,
+        updateDocument,
+        deleteDocument,
+        getAvailableServersForRealm,
+        addServerToRealm,
+        removeServerFromRealm
+    } = useApp();
     const [realm, setRealm] = useState<any>(null);
     const [realmDocuments, setRealmDocuments] = useState<Document[]>([]);
     const [realmJobs, setRealmJobs] = useState<Job[]>([]);
     const [realmServers, setRealmServers] = useState<any[]>([]);
+    const [availableServers, setAvailableServers] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState('documents');
     const [promptText, setPromptText] = useState('');
     const [promptResponse, setPromptResponse] = useState('');
     const [isPromptLoading, setIsPromptLoading] = useState(false);
+    const [showAddServerDialog, setShowAddServerDialog] = useState(false);
 
     // Auto-switch to this realm when page loads
     useEffect(() => {
@@ -103,6 +117,52 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
             setPromptResponse('Error: ' + error);
         } finally {
             setIsPromptLoading(false);
+        }
+    };
+
+    const handleLoadAvailableServers = async () => {
+        if (!realm) return;
+        try {
+            const servers = await getAvailableServersForRealm(realm.id);
+            setAvailableServers(servers);
+            setShowAddServerDialog(true);
+        } catch (error) {
+            console.error('Failed to load available servers:', error);
+        }
+    };
+
+    const handleAddServer = async (serverId: string) => {
+        if (!realm) return;
+        try {
+            await addServerToRealm(realm.id, serverId);
+            setShowAddServerDialog(false);
+            // Refresh realm data to update server list
+            const updatedRealm = realms.find(r => r.id === realm.id);
+            if (updatedRealm) {
+                setRealm(updatedRealm);
+                setRealmServers((updatedRealm as any).servers || []);
+            }
+        } catch (error) {
+            console.error('Failed to add server to realm:', error);
+            alert('Failed to add server to realm: ' + error);
+        }
+    };
+
+    const handleRemoveServer = async (serverId: string) => {
+        if (!realm) return;
+        if (confirm('Are you sure you want to remove this server from the realm?')) {
+            try {
+                await removeServerFromRealm(realm.id, serverId);
+                // Refresh realm data to update server list
+                const updatedRealm = realms.find(r => r.id === realm.id);
+                if (updatedRealm) {
+                    setRealm(updatedRealm);
+                    setRealmServers((updatedRealm as any).servers || []);
+                }
+            } catch (error) {
+                console.error('Failed to remove server from realm:', error);
+                alert('Failed to remove server from realm: ' + error);
+            }
         }
     };
 
@@ -437,6 +497,13 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
                 <TabsContent value="servers" className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold text-gray-900">Assigned Servers</h3>
+                        <button
+                            onClick={handleLoadAvailableServers}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Server</span>
+                        </button>
                     </div>
 
                     {realmServers.length > 0 ? (
@@ -466,6 +533,13 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
                                                 }`}>
                                                     {server.isActive ? 'Active' : 'Inactive'}
                                                 </span>
+                                                <button
+                                                    onClick={() => handleRemoveServer(server.id)}
+                                                    className="p-1 text-red-600 hover:text-red-800"
+                                                    title="Remove server from realm"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -478,9 +552,77 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
                                 <Settings className="w-6 h-6 text-gray-400" />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Servers Assigned</h3>
-                            <p className="text-gray-600">
-                                This realm doesn't have any servers assigned yet.
+                            <p className="text-gray-600 mb-4">
+                                This realm doesn't have any servers assigned yet. Add your first server to get started.
                             </p>
+                            <button
+                                onClick={handleLoadAvailableServers}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Add First Server
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Add Server Dialog */}
+                    {showAddServerDialog && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-900">Add Server to Realm</h3>
+                                    <button
+                                        onClick={() => setShowAddServerDialog(false)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                {availableServers.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-gray-600 mb-3">
+                                            Select a server to add to this realm:
+                                        </p>
+                                        {availableServers.map((server) => (
+                                            <div
+                                                key={server.id}
+                                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                            >
+                                                <div>
+                                                    <h4 className="text-sm font-medium text-gray-900">
+                                                        {server.name}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-500">
+                                                        {server.type} • {server.host}:{server.port}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleAddServer(server.id)}
+                                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4">
+                                        <p className="text-gray-600">No available servers to add.</p>
+                                        <p className="text-sm text-gray-500 mt-2">
+                                            All your servers are already assigned to this realm.
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end mt-4">
+                                    <button
+                                        onClick={() => setShowAddServerDialog(false)}
+                                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </TabsContent>

@@ -243,11 +243,116 @@ export class RealmService {
 
     static async ensureUserHasDefaultRealm(userId: string): Promise<Realm> {
         let defaultRealm = await this.getUserDefaultRealm(userId);
-        
+
         if (!defaultRealm) {
             defaultRealm = await this.createDefaultRealm(userId);
         }
-        
+
         return defaultRealm;
+    }
+
+    static async addServerToRealm(realmId: string, serverId: string, userId: string): Promise<void> {
+        // Check if user has permission to modify realm
+        const userRealm = await this.db.userRealm.findFirst({
+            where: {
+                realmId,
+                userId,
+                role: { in: ['OWNER', 'ADMIN'] }
+            }
+        });
+
+        if (!userRealm) {
+            throw new Error('Insufficient permissions to modify realm servers');
+        }
+
+        // Check if server belongs to the user
+        const server = await this.db.databaseServer.findFirst({
+            where: {
+                id: serverId,
+                userId
+            }
+        });
+
+        if (!server) {
+            throw new Error('Server not found or does not belong to user');
+        }
+
+        // Check if server is already assigned to this realm
+        const existingLink = await this.db.realmServerLink.findFirst({
+            where: {
+                realmId,
+                databaseServerId: serverId
+            }
+        });
+
+        if (existingLink) {
+            throw new Error('Server is already assigned to this realm');
+        }
+
+        // Create the realm-server link
+        await this.db.realmServerLink.create({
+            data: {
+                realmId,
+                databaseServerId: serverId
+            }
+        });
+    }
+
+    static async removeServerFromRealm(realmId: string, serverId: string, userId: string): Promise<void> {
+        // Check if user has permission to modify realm
+        const userRealm = await this.db.userRealm.findFirst({
+            where: {
+                realmId,
+                userId,
+                role: { in: ['OWNER', 'ADMIN'] }
+            }
+        });
+
+        if (!userRealm) {
+            throw new Error('Insufficient permissions to modify realm servers');
+        }
+
+        // Delete the realm-server link
+        const deletedLink = await this.db.realmServerLink.deleteMany({
+            where: {
+                realmId,
+                databaseServerId: serverId
+            }
+        });
+
+        if (deletedLink.count === 0) {
+            throw new Error('Server is not assigned to this realm');
+        }
+    }
+
+    static async getAvailableServersForRealm(realmId: string, userId: string) {
+        // Check if user has permission to view realm
+        const userRealm = await this.db.userRealm.findFirst({
+            where: {
+                realmId,
+                userId
+            }
+        });
+
+        if (!userRealm) {
+            throw new Error('Insufficient permissions to view realm');
+        }
+
+        // Get all user's servers that are not assigned to this realm
+        const availableServers = await this.db.databaseServer.findMany({
+            where: {
+                userId,
+                realmServers: {
+                    none: {
+                        realmId
+                    }
+                }
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+
+        return availableServers;
     }
 }

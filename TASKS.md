@@ -102,6 +102,15 @@
   - Updated stats cards to show Documents, Jobs, Servers, and Active Jobs counts
   - Removed all "Switch to This Realm" buttons as realm is auto-activated on page load
   - Enhanced UI with proper icons from Lucide React and improved visual hierarchy
+- ✅ Implemented server management functionality for realm details page
+  - Added RealmService methods for adding/removing servers from realms (addServerToRealm, removeServerFromRealm, getAvailableServersForRealm)
+  - Created API endpoints at /api/realms/[id]/servers for GET (available servers), POST (add server), DELETE (remove server)
+  - Updated AppContext with server management functions and integrated with realm details page
+  - Enhanced Servers tab with Add Server button and server removal functionality
+  - Added modal dialog for selecting and adding available servers to realm
+  - Implemented proper permission checks (OWNER/ADMIN roles required for server management)
+  - Added server validation to prevent duplicate assignments and ensure user ownership
+  - Integrated with existing many-to-many relationship through RealmServerLink table
   - Fixed DatabaseServerService to work with new many-to-many relationship structure
   - Updated all server queries to use realmServers relationship instead of direct realmId field
   - Resolved server creation and fetching issues after schema migration
