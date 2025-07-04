@@ -210,13 +210,15 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                realm: { 
-                    id: 'realm1', 
+                realm: {
+                    id: 'realm1',
                     name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     ownerId: 'user1',
                     description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
                     documentCount: 1,
                     lastUpdated: new Date(),
                     isDefault: false
@@ -291,13 +293,15 @@ describe('DocumentService', () => {
                     uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    realm: { 
-                    id: 'realm1', 
+                    realm: {
+                    id: 'realm1',
                     name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     ownerId: 'user1',
                     description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
                     documentCount: 1,
                     lastUpdated: new Date(),
                     isDefault: false
@@ -309,6 +313,7 @@ describe('DocumentService', () => {
                         createdAt: new Date(),
                         updatedAt: new Date(),
                         avatar: null,
+                        password: null,
                         role: 'USER' as const,
                         theme: 'LIGHT' as const,
                     },
@@ -341,13 +346,15 @@ describe('DocumentService', () => {
                     uploadDate: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    realm: { 
-                    id: 'realm1', 
+                    realm: {
+                    id: 'realm1',
                     name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     ownerId: 'user1',
                     description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
                     documentCount: 1,
                     lastUpdated: new Date(),
                     isDefault: false
@@ -390,13 +397,15 @@ describe('DocumentService', () => {
                 uploadDate: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                realm: { 
-                    id: 'realm1', 
+                realm: {
+                    id: 'realm1',
                     name: 'Test Realm',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     ownerId: 'user1',
                     description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
                     documentCount: 1,
                     lastUpdated: new Date(),
                     isDefault: false

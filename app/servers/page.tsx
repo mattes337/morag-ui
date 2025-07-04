@@ -374,7 +374,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
         server || {
             id: '',
             name: '',
-            type: 'qdrant',
+            type: 'QDRANT',
             host: 'localhost',
             port: 6333,
             isActive: false,

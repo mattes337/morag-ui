@@ -21,8 +21,8 @@ describe('/api/auth/login', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         (mockSign as any).mockReturnValue('mock-token');
-        mockCompare.mockResolvedValue(true);
-        mockHash.mockResolvedValue('hashed-password');
+        (mockCompare as any).mockResolvedValue(true);
+        (mockHash as any).mockResolvedValue('hashed-password');
     });
 
     describe('POST', () => {
