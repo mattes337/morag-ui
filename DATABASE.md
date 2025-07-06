@@ -69,8 +69,13 @@ Represents uploaded documents and their processing state.
 | `uploadDate` | DateTime | DEFAULT: now() | When document was uploaded |
 | `createdAt` | DateTime | DEFAULT: now() | Timestamp when record was created |
 | `updatedAt` | DateTime | AUTO UPDATE | Timestamp when record was last updated |
+| `filePath` | String | NULLABLE | Path to the uploaded file |
+| `fileSize` | Int | NULLABLE | File size in bytes |
+| `mimeType` | String | NULLABLE | MIME type of the file |
+| `ingestionMetadata` | Json | NULLABLE | JSON metadata from document processing including entities, relations, chunks, etc. |
+| `summary` | String | NULLABLE, TEXT | Textual summary extracted from ingestion metadata |
 | `userId` | String | FOREIGN KEY | User who uploaded the document |
-| `databaseId` | String | FOREIGN KEY, NULLABLE | Database where document is stored |
+| `realmId` | String | FOREIGN KEY | Realm where document belongs |
 
 ### ApiKey
 Manages API keys for external access to the system.

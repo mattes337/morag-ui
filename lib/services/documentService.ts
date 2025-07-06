@@ -12,6 +12,7 @@ export class DocumentService {
         filePath?: string;
         fileSize?: number;
         mimeType?: string;
+        ingestionMetadata?: any;
     }) {
         const document = await prisma.document.create({
             data,
@@ -181,6 +182,34 @@ export class DocumentService {
         return await prisma.document.update({
             where: { id },
             data: { quality, chunks },
+            include: {
+                realm: true,
+                jobs: true,
+            },
+        });
+    }
+
+    static async updateIngestionMetadata(id: string, ingestionMetadata: any) {
+        // Extract summary from ingestion metadata if available
+        const summary = ingestionMetadata?.summary || null;
+
+        return await prisma.document.update({
+            where: { id },
+            data: {
+                ingestionMetadata,
+                summary
+            },
+            include: {
+                realm: true,
+                jobs: true,
+            },
+        });
+    }
+
+    static async updateDocumentSummary(id: string, summary: string) {
+        return await prisma.document.update({
+            where: { id },
+            data: { summary },
             include: {
                 realm: true,
                 jobs: true,

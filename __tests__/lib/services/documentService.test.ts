@@ -15,6 +15,8 @@ jest.mock('../../../lib/services/documentService', () => ({
         getDocumentsByUser: jest.fn(),
         getDocumentsByRealm: jest.fn(),
         updateDocumentQuality: jest.fn(),
+        updateIngestionMetadata: jest.fn(),
+        updateDocumentSummary: jest.fn(),
     },
 }));
 
@@ -418,6 +420,115 @@ describe('DocumentService', () => {
             const result = await DocumentService.updateDocumentQuality('1', 0.95, 10);
 
             expect(mockDocumentService.updateDocumentQuality).toHaveBeenCalledWith('1', 0.95, 10);
+            expect(result).toEqual(mockUpdatedDocument);
+        });
+    });
+
+    describe('updateIngestionMetadata', () => {
+        it('should update ingestion metadata successfully', async () => {
+            const mockIngestionMetadata = {
+                ingestion_id: 'test-id-123',
+                timestamp: '2025-07-06T17:50:38.645173+00:00',
+                summary: 'This is a test document summary extracted from the content.',
+                source_info: {
+                    source_path: '/test/document.pdf',
+                    content_type: 'pdf',
+                    document_id: 'doc_test_123'
+                },
+                processing_result: {
+                    success: true,
+                    processing_time: 450.0955994129181,
+                    content_length: 12345,
+                    metadata: {}
+                },
+                databases_configured: [],
+                embeddings_data: {
+                    chunk_count: 5,
+                    chunk_size: 1000,
+                    chunk_overlap: 200,
+                    embedding_dimension: 768,
+                    chunks: []
+                }
+            };
+
+            const mockUpdatedDocument = {
+                id: '1',
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                realmId: 'realm1',
+                state: DocumentState.INGESTED,
+                version: 1,
+                chunks: 5,
+                quality: 0.95,
+                uploadDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                ingestionMetadata: mockIngestionMetadata,
+                summary: 'This is a test document summary extracted from the content.',
+                realm: {
+                    id: 'realm1',
+                    name: 'Test Realm',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    ownerId: 'user1',
+                    description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    isDefault: false
+                },
+                jobs: [],
+            };
+
+            mockDocumentService.updateIngestionMetadata.mockResolvedValue(mockUpdatedDocument);
+
+            const result = await DocumentService.updateIngestionMetadata('1', mockIngestionMetadata);
+
+            expect(mockDocumentService.updateIngestionMetadata).toHaveBeenCalledWith('1', mockIngestionMetadata);
+            expect(result).toEqual(mockUpdatedDocument);
+        });
+    });
+
+    describe('updateDocumentSummary', () => {
+        it('should update document summary successfully', async () => {
+            const testSummary = 'This is a test document summary.';
+            const mockUpdatedDocument = {
+                id: '1',
+                name: 'Test Document',
+                type: 'pdf',
+                userId: 'user1',
+                realmId: 'realm1',
+                state: DocumentState.INGESTED,
+                version: 1,
+                chunks: 5,
+                quality: 0.95,
+                uploadDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                summary: testSummary,
+                realm: {
+                    id: 'realm1',
+                    name: 'Test Realm',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    ownerId: 'user1',
+                    description: 'Test Realm',
+                    ingestionPrompt: null,
+                    systemPrompt: null,
+                    documentCount: 1,
+                    lastUpdated: new Date(),
+                    isDefault: false
+                },
+                jobs: [],
+            };
+
+            mockDocumentService.updateDocumentSummary.mockResolvedValue(mockUpdatedDocument);
+
+            const result = await DocumentService.updateDocumentSummary('1', testSummary);
+
+            expect(mockDocumentService.updateDocumentSummary).toHaveBeenCalledWith('1', testSummary);
             expect(result).toEqual(mockUpdatedDocument);
         });
     });

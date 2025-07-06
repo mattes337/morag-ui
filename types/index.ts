@@ -117,6 +117,59 @@ export interface DocumentMetadata {
     recovered_content?: string;
 }
 
+// Ingestion metadata structure based on ingest.json template
+export interface IngestionMetadata {
+    ingestion_id: string;
+    timestamp: string;
+    summary?: string; // Textual summary of the document content
+    source_info: {
+        source_path: string;
+        content_type: string;
+        document_id: string;
+    };
+    processing_result: {
+        success: boolean;
+        processing_time: number;
+        content_length: number;
+        metadata: Record<string, any>;
+    };
+    databases_configured: Array<{
+        type: string;
+        hostname: string;
+        port: number | null;
+        database_name: string;
+    }>;
+    embeddings_data: {
+        chunk_count: number;
+        chunk_size: number;
+        chunk_overlap: number;
+        embedding_dimension: number;
+        chunks: Array<{
+            chunk_id: string;
+            chunk_index: number;
+            chunk_text: string;
+            chunk_size: number;
+            embedding: number[];
+            metadata: Record<string, any>;
+        }>;
+    };
+    knowledge_graph?: {
+        entities: Array<{
+            id: string;
+            type: string;
+            name: string;
+            properties: Record<string, any>;
+        }>;
+        relations: Array<{
+            id: string;
+            source_entity_id: string;
+            target_entity_id: string;
+            relation_type: string;
+            properties: Record<string, any>;
+        }>;
+    };
+}
+
 export interface Document {
     id: string;
     name: string;
@@ -127,6 +180,8 @@ export interface Document {
     quality: number;
     uploadDate: string;
     metadata?: DocumentMetadata;
+    ingestionMetadata?: IngestionMetadata;
+    summary?: string; // Textual summary extracted from ingestion metadata
 }
 
 export interface ApiKey {

@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { IngestionMetadataView } from '../ingestion/IngestionMetadataView';
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -18,6 +20,7 @@ export function DocumentDetailView({
     onSupersede,
     onDelete,
 }: DocumentDetailViewProps) {
+    const [activeTab, setActiveTab] = useState<'overview' | 'preview' | 'metadata'>('overview');
     const {
         setShowReingestConfirmDialog,
         setDocumentToReingest,
@@ -145,84 +148,181 @@ export function DocumentDetailView({
                 <div className="flex space-x-3"></div>
             </div>
 
-            {/* Document Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Stats</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Chunks:</span>
-                            <span className="font-medium">{document.chunks}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Quality:</span>
-                            <span className="font-medium">
-                                {(document.quality * 100).toFixed(1)}%
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'overview'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        <span>📊</span>
+                        <span>Overview</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('preview')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'preview'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        <span>👁️</span>
+                        <span>Preview</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('metadata')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                            activeTab === 'metadata'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                        disabled={!document.ingestionMetadata}
+                    >
+                        <span>🔍</span>
+                        <span>Ingestion Metadata</span>
+                        {document.ingestionMetadata && (
+                            <span className="bg-green-100 text-green-600 py-0.5 px-2 rounded-full text-xs">
+                                Available
                             </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Version:</span>
-                            <span className="font-medium">v{document.version}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Document Info</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Type:</span>
-                            <span className="font-medium">{document.type}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">State:</span>
-                            <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(document.state)}`}
-                            >
-                                {document.state}
+                        )}
+                        {!document.ingestionMetadata && (
+                            <span className="bg-gray-100 text-gray-500 py-0.5 px-2 rounded-full text-xs">
+                                N/A
                             </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Uploaded:</span>
-                            <span className="font-medium">{document.uploadDate}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Actions</h3>
-                    <div className="space-y-2">
-                        <button
-                            onClick={handleReingestClick}
-                            className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
-                            disabled={document.state === 'ingesting'}
-                        >
-                            🔄 Reingest Document
-                        </button>
-                        <button
-                            onClick={() => onSupersede(document)}
-                            className="w-full text-left px-3 py-2 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
-                            disabled={
-                                document.state === 'deprecated' || document.state === 'deleted'
-                            }
-                        >
-                            📝 Supersede Version
-                        </button>
-                        <button
-                            onClick={handleDeleteClick}
-                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                            disabled={document.state === 'deleted'}
-                        >
-                            🗑️ Delete Document
-                        </button>
-                    </div>
-                </div>
+                        )}
+                    </button>
+                </nav>
             </div>
 
-            {/* Document Preview */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Preview</h3>
-                {renderDocumentEmbed()}
+            {/* Tab Content */}
+            <div className="mt-6">
+                {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                        {/* Document Summary */}
+                        {document.summary && (
+                            <div className="bg-white p-6 rounded-lg border border-gray-200 mb-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Summary</h3>
+                                <div className="prose prose-sm max-w-none">
+                                    <p className="text-gray-700 leading-relaxed">{document.summary}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Document Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Stats</h3>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Chunks:</span>
+                                        <span className="font-medium">{document.chunks}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Quality:</span>
+                                        <span className="font-medium">
+                                            {(document.quality * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Version:</span>
+                                        <span className="font-medium">v{document.version}</span>
+                                    </div>
+                                    {document.summary && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Summary:</span>
+                                            <span className="font-medium text-green-600">Available</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Document Info</h3>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Type:</span>
+                                        <span className="font-medium">{document.type}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">State:</span>
+                                        <span
+                                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(document.state)}`}
+                                        >
+                                            {document.state}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Uploaded:</span>
+                                        <span className="font-medium">{document.uploadDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Actions</h3>
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={handleReingestClick}
+                                        className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                                        disabled={document.state === 'ingesting'}
+                                    >
+                                        🔄 Reingest Document
+                                    </button>
+                                    <button
+                                        onClick={() => onSupersede(document)}
+                                        className="w-full text-left px-3 py-2 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
+                                        disabled={
+                                            document.state === 'deprecated' || document.state === 'deleted'
+                                        }
+                                    >
+                                        📝 Supersede Version
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteClick}
+                                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                                        disabled={document.state === 'deleted'}
+                                    >
+                                        🗑️ Delete Document
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'preview' && (
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Preview</h3>
+                        {renderDocumentEmbed()}
+                    </div>
+                )}
+
+                {activeTab === 'metadata' && (
+                    <div>
+                        {document.ingestionMetadata ? (
+                            <IngestionMetadataView metadata={document.ingestionMetadata} />
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="text-4xl mb-4">📄</div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">No Ingestion Metadata Available</h3>
+                                <p className="text-gray-500 mb-4">
+                                    This document hasn't been processed yet or the ingestion metadata is not available.
+                                </p>
+                                <button
+                                    onClick={handleReingestClick}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    disabled={document.state === 'ingesting'}
+                                >
+                                    Process Document
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
