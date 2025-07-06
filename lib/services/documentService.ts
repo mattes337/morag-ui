@@ -9,6 +9,9 @@ export class DocumentService {
         realmId: string;
         state?: DocumentState;
         version?: number;
+        filePath?: string;
+        fileSize?: number;
+        mimeType?: string;
     }) {
         const document = await prisma.document.create({
             data,

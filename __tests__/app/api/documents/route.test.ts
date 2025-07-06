@@ -109,7 +109,7 @@ describe('/api/documents', () => {
                 name: 'New Document.pdf',
                 type: 'PDF',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'db1',
             });
         });
 
@@ -126,7 +126,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name, type, and databaseId are required' });
+            expect(data).toEqual({ error: 'Name, type, and realmId are required' });
             expect(mockDocumentService.createDocument).not.toHaveBeenCalled();
         });
 

@@ -61,7 +61,13 @@ describe('RealmService', () => {
                 serverIds: ['server1', 'server2']
             });
 
-            expect(result).toEqual(mockRealm);
+            expect(result).toEqual({
+                ...mockRealm,
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockRealm.createdAt.toISOString(),
+            });
             expect(mockDatabase.realm.create).toHaveBeenCalledWith({
                 data: {
                     name: 'Test Realm',
@@ -112,7 +118,13 @@ describe('RealmService', () => {
 
             const result = await RealmService.createDefaultRealm('user1');
 
-            expect(result).toEqual(mockRealm);
+            expect(result).toEqual({
+                ...mockRealm,
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockRealm.createdAt.toISOString(),
+            });
             expect(mockDatabase.realm.create).toHaveBeenCalledWith({
                 data: {
                     name: 'Default',
@@ -187,7 +199,11 @@ describe('RealmService', () => {
                 userRole: 'OWNER',
                 userCount: 5,
                 servers: [],
-                _count: { userRealms: 5 }
+                _count: { userRealms: 5 },
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockUserRealms[0].realm.createdAt.toISOString(),
             });
             expect(result[1]).toEqual({
                 id: 'realm2',
@@ -199,7 +215,11 @@ describe('RealmService', () => {
                 userRole: 'ADMIN',
                 userCount: 5,
                 servers: [],
-                _count: { userRealms: 5 }
+                _count: { userRealms: 5 },
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockUserRealms[1].realm.createdAt.toISOString(),
             });
         });
     });
@@ -232,7 +252,11 @@ describe('RealmService', () => {
                 updatedAt: mockUserRealm.realm.updatedAt,
                 _count: { userRealms: 5 },
                 userRole: 'OWNER',
-                userCount: 5
+                userCount: 5,
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockUserRealm.realm.createdAt.toISOString(),
             };
 
             (mockDatabase.userRealm.findFirst as jest.Mock).mockResolvedValue(mockUserRealm);
@@ -276,7 +300,13 @@ describe('RealmService', () => {
                 description: 'Updated Description',
             });
 
-            expect(result).toEqual(mockUpdatedRealm);
+            expect(result).toEqual({
+                ...mockUpdatedRealm,
+                documentCount: 0,
+                ingestionPrompt: undefined,
+                systemPrompt: undefined,
+                lastUpdated: mockUpdatedRealm.createdAt.toISOString(),
+            });
         });
 
         it('should throw error when user has insufficient permissions', async () => {

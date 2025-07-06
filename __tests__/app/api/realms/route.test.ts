@@ -121,6 +121,7 @@ describe('/api/realms', () => {
                 body: JSON.stringify({
                     name: 'New Realm',
                     description: 'A new realm',
+                    serverIds: ['server1'],
                 }),
             });
 
@@ -132,6 +133,7 @@ describe('/api/realms', () => {
             expect(mockRealmService.createRealm).toHaveBeenCalledWith({
                 name: 'New Realm',
                 description: 'A new realm',
+                serverIds: ['server1'],
                 ownerId: 'user1',
             });
         });
@@ -196,6 +198,7 @@ describe('/api/realms', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Realm',
+                    serverIds: ['server1'],
                 }),
             });
 

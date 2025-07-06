@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../../../contexts/AppContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Document, Job } from '../../../types';
-import { Plus, FileText, MessageSquare, Briefcase, Settings, Trash2, Edit } from 'lucide-react';
+import { Plus, FileText, MessageSquare, Briefcase, Settings, Trash2 } from 'lucide-react';
 
 interface RealmDetailPageProps {
     params: {

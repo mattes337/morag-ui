@@ -23,6 +23,37 @@ export default function DocumentsPage() {
         router.push(`/documents/${document.id}`);
     };
 
+    const handleIngestDocument = async (document: any) => {
+        try {
+            const response = await fetch(`/api/documents/${document.id}/ingest`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    // Use realm's default ingestion prompt if available
+                    ingestionPrompt: currentRealm?.ingestionPrompt,
+                    chunkSize: 1000,
+                    chunkingMethod: 'Semantic'
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to start ingestion');
+            }
+
+            const result = await response.json();
+            console.log('Ingestion started:', result);
+
+            // Refresh the page to show updated document state
+            window.location.reload();
+        } catch (error) {
+            console.error('Failed to ingest document:', error);
+            alert(`Failed to ingest document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    };
+
     return (
         <DocumentsView
             documents={documents}
@@ -31,6 +62,7 @@ export default function DocumentsPage() {
             onAddDocument={() => setShowAddDocumentDialog(true)}
             onPromptDocument={handlePromptDocument}
             onViewDocumentDetail={handleViewDocumentDetail}
+            onIngestDocument={handleIngestDocument}
             data-oid="f__.a_s"
         />
     );

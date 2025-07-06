@@ -61,7 +61,7 @@ describe('AppContext', () => {
         expect(result.current.apiKeys).toEqual([]); // No initial mock data
         expect(result.current.servers).toEqual([]); // No initial mock data
         expect(result.current.jobs).toEqual([]);
-        expect(result.current.isDataLoading).toBe(false);
+        expect(result.current.isDataLoading).toBe(true);
     });
 
     it('should load initial data when user is set', async () => {
@@ -366,7 +366,7 @@ describe('AppContext', () => {
             body: JSON.stringify({
                 name: 'New Document.pdf',
                 type: 'PDF',
-                databaseId: '1',
+                realmId: '1',
             }),
         });
     });

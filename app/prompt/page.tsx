@@ -24,33 +24,61 @@ export default function PromptPage() {
 
     const handlePromptSubmit = async () => {
         if (!promptText.trim()) return;
+        if (!currentRealm) {
+            alert('Please select a realm first');
+            return;
+        }
 
         setIsLoading(true);
 
         try {
-            // Perform vector search first
-            const searchOptions = {
+            // Query the MoRAG backend
+            const queryRequest = {
                 query: promptText,
-                numResults: numDocuments,
-                documentId: selectedDocument?.id?.toString(),
-                realmId: currentRealm?.id?.toString(),
+                realmId: currentRealm.id,
+                systemPrompt: currentRealm.systemPrompt,
+                maxResults: numDocuments,
+                minSimilarity: 0.7,
+                documentIds: selectedDocument ? [selectedDocument.id] : undefined,
             };
 
-            const results = await performVectorSearch(searchOptions);
-            setSearchResults(results);
+            const response = await fetch('/api/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(queryRequest),
+            });
 
-            // Execute prompt with context
-            const promptOptions = {
-                prompt: promptText,
-                context: results,
-            };
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to query documents');
+            }
 
-            const response = await executePromptWithContext(promptOptions);
-            setPromptResponse(response);
+            const result = await response.json();
+
+            // Convert MoRAG response to the expected format
+            const searchResults = result.sources.map((source: any) => ({
+                id: source.chunk_id,
+                content: source.content,
+                document: source.document_name,
+                realm: currentRealm.name,
+                similarity: source.similarity,
+                chunk: parseInt(source.chunk_id.split('-').pop() || '0'),
+                metadata: source.metadata,
+            }));
+
+            setSearchResults(searchResults);
+            setPromptResponse({
+                answer: result.answer,
+                sources: searchResults,
+                processingTime: result.processingTime,
+                tokensUsed: result.tokensUsed,
+            });
         } catch (error) {
             console.error('Error processing prompt:', error);
             setPromptResponse(
-                'Sorry, there was an error processing your request. Please try again.',
+                `Sorry, there was an error processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
             );
         } finally {
             setIsLoading(false);

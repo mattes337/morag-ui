@@ -10,6 +10,7 @@ interface DocumentsViewProps {
     onAddDocument: () => void;
     onPromptDocument: (document: Document) => void;
     onViewDocumentDetail: (document: Document) => void;
+    onIngestDocument?: (document: Document) => void;
     'data-oid'?: string;
     [key: string]: any;
 }
@@ -21,6 +22,7 @@ export function DocumentsView({
     onAddDocument,
     onPromptDocument,
     onViewDocumentDetail,
+    onIngestDocument,
     ...props
 }: DocumentsViewProps) {
     const getStateColor = (state: string) => {
@@ -205,19 +207,31 @@ export function DocumentsView({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                    <button
-                                        onClick={() => onViewDocumentDetail(doc)}
-                                        className="text-indigo-600 hover:text-indigo-900"
-                                    >
-                                        View Details
-                                    </button>
-                                    <button
-                                        onClick={() => onPromptDocument(doc)}
-                                        className="text-green-600 hover:text-green-900"
-                                    >
-                                        Prompt
-                                    </button>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex flex-col space-y-1">
+                                        <button
+                                            onClick={() => onViewDocumentDetail(doc)}
+                                            className="text-indigo-600 hover:text-indigo-900 text-left"
+                                        >
+                                            View Details
+                                        </button>
+                                        {onIngestDocument && doc.state === 'uploaded' && (
+                                            <button
+                                                onClick={() => onIngestDocument(doc)}
+                                                className="text-blue-600 hover:text-blue-900 text-left"
+                                            >
+                                                Ingest
+                                            </button>
+                                        )}
+                                        {doc.state === 'completed' && (
+                                            <button
+                                                onClick={() => onPromptDocument(doc)}
+                                                className="text-green-600 hover:text-green-900 text-left"
+                                            >
+                                                Query
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}

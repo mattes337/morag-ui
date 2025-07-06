@@ -106,7 +106,12 @@ model Document {
   uploadDate DateTime      @default(now())
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
-  
+
+  // File-related fields
+  filePath   String?       // Path to the uploaded file
+  fileSize   Int?          // File size in bytes
+  mimeType   String?       // MIME type of the file
+
   // Foreign keys
   userId     String
   realmId    String
@@ -176,7 +181,12 @@ model Job {
   summary      String    @default("")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
+
+  // New fields for MoRAG integration
+  jobType      String?   // 'INGESTION', 'QUERY', etc.
+  externalJobId String?  // Job ID from MoRAG backend
+  metadata     Json?     // Additional job metadata
+
   // Foreign keys
   documentId   String
   userId       String

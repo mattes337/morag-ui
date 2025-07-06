@@ -106,7 +106,8 @@ describe('/api/api-keys', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New API Key',
-                    key: 'api-key-1'
+                    key: 'api-key-1',
+                    realmId: 'realm1'
                 })
             });
 
@@ -118,7 +119,8 @@ describe('/api/api-keys', () => {
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'New API Key',
                 key: 'api-key-1',
-                userId: 'user1'
+                userId: 'user1',
+                realmId: 'realm1'
             });
         });
 
@@ -135,7 +137,7 @@ describe('/api/api-keys', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name and key are required' });
+            expect(data).toEqual({ error: 'Name, key, and realmId are required' });
             expect(mockApiKeyService.createApiKey).not.toHaveBeenCalled();
         });
 
@@ -166,7 +168,8 @@ describe('/api/api-keys', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New API Key',
-                    key: 'api-key-1'
+                    key: 'api-key-1',
+                    realmId: 'realm1'
                 })
             });
 

@@ -39,7 +39,14 @@ jest.mock('next/server', () => ({
                 set: jest.fn().mockImplementation((name, value) => cookiesMap.set(name, value)),
                 delete: jest.fn().mockImplementation((name) => cookiesMap.delete(name)),
             },
-            json: jest.fn().mockResolvedValue(JSON.parse(init?.body || '{}')),
+            json: jest.fn().mockImplementation(() => {
+                try {
+                    return Promise.resolve(JSON.parse(init?.body || '{}'));
+                } catch {
+                    return Promise.resolve({});
+                }
+            }),
+            formData: jest.fn().mockResolvedValue(init?.body instanceof FormData ? init.body : new FormData()),
             text: jest.fn().mockResolvedValue(init?.body || ''),
         };
         return request;

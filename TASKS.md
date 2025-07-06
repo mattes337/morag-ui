@@ -114,6 +114,41 @@
   - Fixed DatabaseServerService to work with new many-to-many relationship structure
   - Updated all server queries to use realmServers relationship instead of direct realmId field
   - Resolved server creation and fetching issues after schema migration
+- ✅ Fixed failing tests after realm-server migration
+  - Updated RealmService tests to expect additional fields (documentCount, ingestionPrompt, systemPrompt, lastUpdated)
+  - Fixed API route tests to use realmId instead of databaseId parameters
+  - Updated API key creation tests to require realmId parameter
+  - Fixed document creation tests to use realmId in service calls
+  - Updated AppContext tests to handle initial data loading state
+  - Corrected error messages in API validation to match new requirements
+  - All test suites now passing (100+ tests) after realm-server architecture changes
+- ✅ Implemented comprehensive file upload functionality
+  - Added file upload API endpoint at /api/documents/upload with multipart form support
+  - Enhanced Document model with file-related fields (filePath, fileSize, mimeType)
+  - Updated DocumentService to handle file metadata and storage paths
+  - Created secure file storage in uploads directory with unique filename generation
+  - Added file type validation for PDF, video, audio, and document formats
+  - Enhanced AddDocumentDialog with upload progress indicator and status messages
+  - Implemented file download endpoint at /api/documents/[id]/download with access control
+  - Added comprehensive test coverage for upload functionality with proper mocking
+  - Updated UI to show upload progress and handle different document states
+- ✅ Implemented MoRAG backend integration for document ingestion and querying
+  - Created MoragService with comprehensive API integration for ingestion and querying
+  - Added document ingestion endpoint at /api/documents/[id]/ingest with server configuration
+  - Implemented query endpoint at /api/query for RAG-based document querying
+  - Enhanced Job model with external job tracking and metadata support
+  - Added job status synchronization with MoRAG backend via /api/jobs/[id]/status
+  - Updated DocumentsView with Ingest button for uploaded documents and Query button for completed documents
+  - Modified prompt page to use MoRAG query endpoint instead of mock vector search
+  - Added proper server validation requiring both Qdrant and Neo4j servers for ingestion
+  - Implemented comprehensive error handling and logging throughout MoRAG integration
+  - Created extensive test coverage for ingestion endpoint with proper mocking
+- ✅ Fixed unused imports and cleaned up codebase
+  - Removed unused 'Edit' import from lucide-react in realm details page
+  - Cleaned up commented-out import statements in GlobalDialogs component
+  - Removed temporary debugging file (check-exports.js)
+  - Updated DocumentsView test to match new Query button behavior for completed documents
+  - Verified all imports are properly used and no build warnings remain
 
 ## Pending Tasks
 

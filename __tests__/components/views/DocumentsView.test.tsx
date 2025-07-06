@@ -72,13 +72,16 @@ describe('DocumentsView', () => {
         expect(mockProps.onViewDocumentDetail).toHaveBeenCalledWith(mockDocument);
     });
 
-    it('should call onPromptDocument when Prompt button is clicked', () => {
-        render(<DocumentsView {...mockProps} data-oid="kw_0ccw" />);
+    it('should call onPromptDocument when Query button is clicked for completed documents', () => {
+        const completedDocument = { ...mockDocument, state: 'completed' as const };
+        const propsWithCompletedDoc = { ...mockProps, documents: [completedDocument] };
 
-        const promptButton = screen.getByText('Prompt');
-        fireEvent.click(promptButton);
+        render(<DocumentsView {...propsWithCompletedDoc} data-oid="kw_0ccw" />);
 
-        expect(mockProps.onPromptDocument).toHaveBeenCalledWith(mockDocument);
+        const queryButton = screen.getByText('Query');
+        fireEvent.click(queryButton);
+
+        expect(mockProps.onPromptDocument).toHaveBeenCalledWith(completedDocument);
     });
 
     it('should display document state with correct styling', () => {

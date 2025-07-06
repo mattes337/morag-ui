@@ -8,6 +8,9 @@ export class JobService {
         userId: string;
         realmId: string;
         status?: JobStatus;
+        jobType?: string;
+        externalJobId?: string;
+        metadata?: any;
     }) {
         return await prisma.job.create({ data, include: { document: true, user: true } });
     }
@@ -78,10 +81,16 @@ export class JobService {
             include: { document: true, user: true },
         });
     }
-    static async updateJobStatus(id: string, status: JobStatus, endDate?: Date) {
+    static async updateJobStatus(id: string, status: JobStatus, endDate?: Date, percentage?: number, summary?: string, metadata?: any) {
+        const updateData: any = { status, updatedAt: new Date() };
+        if (endDate) updateData.endDate = endDate;
+        if (percentage !== undefined) updateData.percentage = percentage;
+        if (summary !== undefined) updateData.summary = summary;
+        if (metadata !== undefined) updateData.metadata = metadata;
+
         return await prisma.job.update({
             where: { id },
-            data: { status, endDate, updatedAt: new Date() },
+            data: updateData,
             include: { document: true, user: true },
         });
     }
@@ -94,5 +103,56 @@ export class JobService {
             include: { document: true, user: true },
             orderBy: { createdAt: 'asc' },
         });
+    }
+
+    static async getJobByExternalId(externalJobId: string) {
+        return await prisma.job.findFirst({
+            where: { externalJobId },
+            include: { document: true, user: true }
+        });
+    }
+
+    static async updateJobFromMoragStatus(externalJobId: string, moragStatus: any) {
+        const job = await this.getJobByExternalId(externalJobId);
+        if (!job) {
+            throw new Error(`Job with external ID ${externalJobId} not found`);
+        }
+
+        let status: JobStatus = 'PENDING';
+        let percentage = job.percentage;
+
+        switch (moragStatus.status) {
+            case 'pending':
+                status = 'PENDING';
+                percentage = 0;
+                break;
+            case 'processing':
+                status = 'PROCESSING';
+                percentage = moragStatus.progress || 50;
+                break;
+            case 'completed':
+                status = 'COMPLETED';
+                percentage = 100;
+                break;
+            case 'failed':
+                status = 'FAILED';
+                percentage = job.percentage; // Keep current percentage
+                break;
+        }
+
+        const endDate = (status === 'COMPLETED' || status === 'FAILED') ? new Date() : undefined;
+
+        return await this.updateJobStatus(
+            job.id,
+            status,
+            endDate,
+            percentage,
+            moragStatus.message,
+            {
+                ...job.metadata,
+                moragStatus,
+                lastUpdated: new Date().toISOString()
+            }
+        );
     }
 }

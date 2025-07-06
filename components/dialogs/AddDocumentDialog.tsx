@@ -20,7 +20,7 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { servers, createDocument } = useApp();
+    const { servers, createDocument, refreshData } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
     const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
     const [documentName, setDocumentName] = useState('');
@@ -31,6 +31,8 @@ export function AddDocumentDialog({
     const [gpuProcessing, setGpuProcessing] = useState(false);
     const [contextualEmbedding, setContextualEmbedding] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadStatus, setUploadStatus] = useState<string>('');
 
     const documentTypes: DocumentType[] = useMemo(
         () => [
@@ -111,7 +113,7 @@ export function AddDocumentDialog({
 
     const handleSubmit = async () => {
         if (!selectedDocumentType || !selectedDatabaseId) return;
-        
+
         let name = documentName;
         if (!name) {
             if (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') {
@@ -125,14 +127,60 @@ export function AddDocumentDialog({
 
         try {
             setIsSubmitting(true);
-            await createDocument({
-                name,
-                type: selectedDocumentType.type,
-                realmId: selectedDatabaseId,
-            });
-            handleClose();
+            setUploadProgress(0);
+            setUploadStatus('');
+
+            // Handle file upload for file-based document types
+            if (selectedFile && selectedDocumentType.type !== 'youtube' && selectedDocumentType.type !== 'website') {
+                setUploadStatus('Uploading file...');
+                setUploadProgress(25);
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('realmId', selectedDatabaseId);
+                formData.append('name', name);
+
+                setUploadProgress(50);
+                const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to upload file');
+                }
+
+                setUploadProgress(75);
+                const result = await response.json();
+                console.log('File uploaded successfully:', result);
+
+                setUploadStatus('Refreshing documents...');
+                setUploadProgress(90);
+
+                // Refresh the documents list to show the new upload
+                await refreshData();
+
+                setUploadProgress(100);
+                setUploadStatus('Upload complete!');
+            } else {
+                setUploadStatus('Creating document...');
+                // Handle URL-based documents (YouTube, website) or documents without files
+                await createDocument({
+                    name,
+                    type: selectedDocumentType.type,
+                    realmId: selectedDatabaseId,
+                });
+                setUploadStatus('Document created!');
+            }
+
+            // Small delay to show completion status
+            setTimeout(() => {
+                handleClose();
+            }, 500);
         } catch (error) {
             console.error('Failed to create document:', error);
+            setUploadStatus(`Error: ${error instanceof Error ? error.message : 'Failed to upload'}`);
             // TODO: Show error message to user
         } finally {
             setIsSubmitting(false);
@@ -407,10 +455,35 @@ export function AddDocumentDialog({
                     </div>
                 ) : null}
 
+                {/* Upload Progress */}
+                {isSubmitting && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">
+                                {uploadStatus || 'Processing...'}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                                {uploadProgress}%
+                            </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                                style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex justify-end space-x-3 mt-6" data-oid="sfqwgzj">
                     <button
                         onClick={handleClose}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                        disabled={isSubmitting}
+                        className={`px-4 py-2 border border-gray-300 rounded-md ${
+                            isSubmitting
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-50'
+                        }`}
                         data-oid="r2a1cfs"
                     >
                         Cancel
@@ -429,7 +502,7 @@ export function AddDocumentDialog({
                             data-oid="fr567.8"
                         >
                             {isSubmitting
-                                ? 'Creating...'
+                                ? 'Processing...'
                                 : mode === 'supersede'
                                 ? 'Supersede Document'
                                 : 'Add Document'}
