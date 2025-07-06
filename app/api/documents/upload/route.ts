@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
             type: documentType,
             realmId,
             userId: authUser.userId,
-            state: 'UPLOADED',
+            state: 'PENDING',
             filePath: filepath,
             fileSize: file.size,
             mimeType: file.type

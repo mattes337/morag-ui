@@ -310,7 +310,7 @@ export function DocumentDetailView({
                                 <div className="text-4xl mb-4">📄</div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Ingestion Metadata Available</h3>
                                 <p className="text-gray-500 mb-4">
-                                    This document hasn't been processed yet or the ingestion metadata is not available.
+                                    This document hasn&apos;t been processed yet or the ingestion metadata is not available.
                                 </p>
                                 <button
                                     onClick={handleReingestClick}

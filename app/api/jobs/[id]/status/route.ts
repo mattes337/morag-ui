@@ -30,13 +30,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
                 // If job completed successfully, update document state
                 if (moragStatus.status === 'completed' && job.jobType === 'INGESTION') {
                     await DocumentService.updateDocument(job.documentId, {
-                        state: 'COMPLETED',
+                        state: 'INGESTED',
                         chunks: moragStatus.result?.chunks_created || 0,
                         quality: moragStatus.result?.metadata?.extraction_quality || 0
                     });
                 } else if (moragStatus.status === 'failed' && job.jobType === 'INGESTION') {
                     await DocumentService.updateDocument(job.documentId, {
-                        state: 'FAILED'
+                        state: 'PENDING'
                     });
                 }
 

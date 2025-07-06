@@ -278,7 +278,7 @@ function ChunksTab({ chunks }: { chunks: IngestionMetadata['embeddings_data']['c
     );
 }
 
-function EntitiesTab({ entities }: { entities: IngestionMetadata['knowledge_graph']['entities'] | undefined }) {
+function EntitiesTab({ entities }: { entities: Array<{ id: string; type: string; name: string; properties: Record<string, any>; }> }) {
     if (!entities || entities.length === 0) {
         return (
             <div className="text-center py-8">
@@ -288,7 +288,7 @@ function EntitiesTab({ entities }: { entities: IngestionMetadata['knowledge_grap
         );
     }
 
-    const entityTypes = [...new Set(entities.map(e => e.type))];
+    const entityTypes = Array.from(new Set(entities.map(e => e.type)));
 
     return (
         <div className="space-y-6">
@@ -344,7 +344,7 @@ function EntitiesTab({ entities }: { entities: IngestionMetadata['knowledge_grap
     );
 }
 
-function RelationsTab({ relations }: { relations: IngestionMetadata['knowledge_graph']['relations'] | undefined }) {
+function RelationsTab({ relations }: { relations: Array<{ id: string; source_entity_id: string; target_entity_id: string; relation_type: string; properties: Record<string, any>; }> }) {
     if (!relations || relations.length === 0) {
         return (
             <div className="text-center py-8">
@@ -354,7 +354,7 @@ function RelationsTab({ relations }: { relations: IngestionMetadata['knowledge_g
         );
     }
 
-    const relationTypes = [...new Set(relations.map(r => r.relation_type))];
+    const relationTypes = Array.from(new Set(relations.map(r => r.relation_type)));
 
     return (
         <div className="space-y-6">

@@ -215,7 +215,7 @@ export function DocumentsView({
                                         >
                                             View Details
                                         </button>
-                                        {onIngestDocument && doc.state === 'uploaded' && (
+                                        {onIngestDocument && doc.state === 'pending' && (
                                             <button
                                                 onClick={() => onIngestDocument(doc)}
                                                 className="text-blue-600 hover:text-blue-900 text-left"
@@ -223,7 +223,7 @@ export function DocumentsView({
                                                 Ingest
                                             </button>
                                         )}
-                                        {doc.state === 'completed' && (
+                                        {doc.state === 'ingested' && (
                                             <button
                                                 onClick={() => onPromptDocument(doc)}
                                                 className="text-green-600 hover:text-green-900 text-left"

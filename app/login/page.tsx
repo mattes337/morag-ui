@@ -95,7 +95,7 @@ export default function LoginPage() {
                             SSO Authentication
                         </h2>
                         <p className="mt-2 text-sm text-gray-600">
-                            Please authenticate through your organization's SSO system.
+                            Please authenticate through your organization&apos;s SSO system.
                         </p>
                         <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                             <p className="text-sm text-yellow-800">

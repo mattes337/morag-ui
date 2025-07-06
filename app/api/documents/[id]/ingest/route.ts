@@ -36,8 +36,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         }
 
         // Check if realm has required servers (Qdrant and Neo4j)
-        const qdrantServer = realm.servers.find(s => s.type === 'QDRANT');
-        const neo4jServer = realm.servers.find(s => s.type === 'NEO4J');
+        const qdrantServer = realm.servers?.find(s => s.type === 'QDRANT');
+        const neo4jServer = realm.servers?.find(s => s.type === 'NEO4J');
 
         if (!qdrantServer || !neo4jServer) {
             return NextResponse.json({ 
@@ -94,9 +94,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             }
         });
 
-        // Update document state to processing
+        // Update document state to ingesting
         await DocumentService.updateDocument(document.id, {
-            state: 'PROCESSING'
+            state: 'INGESTING'
         });
 
         return NextResponse.json({

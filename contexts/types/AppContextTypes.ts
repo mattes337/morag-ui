@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { Document, ApiKey, DatabaseServer, UserSettings, User, Job, Realm } from '../../types';
 import { SearchResult } from '../../lib/vectorSearch';
 

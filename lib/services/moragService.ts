@@ -117,10 +117,20 @@ export class MoragService {
         const baseUrl = this.getApiBaseUrl();
         const apiKey = this.getApiKey();
         
-        const headers: HeadersInit = {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            ...options.headers,
         };
+
+        // Add any additional headers from options
+        if (options.headers) {
+            if (options.headers instanceof Headers) {
+                options.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+            } else {
+                Object.assign(headers, options.headers);
+            }
+        }
 
         if (apiKey) {
             headers['Authorization'] = `Bearer ${apiKey}`;

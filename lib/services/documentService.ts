@@ -130,7 +130,19 @@ export class DocumentService {
         });
     }
 
-    static async updateDocument(id: string, data: Partial<Document>) {
+    static async updateDocument(id: string, data: {
+        name?: string;
+        type?: string;
+        state?: DocumentState;
+        version?: number;
+        chunks?: number;
+        quality?: number;
+        filePath?: string;
+        fileSize?: number;
+        mimeType?: string;
+        ingestionMetadata?: any;
+        summary?: string;
+    }) {
         return await prisma.document.update({
             where: { id },
             data,

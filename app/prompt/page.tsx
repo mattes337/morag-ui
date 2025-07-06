@@ -69,12 +69,7 @@ export default function PromptPage() {
             }));
 
             setSearchResults(searchResults);
-            setPromptResponse({
-                answer: result.answer,
-                sources: searchResults,
-                processingTime: result.processingTime,
-                tokensUsed: result.tokensUsed,
-            });
+            setPromptResponse(result.answer);
         } catch (error) {
             console.error('Error processing prompt:', error);
             setPromptResponse(

@@ -67,7 +67,14 @@ export class JobService {
             include: { document: true, user: true },
         });
     }
-    static async updateJob(id: string, data: Partial<Job>) {
+    static async updateJob(id: string, data: {
+        status?: JobStatus;
+        percentage?: number;
+        summary?: string;
+        metadata?: any;
+        endDate?: Date;
+        jobType?: string;
+    }) {
         return await prisma.job.update({
             where: { id },
             data,
@@ -131,7 +138,7 @@ export class JobService {
                 percentage = moragStatus.progress || 50;
                 break;
             case 'completed':
-                status = 'COMPLETED';
+                status = 'FINISHED';
                 percentage = 100;
                 break;
             case 'failed':
@@ -140,7 +147,7 @@ export class JobService {
                 break;
         }
 
-        const endDate = (status === 'COMPLETED' || status === 'FAILED') ? new Date() : undefined;
+        const endDate = (status === 'FINISHED' || status === 'FAILED') ? new Date() : undefined;
 
         return await this.updateJobStatus(
             job.id,
@@ -149,7 +156,7 @@ export class JobService {
             percentage,
             moragStatus.message,
             {
-                ...job.metadata,
+                ...(job.metadata && typeof job.metadata === 'object' ? job.metadata : {}),
                 moragStatus,
                 lastUpdated: new Date().toISOString()
             }

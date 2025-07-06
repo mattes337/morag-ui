@@ -178,7 +178,7 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
                 <h2 className="text-xl font-semibold text-gray-900">Realm Not Found</h2>
-                <p className="text-gray-600">The realm you're looking for doesn't exist or you don't have access to it.</p>
+                <p className="text-gray-600">The realm you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
                 <button
                     onClick={handleBackToRealms}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -349,7 +349,7 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Documents Yet</h3>
                             <p className="text-gray-600 mb-4">
-                                This realm doesn't have any documents yet. Add your first document to get started.
+                                This realm doesn&apos;t have any documents yet. Add your first document to get started.
                             </p>
                             <button
                                 onClick={handleAddDocument}
@@ -553,7 +553,7 @@ export default function RealmDetailPage({ params }: RealmDetailPageProps) {
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Servers Assigned</h3>
                             <p className="text-gray-600 mb-4">
-                                This realm doesn't have any servers assigned yet. Add your first server to get started.
+                                This realm doesn&apos;t have any servers assigned yet. Add your first server to get started.
                             </p>
                             <button
                                 onClick={handleLoadAvailableServers}
