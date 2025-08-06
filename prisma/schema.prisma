@@ -54,14 +54,17 @@ model Realm {
   id              String   @id @default(uuid())
   name            String
   description     String?
+  domain          String?  // Domain classification for specialized processing
   ingestionPrompt String?  // Optional prompt for document ingestion
   systemPrompt    String?  // Optional prompt for user queries
+  extractionPrompt String? // Optional prompt for entity extraction
+  domainPrompt    String?  // Optional domain context prompt
   documentCount   Int      @default(0)
   isDefault       Boolean  @default(false)
   lastUpdated     DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   // Foreign keys
   ownerId         String
 
@@ -154,14 +157,12 @@ model DatabaseServer {
   createdAt     DateTime             @default(now())
   lastConnected DateTime?
   updatedAt     DateTime             @updatedAt
-  
+
   // Foreign keys
   userId        String
-  realmId       String
 
   // Relations
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm           Realm               @relation(fields: [realmId], references: [id], onDelete: Cascade)
   realmServers    RealmServerLink[] // Many-to-many relationship with realms
 
   @@map("database_servers")

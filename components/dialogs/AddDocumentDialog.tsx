@@ -20,7 +20,7 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { servers, createDocument } = useApp();
+    const { servers, createDocument, currentRealm } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
     const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
     const [documentName, setDocumentName] = useState('');
@@ -128,7 +128,7 @@ export function AddDocumentDialog({
             await createDocument({
                 name,
                 type: selectedDocumentType.type,
-                databaseId: selectedDatabaseId,
+                realmId: currentRealm?.id || '',
             });
             handleClose();
         } catch (error) {

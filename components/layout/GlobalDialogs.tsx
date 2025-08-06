@@ -32,8 +32,6 @@ export function GlobalDialogs() {
         setShowDeleteConfirmDialog,
         documentToDelete,
         setDocumentToDelete,
-        showRealmManagementDialog,
-        setShowRealmManagementDialog,
         showEditPromptDialog,
         setShowEditPromptDialog,
         editPromptData,
@@ -102,10 +100,7 @@ export function GlobalDialogs() {
                 data-oid=".f9lboi"
             />
 
-            <RealmManagementDialog
-                isOpen={showRealmManagementDialog}
-                onClose={() => setShowRealmManagementDialog(false)}
-            />
+
 
             {editPromptData && (
                 <EditPromptDialog
@@ -116,11 +111,11 @@ export function GlobalDialogs() {
                     }}
                     onSave={async (prompt: string) => {
                         // TODO: Implement API call to save prompt
-                        console.log('Saving prompt:', prompt, 'for database:', editPromptData.database?.id, 'type:', editPromptData.promptType);
+                        console.log('Saving prompt:', prompt, 'for realm:', editPromptData.realm?.id, 'type:', editPromptData.promptType);
                         setShowEditPromptDialog(false);
                         setEditPromptData(null);
                     }}
-                    database={editPromptData.database!}
+                    realm={editPromptData.realm!}
                     promptType={editPromptData.promptType}
                     currentPrompt={editPromptData.currentPrompt}
                 />

@@ -15,7 +15,8 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
     const [systemPrompt, setSystemPrompt] = useState('');
     const [selectedServerIds, setSelectedServerIds] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const { createDatabase, servers } = useApp();
+    const { servers } = useApp();
+    // Note: createDatabase functionality moved to realm-level configuration
 
     if (!isOpen) return null;
 
@@ -25,13 +26,8 @@ export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogPr
 
         try {
             setIsLoading(true);
-            await createDatabase({
-                name: name.trim(),
-                description: description.trim(),
-                ingestionPrompt: ingestionPrompt.trim() || undefined,
-                systemPrompt: systemPrompt.trim() || undefined,
-                serverIds: selectedServerIds,
-            });
+            // TODO: Implement realm-level database configuration
+            console.log('Database creation moved to realm-level configuration');
             setName('');
             setDescription('');
             setIngestionPrompt('');

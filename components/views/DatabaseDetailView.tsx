@@ -348,9 +348,9 @@ export function DatabaseDetailView({
                                                 <Badge className={getJobStatusBadge(job.status)}>
                                                     {job.status}
                                                 </Badge>
-                                                {job.percentage !== undefined && (
+                                                {job.progress?.percentage !== undefined && (
                                                     <div className="text-sm text-gray-600">
-                                                        {job.percentage}%
+                                                        {job.progress.percentage}%
                                                     </div>
                                                 )}
                                             </div>

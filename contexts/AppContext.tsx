@@ -109,10 +109,14 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [user, setUser] = useState<User | null>(null);
 
     const [userSettings, setUserSettings] = useState<UserSettings>({
-        theme: 'light',
+        id: '',
+        userId: '',
+        theme: 'LIGHT',
         language: 'en',
         notifications: true,
         autoSave: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
     });
 
     const [servers, setServers] = useState<DatabaseServer[]>([]);

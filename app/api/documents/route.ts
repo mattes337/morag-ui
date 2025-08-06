@@ -11,11 +11,10 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const realmId = searchParams.get('realmId');
-        const databaseId = searchParams.get('databaseId');
 
         let documents;
-        if (databaseId) {
-            documents = await DocumentService.getDocumentsByDatabase(databaseId);
+        if (realmId) {
+            documents = await DocumentService.getDocumentsByRealm(realmId);
         } else {
             documents = await DocumentService.getDocumentsByUserId(user.userId, realmId);
         }
@@ -32,21 +31,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const user = requireAuth(request);
+        const user = await requireAuth(request);
         const body = await request.json();
-        const { name, type, databaseId } = body;
-        
-        if (!name || !type || !databaseId) {
+        const { name, type, realmId } = body;
+
+        if (!name || !type || !realmId) {
             return NextResponse.json(
-                { error: 'Name, type, and databaseId are required' },
+                { error: 'Name, type, and realmId are required' },
                 { status: 400 },
             );
         }
-        
-        const document = await DocumentService.createDocument({ 
-            name, 
-            type, 
-            databaseId, 
+
+        const document = await DocumentService.createDocument({
+            name,
+            type,
+            realmId,
             userId: user.userId // Use authenticated user's ID
         });
         

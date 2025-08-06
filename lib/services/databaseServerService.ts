@@ -42,7 +42,11 @@ export class DatabaseServerService {
             data: mappedData,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
         });
     }
@@ -51,7 +55,11 @@ export class DatabaseServerService {
         return await prisma.databaseServer.findMany({
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
             orderBy: {
                 createdAt: 'desc',
@@ -69,7 +77,11 @@ export class DatabaseServerService {
             where,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
             orderBy: {
                 createdAt: 'desc',
@@ -82,7 +94,11 @@ export class DatabaseServerService {
             where: { id },
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
         });
     }
@@ -101,7 +117,11 @@ export class DatabaseServerService {
             data: mappedData,
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
         });
     }
@@ -128,7 +148,11 @@ export class DatabaseServerService {
             },
             include: {
                 user: true,
-                realm: true,
+                realmServers: {
+                    include: {
+                        realm: true
+                    }
+                },
             },
         });
     }

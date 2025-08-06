@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
         let jobs;
         if (databaseId) {
-            jobs = await JobService.getJobsByDatabase(databaseId);
+            jobs = await JobService.getJobsByRealm(databaseId);
         } else {
             jobs = await JobService.getJobsByUserId(user.userId, realmId);
         }
@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { documentId, documentName, documentType, userId } = body;
+        const { documentId, documentName, documentType, userId, realmId } = body;
 
-        if (!documentId || !documentName || !documentType || !userId) {
+        if (!documentId || !documentName || !documentType || !userId || !realmId) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
         }
 
-        const job = await JobService.createJob({ documentId, documentName, documentType, userId });
+        const job = await JobService.createJob({ documentId, documentName, documentType, userId, realmId });
         return NextResponse.json(job, { status: 201 });
     } catch (error) {
         console.error('Failed to create job:', error);

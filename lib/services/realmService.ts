@@ -1,5 +1,8 @@
 import { prisma } from '../database';
-import { Realm, RealmRole, CreateRealmData, UpdateRealmData } from '../../types';
+import { Realm, RealmRole, CreateRealmData } from '../../types';
+import { RealmPromptConfig } from '../types/domain';
+import { UserRealm } from '@prisma/client';
+import { getEffectivePrompt } from '../constants/defaultPrompts';
 
 export interface RealmWithUserRole extends Realm {
     userRole?: RealmRole;
@@ -9,11 +12,40 @@ export interface RealmWithUserRole extends Realm {
 export class RealmService {
     private static db = prisma;
 
+    // Convert Prisma realm to app Realm type
+    private static convertPrismaRealm(prismaRealm: any): Realm {
+        return {
+            ...prismaRealm,
+            description: prismaRealm.description || undefined,
+            domain: prismaRealm.domain || undefined,
+            ingestionPrompt: prismaRealm.ingestionPrompt || undefined,
+            systemPrompt: prismaRealm.systemPrompt || undefined,
+            extractionPrompt: prismaRealm.extractionPrompt || undefined,
+            domainPrompt: prismaRealm.domainPrompt || undefined,
+        };
+    }
+
+    // Get effective prompts with defaults
+    static getEffectivePrompts(realm: Realm): Required<RealmPromptConfig> {
+        return {
+            domain: realm.domain || 'general',
+            ingestionPrompt: getEffectivePrompt(realm.ingestionPrompt, 'ingestionPrompt'),
+            systemPrompt: getEffectivePrompt(realm.systemPrompt, 'systemPrompt'),
+            extractionPrompt: getEffectivePrompt(realm.extractionPrompt, 'extractionPrompt'),
+            domainPrompt: getEffectivePrompt(realm.domainPrompt, 'domainPrompt'),
+        };
+    }
+
     static async createRealm(data: CreateRealmData): Promise<Realm> {
-        return await this.db.realm.create({
+        const realm = await this.db.realm.create({
             data: {
                 name: data.name,
                 description: data.description,
+                domain: data.domain,
+                ingestionPrompt: data.ingestionPrompt,
+                systemPrompt: data.systemPrompt,
+                extractionPrompt: data.extractionPrompt,
+                domainPrompt: data.domainPrompt,
                 isDefault: false,
                 owner: {
                     connect: {
@@ -28,10 +60,11 @@ export class RealmService {
                 }
             }
         });
+        return this.convertPrismaRealm(realm);
     }
 
     static async createDefaultRealm(userId: string): Promise<Realm> {
-        return await this.db.realm.create({
+        const realm = await this.db.realm.create({
             data: {
                 name: 'Default',
                 description: 'Default realm for user',
@@ -49,6 +82,7 @@ export class RealmService {
                 }
             }
         });
+        return this.convertPrismaRealm(realm);
     }
 
     static async getUserRealms(userId: string): Promise<RealmWithUserRole[]> {
@@ -72,7 +106,7 @@ export class RealmService {
         return userRealms
             .filter(ur => ur.realm) // Filter out entries where realm is null/undefined
             .map(ur => ({
-                ...ur.realm,
+                ...this.convertPrismaRealm(ur.realm),
                 userRole: ur.role,
                 userCount: ur.realm._count.userRealms
             }));
@@ -100,7 +134,7 @@ export class RealmService {
         }
 
         return {
-            ...userRealm.realm,
+            ...this.convertPrismaRealm(userRealm.realm),
             userRole: userRealm.role,
             userCount: userRealm.realm._count.userRealms
         };
@@ -120,13 +154,19 @@ export class RealmService {
             throw new Error('Insufficient permissions to update realm');
         }
 
-        return await this.db.realm.update({
+        const realm = await this.db.realm.update({
             where: { id: realmId },
             data: {
                 name: data.name,
-                description: data.description
+                description: data.description,
+                domain: data.domain,
+                ingestionPrompt: data.ingestionPrompt,
+                systemPrompt: data.systemPrompt,
+                extractionPrompt: data.extractionPrompt,
+                domainPrompt: data.domainPrompt
             }
         });
+        return this.convertPrismaRealm(realm);
     }
 
     static async deleteRealm(realmId: string, userId: string): Promise<void> {
@@ -223,16 +263,82 @@ export class RealmService {
             include: { realm: true }
         });
 
-        return userRealm?.realm || null;
+        return userRealm?.realm ? this.convertPrismaRealm(userRealm.realm) : null;
     }
 
     static async ensureUserHasDefaultRealm(userId: string): Promise<Realm> {
         let defaultRealm = await this.getUserDefaultRealm(userId);
-        
+
         if (!defaultRealm) {
             defaultRealm = await this.createDefaultRealm(userId);
         }
-        
+
         return defaultRealm;
+    }
+
+
+
+    static async updateRealmPrompts(realmId: string, userId: string, prompts: RealmPromptConfig): Promise<Realm | null> {
+        // Check if user has permission to update
+        const userRealm = await this.db.userRealm.findFirst({
+            where: {
+                realmId,
+                userId,
+                role: { in: ['OWNER', 'ADMIN'] }
+            }
+        });
+
+        if (!userRealm) {
+            throw new Error('Insufficient permissions to update realm prompts');
+        }
+
+        const realm = await this.db.realm.update({
+            where: { id: realmId },
+            data: {
+                domain: prompts.domain,
+                ingestionPrompt: prompts.ingestionPrompt,
+                systemPrompt: prompts.systemPrompt,
+                extractionPrompt: prompts.extractionPrompt,
+                domainPrompt: prompts.domainPrompt
+            }
+        });
+        return this.convertPrismaRealm(realm);
+    }
+
+    static async getRealmPrompts(realmId: string, userId: string): Promise<RealmPromptConfig | null> {
+        const realm = await this.getRealmById(realmId, userId);
+        if (!realm) {
+            return null;
+        }
+
+        return {
+            domain: realm.domain || undefined,
+            ingestionPrompt: realm.ingestionPrompt || undefined,
+            systemPrompt: realm.systemPrompt || undefined,
+            extractionPrompt: realm.extractionPrompt || undefined,
+            domainPrompt: realm.domainPrompt || undefined
+        };
+    }
+
+    static validateRealmPrompts(prompts: RealmPromptConfig): string[] {
+        const errors: string[] = [];
+
+        if (prompts.ingestionPrompt && prompts.ingestionPrompt.trim().length === 0) {
+            errors.push('Ingestion prompt cannot be empty');
+        }
+
+        if (prompts.systemPrompt && prompts.systemPrompt.trim().length === 0) {
+            errors.push('System prompt cannot be empty');
+        }
+
+        if (prompts.extractionPrompt && prompts.extractionPrompt.trim().length === 0) {
+            errors.push('Extraction prompt cannot be empty');
+        }
+
+        if (prompts.domainPrompt && prompts.domainPrompt.trim().length === 0) {
+            errors.push('Domain prompt cannot be empty');
+        }
+
+        return errors;
     }
 }

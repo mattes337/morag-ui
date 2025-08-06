@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Database } from '../../types';
+import { Realm } from '../../types';
 
 interface EditPromptDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (prompt: string) => void;
-    database: Database;
+    realm: Realm;
     promptType: 'ingestion' | 'system';
     currentPrompt: string;
 }
@@ -16,7 +16,7 @@ export function EditPromptDialog({
     isOpen,
     onClose,
     onSave,
-    database,
+    realm,
     promptType,
     currentPrompt
 }: EditPromptDialogProps) {
@@ -48,7 +48,7 @@ export function EditPromptDialog({
     const title = promptType === 'ingestion' ? 'Edit Ingestion Prompt' : 'Edit System Prompt';
     const placeholder = promptType === 'ingestion' 
         ? 'Prompt used when ingesting documents (e.g., for graph generation or contextual RAG)...'
-        : 'Prompt used when executing user queries on this database...';
+        : 'Prompt used when executing user queries in this realm...';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -57,7 +57,7 @@ export function EditPromptDialog({
                     {title}
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                    Database: <span className="font-medium">{database.name}</span>
+                    Realm: <span className="font-medium">{realm.name}</span>
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

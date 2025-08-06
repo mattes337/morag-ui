@@ -7,7 +7,7 @@ import { DocumentsView } from '../../components/views/DocumentsView';
 export default function DocumentsPage() {
     const router = useRouter();
 
-    const { documents, selectedRealm, setSelectedDocument, setShowAddDocumentDialog } = useApp();
+    const { documents, currentRealm, setSelectedDocument, setShowAddDocumentDialog } = useApp();
 
     const handleBackToRealms = () => {
         router.push('/');
@@ -26,7 +26,7 @@ export default function DocumentsPage() {
     return (
         <DocumentsView
             documents={documents}
-            selectedRealm={selectedRealm}
+            selectedRealm={currentRealm}
             onBackToRealms={handleBackToRealms}
             onAddDocument={() => setShowAddDocumentDialog(true)}
             onPromptDocument={handlePromptDocument}

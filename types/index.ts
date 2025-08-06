@@ -227,9 +227,12 @@ export interface Realm {
     id: string;
     name: string;
     description?: string;
+    domain?: string;          // Domain classification for specialized processing
     isDefault: boolean;
     ingestionPrompt?: string; // Optional prompt for document ingestion
     systemPrompt?: string;    // Optional prompt for user queries
+    extractionPrompt?: string; // Optional prompt for entity extraction
+    domainPrompt?: string;    // Optional domain context prompt
     documentCount?: number;
     lastUpdated?: string;
     servers?: DatabaseServer[]; // Associated servers for this realm
@@ -245,10 +248,20 @@ export interface CreateRealmData {
     name: string;
     description?: string;
     ownerId: string;
+    domain?: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
+    extractionPrompt?: string;
+    domainPrompt?: string;
 }
 
 export interface UpdateRealmData {
     name?: string;
     description?: string;
     isActive?: boolean;
+    domain?: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
+    extractionPrompt?: string;
+    domainPrompt?: string;
 }

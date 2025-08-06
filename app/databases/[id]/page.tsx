@@ -15,9 +15,10 @@ interface DatabaseDetailPageProps {
 
 export default function DatabaseDetailPage({ params }: DatabaseDetailPageProps) {
     const router = useRouter();
-    const { 
-        user, 
-        isDataLoading, 
+    const {
+        user,
+        currentRealm,
+        isDataLoading,
         setShowAddDocumentDialog,
         setShowDeleteConfirmDialog,
         setShowReingestConfirmDialog,
@@ -96,22 +97,22 @@ export default function DatabaseDetailPage({ params }: DatabaseDetailPageProps) 
     };
 
     const handleEditIngestionPrompt = () => {
-        if (database) {
+        if (currentRealm) {
             setEditPromptData({
-                database,
+                realm: currentRealm,
                 promptType: 'ingestion',
-                currentPrompt: database.ingestionPrompt || ''
+                currentPrompt: currentRealm.ingestionPrompt || ''
             });
             setShowEditPromptDialog(true);
         }
     };
 
     const handleEditSystemPrompt = () => {
-        if (database) {
+        if (currentRealm) {
             setEditPromptData({
-                database,
+                realm: currentRealm,
                 promptType: 'system',
-                currentPrompt: database.systemPrompt || ''
+                currentPrompt: currentRealm.systemPrompt || ''
             });
             setShowEditPromptDialog(true);
         }

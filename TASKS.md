@@ -28,6 +28,18 @@
   - All tests passing with improved session management
 - ✅ Fixed session persistence on page reload (F5)
   - Modified AuthWrapper to always run auth check on mount, not just when user is null
+- ✅ Implemented Domain Configuration for Realms (Simplified)
+  - Added domain, ingestionPrompt, systemPrompt, extractionPrompt, and domainPrompt fields to Realm model
+  - Made all prompt fields optional with default fallbacks when not specified
+  - Created default prompt constants for consistent behavior across the application
+  - Updated database schema with new realm fields (no domain template table)
+  - Enhanced RealmService with getEffectivePrompts method for default prompt handling
+  - Updated realm API endpoints to support optional domain configuration
+  - Built RealmPromptEditor component for configuring domain-specific prompts (no templates)
+  - Enhanced RealmManagementDialog to include domain configuration UI
+  - Updated all services (ApiKeyService, JobService, DatabaseServerService) to include realmId
+  - Successfully migrated database and seeded with sample domain-configured realms
+  - Removed domain template system completely - prompts are now optional with sensible defaults
   - Added proper loading state to prevent premature redirects to login
   - Enhanced auth check logic to prevent redirect loops
   - Users now stay logged in across browser refreshes and direct page access

@@ -14,7 +14,7 @@ export default function RealmsPage() {
         isDataLoading,
         setCurrentRealm,
         setSelectedDocument,
-        setShowRealmManagementDialog,
+        setShowCreateRealmDialog,
     } = useApp();
 
     useEffect(() => {
@@ -49,7 +49,7 @@ export default function RealmsPage() {
     return (
         <RealmsView
             realms={realms}
-            onCreateRealm={() => setShowRealmManagementDialog(true)}
+            onCreateRealm={() => setShowCreateRealmDialog(true)}
             onSelectRealm={handleSelectRealm}
             onPromptRealm={handlePromptRealm}
             onViewRealm={handleViewRealm}

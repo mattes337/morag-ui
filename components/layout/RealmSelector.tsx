@@ -25,7 +25,7 @@ export interface Realm {
 }
 
 export function RealmSelector() {
-    const { currentRealm, setCurrentRealm, setShowRealmManagementDialog, realms: contextRealms, isDataLoading } = useApp();
+    const { currentRealm, setCurrentRealm, setShowCreateRealmDialog, realms: contextRealms, isDataLoading } = useApp();
     const [realms, setRealms] = useState<Realm[]>([]);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -129,7 +129,7 @@ export function RealmSelector() {
             <div className="flex items-center space-x-2">
                 <Button
                     variant="outline"
-                    onClick={() => setShowRealmManagementDialog(true)}
+                    onClick={() => setShowCreateRealmDialog(true)}
                 >
                     No Realm Selected
                 </Button>
@@ -209,7 +209,7 @@ export function RealmSelector() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => {
-                        setShowRealmManagementDialog(true);
+                        setShowCreateRealmDialog(true);
                     }}
                     className="flex items-center space-x-2 p-3 cursor-pointer"
                 >
