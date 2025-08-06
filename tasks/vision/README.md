@@ -92,7 +92,7 @@ This document provides a comprehensive analysis of the VISION.md requirements an
 
 ### Database Schema Extensions Needed
 - Blog-related models (BlogIdea, BlogArticle, BlogDraft)
-- Enhanced Database model with domain and prompt configuration
+- Enhanced Realm model with domain and prompt configuration
 - Entity and Fact models for advanced content management
 - Classifier configuration models
 
@@ -125,9 +125,9 @@ This document provides a comprehensive analysis of the VISION.md requirements an
 ## Success Criteria
 
 ### Phase 1 Success Criteria
-- [ ] Databases can be configured with domain-specific settings
-- [ ] Custom extraction prompts work per database
-- [ ] Query prompts are configurable per database
+- [ ] Realms can be configured with domain-specific settings
+- [ ] Custom extraction prompts work per realm (inherited by all databases)
+- [ ] Query prompts are configurable per realm (inherited by all databases)
 - [ ] Enhanced entity extraction is functional
 
 ### Phase 2 Success Criteria

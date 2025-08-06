@@ -57,7 +57,7 @@
   - Synchronized database schema with Prisma schema using `prisma db push`
   - Regenerated Prisma client after terminating conflicting Node.js processes
   - Resolved "Null constraint violation on the fields: (`serverId`)" error
-  - Database schema now properly uses many-to-many relationship through DatabaseServerLink
+  - Database schema now properly uses many-to-many relationship through DatabaseServerLink (Note: DatabaseServer and Database are synonymous)
   - All database tests passing, development server running successfully
 
 ## Pending Tasks
@@ -98,7 +98,7 @@
 - Test error handling for invalid serverIds
 - Verify UI components correctly display server data
 ## Technical Specifications
-### Database Server Model
+### Database Server Model (synonym: Database)
 ```
 interface DatabaseServer {
   id: string;

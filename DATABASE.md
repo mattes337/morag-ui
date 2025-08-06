@@ -86,8 +86,8 @@ Manages API keys for external access to the system.
 | `updatedAt` | DateTime | AUTO UPDATE | Timestamp when record was last updated |
 | `userId` | String | FOREIGN KEY | Owner of the API key |
 
-### DatabaseServer
-Configuration for external database servers (vector databases).
+### DatabaseServer (synonym: Database)
+Configuration for external database servers (vector databases). Note: DatabaseServer and Database refer to the same concept in this system.
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|

@@ -113,6 +113,7 @@ model ApiKey {
 }
 
 model DatabaseServer {
+  // Note: DatabaseServer and Database are synonymous terms in this system
   id          String       @id @default(cuid())
   name        String
   host        String

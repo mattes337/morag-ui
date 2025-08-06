@@ -5,7 +5,7 @@
 - The complete database can be queried
 - All databases can be queried
 	- Use a classifier agent, hand it the databases there are for the user, decide which databases to use
-- Databases can be configured:
+- Realms can be configured:
 	- Domain: which information is relevant
 	- Extraction prompt: the custom prompt for entity extraction
 	- Query prompt: a system prompt for any retrieval
