@@ -129,6 +129,110 @@ export interface Document {
     metadata?: DocumentMetadata;
 }
 
+export interface Entity {
+    id: string;
+    name: string;
+    type: string;
+    description?: string;
+    metadata?: any;
+    isOrphaned: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Fact {
+    id: string;
+    subject: string;
+    predicate: string;
+    object: string;
+    confidence: number;
+    source: string;
+    metadata?: any;
+    entityId?: string;
+    documentId: string;
+    chunkId?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface DocumentEntity {
+    id: string;
+    documentId: string;
+    entityId: string;
+    relevance: number;
+    mentions: number;
+    createdAt: Date;
+}
+
+export interface DocumentChunk {
+    id: string;
+    documentId: string;
+    content: string;
+    chunkIndex: number;
+    embedding?: any;
+    metadata?: any;
+    createdAt: Date;
+}
+
+// Enhanced deletion types
+export interface DeletionPlan {
+    documentId: string;
+    documentName: string;
+    chunksToDelete: number;
+    factsToDelete: number;
+    relationshipsToDelete: number;
+    entitiesToPreserve: number;
+    orphanedEntities: number;
+    estimatedTime: number;
+    warnings: string[];
+}
+
+export interface DeletionOptions {
+    dryRun?: boolean;
+    preserveEntities?: boolean;
+    createAuditLog?: boolean;
+    userId?: string;
+}
+
+export interface DeletionResult {
+    plan: DeletionPlan;
+    executed: boolean;
+    success: boolean;
+    progress?: DeletionProgressResult;
+}
+
+export interface DeletionProgressResult {
+    status: string;
+    completed: {
+        facts: number;
+        chunks: number;
+        relationships: number;
+        orphanedEntities: number;
+    };
+}
+
+export interface DeletionImpact {
+    documents: number;
+    chunks: number;
+    facts: number;
+    affectedEntities: number;
+    orphanedEntities: number;
+    warnings: string[];
+    estimatedTime: number;
+}
+
+export interface BatchDeletionOptions extends DeletionOptions {
+    onProgress?: (completed: number, total: number) => void;
+}
+
+export interface BatchDeletionResult {
+    totalRequested: number;
+    successful: number;
+    failed: number;
+    results: DeletionResult[];
+    errors: { documentId: string; error: string }[];
+}
+
 export interface ApiKey {
     id: string;
     name: string;

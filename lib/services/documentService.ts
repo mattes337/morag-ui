@@ -1,5 +1,6 @@
 import { Document, DocumentState } from '@prisma/client';
 import { prisma } from '../database';
+import { EnhancedDocumentDeletionService } from './enhancedDocumentDeletionService';
 
 export class DocumentService {
     static async createDocument(data: {
@@ -137,30 +138,64 @@ export class DocumentService {
         });
     }
 
-    static async deleteDocument(id: string) {
-        const document = await prisma.document.findUnique({
-            where: { id },
-            select: { realmId: true },
-        });
+    static async deleteDocument(id: string, userId?: string) {
+        // Use enhanced deletion service for better cleanup
+        const enhancedDeletionService = new EnhancedDocumentDeletionService();
 
-        const deletedDocument = await prisma.document.delete({
-            where: { id },
-        });
-
-        // Update realm document count
-        if (document?.realmId) {
-            await prisma.realm.update({
-                where: { id: document.realmId },
-                data: {
-                    documentCount: {
-                        decrement: 1,
-                    },
-                    lastUpdated: new Date(),
-                },
+        try {
+            const result = await enhancedDeletionService.deleteDocument(id, {
+                preserveEntities: true,
+                createAuditLog: true,
+                userId: userId
             });
-        }
 
-        return deletedDocument;
+            // Update realm document count
+            const document = await prisma.document.findUnique({
+                where: { id },
+                select: { realmId: true },
+            });
+
+            if (document?.realmId) {
+                await prisma.realm.update({
+                    where: { id: document.realmId },
+                    data: {
+                        documentCount: {
+                            decrement: 1,
+                        },
+                        lastUpdated: new Date(),
+                    },
+                });
+            }
+
+            return result;
+        } catch (error) {
+            // Fallback to simple deletion if enhanced deletion fails
+            console.warn('Enhanced deletion failed, falling back to simple deletion:', error);
+
+            const document = await prisma.document.findUnique({
+                where: { id },
+                select: { realmId: true },
+            });
+
+            const deletedDocument = await prisma.document.delete({
+                where: { id },
+            });
+
+            // Update realm document count
+            if (document?.realmId) {
+                await prisma.realm.update({
+                    where: { id: document.realmId },
+                    data: {
+                        documentCount: {
+                            decrement: 1,
+                        },
+                        lastUpdated: new Date(),
+                    },
+                });
+            }
+
+            return deletedDocument;
+        }
     }
 
     static async updateDocumentState(id: string, state: DocumentState) {

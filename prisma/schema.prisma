@@ -109,17 +109,95 @@ model Document {
   uploadDate DateTime      @default(now())
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
-  
+
   // Foreign keys
   userId     String
   realmId    String
 
   // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  jobs     Job[]
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm          Realm              @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  jobs           Job[]
+  documentChunks DocumentChunk[]
+  facts          Fact[]
+  entities       DocumentEntity[]
 
   @@map("documents")
+}
+
+model Entity {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // person, organization, concept, etc.
+  description String?
+  metadata    Json?    // Additional entity metadata
+  isOrphaned  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  facts       Fact[]
+  documents   DocumentEntity[]
+
+  @@unique([name, type])
+  @@map("entities")
+}
+
+model Fact {
+  id          String   @id @default(uuid())
+  subject     String   // Entity ID or name
+  predicate   String   // Relationship type
+  object      String   // Target entity or value
+  confidence  Float    @default(1.0)
+  source      String   // Source document or chunk
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign keys
+  entityId    String?
+  documentId  String
+  chunkId     String?
+
+  // Relations
+  entity      Entity?       @relation(fields: [entityId], references: [id])
+  document    Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunk       DocumentChunk? @relation(fields: [chunkId], references: [id])
+
+  @@map("facts")
+}
+
+model DocumentEntity {
+  id         String   @id @default(uuid())
+  documentId String
+  entityId   String
+  relevance  Float    @default(1.0)
+  mentions   Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entity     Entity   @relation(fields: [entityId], references: [id])
+
+  @@unique([documentId, entityId])
+  @@map("document_entities")
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String
+  content    String   @db.LongText
+  chunkIndex Int
+  embedding  Json?    // Vector embedding
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  facts      Fact[]
+
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
 }
 
 model ApiKey {
