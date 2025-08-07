@@ -61,6 +61,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
 
+# Ensure proper permissions for Prisma engines directory
+RUN mkdir -p /app/node_modules/@prisma/engines && \
+    chown -R nextjs:nodejs /app/node_modules/@prisma && \
+    chmod -R 755 /app/node_modules/@prisma
+
 USER nextjs
 
 EXPOSE 3000
