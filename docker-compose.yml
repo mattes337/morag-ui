@@ -14,6 +14,8 @@ services:
             - NODE_ENV=production
         volumes:
             - ./uploads:/app/uploads # For file uploads if needed
+        depends_on:
+            - mariadb
         labels:
           - "traefik.enable=true"
           - "traefik.http.routers.morag.rule=Host(`morag.drydev.de`)"
@@ -21,3 +23,30 @@ services:
           - "traefik.http.routers.morag.tls.certresolver=letsencrypt"
           - "traefik.http.routers.morag.middlewares=secure-headers@file"
           - "traefik.http.services.morag.loadbalancer.server.port=3000"
+
+    # MariaDB Database
+    mariadb:
+        image: mariadb:11.4
+        container_name: morag-mariadb
+        restart: unless-stopped
+        ports:
+            - '3306:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-morag_root_password}
+            - MYSQL_DATABASE=${DB_NAME:-morag}
+            - MYSQL_USER=${DB_USER:-morag_user}
+            - MYSQL_PASSWORD=${DB_PASSWORD:-morag_password}
+            - MARIADB_CHARACTER_SET_SERVER=utf8mb4
+            - MARIADB_COLLATE_SERVER=utf8mb4_unicode_ci
+        volumes:
+            - mariadb_data:/var/lib/mysql
+            - ./mariadb/init:/docker-entrypoint-initdb.d # For initialization scripts
+        command: >
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_unicode_ci
+            --innodb-buffer-pool-size=256M
+            --max-connections=200
+
+volumes:
+    mariadb_data:
+        driver: local
