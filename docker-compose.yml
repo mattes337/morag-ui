@@ -47,6 +47,26 @@ services:
             --innodb-buffer-pool-size=256M
             --max-connections=200
 
+    # phpMyAdmin
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
+        container_name: morag-phpmyadmin
+        restart: unless-stopped
+        environment:
+            - PMA_HOST=mariadb
+            - PMA_PORT=3306
+            - PMA_USER=${DB_USER:-morag_user}
+            - PMA_PASSWORD=${DB_PASSWORD:-morag_password}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-morag_root_password}
+        depends_on:
+            - mariadb
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.morag-phpmyadmin.entrypoints=websecure"
+            - "traefik.http.routers.morag-phpmyadmin.rule=Host(`db.morag.drydev.de`)"
+            - "traefik.http.routers.morag-phpmyadmin.tls.certresolver=letsencrypt"
+            - "traefik.http.services.morag-phpmyadmin.loadbalancer.server.port=80"
+
 volumes:
     mariadb_data:
         driver: local
