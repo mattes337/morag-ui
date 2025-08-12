@@ -11,8 +11,16 @@ export interface DocumentTypeInfo {
 /**
  * Detects document type and subtype from filename or URL
  */
-export function detectDocumentType(input: string): DocumentTypeInfo {
-    const lowerInput = input.toLowerCase();
+export function detectDocumentType(input: string | { filename?: string; url?: string }): DocumentTypeInfo {
+    let inputString: string;
+    
+    if (typeof input === 'string') {
+        inputString = input;
+    } else {
+        inputString = input.url || input.filename || '';
+    }
+    
+    const lowerInput = inputString.toLowerCase();
     
     // YouTube detection
     if (lowerInput.includes('youtube.com') || lowerInput.includes('youtu.be')) {
@@ -86,26 +94,26 @@ export function detectDocumentType(input: string): DocumentTypeInfo {
     };
     
     // Check document types
-    if (documentExtensions[extension]) {
+    if (extension in documentExtensions) {
         return {
             type: 'document',
-            subType: documentExtensions[extension]
+            subType: documentExtensions[extension as keyof typeof documentExtensions]
         };
     }
     
     // Check video types
-    if (videoExtensions[extension]) {
+    if (extension in videoExtensions) {
         return {
             type: 'video',
-            subType: videoExtensions[extension]
+            subType: videoExtensions[extension as keyof typeof videoExtensions]
         };
     }
     
     // Check audio types
-    if (audioExtensions[extension]) {
+    if (extension in audioExtensions) {
         return {
             type: 'audio',
-            subType: audioExtensions[extension]
+            subType: audioExtensions[extension as keyof typeof audioExtensions]
         };
     }
     
