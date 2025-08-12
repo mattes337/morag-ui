@@ -69,6 +69,7 @@ describe('DocumentService', () => {
             const result = await DocumentService.createDocument({
                 name: 'Test Document',
                 type: 'pdf',
+                subType: 'pdf',
                 userId: 'user1',
                 realmId: 'realm1',
                 state: DocumentState.PENDING,
@@ -78,6 +79,7 @@ describe('DocumentService', () => {
             expect(mockDocumentService.createDocument).toHaveBeenCalledWith({
                 name: 'Test Document',
                 type: 'pdf',
+                subType: 'pdf',
                 userId: 'user1',
                 realmId: 'realm1',
                 state: DocumentState.PENDING,

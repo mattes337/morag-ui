@@ -4,6 +4,7 @@ import { DocumentService } from '../../../../lib/services/documentService';
 import { JobService } from '../../../../lib/services/jobService';
 import { ServerService } from '../../../../lib/services/serverService';
 import { moragService } from '../../../../lib/services/moragService';
+import { detectDocumentType } from '../../../../lib/utils/documentTypeDetection';
 import { DocumentState, JobStatus } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
@@ -25,10 +26,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Detect document type and subtype
+    const { type, subType } = detectDocumentType({ filename: file.name });
+
     // Create document record
     const document = await DocumentService.createDocument({
       name: file.name,
-      type: file.type || 'application/octet-stream',
+      type,
+      subType,
       userId: user.userId,
       realmId: realmId,
       state: mode === 'convert' ? DocumentState.PENDING : DocumentState.INGESTING,
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
           // Create job for tracking
           const job = await JobService.createJob({
             documentName: file.name,
-            documentType: file.type || 'application/octet-stream',
+            documentType: type,
             documentId: document.id,
             userId: user.userId,
             realmId: realmId,
@@ -105,7 +110,7 @@ export async function POST(request: NextRequest) {
     // Create job record
     const job = await JobService.createJob({
       documentName: file.name,
-      documentType: file.type || 'application/octet-stream',
+      documentType: type,
       documentId: document.id,
       userId: user.userId,
       realmId: realmId,

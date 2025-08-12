@@ -2,6 +2,7 @@
 
 import { Realm, Document } from '../../types';
 import { FileText, Plus } from 'lucide-react';
+import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 
 interface DocumentsViewProps {
     documents: Document[];
@@ -133,7 +134,12 @@ export function DocumentsView({
                                     <div className="text-sm text-gray-500">{doc.uploadDate}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {doc.type}
+                                    <div>
+                                        <div className="font-medium">{getDocumentTypeDescription(doc.type, doc.subType)}</div>
+                                        {doc.subType && (
+                                            <div className="text-xs text-gray-500">{doc.subType}</div>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span

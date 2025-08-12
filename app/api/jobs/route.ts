@@ -11,14 +11,8 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const realmId = searchParams.get('realmId');
-        const databaseId = searchParams.get('databaseId');
 
-        let jobs;
-        if (databaseId) {
-            jobs = await JobService.getJobsByRealm(databaseId);
-        } else {
-            jobs = await JobService.getJobsByUserId(user.userId, realmId);
-        }
+        const jobs = await JobService.getJobsByUserId(user.userId, realmId);
         
         return NextResponse.json(jobs);
     } catch (error) {

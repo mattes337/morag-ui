@@ -6,6 +6,7 @@ export class DocumentService {
     static async createDocument(data: {
         name: string;
         type: string;
+        subType?: string;
         userId: string;
         realmId: string;
         state?: DocumentState;

@@ -4,6 +4,7 @@ import { DocumentService } from '../../../../lib/services/documentService';
 import { JobService } from '../../../../lib/services/jobService';
 import { ServerService } from '../../../../lib/services/serverService';
 import { moragService } from '../../../../lib/services/moragService';
+import { detectDocumentType } from '../../../../lib/utils/documentTypeDetection';
 import { DocumentState, JobStatus } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
@@ -27,10 +28,14 @@ export async function POST(request: NextRequest) {
     const urlObj = new URL(url);
     const filename = urlObj.pathname.split('/').pop() || 'web-content';
 
+    // Detect document type and subtype
+    const { type, subType } = detectDocumentType({ url, filename });
+
     // Create document record
     const document = await DocumentService.createDocument({
       name: filename,
-      type: 'text/html',
+      type,
+      subType,
       userId: user.userId,
       realmId: realmId,
       state: mode === 'convert' ? DocumentState.PENDING : DocumentState.INGESTING,
@@ -74,7 +79,7 @@ export async function POST(request: NextRequest) {
           // Create job for tracking
           const job = await JobService.createJob({
             documentName: filename,
-            documentType: 'text/html',
+            documentType: type,
             documentId: document.id,
             userId: user.userId,
             realmId: realmId,
@@ -117,7 +122,7 @@ export async function POST(request: NextRequest) {
     // Create job record
     const job = await JobService.createJob({
       documentName: filename,
-      documentType: 'text/html',
+      documentType: type,
       documentId: document.id,
       userId: user.userId,
       realmId: realmId,

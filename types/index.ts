@@ -108,7 +108,8 @@ export interface DocumentMetadata {
 export interface Document {
     id: string;
     name: string;
-    type: string;
+    type: string; // Main type: document, video, audio, website, youtube
+    subType?: string; // Optional subtype: pdf, word, excel, markdown, text, etc.
     state: 'pending' | 'ingesting' | 'ingested' | 'deprecated' | 'deleted';
     version: number;
     chunks: number;

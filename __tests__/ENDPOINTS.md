@@ -126,11 +126,17 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 500: Failed to fetch documents
 
 ### POST /api/documents
-- Description: Create new document
-- Request body: `{ name: string, type: string, databaseId: string }`
-- Response: Created document object
+- Description: Create a new document
+- Request body: `{ name: string, type?: string, subType?: string, realmId: string, filename?: string, url?: string }`
+  - `name`: Document name (required)
+  - `type`: Document type (optional, auto-detected if not provided)
+  - `subType`: Document subtype (optional, auto-detected if not provided)
+  - `realmId`: Realm ID (required)
+  - `filename`: Original filename for type detection (optional)
+  - `url`: Source URL for type detection (optional)
+- Response: Created document object with auto-detected type/subType
 - Error cases:
-  - 400: Missing required fields
+  - 400: Missing required fields (name, realmId)
   - 401: Authentication required
   - 500: Failed to create document
 
@@ -153,7 +159,7 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 400: File and realmId required, or no database servers configured
   - 401: Authentication required
   - 500: Processing failed
-- Notes: Always sends webhook URL for progress updates; stores markdown content in database
+- Notes: Always sends webhook URL for progress updates; stores markdown content in database; automatically detects document type and subType from filename
 
 ### POST /api/documents/batch-process
 - Description: Process multiple documents in batch using MoRAG backend
@@ -179,7 +185,7 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 400: URL and realmId required, or no database servers configured
   - 401: Authentication required
   - 500: URL processing failed
-- Notes: Always sends webhook URL for progress updates; stores markdown content in database
+- Notes: Always sends webhook URL for progress updates; stores markdown content in database; automatically detects document type and subType from URL and filename
 
 ## Search Endpoints
 

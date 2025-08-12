@@ -2,6 +2,7 @@
 
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -133,7 +134,10 @@ export function DocumentDetailView({
                         >
                             {document.state}
                         </span>
-                        <span className="text-sm text-gray-500">Type: {document.type}</span>
+                        <span className="text-sm text-gray-500">
+                            Type: {getDocumentTypeDescription(document.type, document.subType)}
+                            {document.subType && ` (${document.subType})`}
+                        </span>
                         <span className="text-sm text-gray-500">Version: v{document.version}</span>
                         <span className="text-sm text-gray-500">
                             Uploaded: {document.uploadDate}
@@ -172,7 +176,12 @@ export function DocumentDetailView({
                     <div className="space-y-2">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Type:</span>
-                            <span className="font-medium">{document.type}</span>
+                            <div className="text-right">
+                                <div className="font-medium">{getDocumentTypeDescription(document.type, document.subType)}</div>
+                                {document.subType && (
+                                    <div className="text-xs text-gray-500">{document.subType}</div>
+                                )}
+                            </div>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">State:</span>

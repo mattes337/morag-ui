@@ -90,9 +90,9 @@ describe('/api/documents', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Document.pdf',
-                    type: 'PDF',
-                    userId: 'user1',
-                    databaseId: 'db1',
+                    type: 'document',
+                    subType: 'pdf',
+                    realmId: 'realm1',
                 }),
             });
 
@@ -103,9 +103,10 @@ describe('/api/documents', () => {
             expect(data).toEqual(mockDocument);
             expect(mockDocumentService.createDocument).toHaveBeenCalledWith({
                 name: 'New Document.pdf',
-                type: 'PDF',
+                type: 'document',
+                subType: 'pdf',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'realm1',
             });
         });
 
@@ -114,7 +115,7 @@ describe('/api/documents', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Document.pdf',
-                    // Missing type (userId comes from auth)
+                    // Missing realmId (userId comes from auth, type/subType can be auto-detected)
                 }),
             });
 
@@ -122,7 +123,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name, type, and databaseId are required' });
+            expect(data).toEqual({ error: 'Name and realmId are required' });
             expect(mockDocumentService.createDocument).not.toHaveBeenCalled();
         });
 
@@ -133,9 +134,9 @@ describe('/api/documents', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Document.pdf',
-                    type: 'PDF',
-                    databaseId: 'db1',
-                    userId: 'user1',
+                    type: 'document',
+                    subType: 'pdf',
+                    realmId: 'realm1',
                 }),
             });
 

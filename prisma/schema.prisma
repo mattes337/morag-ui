@@ -102,7 +102,8 @@ model UserRealm {
 model Document {
   id         String        @id @default(uuid())
   name       String
-  type       String
+  type       String        // Main type: document, video, audio, website, youtube
+  subType    String?       // Optional subtype: pdf, word, excel, markdown, text, etc.
   state      DocumentState @default(PENDING)
   version    Int           @default(1)
   chunks     Int           @default(0)

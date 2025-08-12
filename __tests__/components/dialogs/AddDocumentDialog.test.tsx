@@ -65,8 +65,7 @@ describe('AddDocumentDialog', () => {
     it('should display document types', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="1:9llyu" />);
 
-        expect(screen.getByText('PDF Document')).toBeInTheDocument();
-        expect(screen.getByText('Word Document')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /📄.*Document/ })).toBeInTheDocument();
         expect(screen.getByText('YouTube Video')).toBeInTheDocument();
         expect(screen.getByText('Video File')).toBeInTheDocument();
         expect(screen.getByText('Audio File')).toBeInTheDocument();
@@ -76,8 +75,8 @@ describe('AddDocumentDialog', () => {
     it('should select document type and show form', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="866w_c8" />);
 
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             expect(screen.getByText('File *')).toBeInTheDocument();
@@ -103,8 +102,8 @@ describe('AddDocumentDialog', () => {
     it('should handle form inputs', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="ndh0yp1" />);
 
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             const chunkSizeSelect = screen.getByLabelText('Chunk Size');
@@ -136,8 +135,8 @@ describe('AddDocumentDialog', () => {
     it('should show add document button after selecting type', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="6nv8:7p" />);
 
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             expect(screen.getByRole('button', { name: 'Add Document' })).toBeInTheDocument();
@@ -160,8 +159,8 @@ describe('AddDocumentDialog', () => {
     it('should allow changing document type in add mode', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="lwja.d-" />);
 
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             const changeButton = screen.getByText('Change');
@@ -174,7 +173,7 @@ describe('AddDocumentDialog', () => {
     it('should auto-select document type in supersede mode', () => {
         const documentToSupersede = {
             ...mockDocument,
-            type: 'PDF',
+            type: 'Document',
         };
 
         render(
@@ -187,14 +186,15 @@ describe('AddDocumentDialog', () => {
         );
 
         expect(screen.getByText('📄')).toBeInTheDocument();
-        expect(screen.getByText('PDF Document')).toBeInTheDocument();
+        expect(screen.getByText('Document')).toBeInTheDocument();
     });
 
     it('should reset form when dialog closes', async () => {
         const { rerender } = render(<AddDocumentDialog {...mockProps} data-oid="3v3m7x3" />);
 
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        // Find the document type button by looking for the button with the document icon and text
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             const gpuCheckbox = screen.getByLabelText('GPU Processing');

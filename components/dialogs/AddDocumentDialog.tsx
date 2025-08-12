@@ -20,9 +20,8 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { servers, createDocument, currentRealm } = useApp();
+    const { createDocument, currentRealm } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
-    const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
     const [documentName, setDocumentName] = useState('');
     const [documentUrl, setDocumentUrl] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -34,14 +33,12 @@ export function AddDocumentDialog({
 
     const documentTypes: DocumentType[] = useMemo(
         () => [
-            { type: 'pdf', label: 'PDF Document', icon: '📄' },
-            { type: 'word', label: 'Word Document', icon: '📝' },
+            { type: 'document', label: 'Document', icon: '📄' },
             { type: 'youtube', label: 'YouTube Video', icon: '📺' },
             { type: 'video', label: 'Video File', icon: '🎬' },
             { type: 'audio', label: 'Audio File', icon: '🎵' },
             { type: 'website', label: 'Website', icon: '🌐' },
         ],
-
         [],
     );
 
@@ -58,7 +55,8 @@ export function AddDocumentDialog({
                     type.type === docType ||
                     type.label.toLowerCase().includes(docType) ||
                     (docType === 'youtube' && type.type === 'youtube') ||
-                    (docType === 'website' && type.type === 'website'),
+                    (docType === 'website' && type.type === 'website') ||
+                    (['pdf', 'word', 'text', 'document'].includes(docType) && type.type === 'document'),
             );
 
             if (matchingType) {
@@ -66,8 +64,8 @@ export function AddDocumentDialog({
             } else {
                 // Default fallback for unknown types
                 setSelectedDocumentType({
-                    type: docType,
-                    label: documentToSupersede.type,
+                    type: 'document',
+                    label: 'Document',
                     icon: '📄',
                 });
             }
@@ -84,7 +82,6 @@ export function AddDocumentDialog({
     useEffect(() => {
         if (isOpen && mode === 'add') {
             setSelectedDocumentType(null);
-            setSelectedDatabaseId('');
             setDocumentName('');
             setDocumentUrl('');
             setSelectedFile(null);
@@ -97,7 +94,6 @@ export function AddDocumentDialog({
 
     const handleClose = () => {
         setSelectedDocumentType(null);
-        setSelectedDatabaseId('');
         setDocumentName('');
         setDocumentUrl('');
         setSelectedFile(null);
@@ -110,7 +106,7 @@ export function AddDocumentDialog({
     };
 
     const handleSubmit = async () => {
-        if (!selectedDocumentType || !selectedDatabaseId) return;
+        if (!selectedDocumentType || !currentRealm) return;
         
         let name = documentName;
         if (!name) {
@@ -125,11 +121,22 @@ export function AddDocumentDialog({
 
         try {
             setIsSubmitting(true);
-            await createDocument({
+            
+            // Prepare data for type detection
+            const documentData: any = {
                 name,
                 type: selectedDocumentType.type,
-                realmId: currentRealm?.id || '',
-            });
+                realmId: currentRealm.id,
+            };
+
+            // Add filename or URL for automatic type/subtype detection
+            if (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') {
+                documentData.url = documentUrl;
+            } else if (selectedFile) {
+                documentData.filename = selectedFile.name;
+            }
+
+            await createDocument(documentData);
             handleClose();
         } catch (error) {
             console.error('Failed to create document:', error);
@@ -139,7 +146,7 @@ export function AddDocumentDialog({
         }
     };
 
-    const isFormValid = selectedDocumentType && selectedDatabaseId && (
+    const isFormValid = selectedDocumentType && currentRealm && (
         (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') ? documentUrl :
         selectedFile || documentName
     );
@@ -226,26 +233,21 @@ export function AddDocumentDialog({
                             )}
                         </div>
 
-                        <div data-oid="database-selection">
-                            <label
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                                data-oid="database-label"
-                            >
-                                Database *
-                            </label>
-                            <select
-                                value={selectedDatabaseId}
-                                onChange={(e) => setSelectedDatabaseId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                data-oid="database-select"
-                            >
-                                <option value="">Select a database...</option>
-                                {servers.map((server) => (
-                                     <option key={server.id} value={server.id}>
-                                         {server.name}
-                                     </option>
-                                 ))}
-                             </select>
+                        {/* Show current realm info */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div className="flex items-center space-x-2">
+                                <div className="text-blue-600 text-sm font-medium">
+                                    Adding to Realm:
+                                </div>
+                                <div className="text-blue-800 font-semibold">
+                                    {currentRealm?.name || 'No realm selected'}
+                                </div>
+                            </div>
+                            {currentRealm?.domain && (
+                                <div className="text-blue-600 text-xs mt-1">
+                                    Domain: {currentRealm.domain}
+                                </div>
+                            )}
                         </div>
 
                         <div data-oid="document-name">

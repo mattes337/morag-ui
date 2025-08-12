@@ -97,7 +97,7 @@ describe('Document Workflow Integration', () => {
 
         // Test document display
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
-        expect(screen.getByText('PDF')).toBeInTheDocument();
+        expect(screen.getByText('Document')).toBeInTheDocument();
         expect(screen.getByText('ingested')).toBeInTheDocument();
 
         // Test add document workflow
@@ -108,9 +108,9 @@ describe('Document Workflow Integration', () => {
             expect(screen.getByText('Select document type:')).toBeInTheDocument();
         });
 
-        // Select PDF document type
-        const pdfButton = screen.getByText('PDF Document');
-        fireEvent.click(pdfButton);
+        // Select document type
+        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
+        fireEvent.click(documentButton);
 
         await waitFor(() => {
             expect(screen.getByText('File *')).toBeInTheDocument();
@@ -213,6 +213,6 @@ describe('Document Workflow Integration', () => {
 
         // Should auto-select document type
         expect(screen.getByText('📄')).toBeInTheDocument();
-        expect(screen.getByText('PDF Document')).toBeInTheDocument();
+        expect(screen.getByText('Document')).toBeInTheDocument();
     });
 });
