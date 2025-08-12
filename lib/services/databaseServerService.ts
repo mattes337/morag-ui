@@ -153,10 +153,15 @@ export class DatabaseServerService {
         });
     }
 
-    static async deleteDatabaseServer(id: string) {
-        return await prisma.databaseServer.delete({
-            where: { id },
+    static async getServersByRealm(realmId: string) {
+        const realmServerLinks = await prisma.realmServerLink.findMany({
+            where: { realmId },
+            include: {
+                databaseServer: true,
+            },
         });
+
+        return realmServerLinks.map(link => link.databaseServer);
     }
 
     static async setActiveServer(userId: string, serverId: string) {

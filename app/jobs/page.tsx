@@ -28,9 +28,30 @@ export default function JobsPage() {
         setJobs(updatedJobs);
     };
 
-    const handleViewJobDetail = (job: Job) => {
-        // For now, navigate to the document detail page
-        // In a real app, you might have a dedicated job detail page
+    const handleViewJobDetail = async (job: Job) => {
+        try {
+            // Fetch job with fresh status check
+            const response = await fetch(`/api/jobs/${job.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const updatedJob = await response.json();
+                
+                // Update the job in the local state if it was refreshed
+                const updatedJobs = jobs.map((j) =>
+                    j.id === job.id ? { ...j, ...updatedJob } : j
+                );
+                setJobs(updatedJobs);
+            }
+        } catch (error) {
+            console.error('Failed to fetch fresh job status:', error);
+        }
+
+        // Navigate to the document detail page
         router.push(`/documents/${job.documentId}`);
     };
 

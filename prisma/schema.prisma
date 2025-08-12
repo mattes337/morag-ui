@@ -107,6 +107,7 @@ model Document {
   version    Int           @default(1)
   chunks     Int           @default(0)
   quality    Float         @default(0.0)
+  markdown   String?       @db.LongText // Converted markdown content from MoRAG backend
   uploadDate DateTime      @default(now())
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -251,6 +252,7 @@ model Job {
   id           String    @id @default(uuid())
   documentName String
   documentType String
+  taskId       String?   // MoRAG backend task ID for tracking
   startDate    DateTime  @default(now())
   endDate      DateTime?
   status       JobStatus @default(PENDING)
