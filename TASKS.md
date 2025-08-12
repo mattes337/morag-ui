@@ -37,7 +37,7 @@
   - Updated realm API endpoints to support optional domain configuration
   - Built RealmPromptEditor component for configuring domain-specific prompts (no templates)
   - Enhanced RealmManagementDialog to include domain configuration UI
-  - Updated all services (ApiKeyService, JobService, DatabaseServerService) to include realmId
+  - Updated all services (ApiKeyService, JobService, ServerService) to include realmId
   - Successfully migrated database and seeded with sample domain-configured realms
   - Removed domain template system completely - prompts are now optional with sensible defaults
   - Added proper loading state to prevent premature redirects to login
@@ -69,7 +69,7 @@
   - Synchronized database schema with Prisma schema using `prisma db push`
   - Regenerated Prisma client after terminating conflicting Node.js processes
   - Resolved "Null constraint violation on the fields: (`serverId`)" error
-  - Database schema now properly uses many-to-many relationship through DatabaseServerLink (Note: DatabaseServer and Database are synonymous)
+  - Database schema now properly uses many-to-many relationship through RealmServerLink (Note: Server and Database are synonymous)
   - All database tests passing, development server running successfully
 - ✅ **Phase 2: Enhanced Document Deletion Implementation Complete**
   - Added Entity, Fact, DocumentChunk, and DocumentEntity models to Prisma schema
@@ -105,7 +105,7 @@
   - PUT /api/servers/[id] - Update server
   - DELETE /api/servers/[id] - Delete server
 ### 2. Service Layer Implementation
-- Enhance databaseServerService.ts with CRUD operations
+- Enhance serverService.ts with CRUD operations
 - Add proper validation for server creation/updates
 - Implement authentication checks
 - Add error handling for all operations
@@ -122,7 +122,7 @@
 ## Technical Specifications
 ### Database Server Model (synonym: Database)
 ```
-interface DatabaseServer {
+interface Server {
   id: string;
   name: string;
   type: 'qdrant' | 'neo4j' | 'pinecone' | 

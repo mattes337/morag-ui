@@ -1,15 +1,3 @@
-// Database functionality is now part of Realm - this interface is kept for backward compatibility
-export interface Database {
-    id: string;
-    name: string;
-    description: string;
-    ingestionPrompt?: string;
-    systemPrompt?: string;
-    documentCount: number;
-    lastUpdated: string;
-    servers?: DatabaseServer[];
-}
-
 export interface DocumentMetadata {
     // Common fields for all document types
     filename?: string;
@@ -256,7 +244,7 @@ export interface SearchResult {
     content: string;
 }
 
-export interface DatabaseServer {
+export interface Server {
     id: string;
     name: string;
     type: 'qdrant' | 'neo4j' | 'pinecone' | 'weaviate' | 'chroma';
@@ -339,7 +327,7 @@ export interface Realm {
     domainPrompt?: string;    // Optional domain context prompt
     documentCount?: number;
     lastUpdated?: string;
-    servers?: DatabaseServer[]; // Associated servers for this realm
+    servers?: Server[]; // Associated servers for this realm
     userRole?: RealmRole; // User's role in this realm
     userCount?: number; // Number of users in this realm
     createdAt: Date;

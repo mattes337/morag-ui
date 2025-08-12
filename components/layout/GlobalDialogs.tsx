@@ -2,7 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { AddDocumentDialog } from '../dialogs/AddDocumentDialog';
-// CreateDatabaseDialog removed - replaced by RealmManagementDialog
+
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
 import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';

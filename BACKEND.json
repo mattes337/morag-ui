@@ -2201,7 +2201,7 @@
         "title": "CreateRemoteJobResponse",
         "description": "Response model for creating a remote job."
       },
-      "DatabaseServerConfig": {
+      "ServerConfig": {
         "properties": {
           "type": {
             "$ref": "#/components/schemas/DatabaseType",
@@ -2285,7 +2285,7 @@
         "required": [
           "type"
         ],
-        "title": "DatabaseServerConfig",
+        "title": "ServerConfig",
         "description": "Configuration for a single database server connection."
       },
       "DatabaseType": {
@@ -3813,7 +3813,7 @@
           "neo4j_server": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DatabaseServerConfig"
+                "$ref": "#/components/schemas/ServerConfig"
               },
               {
                 "type": "null"
@@ -3824,7 +3824,7 @@
           "qdrant_server": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DatabaseServerConfig"
+                "$ref": "#/components/schemas/ServerConfig"
               },
               {
                 "type": "null"

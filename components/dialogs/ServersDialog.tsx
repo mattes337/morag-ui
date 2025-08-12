@@ -1,13 +1,13 @@
 'use client';
 
 import { useApp } from '../../contexts/AppContext';
-import { DatabaseServer } from '../../types';
+import { Server } from '../../types';
 import { useState } from 'react';
 
 export function ServersDialog() {
     const { showServersDialog, setShowServersDialog, servers, setServers } = useApp();
 
-    const [editingServer, setEditingServer] = useState<DatabaseServer | null>(null);
+    const [editingServer, setEditingServer] = useState<Server | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
 
     if (!showServersDialog) return null;
@@ -25,7 +25,7 @@ export function ServersDialog() {
         setShowAddForm(true);
     };
 
-    const handleSaveServer = (server: DatabaseServer) => {
+    const handleSaveServer = (server: Server) => {
         if (server.id) {
             // Update existing server
             setServers(servers.map((s) => (s.id === server.id ? server : s)));
@@ -264,13 +264,13 @@ export function ServersDialog() {
 }
 
 interface ServerFormProps {
-    server: DatabaseServer | null;
-    onSave: (server: DatabaseServer) => void;
+    server: Server | null;
+    onSave: (server: Server) => void;
     onCancel: () => void;
 }
 
 function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
-    const [formData, setFormData] = useState<DatabaseServer>(
+    const [formData, setFormData] = useState<Server>(
         server || {
             id: '',
             name: '',
@@ -307,7 +307,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
     const handleTypeChange = (type: string) => {
         setFormData({
             ...formData,
-            type: type as DatabaseServer['type'],
+            type: type as Server['type'],
             port: getDefaultPort(type),
         });
     };

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { DatabaseServer } from '../../types';
+import { Server } from '../../types';
 
 interface TestConnectionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    server: DatabaseServer | null;
+    server: Server | null;
 }
 
 interface TestResult {

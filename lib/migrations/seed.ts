@@ -8,7 +8,7 @@ async function main() {
     await prisma.apiKey.deleteMany();
     await prisma.document.deleteMany();
     await prisma.realm.deleteMany();
-    await prisma.databaseServer.deleteMany();
+    await prisma.server.deleteMany();
     await prisma.userSettings.deleteMany();
     await prisma.user.deleteMany();
 
@@ -36,8 +36,8 @@ async function main() {
         },
     });
 
-    // Create sample database servers first
-    const server1 = await prisma.databaseServer.create({
+    // Create sample servers first
+    const server1 = await prisma.server.create({
         data: {
             name: 'Primary Qdrant',
             type: 'QDRANT',
@@ -49,7 +49,7 @@ async function main() {
         },
     });
 
-    const server2 = await prisma.databaseServer.create({
+    const server2 = await prisma.server.create({
         data: {
             name: 'Neo4j Knowledge Graph',
             type: 'NEO4J',
@@ -62,7 +62,7 @@ async function main() {
         },
     });
 
-    console.log('Created database servers:', { server1, server2 });
+    console.log('Created servers:', { server1, server2 });
 
     // Create sample realms
     const realm1 = await prisma.realm.create({

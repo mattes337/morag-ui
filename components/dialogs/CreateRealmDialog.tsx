@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 
-interface CreateDatabaseDialogProps {
+interface CreateRealmDialogProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-export function CreateDatabaseDialog({ isOpen, onClose }: CreateDatabaseDialogProps) {
+export function CreateRealmDialog({ isOpen, onClose }: CreateRealmDialogProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [ingestionPrompt, setIngestionPrompt] = useState('');

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '../../../../lib/auth';
-import { DatabaseServerService } from '../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../lib/services/serverService';
 import { moragService } from '../../../../lib/services/moragService';
 
 export async function POST(request: NextRequest) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Get database servers for all specified realms
     const allServers = [];
     for (const realmId of realmIds) {
-      const servers = await DatabaseServerService.getServersByRealm(realmId);
+      const servers = await ServerService.getServersByRealm(realmId);
       allServers.push(...servers);
     }
 
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     // Get database servers for all specified realms
     const allServers = [];
     for (const realmId of realmIds) {
-      const servers = await DatabaseServerService.getServersByRealm(realmId);
+      const servers = await ServerService.getServersByRealm(realmId);
       allServers.push(...servers);
     }
 

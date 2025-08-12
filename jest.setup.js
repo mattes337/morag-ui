@@ -155,8 +155,8 @@ jest.mock('./lib/services/jobService', () => ({
     },
 }));
 
-jest.mock('./lib/services/databaseServerService', () => ({
-    DatabaseServerService: {
+jest.mock('./lib/services/serverService', () => ({
+  ServerService: {
         createServer: jest.fn(),
         getAllServers: jest.fn(),
         getServersByUser: jest.fn(),

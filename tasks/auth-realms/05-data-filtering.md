@@ -62,7 +62,7 @@ model Database {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  server DatabaseServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
   user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   realm  Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade)
 
@@ -112,8 +112,8 @@ model ApiKey {
   @@map("api_keys")
 }
 
-model DatabaseServer {
-  // Note: DatabaseServer and Database are synonymous terms in this system
+model Server {
+// Note: Server and Database are synonymous terms in this system
   id          String       @id @default(cuid())
   name        String
   host        String
@@ -244,7 +244,7 @@ export class DatabaseService {
     // Create database with realm association
     static async createDatabase(data: CreateDatabaseData & { realmId: string }): Promise<Database> {
         // Validate server belongs to the same realm
-        const server = await prisma.databaseServer.findFirst({
+        const server = await prisma.server.findFirst({
             where: {
                 id: data.serverId,
                 realmId: data.realmId,
@@ -290,7 +290,7 @@ export class DatabaseService {
 
         // If serverId is being updated, validate new server belongs to realm
         if (data.serverId) {
-            const server = await prisma.databaseServer.findFirst({
+            const server = await prisma.server.findFirst({
                 where: {
                     id: data.serverId,
                     realmId,
@@ -356,7 +356,7 @@ export class DatabaseService {
 
         // Get server names for the grouped results
         const serverIds = byServer.map(item => item.serverId);
-        const servers = await prisma.databaseServer.findMany({
+        const servers = await prisma.server.findMany({
             where: {
                 id: { in: serverIds },
                 realmId,

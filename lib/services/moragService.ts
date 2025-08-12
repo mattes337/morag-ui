@@ -1,4 +1,4 @@
-import { DatabaseServer } from '@prisma/client';
+import { Server } from '@prisma/client';
 
 // New unified process request structure based on the API spec
 export interface UnifiedProcessRequest {
@@ -35,7 +35,7 @@ export interface UnifiedProcessRequest {
 export interface UnifiedProcessResponse {
   success: boolean;
   mode: string;
-  content?: string;
+  markdown?: string;
   metadata?: Record<string, any>;
   processing_time_ms?: number;
   task_id?: string;
@@ -80,7 +80,6 @@ export interface WebhookPayload {
     step_details?: Record<string, any>;
   };
   result?: {
-    content?: string;
     markdown?: string;
     metadata?: Record<string, any>;
     chunks?: number;
@@ -160,7 +159,7 @@ export class MoragService {
     file: File,
     documentId: string,
     webhookUrl: string,
-    databases: DatabaseServer[],
+    databases: Server[],
     metadata?: Record<string, any>
   ): Promise<UnifiedProcessResponse> {
     const formData = new FormData();
@@ -209,7 +208,7 @@ export class MoragService {
     documentId: string,
     mode: 'convert' | 'process' | 'ingest' = 'process',
     webhookUrl?: string,
-    databases?: DatabaseServer[],
+    databases?: Server[],
     metadata?: Record<string, any>
   ): Promise<UnifiedProcessResponse> {
     const formData = new FormData();
@@ -261,7 +260,7 @@ export class MoragService {
     items: Array<{ url?: string; file?: File; metadata?: Record<string, any> }>,
     mode: 'convert' | 'process' | 'ingest' = 'process',
     webhookUrl?: string,
-    databases?: DatabaseServer[]
+    databases?: Server[]
   ): Promise<UnifiedProcessResponse> {
     const formData = new FormData();
     formData.append('mode', mode);
@@ -347,7 +346,7 @@ export class MoragService {
   /**
    * Search for similar content using the new search endpoint
    */
-  async search(query: string, databases: DatabaseServer[], options?: {
+  async search(query: string, databases: Server[], options?: {
     limit?: number;
     threshold?: number;
     filters?: Record<string, any>;

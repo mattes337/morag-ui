@@ -3,13 +3,13 @@
  */
 import { NextRequest } from 'next/server';
 import { GET, POST } from '../../../../app/api/servers/route';
-import { DatabaseServerService } from '../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../lib/services/serverService';
 import { requireAuth } from '../../../../lib/auth';
 import { UserService } from '../../../../lib/services/userService';
 import { RealmService } from '../../../../lib/services/realmService';
 
 // Mock the services and auth
-jest.mock('../../../../lib/services/databaseServerService');
+jest.mock('../../../../lib/services/serverService');
 jest.mock('../../../../lib/services/userService');
 jest.mock('../../../../lib/services/realmService');
 jest.mock('../../../../lib/auth');
@@ -17,15 +17,15 @@ jest.mock('../../../../lib/auth');
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 // Mock static methods
-const mockCreateDatabaseServer = jest.fn();
-const mockGetDatabaseServersByUser = jest.fn();
+const mockCreateServer = jest.fn();
+const mockGetServersByUser = jest.fn();
 const mockGetUserSettings = jest.fn();
 const mockUpdateUserSettings = jest.fn();
 const mockGetRealmById = jest.fn();
 const mockEnsureUserHasDefaultRealm = jest.fn();
 
-(DatabaseServerService.createDatabaseServer as jest.Mock) = mockCreateDatabaseServer;
-(DatabaseServerService.getDatabaseServersByUser as jest.Mock) = mockGetDatabaseServersByUser;
+(ServerService.createServer as jest.Mock) = mockCreateServer;
+(ServerService.getServersByUser as jest.Mock) = mockGetServersByUser;
 (UserService.getUserSettings as jest.Mock) = mockGetUserSettings;
 (UserService.updateUserSettings as jest.Mock) = mockUpdateUserSettings;
 (RealmService.getRealmById as jest.Mock) = mockGetRealmById;
@@ -81,7 +81,7 @@ describe('/api/servers', () => {
                 },
             ];
 
-            mockGetDatabaseServersByUser.mockResolvedValue(mockServers as any);
+            mockGetServersByUser.mockResolvedValue(mockServers as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers');
             const response = await GET(mockRequest);
@@ -89,7 +89,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockServers);
-            expect(mockGetDatabaseServersByUser).toHaveBeenCalledWith('user1', 'realm1');
+            expect(mockGetServersByUser).toHaveBeenCalledWith('user1', 'realm1');
             expect(mockRequireAuth).toHaveBeenCalledWith(mockRequest);
         });
 
@@ -104,11 +104,11 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(401);
             expect(data).toEqual({ error: 'Authentication required' });
-            expect(mockGetDatabaseServersByUser).not.toHaveBeenCalled();
+            expect(mockGetServersByUser).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
-            mockGetDatabaseServersByUser.mockRejectedValue(new Error('Database error'));
+            mockGetServersByUser.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers');
             const response = await GET(mockRequest);
@@ -135,7 +135,7 @@ describe('/api/servers', () => {
                 userId: 'user1',
             };
 
-            mockCreateDatabaseServer.mockResolvedValue(mockServer as any);
+            mockCreateServer.mockResolvedValue(mockServer as any);
 
             const requestBody = {
                 name: 'New Server',
@@ -158,7 +158,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(201);
             expect(data).toEqual(mockServer);
-            expect(mockCreateDatabaseServer).toHaveBeenCalledWith({
+            expect(mockCreateServer).toHaveBeenCalledWith({
                 ...requestBody,
                 userId: 'user1',
                 realmId: 'realm1',
@@ -180,7 +180,7 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(400);
             expect(data).toEqual({ error: 'Name, type, host, and port are required' });
-            expect(mockCreateDatabaseServer).not.toHaveBeenCalled();
+            expect(mockCreateServer).not.toHaveBeenCalled();
         });
 
         it('should handle authentication errors', async () => {
@@ -203,11 +203,11 @@ describe('/api/servers', () => {
 
             expect(response.status).toBe(401);
             expect(data).toEqual({ error: 'Authentication required' });
-            expect(mockCreateDatabaseServer).not.toHaveBeenCalled();
+            expect(mockCreateServer).not.toHaveBeenCalled();
         });
 
         it('should handle service errors', async () => {
-            mockCreateDatabaseServer.mockRejectedValue(new Error('Database error'));
+            mockCreateServer.mockRejectedValue(new Error('Database error'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/servers', {
                 method: 'POST',

@@ -25,7 +25,7 @@ model User {
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
-  databaseServers DatabaseServer[]
+  servers         Server[]
   userSettings    UserSettings?
   realms          Realm[]
   userRealms      UserRealm[]
@@ -75,7 +75,7 @@ model Realm {
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
-  databaseServers RealmServerLink[] // Many-to-many relationship with servers
+  servers         RealmServerLink[] // Many-to-many relationship with servers
 
   @@unique([name, ownerId])
   @@map("realms")
@@ -222,7 +222,7 @@ model ApiKey {
   @@map("api_keys")
 }
 
-model DatabaseServer {
+model Server {
   id            String               @id @default(uuid())
   name          String
   type          DatabaseType
@@ -245,7 +245,7 @@ model DatabaseServer {
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   realmServers    RealmServerLink[] // Many-to-many relationship with realms
 
-  @@map("database_servers")
+  @@map("servers")
 }
 
 model Job {
@@ -275,17 +275,17 @@ model Job {
 }
 
 model RealmServerLink {
-  id               String   @id @default(uuid())
-  realmId          String
-  databaseServerId String
+  id       String   @id @default(uuid())
+  realmId  String
+  serverId String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // Relations
-  realm          Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  databaseServer DatabaseServer @relation(fields: [databaseServerId], references: [id], onDelete: Cascade)
+  realm  Realm  @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
-  @@unique([realmId, databaseServerId])
+  @@unique([realmId, serverId])
   @@map("realm_server_links")
 }
 

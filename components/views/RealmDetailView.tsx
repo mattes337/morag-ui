@@ -1,37 +1,37 @@
 'use client';
 
-import { Database, Document, Job } from '../../types';
+import { Realm, Document, Job } from '../../types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { ArrowLeft, Database as DatabaseIcon, FileText, Briefcase, Settings, Server, Edit, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
-interface DatabaseDetailViewProps {
-    database: Database;
+interface RealmDetailViewProps {
+    realm: Realm;
     documents: Document[];
-    jobs: Job[];
+    servers: Server[];
     onBack: () => void;
-    onRefresh: () => void;
-    onAddDocument?: () => void;
-    onDeleteDocument?: (document: Document) => void;
-    onReingestDocument?: (document: Document) => void;
-    onEditIngestionPrompt?: () => void;
-    onEditSystemPrompt?: () => void;
+    onPrompt: (realm: Realm) => void;
+    onAddDocument: (realm: Realm) => void;
+    onDeleteDocument: (documentId: string) => void;
+    onDeleteRealm: (realm: Realm) => void;
+    onEditRealm: (realm: Realm) => void;
+    onManageServers: (realm: Realm) => void;
 }
 
-export function DatabaseDetailView({
-    database,
+export function RealmDetailView({
+    realm,
     documents,
-    jobs,
+    servers,
     onBack,
-    onRefresh,
+    onPrompt,
     onAddDocument,
     onDeleteDocument,
-    onReingestDocument,
-    onEditIngestionPrompt,
-    onEditSystemPrompt,
-}: DatabaseDetailViewProps) {
+    onDeleteRealm,
+    onEditRealm,
+    onManageServers,
+}: RealmDetailViewProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
     const formatDate = (dateString: string) => {
@@ -129,7 +129,7 @@ export function DatabaseDetailView({
                         <div>
                             <p className="text-sm font-medium text-gray-600">Last Updated</p>
                             <p className="text-sm font-medium text-gray-900">
-                                {formatDate(database.lastUpdated)}
+                                {formatDate(database.lastUpdated || database.updatedAt.toISOString())}
                             </p>
                         </div>
                         <Settings className="w-8 h-8 text-orange-600" />
@@ -162,11 +162,11 @@ export function DatabaseDetailView({
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Document Count</label>
-                                    <p className="text-gray-900">{database.documentCount}</p>
+                                    <p className="text-gray-900">{database.documentCount || 0}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Created</label>
-                                    <p className="text-gray-900">{formatDate(database.lastUpdated)}</p>
+                                    <p className="text-gray-900">{formatDate(database.lastUpdated || database.updatedAt.toISOString())}</p>
                                 </div>
                             </div>
                         </div>

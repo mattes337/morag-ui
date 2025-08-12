@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseServerService } from '../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../lib/services/serverService';
 import { requireAuth } from '../../../../lib/auth';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
         const user = await requireAuth(request);
-        const server = await DatabaseServerService.getDatabaseServerById(params.id);
+        const server = await ServerService.getServerById(params.id);
         
         if (!server) {
             return NextResponse.json({ error: 'Server not found' }, { status: 404 });
@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         const body = await request.json();
         
         // First check if the server exists and belongs to the user
-        const existingServer = await DatabaseServerService.getDatabaseServerById(params.id);
+        const existingServer = await ServerService.getServerById(params.id);
         
         if (!existingServer) {
             return NextResponse.json({ error: 'Server not found' }, { status: 404 });
@@ -44,10 +44,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         
         // Handle server activation specially
         if (body.isActive === true) {
-            const server = await DatabaseServerService.setActiveServer(existingServer.userId, params.id);
+            const server = await ServerService.setActiveServer(existingServer.userId, params.id);
             return NextResponse.json(server);
         } else {
-            const server = await DatabaseServerService.updateDatabaseServer(params.id, body);
+            const server = await ServerService.updateServer(params.id, body);
             return NextResponse.json(server);
         }
     } catch (error) {
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         const user = await requireAuth(request);
         
         // First check if the server exists and belongs to the user
-        const existingServer = await DatabaseServerService.getDatabaseServerById(params.id);
+        const existingServer = await ServerService.getServerById(params.id);
         
         if (!existingServer) {
             return NextResponse.json({ error: 'Server not found' }, { status: 404 });
@@ -74,7 +74,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
             return NextResponse.json({ error: 'Unauthorized access' }, { status: 403 });
         }
         
-        await DatabaseServerService.deleteDatabaseServer(params.id);
+        await ServerService.deleteServer(params.id);
         return NextResponse.json({ success: true });
     } catch (error) {
         if (error instanceof Error && error.message === 'Authentication required') {

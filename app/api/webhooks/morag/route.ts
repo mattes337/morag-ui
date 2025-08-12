@@ -38,11 +38,9 @@ export async function POST(request: NextRequest) {
         state: DocumentState.INGESTED,
       };
 
-      // Handle both markdown and content fields for backward compatibility
+      // Store markdown content
       if (payload.result.markdown) {
         updateData.markdown = payload.result.markdown;
-      } else if (payload.result.content) {
-        updateData.markdown = payload.result.content;
       }
 
       if (payload.result.chunks) {

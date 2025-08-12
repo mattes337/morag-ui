@@ -91,7 +91,7 @@ export class RealmAccessService {
             _count: {
               select: {
                 documents: true,
-                databaseServers: true,
+                servers: true,
               },
             },
           },
@@ -107,7 +107,7 @@ export class RealmAccessService {
         _count: {
           select: {
             documents: true,
-            databaseServers: true,
+            servers: true,
           },
         },
       },

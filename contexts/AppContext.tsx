@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Document, ApiKey, DatabaseServer, UserSettings, User, Job, Realm } from '../types';
+import { Document, ApiKey, Server, UserSettings, User, Job, Realm } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
 
 interface AppContextType {
@@ -13,8 +13,8 @@ interface AppContextType {
     setUser: (user: User | null) => void;
     userSettings: UserSettings;
     setUserSettings: (settings: UserSettings) => void;
-    servers: DatabaseServer[];
-    setServers: (servers: DatabaseServer[]) => void;
+    servers: Server[];
+    setServers: (servers: Server[]) => void;
 
     // Realm Management
     currentRealm: Realm | null;
@@ -119,7 +119,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         updatedAt: new Date(),
     });
 
-    const [servers, setServers] = useState<DatabaseServer[]>([]);
+    const [servers, setServers] = useState<Server[]>([]);
 
     // Realm state
     const [currentRealm, setCurrentRealm] = useState<Realm | null>(null);

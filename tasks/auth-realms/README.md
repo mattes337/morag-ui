@@ -27,7 +27,7 @@ This project implements two major enhancements to the Morag UI application:
 - Direct user-to-entity relationships
 - No realm concept
 - All data shared within user scope
-- Models: User, Database, Document, Job, ApiKey, DatabaseServer (Note: DatabaseServer and Database are synonymous)
+- Models: User, Database, Document, Job, ApiKey, Server (Note: Server and Database are synonymous)
 
 ## Implementation Phases
 

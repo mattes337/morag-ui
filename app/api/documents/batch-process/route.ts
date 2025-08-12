@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '../../../../lib/auth';
 import { DocumentService } from '../../../../lib/services/documentService';
 import { JobService } from '../../../../lib/services/jobService';
-import { DatabaseServerService } from '../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../lib/services/serverService';
 import { moragService } from '../../../../lib/services/moragService';
 import { DocumentState, JobStatus } from '@prisma/client';
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get database servers for the realm
-    const servers = await DatabaseServerService.getServersByRealm(realmId);
+    const servers = await ServerService.getServersByRealm(realmId);
     if (servers.length === 0) {
       return NextResponse.json(
         { error: 'No database servers configured for this realm' },

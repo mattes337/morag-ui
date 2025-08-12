@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '../../../../lib/auth';
 import { DocumentService } from '../../../../lib/services/documentService';
 import { JobService } from '../../../../lib/services/jobService';
-import { DatabaseServerService } from '../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../lib/services/serverService';
 import { moragService } from '../../../../lib/services/moragService';
 import { DocumentState, JobStatus } from '@prisma/client';
 
@@ -56,15 +56,15 @@ export async function POST(request: NextRequest) {
         );
         
         // Handle synchronous response
-        if (result.success && result.content) {
+        if (result.success && result.markdown) {
           await DocumentService.updateDocument(document.id, {
-            markdown: result.content,
+            markdown: result.markdown,
             state: DocumentState.INGESTED,
           });
 
           return NextResponse.json({
             documentId: document.id,
-            markdown: result.content,
+            markdown: result.markdown,
             status: 'completed',
           });
         }
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For process or ingest modes, get database servers for the realm
-    const servers = await DatabaseServerService.getServersByRealm(realmId);
+    const servers = await ServerService.getServersByRealm(realmId);
     if (servers.length === 0) {
       return NextResponse.json(
         { error: 'No database servers configured for this realm' },
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       if (result.success && !result.task_id) {
         await DocumentService.updateDocument(document.id, {
           state: DocumentState.INGESTED,
-          markdown: result.content || '',
+          markdown: result.markdown || '',
         });
 
         await JobService.updateJob(job.id, {

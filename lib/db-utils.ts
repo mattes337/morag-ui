@@ -72,7 +72,7 @@ export function convertPrismaApiKeyToApp(prismaApiKey: any) {
     };
 }
 
-export function convertPrismaDatabaseServerToApp(prismaServer: any) {
+export function convertPrismaServerToApp(prismaServer: any) {
     return {
         id: prismaServer.id,
         name: prismaServer.name,
@@ -123,7 +123,7 @@ export async function getAllAppData() {
         prisma.job.findMany({
             include: { document: true, user: true },
         }),
-        prisma.databaseServer.findMany(),
+        prisma.server.findMany(),
     ]);
 
     return {
@@ -131,6 +131,6 @@ export async function getAllAppData() {
         documents: documents.map(convertPrismaDocumentToApp),
         apiKeys: apiKeys.map(convertPrismaApiKeyToApp),
         jobs: jobs.map(convertPrismaJobToApp),
-        servers: servers.map(convertPrismaDatabaseServerToApp),
+        servers: servers.map(convertPrismaServerToApp),
     };
 }

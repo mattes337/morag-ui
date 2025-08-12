@@ -641,7 +641,7 @@ export async function POST(request: NextRequest) {
         const { name, description, serverId } = body;
         
         // Validate server belongs to current realm
-        const server = await DatabaseServerService.getServerById(serverId);
+        const server = await ServerService.getServerById(serverId);
         if (!server || server.realmId !== realm.id) {
             return NextResponse.json(
                 { error: 'Server not found in current realm' },

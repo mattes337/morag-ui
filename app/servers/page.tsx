@@ -1,16 +1,16 @@
 'use client';
 
 import { useApp } from '../../contexts/AppContext';
-import { DatabaseServer } from '../../types';
+import { Server } from '../../types';
 import { useState } from 'react';
 import { Server, Plus } from 'lucide-react';
 import { TestConnectionModal } from '../../components/modals/TestConnectionModal';
 
 export default function ServersPage() {
     const { servers, setServers } = useApp();
-    const [editingServer, setEditingServer] = useState<DatabaseServer | null>(null);
+    const [editingServer, setEditingServer] = useState<Server | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [testingServer, setTestingServer] = useState<DatabaseServer | null>(null);
+    const [testingServer, setTestingServer] = useState<Server | null>(null);
     const [showTestModal, setShowTestModal] = useState(false);
 
     const handleAddServer = () => {
@@ -26,7 +26,7 @@ export default function ServersPage() {
         setShowAddForm(true);
     };
 
-    const handleSaveServer = async (server: DatabaseServer) => {
+    const handleSaveServer = async (server: Server) => {
         try {
             if (server.id) {
                 // Update existing server
@@ -132,7 +132,7 @@ export default function ServersPage() {
         }
     };
 
-    const testConnection = async (server: DatabaseServer) => {
+    const testConnection = async (server: Server) => {
         setTestingServer(server);
         setShowTestModal(true);
     };
@@ -364,13 +364,13 @@ export default function ServersPage() {
 }
 
 interface ServerFormProps {
-    server: DatabaseServer | null;
-    onSave: (server: DatabaseServer) => void;
+    server: Server | null;
+    onSave: (server: Server) => void;
     onCancel: () => void;
 }
 
 function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
-    const [formData, setFormData] = useState<DatabaseServer>(
+    const [formData, setFormData] = useState<Server>(
         server || {
             id: '',
             name: '',
@@ -407,7 +407,7 @@ function ServerForm({ server, onSave, onCancel }: ServerFormProps) {
     const handleTypeChange = (type: string) => {
         setFormData({
             ...formData,
-            type: type as DatabaseServer['type'],
+            type: type as Server['type'],
             port: getDefaultPort(type),
         });
     };
