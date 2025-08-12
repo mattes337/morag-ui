@@ -3,7 +3,7 @@
 import { useApp } from '../../contexts/AppContext';
 import { Server } from '../../types';
 import { useState } from 'react';
-import { Server, Plus } from 'lucide-react';
+import { Server as ServerIcon, Plus } from 'lucide-react';
 import { TestConnectionModal } from '../../components/modals/TestConnectionModal';
 
 export default function ServersPage() {
@@ -305,7 +305,7 @@ export default function ServersPage() {
                                         className="bg-gray-100 rounded-full p-6 mb-6"
                                         data-oid=".--osh8"
                                     >
-                                        <Server
+                                        <ServerIcon
                                             className="w-16 h-16 text-gray-400"
                                             data-oid="rjijgcf"
                                         />

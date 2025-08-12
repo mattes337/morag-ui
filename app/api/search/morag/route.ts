@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
         {
           limit,
           threshold,
-          includeMetadata,
-          realmIds,
+          filters: { realmIds },
         }
       );
 
@@ -139,8 +138,7 @@ export async function GET(request: NextRequest) {
         {
           limit,
           threshold,
-          includeMetadata,
-          realmIds,
+          filters: { realmIds },
         }
       );
 

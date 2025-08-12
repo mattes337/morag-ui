@@ -1,15 +1,16 @@
 'use client';
 
-import { Realm, Document, Job } from '../../types';
+import { Realm, Document, Job, Server } from '../../types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { ArrowLeft, Database as DatabaseIcon, FileText, Briefcase, Settings, Server, Edit, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Database as DatabaseIcon, FileText, Briefcase, Settings, Server as ServerIcon, Edit, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 interface RealmDetailViewProps {
     realm: Realm;
     documents: Document[];
+    jobs: Job[];
     servers: Server[];
     onBack: () => void;
     onPrompt: (realm: Realm) => void;
@@ -18,11 +19,16 @@ interface RealmDetailViewProps {
     onDeleteRealm: (realm: Realm) => void;
     onEditRealm: (realm: Realm) => void;
     onManageServers: (realm: Realm) => void;
+    onRefresh?: () => void;
+    onReingestDocument?: (document: Document) => void;
+    onEditIngestionPrompt?: () => void;
+    onEditSystemPrompt?: () => void;
 }
 
 export function RealmDetailView({
     realm,
     documents,
+    jobs,
     servers,
     onBack,
     onPrompt,
@@ -31,6 +37,10 @@ export function RealmDetailView({
     onDeleteRealm,
     onEditRealm,
     onManageServers,
+    onRefresh,
+    onReingestDocument,
+    onEditIngestionPrompt,
+    onEditSystemPrompt,
 }: RealmDetailViewProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -85,14 +95,16 @@ export function RealmDetailView({
                             <DatabaseIcon className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{database.name}</h1>
-                            <p className="text-gray-600">{database.description}</p>
+                            <h1 className="text-2xl font-bold text-gray-900">{realm.name}</h1>
+                            <p className="text-gray-600">{realm.description}</p>
                         </div>
                     </div>
                 </div>
-                <Button onClick={onRefresh} variant="outline">
-                    Refresh
-                </Button>
+                {onRefresh && (
+                    <Button onClick={onRefresh} variant="outline">
+                        Refresh
+                    </Button>
+                )}
             </div>
 
             {/* Database Stats */}
@@ -119,9 +131,9 @@ export function RealmDetailView({
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Servers</p>
-                            <p className="text-2xl font-bold text-gray-900">{database.servers?.length || 0}</p>
+                            <p className="text-2xl font-bold text-gray-900">{realm.servers?.length || 0}</p>
                         </div>
-                        <Server className="w-8 h-8 text-purple-600" />
+                        <ServerIcon className="w-8 h-8 text-purple-600" />
                     </div>
                 </div>
                 <div className="bg-white rounded-lg border p-4">
@@ -129,7 +141,7 @@ export function RealmDetailView({
                         <div>
                             <p className="text-sm font-medium text-gray-600">Last Updated</p>
                             <p className="text-sm font-medium text-gray-900">
-                                {formatDate(database.lastUpdated || database.updatedAt.toISOString())}
+                                {formatDate(realm.lastUpdated || realm.updatedAt.toISOString())}
                             </p>
                         </div>
                         <Settings className="w-8 h-8 text-orange-600" />
@@ -148,25 +160,25 @@ export function RealmDetailView({
 
                 <TabsContent value="overview" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Database Information */}
+                        {/* Realm Information */}
                         <div className="bg-white rounded-lg border p-6">
-                            <h3 className="text-lg font-semibold mb-4">Database Information</h3>
+                            <h3 className="text-lg font-semibold mb-4">Realm Information</h3>
                             <div className="space-y-3">
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Name</label>
-                                    <p className="text-gray-900">{database.name}</p>
+                                    <p className="text-gray-900">{realm.name}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Description</label>
-                                    <p className="text-gray-900">{database.description}</p>
+                                    <p className="text-gray-900">{realm.description}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Document Count</label>
-                                    <p className="text-gray-900">{database.documentCount || 0}</p>
+                                    <p className="text-gray-900">{realm.documentCount || 0}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Created</label>
-                                    <p className="text-gray-900">{formatDate(database.lastUpdated || database.updatedAt.toISOString())}</p>
+                                    <p className="text-gray-900">{formatDate(realm.lastUpdated || realm.updatedAt.toISOString())}</p>
                                 </div>
                             </div>
                         </div>
@@ -174,9 +186,9 @@ export function RealmDetailView({
                         {/* Connected Servers */}
                         <div className="bg-white rounded-lg border p-6">
                             <h3 className="text-lg font-semibold mb-4">Connected Servers</h3>
-                            {database.servers && database.servers.length > 0 ? (
+                            {realm.servers && realm.servers.length > 0 ? (
                                 <div className="space-y-3">
-                                    {database.servers.map((server) => (
+                                    {realm.servers.map((server) => (
                                         <div key={server.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div>
                                                 <p className="font-medium text-gray-900">{server.name}</p>
@@ -201,11 +213,11 @@ export function RealmDetailView({
                             <div className="flex justify-between items-center">
                                 <div>
                                     <h3 className="text-lg font-semibold">Documents</h3>
-                                    <p className="text-gray-600">All documents in this database</p>
+                                    <p className="text-gray-600">All documents in this realm</p>
                                 </div>
                                 <div className="flex space-x-2">
                                     {onAddDocument && (
-                                        <Button onClick={onAddDocument} size="sm" className="flex items-center space-x-2">
+                                        <Button onClick={() => onAddDocument(realm)} size="sm" className="flex items-center space-x-2">
                                             <Plus className="w-4 h-4" />
                                             <span>Add Document</span>
                                         </Button>
@@ -246,7 +258,7 @@ export function RealmDetailView({
                                                     )}
                                                     {onDeleteDocument && (
                                                         <Button
-                                                            onClick={() => onDeleteDocument(document)}
+                                                            onClick={() => onDeleteDocument(document.id)}
                                                             size="sm"
                                                             variant="outline"
                                                             className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -263,7 +275,7 @@ export function RealmDetailView({
                             ) : (
                                 <div className="text-center py-8">
                                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-600">No documents found in this database</p>
+                                    <p className="text-gray-600">No documents found in this realm</p>
                                 </div>
                             )}
                         </div>
@@ -289,8 +301,8 @@ export function RealmDetailView({
                                 )}
                             </div>
                             <div className="bg-gray-50 rounded-lg p-4">
-                                {database.ingestionPrompt ? (
-                                    <p className="text-gray-900 whitespace-pre-wrap">{database.ingestionPrompt}</p>
+                                {realm.ingestionPrompt ? (
+                                    <p className="text-gray-900 whitespace-pre-wrap">{realm.ingestionPrompt}</p>
                                 ) : (
                                     <p className="text-gray-600 italic">No ingestion prompt configured</p>
                                 )}
@@ -314,8 +326,8 @@ export function RealmDetailView({
                                 )}
                             </div>
                             <div className="bg-gray-50 rounded-lg p-4">
-                                {database.systemPrompt ? (
-                                    <p className="text-gray-900 whitespace-pre-wrap">{database.systemPrompt}</p>
+                                {realm.systemPrompt ? (
+                                    <p className="text-gray-900 whitespace-pre-wrap">{realm.systemPrompt}</p>
                                 ) : (
                                     <p className="text-gray-600 italic">No system prompt configured</p>
                                 )}
@@ -328,7 +340,7 @@ export function RealmDetailView({
                     <div className="bg-white rounded-lg border">
                         <div className="p-6 border-b">
                             <h3 className="text-lg font-semibold">Jobs</h3>
-                            <p className="text-gray-600">Processing jobs for documents in this database</p>
+                            <p className="text-gray-600">Processing jobs for documents in this realm</p>
                         </div>
                         <div className="p-6">
                             {jobs.length > 0 ? (
@@ -360,7 +372,7 @@ export function RealmDetailView({
                             ) : (
                                 <div className="text-center py-8">
                                     <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-600">No jobs found for this database</p>
+                                    <p className="text-gray-600">No jobs found for this realm</p>
                                 </div>
                             )}
                         </div>

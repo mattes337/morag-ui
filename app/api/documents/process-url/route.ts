@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const document = await DocumentService.createDocument({
       name: filename,
       type: 'text/html',
-      userId: user.id,
+      userId: user.userId,
       realmId: realmId,
       state: mode === 'convert' ? DocumentState.PENDING : DocumentState.INGESTING,
     });
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           webhookUrl,
           undefined,
           {
-            userId: user.id,
+            userId: user.userId,
             realmId: realmId,
           }
         );
@@ -76,11 +76,9 @@ export async function POST(request: NextRequest) {
             documentName: filename,
             documentType: 'text/html',
             documentId: document.id,
-            userId: user.id,
+            userId: user.userId,
             realmId: realmId,
             status: JobStatus.PROCESSING,
-            taskId: result.task_id,
-            summary: `Converting URL: ${url}`,
           });
 
           return NextResponse.json({
@@ -121,10 +119,9 @@ export async function POST(request: NextRequest) {
       documentName: filename,
       documentType: 'text/html',
       documentId: document.id,
-      userId: user.id,
+      userId: user.userId,
       realmId: realmId,
       status: JobStatus.PROCESSING,
-      summary: `Processing URL: ${url}`,
     });
 
     try {
@@ -136,7 +133,7 @@ export async function POST(request: NextRequest) {
         webhookUrl,
         servers,
         {
-          userId: user.id,
+          userId: user.userId,
           realmId: realmId,
           jobId: job.id,
         }

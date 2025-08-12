@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '../../../../../lib/auth';
-import { JobService } from '../../../../../lib/services/jobService';
-import { moragService } from '../../../../../lib/services/moragService';
+import { getAuthUser } from '../../../../lib/auth';
+import { JobService } from '../../../../lib/services/jobService';
+import { moragService } from '../../../../lib/services/moragService';
 
 interface RouteParams {
   params: {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if user has access to this job
-    if (job.userId !== user.id) {
+    if (job.userId !== user.userId) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
@@ -110,7 +110,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if user has access to this job
-    if (job.userId !== user.id) {
+    if (job.userId !== user.userId) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }

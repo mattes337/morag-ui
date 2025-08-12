@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const document = await DocumentService.createDocument({
       name: file.name,
       type: file.type || 'application/octet-stream',
-      userId: user.id,
+      userId: user.userId,
       realmId: realmId,
       state: mode === 'convert' ? DocumentState.PENDING : DocumentState.INGESTING,
     });
@@ -64,10 +64,9 @@ export async function POST(request: NextRequest) {
             documentName: file.name,
             documentType: file.type || 'application/octet-stream',
             documentId: document.id,
-            userId: user.id,
+            userId: user.userId,
             realmId: realmId,
             status: JobStatus.PROCESSING,
-            taskId: result.task_id,
           });
 
           return NextResponse.json({
@@ -108,7 +107,7 @@ export async function POST(request: NextRequest) {
       documentName: file.name,
       documentType: file.type || 'application/octet-stream',
       documentId: document.id,
-      userId: user.id,
+      userId: user.userId,
       realmId: realmId,
       status: JobStatus.PROCESSING,
     });
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
         webhookUrl,
         servers,
         {
-          userId: user.id,
+          userId: user.userId,
           realmId: realmId,
           jobId: job.id,
         }

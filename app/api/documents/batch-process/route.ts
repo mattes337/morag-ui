@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         DocumentService.createDocument({
           name: file.name,
           type: file.type || 'application/octet-stream',
-          userId: user.id,
+          userId: user.userId,
           realmId: realmId,
           state: DocumentState.INGESTING,
         })
@@ -51,10 +51,9 @@ export async function POST(request: NextRequest) {
       documentName: `Batch processing (${files.length} files)`,
       documentType: 'batch',
       documentId: documents[0].id, // Use first document as reference
-      userId: user.id,
+      userId: user.userId,
       realmId: realmId,
       status: JobStatus.PROCESSING,
-      summary: `Processing ${files.length} documents`,
     });
 
     // Construct webhook URL
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
         file,
         metadata: {
           documentId: documents[index].id,
-          userId: user.id,
+          userId: user.userId,
           realmId: realmId,
           jobId: batchJob.id,
         }
