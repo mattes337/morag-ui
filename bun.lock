@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "@onlook/next-template",
+      "name": "@morag-ui/next-template",
       "dependencies": {
         "@prisma/client": "^5.7.1",
         "@radix-ui/react-slot": "^1.1.0",
