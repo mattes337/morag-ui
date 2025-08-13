@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { XMarkIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
@@ -29,17 +29,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
     const [formData, setFormData] = useState<FormData>({ name: '', description: '', prompts: {} });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    useEffect(() => {
-        if (isOpen) {
-            setMode('manage');
-            setEditingRealm(null);
-            setFormData({ name: '', description: '', prompts: {} });
-            setError('');
-            fetchRealms();
-        }
-    }, [isOpen]);
-
-    const fetchRealms = async () => {
+    const fetchRealms = useCallback(async () => {
         try {
             const response = await fetch('/api/realms');
             if (response.ok) {
@@ -50,7 +40,17 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
             console.error('Error fetching realms:', error);
             toast.error('Failed to fetch realms');
         }
-    };
+    }, [setRealms]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setMode('manage');
+            setEditingRealm(null);
+            setFormData({ name: '', description: '', prompts: {} });
+            setError('');
+            fetchRealms();
+        }
+    }, [isOpen, fetchRealms]);
 
 
 

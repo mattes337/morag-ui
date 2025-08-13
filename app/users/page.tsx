@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { Users, Plus, Trash2, Edit, Crown, Shield, User as UserIcon, Eye } from 'lucide-react';
 import { RealmRole } from '../../types';
+import Image from 'next/image';
 
 interface RealmUser {
     id: string;
@@ -32,13 +33,7 @@ export default function UsersPage() {
     const [editingUser, setEditingUser] = useState<string | null>(null);
     const [editRole, setEditRole] = useState<RealmRole>('MEMBER');
 
-    useEffect(() => {
-        if (currentRealm) {
-            loadUsers();
-        }
-    }, [currentRealm]);
-
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         if (!currentRealm) return;
         
         try {
@@ -61,7 +56,13 @@ export default function UsersPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentRealm]);
+
+    useEffect(() => {
+        if (currentRealm) {
+            loadUsers();
+        }
+    }, [currentRealm, loadUsers]);
 
     const handleAddUser = async () => {
         if (!currentRealm || !addUserData.email.trim()) return;
@@ -281,7 +282,7 @@ export default function UsersPage() {
                     <div className="text-center py-12">
                         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-                        <p className="text-gray-600">This realm doesn't have any users yet.</p>
+                        <p className="text-gray-600">This realm doesn&apos;t have any users yet.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -311,10 +312,12 @@ export default function UsersPage() {
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-10 w-10">
                                                     {realmUser.avatar ? (
-                                                        <img
+                                                        <Image
                                                             className="h-10 w-10 rounded-full"
                                                             src={realmUser.avatar}
                                                             alt={realmUser.name}
+                                                            width={40}
+                                                            height={40}
                                                         />
                                                     ) : (
                                                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">

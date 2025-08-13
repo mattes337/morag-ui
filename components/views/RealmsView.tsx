@@ -37,8 +37,9 @@ export function RealmsView({
         // Immediately switch to the realm without needing to view details
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
+    const formatDate = (date: string | Date) => {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        return dateObj.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric'
@@ -181,13 +182,7 @@ export function RealmsView({
                                     </div>
                                 </div>
 
-                                {/* Owner Information */}
-                                {realm.owner && (
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Owner</label>
-                                        <p className="text-sm text-gray-900 mt-1">{realm.owner.name || realm.owner.email}</p>
-                                    </div>
-                                )}
+
 
                                 {/* Action Buttons */}
                                 <div className="flex flex-wrap gap-2 pt-2">
