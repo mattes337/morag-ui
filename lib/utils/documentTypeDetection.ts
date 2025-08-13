@@ -145,7 +145,30 @@ export function getDocumentTypeDescription(type: string, subType?: string): stri
     }
     
     if (type === 'document') {
-        // All document types are now just "Document" regardless of subtype
+        if (subType) {
+            switch (subType) {
+                case 'markdown':
+                    return 'Markdown Document';
+                case 'pdf':
+                    return 'PDF Document';
+                case 'word':
+                    return 'Word Document';
+                case 'excel':
+                    return 'Excel Document';
+                case 'powerpoint':
+                    return 'PowerPoint Document';
+                case 'text':
+                    return 'Text Document';
+                case 'csv':
+                    return 'CSV Document';
+                case 'epub':
+                    return 'EPUB Document';
+                case 'rtf':
+                    return 'RTF Document';
+                default:
+                    return `${subType.toUpperCase()} Document`;
+            }
+        }
         return 'Document';
     }
     

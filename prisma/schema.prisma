@@ -1,172 +1,154 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "mysql" // Change to "mysql" for MariaDB/MySQL
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  avatar    String?
-  password  String?
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  documents       Document[]
-  apiKeys         ApiKey[]
-  jobs            Job[]
-  servers         Server[]
-  userSettings    UserSettings?
-  realms          Realm[]
-  userRealms      UserRealm[]
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  avatar       String?
+  password     String?
+  role         UserRole      @default(USER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  apiKeys      ApiKey[]
+  documents    Document[]
+  jobs         Job[]
+  realms       Realm[]
+  servers      Server[]
+  userRealms   UserRealm[]
+  userSettings UserSettings?
 
   @@map("users")
 }
 
 model UserSettings {
-  id               String  @id @default(uuid())
-  userId           String  @unique
-  theme            Theme   @default(LIGHT)
-  language         String  @default("en")
-  notifications    Boolean @default(true)
-  autoSave         Boolean @default(true)
-  defaultDatabase  String?
-  currentRealmId   String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  theme           Theme    @default(LIGHT)
+  language        String   @default("en")
+  notifications   Boolean  @default(true)
+  autoSave        Boolean  @default(true)
+  defaultDatabase String?
+  currentRealmId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
 
 model Realm {
-  id              String   @id @default(uuid())
-  name            String
-  description     String?
-  domain          String?  // Domain classification for specialized processing
-  ingestionPrompt String?  // Optional prompt for document ingestion
-  systemPrompt    String?  // Optional prompt for user queries
-  extractionPrompt String? // Optional prompt for entity extraction
-  domainPrompt    String?  // Optional domain context prompt
-  documentCount   Int      @default(0)
-  isDefault       Boolean  @default(false)
-  lastUpdated     DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Foreign keys
-  ownerId         String
-
-  // Relations
-  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  userRealms      UserRealm[]
-  documents       Document[]
-  apiKeys         ApiKey[]
-  jobs            Job[]
-  servers         RealmServerLink[] // Many-to-many relationship with servers
+  id               String            @id @default(uuid())
+  name             String
+  description      String?
+  domain           String?
+  ingestionPrompt  String?
+  systemPrompt     String?
+  extractionPrompt String?
+  domainPrompt     String?
+  documentCount    Int               @default(0)
+  isDefault        Boolean           @default(false)
+  lastUpdated      DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  ownerId          String
+  apiKeys          ApiKey[]
+  documents        Document[]
+  jobs             Job[]
+  servers          RealmServerLink[]
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  userRealms       UserRealm[]
 
   @@unique([name, ownerId])
+  @@index([ownerId], map: "realms_ownerId_fkey")
   @@map("realms")
 }
 
 model UserRealm {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
   realmId   String
   role      RealmRole @default(MEMBER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm Realm @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, realmId])
+  @@index([realmId], map: "user_realms_realmId_fkey")
   @@map("user_realms")
 }
 
-
-
 model Document {
-  id         String        @id @default(uuid())
-  name       String
-  type       String        // Main type: document, video, audio, website, youtube
-  subType    String?       // Optional subtype: pdf, word, excel, markdown, text, etc.
-  state      DocumentState @default(PENDING)
-  version    Int           @default(1)
-  chunks     Int           @default(0)
-  quality    Float         @default(0.0)
-  markdown   String?       @db.LongText // Converted markdown content from MoRAG backend
-  uploadDate DateTime      @default(now())
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  // Foreign keys
-  userId     String
-  realmId    String
-
-  // Relations
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm          Realm              @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  jobs           Job[]
+  id             String           @id @default(uuid())
+  name           String
+  type           String
+  state          DocumentState    @default(PENDING)
+  version        Int              @default(1)
+  chunks         Int              @default(0)
+  quality        Float            @default(0)
+  markdown       String?          @db.LongText
+  uploadDate     DateTime         @default(now())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  userId         String
+  realmId        String
+  subType        String?
   documentChunks DocumentChunk[]
-  facts          Fact[]
   entities       DocumentEntity[]
+  realm          Realm            @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facts          Fact[]
+  jobs           Job[]
 
+  @@index([realmId], map: "documents_realmId_fkey")
+  @@index([userId], map: "documents_userId_fkey")
   @@map("documents")
 }
 
 model Entity {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String
-  type        String   // person, organization, concept, etc.
+  type        String
   description String?
-  metadata    Json?    // Additional entity metadata
-  isOrphaned  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  facts       Fact[]
+  metadata    String?          @db.LongText
+  isOrphaned  Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   documents   DocumentEntity[]
+  facts       Fact[]
 
   @@unique([name, type])
   @@map("entities")
 }
 
 model Fact {
-  id          String   @id @default(uuid())
-  subject     String   // Entity ID or name
-  predicate   String   // Relationship type
-  object      String   // Target entity or value
-  confidence  Float    @default(1.0)
-  source      String   // Source document or chunk
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String         @id @default(uuid())
+  subject    String
+  predicate  String
+  object     String
+  confidence Float          @default(1)
+  source     String
+  metadata   String?        @db.LongText
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  entityId   String?
+  documentId String
+  chunkId    String?
+  chunk      DocumentChunk? @relation(fields: [chunkId], references: [id])
+  document   Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entity     Entity?        @relation(fields: [entityId], references: [id])
 
-  // Foreign keys
-  entityId    String?
-  documentId  String
-  chunkId     String?
-
-  // Relations
-  entity      Entity?       @relation(fields: [entityId], references: [id])
-  document    Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  chunk       DocumentChunk? @relation(fields: [chunkId], references: [id])
-
+  @@index([chunkId], map: "facts_chunkId_fkey")
+  @@index([documentId], map: "facts_documentId_fkey")
+  @@index([entityId], map: "facts_entityId_fkey")
   @@map("facts")
 }
 
@@ -174,15 +156,14 @@ model DocumentEntity {
   id         String   @id @default(uuid())
   documentId String
   entityId   String
-  relevance  Float    @default(1.0)
+  relevance  Float    @default(1)
   mentions   Int      @default(1)
   createdAt  DateTime @default(now())
-
-  // Relations
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   entity     Entity   @relation(fields: [entityId], references: [id])
 
   @@unique([documentId, entityId])
+  @@index([entityId], map: "document_entities_entityId_fkey")
   @@map("document_entities")
 }
 
@@ -191,11 +172,9 @@ model DocumentChunk {
   documentId String
   content    String   @db.LongText
   chunkIndex Int
-  embedding  Json?    // Vector embedding
-  metadata   Json?
+  embedding  String?  @db.LongText
+  metadata   String?  @db.LongText
   createdAt  DateTime @default(now())
-
-  // Relations
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   facts      Fact[]
 
@@ -204,27 +183,25 @@ model DocumentChunk {
 }
 
 model ApiKey {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  key       String   @unique
-  created   DateTime @default(now())
+  key       String    @unique
+  created   DateTime  @default(now())
   lastUsed  DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Foreign keys
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   userId    String
   realmId   String
+  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm Realm @relation(fields: [realmId], references: [id], onDelete: Cascade)
-
+  @@index([realmId], map: "api_keys_realmId_fkey")
+  @@index([userId], map: "api_keys_userId_fkey")
   @@map("api_keys")
 }
 
 model Server {
-  id            String               @id @default(uuid())
+  id            String            @id @default(uuid())
   name          String
   type          DatabaseType
   host          String
@@ -234,18 +211,15 @@ model Server {
   apiKey        String?
   database      String?
   collection    String?
-  isActive      Boolean              @default(false)
-  createdAt     DateTime             @default(now())
+  isActive      Boolean           @default(false)
+  createdAt     DateTime          @default(now())
   lastConnected DateTime?
-  updatedAt     DateTime             @updatedAt
-
-  // Foreign keys
+  updatedAt     DateTime          @updatedAt
   userId        String
+  realmServers  RealmServerLink[]
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realmServers    RealmServerLink[] // Many-to-many relationship with realms
-
+  @@index([userId], map: "servers_userId_fkey")
   @@map("servers")
 }
 
@@ -253,7 +227,7 @@ model Job {
   id           String    @id @default(uuid())
   documentName String
   documentType String
-  taskId       String?   // MoRAG backend task ID for tracking
+  taskId       String?
   startDate    DateTime  @default(now())
   endDate      DateTime?
   status       JobStatus @default(PENDING)
@@ -261,36 +235,33 @@ model Job {
   summary      String    @default("")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
-  // Foreign keys
   documentId   String
   userId       String
   realmId      String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  realm        Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  realm    Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
-
+  @@index([documentId], map: "jobs_documentId_fkey")
+  @@index([realmId], map: "jobs_realmId_fkey")
+  @@index([userId], map: "jobs_userId_fkey")
   @@map("jobs")
 }
 
 model RealmServerLink {
-  id       String   @id @default(uuid())
-  realmId  String
-  serverId String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  realm  Realm  @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  realmId   String
+  serverId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  realm     Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
   @@unique([realmId, serverId])
+  @@index([serverId], map: "realm_server_links_serverId_fkey")
   @@map("realm_server_links")
 }
 
-// Enums
 enum UserRole {
   ADMIN
   USER
