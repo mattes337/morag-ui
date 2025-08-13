@@ -78,6 +78,52 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 404: Realm not found
   - 500: Failed to delete realm
 
+## Realm User Management Endpoints
+
+### GET /api/realms/[id]/users
+- Description: Get all users in a specific realm
+- Parameters: `id` (string) - Realm ID
+- Response: `{ users: Array<{ id: string, name: string, email: string, avatar?: string, role: RealmRole, createdAt: string, updatedAt: string }> }`
+- Error cases:
+  - 401: Authentication required
+  - 403: Access denied to this realm
+  - 500: Failed to fetch realm users
+
+### POST /api/realms/[id]/users
+- Description: Add user to realm
+- Parameters: `id` (string) - Realm ID
+- Request body: `{ email: string, role: RealmRole }`
+- Response: `{ user: RealmUser }`
+- Error cases:
+  - 400: Email and role are required / User already in realm
+  - 401: Authentication required
+  - 403: Insufficient permissions to add users / Only owners can assign OWNER/ADMIN roles
+  - 404: User not found
+  - 500: Failed to add user to realm
+
+### PUT /api/realms/[id]/users/[userId]
+- Description: Update user role in realm
+- Parameters: `id` (string) - Realm ID, `userId` (string) - User ID
+- Request body: `{ role: RealmRole }`
+- Response: `{ user: RealmUser }`
+- Error cases:
+  - 400: Role is required / Cannot modify your own role
+  - 401: Authentication required
+  - 403: Insufficient permissions / Only owners can modify OWNER roles
+  - 404: User not found in this realm
+  - 500: Failed to update user role
+
+### DELETE /api/realms/[id]/users/[userId]
+- Description: Remove user from realm
+- Parameters: `id` (string) - Realm ID, `userId` (string) - User ID
+- Response: `{ success: boolean }`
+- Error cases:
+  - 400: Cannot remove yourself / Cannot remove the last owner
+  - 401: Authentication required
+  - 403: Insufficient permissions / Only owners can remove other owners
+  - 404: User not found in this realm
+  - 500: Failed to remove user from realm
+
 ## Database Endpoints
 
 ### GET /api/databases
