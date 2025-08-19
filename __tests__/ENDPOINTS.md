@@ -193,45 +193,7 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 404: Document not found
   - 500: Failed to fetch document
 
-### POST /api/documents/process
-- Description: Process document using MoRAG backend (convert, process, or ingest)
-- Request body: FormData with `file`, `realmId`, and optional `mode` ('convert' | 'process' | 'ingest')
-- Response: 
-  - Convert mode (synchronous): `{ documentId: string, markdown: string, status: 'completed' }`
-  - Convert mode (asynchronous): `{ documentId: string, jobId: string, taskId: string, status: 'processing', message: string }`
-  - Process/Ingest mode (synchronous): `{ documentId: string, jobId: string, status: 'completed', message: string }`
-  - Process/Ingest mode (asynchronous): `{ documentId: string, jobId: string, taskId: string, status: 'processing', message: string }`
-- Error cases:
-  - 400: File and realmId required, or no database servers configured
-  - 401: Authentication required
-  - 500: Processing failed
-- Notes: Always sends webhook URL for progress updates; stores markdown content in database; automatically detects document type and subType from filename
 
-### POST /api/documents/batch-process
-- Description: Process multiple documents in batch using MoRAG backend
-- Request body: FormData with `files[]` and `realmId`
-- Response: 
-  - Synchronous: `{ batchJobId: string, documentIds: string[], status: 'completed', message: string }`
-  - Asynchronous: `{ batchJobId: string, documentIds: string[], taskId: string, status: 'processing', message: string }`
-- Error cases:
-  - 400: Files and realmId required, or no database servers configured
-  - 401: Authentication required
-  - 500: Batch processing failed
-- Notes: Always sends webhook URL for progress updates; uses unified /api/v1/process endpoint
-
-### POST /api/documents/process-url
-- Description: Process URL content using MoRAG backend
-- Request body: `{ url: string, realmId: string, mode?: 'convert' | 'process' | 'ingest' }`
-- Response: 
-  - Convert mode (synchronous): `{ documentId: string, markdown: string, status: 'completed' }`
-  - Convert mode (asynchronous): `{ documentId: string, jobId: string, taskId: string, status: 'processing', message: string }`
-  - Process/Ingest mode (synchronous): `{ documentId: string, jobId: string, status: 'completed', message: string }`
-  - Process/Ingest mode (asynchronous): `{ documentId: string, jobId: string, taskId: string, status: 'processing', message: string }`
-- Error cases:
-  - 400: URL and realmId required, or no database servers configured
-  - 401: Authentication required
-  - 500: URL processing failed
-- Notes: Always sends webhook URL for progress updates; stores markdown content in database; automatically detects document type and subType from URL and filename
 
 ## Search Endpoints
 
@@ -314,6 +276,65 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Response: User object
 - Error cases:
   - 404: User not found
+
+## Document Migration Endpoints
+
+### POST /api/migrations
+- **Description**: Create new document migration between realms
+- **Request body**: `{ documentIds: string[], sourceRealmId: string, targetRealmId: string, migrationOptions: MigrationOptions }`
+- **Response**: `{ success: boolean, migration: Migration }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Validation failed / Source and target realms must be different
+  - 401: Authentication required
+  - 500: Failed to create migration
+
+### GET /api/migrations
+- **Description**: Get user's migrations with optional filtering
+- **Query parameters**: 
+  - `realmId` (optional): Filter by realm ID
+  - `status` (optional): Filter by migration status (PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED)
+  - `limit` (optional): Maximum number of results (1-100, default varies)
+  - `offset` (optional): Number of results to skip (default 0)
+- **Response**: `{ success: boolean, migrations: Migration[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid query parameters
+  - 401: Authentication required
+  - 500: Failed to fetch migrations
+
+### GET /api/migrations/[id]
+- **Description**: Get specific migration details
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, migration: Migration }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found
+  - 500: Failed to fetch migration
+
+### DELETE /api/migrations/[id]
+- **Description**: Cancel ongoing migration
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, message: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found or cannot be cancelled
+  - 500: Failed to cancel migration
+
+### GET /api/migrations/[id]/progress
+- **Description**: Get real-time migration progress
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, progress: MigrationProgress }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found
+  - 500: Failed to fetch migration progress
 
 ## Missing Endpoints
 

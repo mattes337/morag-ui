@@ -44,8 +44,6 @@ export function DocumentDetailView({
                 return 'bg-blue-100 text-blue-800';
             case 'ingested':
                 return 'bg-green-100 text-green-800';
-            case 'deprecated':
-                return 'bg-gray-100 text-gray-800';
             case 'deleted':
                 return 'bg-red-100 text-red-800';
             default:
@@ -212,7 +210,7 @@ export function DocumentDetailView({
                             onClick={() => onSupersede(document)}
                             className="w-full text-left px-3 py-2 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
                             disabled={
-                                document.state === 'deprecated' || document.state === 'deleted'
+                                document.state === 'deleted'
                             }
                         >
                             📝 Supersede Version

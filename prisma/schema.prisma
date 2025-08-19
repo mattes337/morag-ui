@@ -9,21 +9,22 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  name         String
-  email        String        @unique
-  avatar       String?
-  password     String?
-  role         UserRole      @default(USER)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  apiKeys      ApiKey[]
-  documents    Document[]
-  jobs         Job[]
-  realms       Realm[]
-  servers      Server[]
-  userRealms   UserRealm[]
-  userSettings UserSettings?
+  id                String              @id @default(uuid())
+  name              String
+  email             String              @unique
+  avatar            String?
+  password          String?
+  role              UserRole            @default(USER)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  apiKeys           ApiKey[]
+  documents         Document[]
+  jobs              Job[]
+  realms            Realm[]
+  servers           Server[]
+  userRealms        UserRealm[]
+  userSettings      UserSettings?
+  createdMigrations DocumentMigration[]
 
   @@map("users")
 }
@@ -45,7 +46,7 @@ model UserSettings {
 }
 
 model Realm {
-  id               String            @id @default(uuid())
+  id               String              @id @default(uuid())
   name             String
   description      String?
   domain           String?
@@ -53,18 +54,20 @@ model Realm {
   systemPrompt     String?
   extractionPrompt String?
   domainPrompt     String?
-  documentCount    Int               @default(0)
-  isDefault        Boolean           @default(false)
-  lastUpdated      DateTime          @default(now())
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  documentCount    Int                 @default(0)
+  isDefault        Boolean             @default(false)
+  lastUpdated      DateTime            @default(now())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
   ownerId          String
   apiKeys          ApiKey[]
   documents        Document[]
   jobs             Job[]
   servers          RealmServerLink[]
-  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner            User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   userRealms       UserRealm[]
+  sourceMigrations DocumentMigration[] @relation("SourceMigrations")
+  targetMigrations DocumentMigration[] @relation("TargetMigrations")
 
   @@unique([name, ownerId])
   @@index([ownerId], map: "realms_ownerId_fkey")
@@ -87,26 +90,33 @@ model UserRealm {
 }
 
 model Document {
-  id             String           @id @default(uuid())
-  name           String
-  type           String
-  state          DocumentState    @default(PENDING)
-  version        Int              @default(1)
-  chunks         Int              @default(0)
-  quality        Float            @default(0)
-  markdown       String?          @db.LongText
-  uploadDate     DateTime         @default(now())
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  userId         String
-  realmId        String
-  subType        String?
-  documentChunks DocumentChunk[]
-  entities       DocumentEntity[]
-  realm          Realm            @relation(fields: [realmId], references: [id], onDelete: Cascade)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  facts          Fact[]
-  jobs           Job[]
+  id                    String                  @id @default(uuid())
+  name                  String
+  type                  String
+  state                 DocumentState           @default(PENDING)
+  version               Int                     @default(1)
+  chunks                Int                     @default(0)
+  quality               Float                   @default(0)
+  markdown              String?                 @db.LongText
+  uploadDate            DateTime                @default(now())
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  userId                String
+  realmId               String
+  subType               String?
+  currentStage          ProcessingStage?        @default(MARKDOWN_CONVERSION)
+  stageStatus           StageStatus             @default(PENDING)
+  lastStageError        String?                 @db.Text
+  documentChunks        DocumentChunk[]
+  entities              DocumentEntity[]
+  realm                 Realm                   @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facts                 Fact[]
+  jobs                  Job[]
+  stageFiles            DocumentStageFile[]
+  stageExecutions       StageExecution[]
+  sourceMigrationItems  DocumentMigrationItem[] @relation("SourceMigrationItems")
+  targetMigrationItems  DocumentMigrationItem[] @relation("TargetMigrationItems")
 
   @@index([realmId], map: "documents_realmId_fkey")
   @@index([userId], map: "documents_userId_fkey")
@@ -180,6 +190,46 @@ model DocumentChunk {
 
   @@unique([documentId, chunkIndex])
   @@map("document_chunks")
+}
+
+model DocumentStageFile {
+  id           String          @id @default(uuid())
+  documentId   String
+  stage        ProcessingStage
+  filename     String
+  filepath     String
+  filesize     Int
+  contentType  String
+  content      String?         @db.LongText
+  metadata     String?         @db.LongText
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, stage, filename])
+  @@index([documentId], map: "document_stage_files_documentId_fkey")
+  @@map("document_stage_files")
+}
+
+model StageExecution {
+  id           String          @id @default(uuid())
+  documentId   String
+  stage        ProcessingStage
+  status       StageStatus
+  startedAt    DateTime        @default(now())
+  completedAt  DateTime?
+  errorMessage String?         @db.Text
+  inputFiles   String?         @db.Text
+  outputFiles  String?         @db.Text
+  metadata     String?         @db.LongText
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], map: "stage_executions_documentId_fkey")
+  @@index([stage], map: "stage_executions_stage_idx")
+  @@index([status], map: "stage_executions_status_idx")
+  @@map("stage_executions")
 }
 
 model ApiKey {
@@ -262,6 +312,56 @@ model RealmServerLink {
   @@map("realm_server_links")
 }
 
+model DocumentMigration {
+  id                  String                  @id @default(uuid())
+  sourceRealmId       String
+  targetRealmId       String
+  status              MigrationStatus         @default(PENDING)
+  totalDocuments      Int                     @default(0)
+  processedDocuments  Int                     @default(0)
+  failedDocuments     Int                     @default(0)
+  migrationOptions    String?                 @db.LongText // JSON string
+  startedAt           DateTime                @default(now())
+  completedAt         DateTime?
+  errorMessage        String?                 @db.Text
+  createdBy           String
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  sourceRealm         Realm                   @relation("SourceMigrations", fields: [sourceRealmId], references: [id], onDelete: Cascade)
+  targetRealm         Realm                   @relation("TargetMigrations", fields: [targetRealmId], references: [id], onDelete: Cascade)
+  createdByUser       User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  migrationItems      DocumentMigrationItem[]
+
+  @@index([sourceRealmId], map: "document_migrations_sourceRealmId_fkey")
+  @@index([targetRealmId], map: "document_migrations_targetRealmId_fkey")
+  @@index([createdBy], map: "document_migrations_createdBy_fkey")
+  @@index([status], map: "document_migrations_status_idx")
+  @@map("document_migrations")
+}
+
+model DocumentMigrationItem {
+  id                 String            @id @default(uuid())
+  migrationId        String
+  sourceDocumentId   String
+  targetDocumentId   String?
+  status             MigrationStatus   @default(PENDING)
+  errorMessage       String?           @db.Text
+  migratedStages     String?           @db.Text // JSON array of stage names
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  migration          DocumentMigration @relation(fields: [migrationId], references: [id], onDelete: Cascade)
+  sourceDocument     Document          @relation("SourceMigrationItems", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  targetDocument     Document?         @relation("TargetMigrationItems", fields: [targetDocumentId], references: [id], onDelete: SetNull)
+
+  @@index([migrationId], map: "document_migration_items_migrationId_fkey")
+  @@index([sourceDocumentId], map: "document_migration_items_sourceDocumentId_fkey")
+  @@index([targetDocumentId], map: "document_migration_items_targetDocumentId_fkey")
+  @@index([status], map: "document_migration_items_status_idx")
+  @@map("document_migration_items")
+}
+
 enum UserRole {
   ADMIN
   USER
@@ -302,6 +402,30 @@ enum JobStatus {
   WAITING_FOR_REMOTE_WORKER
   PROCESSING
   FINISHED
+  FAILED
+  CANCELLED
+}
+
+enum ProcessingStage {
+  MARKDOWN_CONVERSION
+  MARKDOWN_OPTIMIZER
+  CHUNKER
+  FACT_GENERATOR
+  INGESTOR
+}
+
+enum StageStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum MigrationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
   FAILED
   CANCELLED
 }

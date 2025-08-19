@@ -110,7 +110,7 @@ export interface Document {
     name: string;
     type: string; // Main type: document, video, audio, website, youtube
     subType?: string; // Optional subtype: pdf, word, excel, markdown, text, etc.
-    state: 'pending' | 'ingesting' | 'ingested' | 'deprecated' | 'deleted';
+    state: 'pending' | 'ingesting' | 'ingested' | 'deleted';
     version: number;
     chunks: number;
     quality: number;
