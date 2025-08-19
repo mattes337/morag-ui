@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     try {
         const user = await requireAuth(request);
         const body = await request.json();
-        const { name, type, subType, realmId, filename, url } = body;
+        const { name, type, subType, realmId, filename, url, processingMode } = body;
 
         if (!name || !realmId) {
             return NextResponse.json(
@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
             type: finalType,
             subType: finalSubType,
             realmId,
-            userId: user.userId // Use authenticated user's ID
+            userId: user.userId, // Use authenticated user's ID
+            processingMode: processingMode || 'AUTOMATIC'
         });
         
         return NextResponse.json(document, { status: 201 });

@@ -1,4 +1,6 @@
 import { PrismaClient, ProcessingStage, StageStatus, StageExecution } from '@prisma/client';
+import { moragService } from './moragService';
+import { backgroundJobService } from './backgroundJobService';
 
 const prisma = new PrismaClient();
 
@@ -324,6 +326,138 @@ class StageExecutionService {
         lastStageError: null,
       },
     });
+  }
+
+  /**
+   * Execute a stage asynchronously using the background job service
+   */
+  async executeStageAsync(documentId: string, stage: ProcessingStage, priority: number = 5): Promise<string> {
+    // Create a processing job for this stage
+    const jobId = await backgroundJobService.createProcessingJob(documentId, stage, priority);
+    
+    // Update document status to indicate processing has started
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        currentStage: stage,
+        stageStatus: 'IN_PROGRESS',
+        lastStageError: null,
+      },
+    });
+    
+    return jobId;
+  }
+
+  /**
+   * Process a stage directly (called by background job service)
+   */
+  async processStageDirectly(documentId: string, stage: ProcessingStage): Promise<void> {
+    try {
+      // Start execution record
+      const execution = await this.startExecution({
+        documentId,
+        stage,
+        metadata: { processedAt: new Date().toISOString() }
+      });
+
+      // Get document details
+      const document = await prisma.document.findUnique({
+        where: { id: documentId },
+        include: {
+          realm: true,
+          user: true
+        }
+      });
+
+      if (!document) {
+        throw new Error(`Document ${documentId} not found`);
+      }
+
+      // Call MoRAG backend for stage processing
+      await moragService.processStage({
+        documentId,
+        stage,
+        executionId: execution.id,
+        document: {
+          id: document.id,
+          title: document.title,
+          content: document.content || '',
+          filePath: document.filePath || '',
+          realmId: document.realmId
+        },
+        webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/stages`
+      });
+
+      // The webhook will handle completion/failure updates
+    } catch (error) {
+      // If there's an immediate error, fail the execution
+      const execution = await this.getLatestExecution(documentId, stage);
+      if (execution) {
+        await this.failExecution(execution.id, error instanceof Error ? error.message : 'Unknown error');
+      }
+      
+      // Update document status
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          stageStatus: 'FAILED',
+          lastStageError: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Handle webhook completion of a stage
+   */
+  async handleStageCompletion(executionId: string, status: 'completed' | 'failed', data?: {
+    outputFiles?: string[];
+    errorMessage?: string;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    const execution = await this.getExecution(executionId);
+    if (!execution) {
+      throw new Error(`Execution ${executionId} not found`);
+    }
+
+    if (status === 'completed') {
+      await this.completeExecution(executionId, data?.outputFiles, data?.metadata);
+      
+      // Update document status and advance to next stage if applicable
+      await prisma.document.update({
+        where: { id: execution.documentId },
+        data: {
+          stageStatus: 'COMPLETED',
+          lastStageError: null,
+        },
+      });
+      
+      // Check if we should advance to the next stage for automatic processing
+      const document = await prisma.document.findUnique({
+        where: { id: execution.documentId }
+      });
+      
+      if (document?.processingMode === 'AUTOMATIC' && !document.isProcessingPaused) {
+        const nextStage = await this.advanceToNextStage(execution.documentId);
+        if (nextStage) {
+          // Schedule the next stage
+          await backgroundJobService.scheduleAutomaticJob(execution.documentId, nextStage);
+        }
+      }
+    } else {
+      await this.failExecution(executionId, data?.errorMessage || 'Stage processing failed', data?.metadata);
+      
+      // Update document status
+      await prisma.document.update({
+        where: { id: execution.documentId },
+        data: {
+          stageStatus: 'FAILED',
+          lastStageError: data?.errorMessage || 'Stage processing failed',
+        },
+      });
+    }
   }
 
   /**

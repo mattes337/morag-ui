@@ -33,7 +33,7 @@ interface AppContextType {
 
     // Realm operations
     updateRealm: (id: string, data: Partial<Realm>) => Promise<void>;
-    createDocument: (data: { name: string; type: string; realmId: string }) => Promise<void>;
+    createDocument: (data: { name: string; type: string; realmId: string; processingMode?: string }) => Promise<void>;
     updateDocument: (id: string, data: Partial<Document>) => Promise<void>;
     deleteDocument: (id: string) => Promise<void>;
     createApiKey: (data: { name: string; key: string }) => Promise<void>;
@@ -386,14 +386,17 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         }
     };
 
-    const createDocument = async (data: { name: string; type: string; realmId: string }) => {
+    const createDocument = async (data: { name: string; type: string; realmId: string; processingMode?: string }) => {
         try {
             if (!user) throw new Error('No user logged in');
 
             const response = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data), // userId is now handled by authentication
+                body: JSON.stringify({
+                    ...data,
+                    processingMode: data.processingMode || 'AUTOMATIC'
+                }), // userId is now handled by authentication
             });
 
             if (!response.ok) {

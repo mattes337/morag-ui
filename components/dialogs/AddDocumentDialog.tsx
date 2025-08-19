@@ -29,6 +29,7 @@ export function AddDocumentDialog({
     const [chunkingMethod, setChunkingMethod] = useState('Semantic');
     const [gpuProcessing, setGpuProcessing] = useState(false);
     const [contextualEmbedding, setContextualEmbedding] = useState(false);
+    const [processingMode, setProcessingMode] = useState<'MANUAL' | 'AUTOMATIC'>('AUTOMATIC');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const documentTypes: DocumentType[] = useMemo(
@@ -89,6 +90,7 @@ export function AddDocumentDialog({
             setChunkingMethod('Semantic');
             setGpuProcessing(false);
             setContextualEmbedding(false);
+            setProcessingMode('AUTOMATIC');
         }
     }, [isOpen, mode]);
 
@@ -101,6 +103,7 @@ export function AddDocumentDialog({
         setChunkingMethod('Semantic');
         setGpuProcessing(false);
         setContextualEmbedding(false);
+        setProcessingMode('AUTOMATIC');
         setIsSubmitting(false);
         onClose();
     };
@@ -127,6 +130,7 @@ export function AddDocumentDialog({
                 name,
                 type: selectedDocumentType.type,
                 realmId: currentRealm.id,
+                processingMode,
             };
 
             // Add filename or URL for automatic type/subtype detection
@@ -336,6 +340,51 @@ export function AddDocumentDialog({
                                     <span className="text-sm" data-oid="i0_pmze">
                                         Contextual Embedding
                                     </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Processing Mode Selection */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4" data-oid="processing-mode">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Processing Mode
+                            </label>
+                            <div className="space-y-3">
+                                <label className="flex items-start space-x-3 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="processingMode"
+                                        value="AUTOMATIC"
+                                        checked={processingMode === 'AUTOMATIC'}
+                                        onChange={(e) => setProcessingMode(e.target.value as 'AUTOMATIC')}
+                                        className="mt-1 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                            Automatic Processing (Recommended)
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            Document will be processed through all stages automatically via background jobs
+                                        </div>
+                                    </div>
+                                </label>
+                                <label className="flex items-start space-x-3 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="processingMode"
+                                        value="MANUAL"
+                                        checked={processingMode === 'MANUAL'}
+                                        onChange={(e) => setProcessingMode(e.target.value as 'MANUAL')}
+                                        className="mt-1 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                            Manual Processing
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            You will manually trigger each processing stage
+                                        </div>
+                                    </div>
                                 </label>
                             </div>
                         </div>

@@ -3,6 +3,12 @@
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
+import { ProcessingStatusDisplay } from '../ui/processing-status-display';
+import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
+import { StageProgressIndicator } from '../ui/stage-progress-indicator';
+import { Badge } from '../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Activity, Settings } from 'lucide-react';
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -147,6 +153,87 @@ export function DocumentDetailView({
                 <div className="flex space-x-3"></div>
             </div>
 
+            {/* Processing Status Section */}
+            {document.processingMode && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Activity className="w-5 h-5" />
+                                <span>Processing Status</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <Badge variant={document.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'}>
+                                    {document.processingMode} Mode
+                                </Badge>
+                                <ProcessingModeToggle
+                                    mode={document.processingMode}
+                                    onChange={async (mode) => {
+                                        // TODO: Implement mode change handler
+                                        console.log('Change processing mode to:', mode);
+                                    }}
+                                    disabled={document.state === 'ingesting'}
+                                    size="sm"
+                                />
+                            </div>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {/* Processing Status Display */}
+                            <ProcessingStatusDisplay
+                                stages={[
+                                    {
+                                        stage: 'MARKDOWN_CONVERSION',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 
+                                               document.state === 'ingesting' ? 'RUNNING' : 'PENDING'
+                                    },
+                                    {
+                                        stage: 'CHUNKER',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 
+                                               document.state === 'ingesting' ? 'PENDING' : 'PENDING'
+                                    },
+                                    {
+                                        stage: 'INGESTOR',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 
+                                               document.state === 'ingesting' ? 'PENDING' : 'PENDING'
+                                    }
+                                ]}
+                                currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
+                                compact={false}
+                            />
+                            
+                            {/* Stage Progress Indicator */}
+                            <StageProgressIndicator
+                                stages={[
+                                    {
+                                        stage: 'MARKDOWN_CONVERSION',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 
+                                               document.state === 'ingesting' ? 'RUNNING' : 'PENDING',
+                                        progress: document.state === 'ingesting' ? 65 : undefined,
+                                        startedAt: document.state === 'ingesting' ? new Date(Date.now() - 120000) : undefined
+                                    },
+                                    {
+                                        stage: 'CHUNKER',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 'PENDING'
+                                    },
+                                    {
+                                        stage: 'INGESTOR',
+                                        status: document.state === 'ingested' ? 'COMPLETED' : 'PENDING'
+                                    }
+                                ]}
+                                currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
+                                overallProgress={document.state === 'ingested' ? 100 : 
+                                               document.state === 'ingesting' ? 35 : 0}
+                                compact={true}
+                                showLabels={false}
+                                showProgress={true}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Document Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -189,6 +276,14 @@ export function DocumentDetailView({
                                 {document.state}
                             </span>
                         </div>
+                        {document.processingMode && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Processing:</span>
+                                <Badge variant={document.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'} className="text-xs">
+                                    {document.processingMode}
+                                </Badge>
+                            </div>
+                        )}
                         <div className="flex justify-between">
                             <span className="text-gray-600">Uploaded:</span>
                             <span className="font-medium">{document.uploadDate}</span>

@@ -107,6 +107,10 @@ model Document {
   currentStage          ProcessingStage?        @default(MARKDOWN_CONVERSION)
   stageStatus           StageStatus             @default(PENDING)
   lastStageError        String?                 @db.Text
+  processingMode        ProcessingMode          @default(AUTOMATIC)
+  isProcessingPaused    Boolean                 @default(false)
+  nextScheduledStage    ProcessingStage?
+  scheduledAt           DateTime?
   documentChunks        DocumentChunk[]
   entities              DocumentEntity[]
   realm                 Realm                   @relation(fields: [realmId], references: [id], onDelete: Cascade)
@@ -115,6 +119,7 @@ model Document {
   jobs                  Job[]
   stageFiles            DocumentStageFile[]
   stageExecutions       StageExecution[]
+  processingJobs        ProcessingJob[]
   sourceMigrationItems  DocumentMigrationItem[] @relation("SourceMigrationItems")
   targetMigrationItems  DocumentMigrationItem[] @relation("TargetMigrationItems")
 
@@ -362,6 +367,30 @@ model DocumentMigrationItem {
   @@map("document_migration_items")
 }
 
+model ProcessingJob {
+  id           String          @id @default(uuid())
+  documentId   String
+  stage        ProcessingStage
+  status       JobStatus       @default(PENDING)
+  priority     Int             @default(0)
+  scheduledAt  DateTime        @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  retryCount   Int             @default(0)
+  maxRetries   Int             @default(3)
+  errorMessage String?         @db.Text
+  metadata     String?         @db.LongText
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], map: "processing_jobs_documentId_fkey")
+  @@index([status], map: "processing_jobs_status_idx")
+  @@index([scheduledAt], map: "processing_jobs_scheduledAt_idx")
+  @@index([stage], map: "processing_jobs_stage_idx")
+  @@map("processing_jobs")
+}
+
 enum UserRole {
   ADMIN
   USER
@@ -428,4 +457,9 @@ enum MigrationStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum ProcessingMode {
+  MANUAL
+  AUTOMATIC
 }

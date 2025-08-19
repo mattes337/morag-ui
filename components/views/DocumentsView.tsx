@@ -3,6 +3,8 @@
 import { Realm, Document } from '../../types';
 import { FileText, Plus } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
+import { ProcessingStatusDisplay } from '../ui/processing-status-display';
+import { Badge } from '../ui/badge';
 
 interface DocumentsViewProps {
     documents: Document[];
@@ -104,6 +106,9 @@ export function DocumentsView({
                                 State
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Processing
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Version
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -145,6 +150,23 @@ export function DocumentsView({
                                     >
                                         {doc.state}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center space-x-2">
+                                        <Badge 
+                                            variant={doc.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'}
+                                            className="text-xs"
+                                        >
+                                            {doc.processingMode || 'AUTOMATIC'}
+                                        </Badge>
+                                        {doc.state === 'ingesting' && (
+                                            <ProcessingStatusDisplay
+                                                documentId={doc.id}
+                                                processingMode={doc.processingMode || 'AUTOMATIC'}
+                                                compact={true}
+                                            />
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     v{doc.version}

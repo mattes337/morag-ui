@@ -94,6 +94,31 @@ export interface WebhookPayload {
   };
 }
 
+export interface StageProcessRequest {
+  documentId: string;
+  stage: string;
+  executionId: string;
+  document: {
+    id: string;
+    title: string;
+    content: string;
+    filePath: string;
+    realmId: string;
+  };
+  webhookUrl: string;
+  metadata?: Record<string, any>;
+}
+
+export interface StageProcessResponse {
+  success: boolean;
+  taskId: string;
+  executionId: string;
+  stage: string;
+  estimatedTimeSeconds: number;
+  statusUrl: string;
+  message: string;
+}
+
 export class MoragService {
   private baseUrl: string;
   private apiKey?: string;
@@ -163,6 +188,39 @@ export class MoragService {
     }
 
     return await response.json();
+  }
+
+  /**
+   * Process a specific stage for a document
+   */
+  async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/process`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        document_id: request.documentId,
+        stage: request.stage,
+        execution_id: request.executionId,
+        document: request.document,
+        webhook_url: request.webhookUrl,
+        metadata: request.metadata || {},
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return {
+      success: result.success,
+      taskId: result.task_id,
+      executionId: request.executionId,
+      stage: request.stage,
+      estimatedTimeSeconds: result.estimated_time_seconds || 60,
+      statusUrl: result.status_url || '',
+      message: result.message || 'Stage processing started',
+    };
   }
 
   /**

@@ -11,6 +11,7 @@ export class DocumentService {
         realmId: string;
         state?: DocumentState;
         version?: number;
+        processingMode?: string;
     }) {
         const document = await prisma.document.create({
             data,

@@ -269,6 +269,144 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Error cases:
   - 500: Failed to delete API key
 
+## Job Scheduler Endpoints
+
+### GET /api/scheduler
+- **Description**: Get job scheduler status and statistics
+- **Response**: `{ stats: SchedulerStats, config: SchedulerConfig, timestamp: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 401: Authentication required
+  - 500: Failed to get scheduler status
+
+### POST /api/scheduler
+- **Description**: Control job scheduler (start/stop/restart/trigger)
+- **Body**: `{ action: 'start' | 'stop' | 'restart' | 'trigger' }`
+- **Response**: `{ success: boolean, message: string, stats: SchedulerStats }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid action
+  - 401: Authentication required
+  - 500: Failed to control scheduler
+
+### PUT /api/scheduler
+- **Description**: Update job scheduler configuration
+- **Body**: `{ config: Partial<SchedulerConfig> }`
+- **Response**: `{ success: boolean, message: string, config: SchedulerConfig }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid configuration
+  - 401: Authentication required
+  - 500: Failed to update configuration
+
+## Document Processing Endpoints
+
+### GET /api/documents/[id]/processing
+- **Description**: Get document processing status and jobs
+- **Parameters**: `id` (string) - Document ID
+- **Response**: `{ documentId: string, processingMode: string, currentStage: string, stageStatus: string, isProcessingPaused: boolean, jobs: Job[], recentJobs: Job[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Document ID required
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to get processing status
+
+### PUT /api/documents/[id]/processing
+- **Description**: Update document processing mode or control processing
+- **Parameters**: `id` (string) - Document ID
+- **Body**: `{ processingMode?: 'MANUAL' | 'AUTOMATIC', action?: 'pause' | 'resume' | 'cancel' | 'schedule', stage?: string, priority?: number }`
+- **Response**: `{ success: boolean, message: string, document: Document, recentJobs: Job[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid parameters
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to update processing
+
+### POST /api/documents/[id]/processing
+- **Description**: Execute a specific stage for the document
+- **Parameters**: `id` (string) - Document ID
+- **Body**: `{ stage: string, priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, jobId: string, documentId: string, stage: string, priority: number, scheduledAt: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Stage required
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to schedule processing
+
+## Processing Jobs Endpoints
+
+### GET /api/processing-jobs
+- **Description**: Get processing jobs with optional filtering
+- **Query Parameters**: 
+  - `documentId` (optional): Filter by document ID
+  - `status` (optional): Filter by job status
+  - `stage` (optional): Filter by processing stage
+  - `limit` (optional): Number of jobs to return (max 100, default 50)
+  - `offset` (optional): Pagination offset (default 0)
+- **Response**: `{ jobs: Job[], stats: JobStats, pagination: PaginationInfo }`
+- **Authentication**: Required
+- **Error cases**:
+  - 401: Authentication required
+  - 500: Failed to get jobs
+
+### POST /api/processing-jobs
+- **Description**: Create a new processing job
+- **Body**: `{ documentId: string, stage: string, priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, job: Job }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid parameters or stage
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to create job
+
+### DELETE /api/processing-jobs
+- **Description**: Cancel multiple processing jobs
+- **Body**: `{ jobIds?: string[], documentId?: string }`
+- **Response**: `{ success: boolean, message: string, cancelledCount: number }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Either jobIds or documentId required
+  - 401: Authentication required
+  - 500: Failed to cancel jobs
+
+### GET /api/processing-jobs/[id]
+- **Description**: Get a specific processing job by ID
+- **Parameters**: `id` (string) - Job ID
+- **Response**: `{ job: Job }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Job ID required
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to get job
+
+### PUT /api/processing-jobs/[id]
+- **Description**: Update a processing job (retry, cancel, reschedule, update priority)
+- **Parameters**: `id` (string) - Job ID
+- **Body**: `{ action: 'cancel' | 'retry' | 'reschedule' | 'update_priority', priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, job: Job, [additional fields based on action] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid action or missing required fields
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to update job
+
+### DELETE /api/processing-jobs/[id]
+- **Description**: Cancel a specific processing job
+- **Parameters**: `id` (string) - Job ID
+- **Response**: `{ success: boolean, message: string, jobId: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Job ID required
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to cancel job
+
 ## User Endpoints
 
 ### GET /api/users/[email]

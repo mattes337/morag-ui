@@ -115,6 +115,7 @@ export interface Document {
     chunks: number;
     quality: number;
     uploadDate: string;
+    processingMode?: 'MANUAL' | 'AUTOMATIC';
     metadata?: DocumentMetadata;
 }
 
