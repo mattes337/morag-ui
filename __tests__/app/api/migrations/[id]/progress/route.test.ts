@@ -30,12 +30,15 @@ describe('/api/migrations/[id]/progress', () => {
   describe('GET', () => {
     it('should return migration progress', async () => {
       const mockProgress = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
         totalDocuments: 10,
         processedDocuments: 7,
         failedDocuments: 1,
         currentStage: 'Processing documents',
         estimatedTimeRemaining: 300,
         percentage: 70,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       mockDocumentMigrationService.getMigrationProgress.mockResolvedValue(mockProgress as any);
@@ -105,14 +108,12 @@ describe('/api/migrations/[id]/progress', () => {
 
     it('should handle completed migration progress', async () => {
       const mockProgress = {
-        migrationId: 'migration-1',
+        id: 'migration-1',
         status: MigrationStatus.COMPLETED,
         totalDocuments: 5,
         processedDocuments: 5,
-        failedDocuments: 0,
-        completedDocuments: 5,
-        pendingDocuments: 0,
-        progressPercentage: 100,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const mockMigration = {
@@ -139,14 +140,12 @@ describe('/api/migrations/[id]/progress', () => {
 
     it('should handle failed migration progress', async () => {
       const mockProgress = {
-        migrationId: 'migration-1',
+        id: 'migration-1',
         status: MigrationStatus.FAILED,
         totalDocuments: 3,
         processedDocuments: 1,
-        failedDocuments: 2,
-        completedDocuments: 1,
-        pendingDocuments: 0,
-        progressPercentage: 33,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const mockMigration = {

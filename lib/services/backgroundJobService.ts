@@ -67,6 +67,13 @@ class BackgroundJobService {
   }
 
   /**
+   * Check if the background job processor is running
+   */
+  isProcessorRunning(): boolean {
+    return this.processingInterval !== null;
+  }
+
+  /**
    * Create a new processing job
    */
   async createJob(input: ProcessingJobInput): Promise<ProcessingJobOutput> {
@@ -128,14 +135,21 @@ class BackgroundJobService {
   }
 
   /**
-   * Process the next batch of jobs
+   * Process jobs and return statistics
    */
-  async processNextJobs(batchSize: number = 5): Promise<void> {
+  async processJobs(batchSize: number = 5): Promise<{
+    processed: number;
+    failed: number;
+    skipped: number;
+  }> {
     if (this.isProcessing) {
-      return;
+      return { processed: 0, failed: 0, skipped: 0 };
     }
 
     this.isProcessing = true;
+    let processed = 0;
+    let failed = 0;
+    let skipped = 0;
 
     try {
       // First, schedule any new automatic jobs
@@ -163,14 +177,25 @@ class BackgroundJobService {
       for (const job of jobs) {
         try {
           await this.processJob(job.id);
+          processed++;
         } catch (error) {
           console.error(`Error processing job ${job.id}:`, error);
           await this.failJob(job.id, error instanceof Error ? error.message : 'Unknown error');
+          failed++;
         }
       }
     } finally {
       this.isProcessing = false;
     }
+
+    return { processed, failed, skipped };
+  }
+
+  /**
+   * Process the next batch of jobs
+   */
+  async processNextJobs(batchSize: number = 5): Promise<void> {
+    await this.processJobs(batchSize);
   }
 
   /**
@@ -354,6 +379,33 @@ class BackgroundJobService {
         },
       },
     });
+  }
+
+  /**
+   * Get job statistics
+   */
+  async getStats(): Promise<{
+    totalJobs: number;
+    pendingJobs: number;
+    runningJobs: number;
+    completedJobs: number;
+    failedJobs: number;
+  }> {
+    const [totalJobs, pendingJobs, runningJobs, completedJobs, failedJobs] = await Promise.all([
+      prisma.processingJob.count(),
+      prisma.processingJob.count({ where: { status: JobStatus.PENDING } }),
+      prisma.processingJob.count({ where: { status: JobStatus.PROCESSING } }),
+      prisma.processingJob.count({ where: { status: JobStatus.FINISHED } }),
+      prisma.processingJob.count({ where: { status: JobStatus.FAILED } })
+    ]);
+
+    return {
+      totalJobs,
+      pendingJobs,
+      runningJobs,
+      completedJobs,
+      failedJobs
+    };
   }
 
   /**

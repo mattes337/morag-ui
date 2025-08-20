@@ -124,14 +124,12 @@ async function handleStageCompleted(payload: StageWebhookPayload): Promise<void>
     
     if (payload.result?.files) {
       for (const file of payload.result.files) {
-        const stageFile = await stageFileService.createStageFile({
+        const stageFile = await stageFileService.storeStageFile({
           documentId: payload.document_id,
           stage: payload.stage,
           filename: file.filename,
-          filepath: file.filepath || file.filename,
-          filesize: file.filesize,
+          content: file.content || '',
           contentType: file.contentType,
-          content: file.content,
           metadata: file.metadata,
         });
         

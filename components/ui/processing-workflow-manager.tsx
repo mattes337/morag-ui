@@ -169,7 +169,7 @@ export function ProcessingWorkflowManager({
           {/* Processing Mode Toggle */}
           <ProcessingModeToggle
             mode={processingMode}
-            onChange={handleToggleMode}
+            onModeChange={handleToggleMode}
             disabled={isProcessing || isLoading}
           />
           

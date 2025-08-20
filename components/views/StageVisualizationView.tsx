@@ -54,7 +54,16 @@ interface StageVisualizationProps {
   isLoading?: boolean;
 }
 
-const STAGE_CONFIG = {
+interface StageConfig {
+  name: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  estimatedTime: string;
+  optional?: boolean;
+}
+
+const STAGE_CONFIG: Record<ProcessingStage, StageConfig> = {
   MARKDOWN_CONVERSION: {
     name: 'Markdown Conversion',
     description: 'Convert input files to unified markdown format',

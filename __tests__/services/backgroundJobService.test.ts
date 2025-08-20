@@ -1,41 +1,42 @@
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+type Mock = jest.MockedFunction<any>;
 import { backgroundJobService } from '../../lib/services/backgroundJobService';
-import { PrismaClient, JobStatus } from '@prisma/client';
+import { PrismaClient, JobStatus, ProcessingStage } from '@prisma/client';
 import { errorHandlingService } from '../../lib/services/errorHandlingService';
 
 // Mock dependencies
-vi.mock('@prisma/client');
-vi.mock('../../lib/services/errorHandlingService');
+jest.mock('@prisma/client');
+jest.mock('../../lib/services/errorHandlingService');
 
 const mockPrisma = {
   processingJob: {
-    create: vi.fn(),
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    update: vi.fn(),
-    count: vi.fn(),
-    groupBy: vi.fn()
+    create: jest.fn(),
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
+    count: jest.fn(),
+    groupBy: jest.fn()
   },
   document: {
-    findUnique: vi.fn(),
-    update: vi.fn()
+    findUnique: jest.fn(),
+    update: jest.fn()
   }
 } as any;
 
 const mockErrorHandlingService = errorHandlingService as {
-  handleProcessingError: Mock;
+  handleProcessingError: jest.MockedFunction<any>;
 };
 
 // Mock PrismaClient constructor
 (PrismaClient as any).mockImplementation(() => mockPrisma);
 
 // Mock fetch for webhook calls
-global.fetch = vi.fn();
+global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 describe('BackgroundJobService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
+    jest.clearAllMocks();
+    jest.useFakeTimers();
     
     // Default mock implementations
     mockPrisma.processingJob.findMany.mockResolvedValue([]);
@@ -48,14 +49,14 @@ describe('BackgroundJobService', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.useRealTimers();
+    jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   describe('createJob', () => {
     const jobData = {
       documentId: 'doc-1',
-      stage: 'MARKDOWN_CONVERSION',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
       priority: 1
     };
 
@@ -130,13 +131,13 @@ describe('BackgroundJobService', () => {
     });
 
     it('should schedule jobs for documents needing processing', async () => {
-      await backgroundJobService.scheduleAutomaticJobs(mockDocuments);
+      await backgroundJobService.scheduleAutomaticJobs();
 
       expect(mockPrisma.processingJob.create).toHaveBeenCalledTimes(2);
       expect(mockPrisma.processingJob.create).toHaveBeenCalledWith({
         data: {
           documentId: 'doc-1',
-          stage: 'MARKDOWN_CONVERSION',
+          stage: ProcessingStage.MARKDOWN_CONVERSION,
           priority: 0,
           status: JobStatus.PENDING,
           createdAt: expect.any(Date),
@@ -146,7 +147,7 @@ describe('BackgroundJobService', () => {
     });
 
     it('should handle empty document list', async () => {
-      await backgroundJobService.scheduleAutomaticJobs([]);
+      await backgroundJobService.scheduleAutomaticJobs();
 
       expect(mockPrisma.processingJob.create).not.toHaveBeenCalled();
     });
@@ -159,7 +160,7 @@ describe('BackgroundJobService', () => {
         processingMode: 'AUTOMATIC'
       };
 
-      await backgroundJobService.scheduleAutomaticJobs([completedDoc]);
+      await backgroundJobService.scheduleAutomaticJobs();
 
       expect(mockPrisma.processingJob.create).not.toHaveBeenCalled();
     });
@@ -169,7 +170,7 @@ describe('BackgroundJobService', () => {
     const mockPendingJob = {
       id: 'job-1',
       documentId: 'doc-1',
-      stage: 'MARKDOWN_CONVERSION',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
       status: JobStatus.PENDING,
       priority: 1,
       scheduledAt: new Date(Date.now() - 1000),
@@ -197,7 +198,7 @@ describe('BackgroundJobService', () => {
       expect(mockPrisma.processingJob.update).toHaveBeenCalledWith({
         where: { id: 'job-1' },
         data: {
-          status: JobStatus.RUNNING,
+          status: JobStatus.PROCESSING,
           startedAt: expect.any(Date)
         }
       });
@@ -218,7 +219,7 @@ describe('BackgroundJobService', () => {
       expect(mockErrorHandlingService.handleProcessingError).toHaveBeenCalledWith({
         jobId: 'job-1',
         documentId: 'doc-1',
-        stage: 'MARKDOWN_CONVERSION',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
         attempt: 1,
         error,
         timestamp: expect.any(Date)
@@ -277,7 +278,7 @@ describe('BackgroundJobService', () => {
     it('should not cancel a running job', async () => {
       const runningJob = {
         id: 'job-1',
-        status: JobStatus.RUNNING
+        status: JobStatus.PROCESSING
       };
       mockPrisma.processingJob.findFirst.mockResolvedValue(runningJob);
 
@@ -351,13 +352,13 @@ describe('BackgroundJobService', () => {
 
   describe('processor interval', () => {
     it('should process jobs at regular intervals when running', async () => {
-      const processSpy = vi.spyOn(backgroundJobService, 'processJobs');
+      const processSpy = jest.spyOn(backgroundJobService, 'processJobs');
       processSpy.mockResolvedValue({ processed: 0, failed: 0, skipped: 0 });
 
       await backgroundJobService.startProcessor();
 
       // Fast forward time to trigger interval
-      vi.advanceTimersByTime(30000); // 30 seconds
+      jest.advanceTimersByTime(30000); // 30 seconds
 
       expect(processSpy).toHaveBeenCalled();
 
@@ -366,11 +367,11 @@ describe('BackgroundJobService', () => {
     });
 
     it('should not process jobs when processor is stopped', async () => {
-      const processSpy = vi.spyOn(backgroundJobService, 'processJobs');
+      const processSpy = jest.spyOn(backgroundJobService, 'processJobs');
       processSpy.mockResolvedValue({ processed: 0, failed: 0, skipped: 0 });
 
       // Don't start processor
-      vi.advanceTimersByTime(30000);
+      jest.advanceTimersByTime(30000);
 
       expect(processSpy).not.toHaveBeenCalled();
       processSpy.mockRestore();

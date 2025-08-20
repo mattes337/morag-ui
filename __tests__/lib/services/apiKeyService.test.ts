@@ -47,12 +47,13 @@ describe('ApiKeyService', () => {
                 },
             };
 
-            mockApiKeyService.createApiKey.mockResolvedValue(mockApiKey);
+            mockApiKeyService.createApiKey.mockResolvedValue(mockApiKey as any);
 
             const result = await ApiKeyService.createApiKey({
                 name: 'Test API Key',
-                key: 'test-key-123',
+                key: 'test-key',
                 userId: 'user1',
+                realmId: 'realm1',
             });
 
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
@@ -109,7 +110,7 @@ describe('ApiKeyService', () => {
                 },
             ];
 
-            mockApiKeyService.getAllApiKeys.mockResolvedValue(mockApiKeys);
+            mockApiKeyService.getAllApiKeys.mockResolvedValue(mockApiKeys as any);
 
             const result = await ApiKeyService.getAllApiKeys();
 
@@ -141,7 +142,7 @@ describe('ApiKeyService', () => {
                 },
             };
 
-            mockApiKeyService.getApiKeyById.mockResolvedValue(mockApiKey);
+            mockApiKeyService.getApiKeyById.mockResolvedValue(mockApiKey as any);
 
             const result = await ApiKeyService.getApiKeyById('1');
 
@@ -150,7 +151,7 @@ describe('ApiKeyService', () => {
         });
 
         it('should return null if API key not found', async () => {
-            mockApiKeyService.getApiKeyById.mockResolvedValue(null);
+            mockApiKeyService.getApiKeyById.mockResolvedValue(null as any);
 
             const result = await ApiKeyService.getApiKeyById('nonexistent');
 
@@ -203,7 +204,7 @@ describe('ApiKeyService', () => {
                 },
             ];
 
-            mockApiKeyService.getApiKeysByUser.mockResolvedValue(mockApiKeys);
+            mockApiKeyService.getApiKeysByUser.mockResolvedValue(mockApiKeys as any);
 
             const result = await ApiKeyService.getApiKeysByUser('user1');
 
@@ -235,7 +236,7 @@ describe('ApiKeyService', () => {
                 },
             };
 
-            mockApiKeyService.updateApiKey.mockResolvedValue(mockUpdatedApiKey);
+            mockApiKeyService.updateApiKey.mockResolvedValue(mockUpdatedApiKey as any);
 
             const result = await ApiKeyService.updateApiKey('1', {
                 name: 'Updated API Key',
@@ -271,7 +272,7 @@ describe('ApiKeyService', () => {
                 },
             };
 
-            mockApiKeyService.deleteApiKey.mockResolvedValue(mockDeletedApiKey);
+            mockApiKeyService.deleteApiKey.mockResolvedValue(mockDeletedApiKey as any);
 
             const result = await ApiKeyService.deleteApiKey('1');
 
@@ -302,7 +303,7 @@ describe('ApiKeyService', () => {
                 },
             };
 
-            mockApiKeyService.validateApiKey.mockResolvedValue(mockApiKey);
+            mockApiKeyService.validateApiKey.mockResolvedValue(mockApiKey as any);
 
             const result = await ApiKeyService.validateApiKey('test-key-123');
 
@@ -311,7 +312,7 @@ describe('ApiKeyService', () => {
         });
 
         it('should return null for invalid API key', async () => {
-            mockApiKeyService.validateApiKey.mockResolvedValue(null);
+            mockApiKeyService.validateApiKey.mockResolvedValue(null as any);
 
             const result = await ApiKeyService.validateApiKey('invalid-key');
 

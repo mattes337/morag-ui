@@ -25,9 +25,8 @@ export async function GET(
     const migrationId = validationResult.data;
 
     // Get migration details
-    const migration = await DocumentMigrationService.getMigration(
-      migrationId,
-      user.userId
+    const migration = await DocumentMigrationService.getMigrationById(
+      migrationId
     );
 
     if (!migration) {
@@ -78,17 +77,7 @@ export async function DELETE(
     const migrationId = validationResult.data;
 
     // Cancel migration
-    const success = await DocumentMigrationService.cancelMigration(
-      migrationId,
-      user.userId
-    );
-
-    if (!success) {
-      return NextResponse.json(
-        { error: 'Migration not found or cannot be cancelled' },
-        { status: 404 }
-      );
-    }
+    await DocumentMigrationService.cancelMigration(migrationId);
 
     return NextResponse.json({
       success: true,

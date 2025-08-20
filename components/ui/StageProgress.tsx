@@ -259,10 +259,12 @@ export function StageProgress({
       {currentStage && (
         <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="p-1 bg-blue-500 rounded-full text-white">
-            <STATUS_ICONS[stageStatus] className={cn(
-              'w-4 h-4',
-              stageStatus === 'RUNNING' ? 'animate-spin' : ''
-            )} />
+            {React.createElement(STATUS_ICONS[stageStatus], {
+              className: cn(
+                'w-4 h-4',
+                stageStatus === 'RUNNING' ? 'animate-spin' : ''
+              )
+            })}
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-blue-900">

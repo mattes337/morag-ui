@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import type { MockedFunction } from 'jest-mock';
 import { GET, POST, DELETE } from '../../app/api/processing-jobs/route';
 import { GET as getById, PUT, DELETE as deleteById } from '../../app/api/processing-jobs/[id]/route';
 import { backgroundJobService } from '../../lib/services/backgroundJobService';
@@ -6,28 +7,28 @@ import { PrismaClient, JobStatus } from '@prisma/client';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-vi.mock('../../lib/services/backgroundJobService');
-vi.mock('@prisma/client');
+jest.mock('../../lib/services/backgroundJobService');
+jest.mock('@prisma/client');
 
 const mockBackgroundJobService = backgroundJobService as {
-  createJob: Mock;
-  cancelJob: Mock;
-  getStats: Mock;
+  createJob: MockedFunction<any>;
+  cancelJob: MockedFunction<any>;
+  getStats: MockedFunction<any>;
 };
 
 const mockPrisma = {
   processingJob: {
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    deleteMany: vi.fn(),
-    count: vi.fn(),
-    groupBy: vi.fn()
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
+    count: jest.fn(),
+    groupBy: jest.fn()
   },
   document: {
-    findUnique: vi.fn()
+    findUnique: jest.fn()
   }
 } as any;
 
@@ -36,13 +37,18 @@ const mockPrisma = {
 
 // Helper to create mock NextRequest
 function createMockRequest(method: string, url: string, body?: any): NextRequest {
+  const jsonMock = jest.fn() as jest.MockedFunction<() => Promise<any>>;
+  jsonMock.mockResolvedValue(body || {});
+  const textMock = jest.fn() as jest.MockedFunction<() => Promise<string>>;
+  textMock.mockResolvedValue(JSON.stringify(body || {}));
+  
   const request = {
     method,
     url,
-    json: vi.fn().mockResolvedValue(body || {}),
-    text: vi.fn().mockResolvedValue(JSON.stringify(body || {})),
+    json: jsonMock,
+    text: textMock,
     nextUrl: {
-      searchParams: new URLSearchParams(url.split('?')[1] || '')
+      searchParams: new URLSearchParams()
     }
   } as unknown as NextRequest;
   
@@ -51,11 +57,11 @@ function createMockRequest(method: string, url: string, body?: any): NextRequest
 
 describe('/api/processing-jobs', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('GET /api/processing-jobs', () => {
@@ -73,7 +79,7 @@ describe('/api/processing-jobs', () => {
         id: 'job-2',
         documentId: 'doc-2',
         stage: 'CHUNKER',
-        status: JobStatus.RUNNING,
+        status: JobStatus.PROCESSING,
         priority: 0,
         createdAt: new Date(),
         scheduledAt: new Date()
@@ -85,7 +91,7 @@ describe('/api/processing-jobs', () => {
       mockPrisma.processingJob.count.mockResolvedValue(2);
       mockPrisma.processingJob.groupBy.mockResolvedValue([
         { status: JobStatus.PENDING, _count: { id: 1 } },
-        { status: JobStatus.RUNNING, _count: { id: 1 } }
+        { status: JobStatus.PROCESSING, _count: { id: 1 } }
       ]);
     });
 
@@ -242,7 +248,7 @@ describe('/api/processing-jobs', () => {
       expect(mockPrisma.processingJob.deleteMany).toHaveBeenCalledWith({
         where: {
           id: { in: ['job-1', 'job-2'] },
-          status: { in: [JobStatus.PENDING, JobStatus.SCHEDULED] }
+          status: { in: [JobStatus.PENDING, JobStatus.WAITING_FOR_REMOTE_WORKER] }
         }
       });
     });
@@ -261,7 +267,7 @@ describe('/api/processing-jobs', () => {
       expect(mockPrisma.processingJob.deleteMany).toHaveBeenCalledWith({
         where: {
           documentId: 'doc-1',
-          status: { in: [JobStatus.PENDING, JobStatus.SCHEDULED] }
+          status: { in: [JobStatus.PENDING, JobStatus.WAITING_FOR_REMOTE_WORKER] }
         }
       });
     });
@@ -289,7 +295,7 @@ describe('/api/processing-jobs/[id]', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('GET /api/processing-jobs/[id]', () => {
@@ -357,7 +363,7 @@ describe('/api/processing-jobs/[id]', () => {
         where: { id: 'job-1' },
         data: {
           scheduledAt: newScheduleTime,
-          status: JobStatus.SCHEDULED
+          status: JobStatus.PENDING
         }
       });
     });

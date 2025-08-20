@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jobScheduler } from '@/lib/services/jobScheduler';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { jobScheduler } from '../../../../../lib/services/jobScheduler';
+import { getAuthUser } from '../../../../../lib/auth';
 import { PrismaClient, ProcessingMode } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -15,8 +14,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getAuthUser(request);
+    if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -70,8 +69,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getAuthUser(request);
+    if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -194,8 +193,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getAuthUser(request);
+    if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 

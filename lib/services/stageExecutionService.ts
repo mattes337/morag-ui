@@ -333,19 +333,19 @@ class StageExecutionService {
    */
   async executeStageAsync(documentId: string, stage: ProcessingStage, priority: number = 5): Promise<string> {
     // Create a processing job for this stage
-    const jobId = await backgroundJobService.createProcessingJob(documentId, stage, priority);
-    
+    const job = await backgroundJobService.createJob({ documentId, stage, priority });
+
     // Update document status to indicate processing has started
     await prisma.document.update({
       where: { id: documentId },
       data: {
         currentStage: stage,
-        stageStatus: 'IN_PROGRESS',
+        stageStatus: 'RUNNING',
         lastStageError: null,
       },
     });
-    
-    return jobId;
+
+    return job.id;
   }
 
   /**
@@ -380,9 +380,9 @@ class StageExecutionService {
         executionId: execution.id,
         document: {
           id: document.id,
-          title: document.title,
-          content: document.content || '',
-          filePath: document.filePath || '',
+          title: document.name,
+          content: document.markdown || '',
+          filePath: '', // Not available in current schema
           realmId: document.realmId
         },
         webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/stages`
@@ -443,7 +443,7 @@ class StageExecutionService {
         const nextStage = await this.advanceToNextStage(execution.documentId);
         if (nextStage) {
           // Schedule the next stage
-          await backgroundJobService.scheduleAutomaticJob(execution.documentId, nextStage);
+          await backgroundJobService.scheduleAutomaticJobs();
         }
       }
     } else {

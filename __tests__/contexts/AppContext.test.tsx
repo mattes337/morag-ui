@@ -66,9 +66,9 @@ describe('AppContext', () => {
 
     it('should load initial data when user is set', async () => {
         // Mock API responses for data loading
-        const mockFetch = jest.fn();
+        const mockFetchForDataLoading = jest.fn();
         
-        mockFetch.mockImplementation((url, options) => {
+        mockFetchForDataLoading.mockImplementation((url, options) => {
             console.log('Mock fetch called with:', url, options);
             
             if (url === '/api/realms/current') {
@@ -121,7 +121,7 @@ describe('AppContext', () => {
             });
         });
         
-        global.fetch = mockFetch;
+        global.fetch = mockFetchForDataLoading;
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
@@ -183,18 +183,19 @@ describe('AppContext', () => {
         });
         
         // Check that we have the expected number of calls
-        console.log('Total fetch calls:', global.fetch.mock.calls.length);
-        global.fetch.mock.calls.forEach((call, index) => {
+        const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+        console.log('Total fetch calls:', mockFetch.mock.calls.length);
+        mockFetch.mock.calls.forEach((call, index) => {
             console.log(`Call ${index + 1}:`, call[0], call[1]);
         });
     });
 
     it('should update a realm', async () => {
         // Mock all fetch calls for initialization and realm update
-        const mockFetch = jest.fn();
+        const mockFetchForRealmUpdate = jest.fn();
 
         // Mock all initialization calls
-        mockFetch.mockImplementation((url, options) => {
+        mockFetchForRealmUpdate.mockImplementation((url, options) => {
             if (url === '/api/realms/current') {
                 return Promise.resolve({
                     ok: true,
@@ -250,7 +251,7 @@ describe('AppContext', () => {
             });
         });
 
-        global.fetch = mockFetch;
+        global.fetch = mockFetchForRealmUpdate;
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
@@ -359,7 +360,7 @@ describe('AppContext', () => {
             await result.current.createDocument({
                 name: 'New Document.pdf',
                 type: 'PDF',
-                databaseId: '1',
+                realmId: '1',
             });
         });
 

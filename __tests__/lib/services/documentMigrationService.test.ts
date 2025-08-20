@@ -11,8 +11,12 @@ const mockPrisma = {
     update: jest.fn(),
   },
   documentMigrationItem: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+    },
+  document: {
     findMany: jest.fn(),
-    count: jest.fn(),
   },
   $transaction: jest.fn(),
 };
@@ -71,9 +75,13 @@ describe('DocumentMigrationService', () => {
         documentIds: ['doc-1', 'doc-2'],
         sourceRealmId: 'realm-1',
         targetRealmId: 'realm-2',
-        migrationOptions: { copyStageFiles: true },
-        createdBy: 'user-1',
-      });
+        migrationOptions: {
+          copyStageFiles: true,
+          reprocessStages: [],
+          preserveOriginal: true,
+          migrationMode: 'copy'
+        },
+      }, 'user-1');
 
       expect(result).toEqual(mockMigration);
       expect(mockPrisma.documentMigration.create).toHaveBeenCalledWith({
@@ -87,16 +95,20 @@ describe('DocumentMigrationService', () => {
     });
 
     it('should throw error for invalid document IDs', async () => {
-      mockPrisma.document.findMany.mockResolvedValue([]);
+      mockPrisma.document.findMany.mockResolvedValue([] as any);
 
       await expect(
         DocumentMigrationService.createMigration({
           documentIds: ['invalid-doc'],
           sourceRealmId: 'realm-1',
           targetRealmId: 'realm-2',
-          migrationOptions: {},
-          createdBy: 'user-1',
-        })
+          migrationOptions: {
+            copyStageFiles: true,
+            reprocessStages: [],
+            preserveOriginal: true,
+            migrationMode: 'copy'
+          },
+        }, 'user-1')
       ).rejects.toThrow('Some documents not found or not accessible');
     });
   });
@@ -114,7 +126,7 @@ describe('DocumentMigrationService', () => {
 
       mockPrisma.documentMigration.findMany.mockResolvedValue(mockMigrations as any);
 
-      const result = await DocumentMigrationService.getMigrationsByUser('user-1', {
+      const result = await DocumentMigrationService.getMigrations('user-1', {
         realmId: 'realm-1',
         status: MigrationStatus.COMPLETED,
         limit: 10,
@@ -162,7 +174,7 @@ describe('DocumentMigrationService', () => {
     });
 
     it('should return null for non-existent migration', async () => {
-      mockPrisma.documentMigration.findUnique.mockResolvedValue(null);
+      mockPrisma.documentMigration.findUnique.mockResolvedValue(null as any);
 
       const result = await DocumentMigrationService.getMigrationById('invalid-id');
 
@@ -183,9 +195,7 @@ describe('DocumentMigrationService', () => {
         status: MigrationStatus.CANCELLED,
       } as any);
 
-      const result = await DocumentMigrationService.cancelMigration('migration-1');
-
-      expect(result.status).toBe(MigrationStatus.CANCELLED);
+      await DocumentMigrationService.cancelMigration('migration-1');
       expect(mockPrisma.documentMigration.update).toHaveBeenCalledWith({
         where: { id: 'migration-1' },
         data: { status: MigrationStatus.CANCELLED },
@@ -239,7 +249,7 @@ describe('DocumentMigrationService', () => {
     });
 
     it('should return null for non-existent migration', async () => {
-      mockPrisma.documentMigration.findUnique.mockResolvedValue(null);
+      mockPrisma.documentMigration.findUnique.mockResolvedValue(null as any);
 
       const result = await DocumentMigrationService.getMigrationProgress('invalid-id');
 

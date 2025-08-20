@@ -33,7 +33,7 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = prisma as any;
 
 describe('EnhancedDocumentDeletionService', () => {
     let service: EnhancedDocumentDeletionService;

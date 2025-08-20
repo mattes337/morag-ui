@@ -15,7 +15,7 @@ export default function JobsPage() {
             j.id === job.id
                 ? {
                       ...j,
-                      status: 'cancelled' as const,
+                      status: 'CANCELLED' as const,
                       endDate: new Date().toISOString(),
                       progress: {
                           ...j.progress,

@@ -1,10 +1,10 @@
 /**
  * @jest-environment node
  */
-import { UserService } from '@/lib/services/userService';
-import { RealmService } from '@/lib/services/realmService';
+import { UserService } from '../../../lib/services/userService';
+import { RealmService } from '../../../lib/services/realmService';
 import { prisma } from '../../../lib/database';
-import { User, Role, UserSettings } from '@prisma/client';
+import { User, UserSettings } from '@prisma/client';
 
 // Mock the database
 jest.mock('../../../lib/database', () => ({
@@ -24,13 +24,13 @@ jest.mock('../../../lib/database', () => ({
 }));
 
 // Mock RealmService
-jest.mock('@/lib/services/realmService', () => ({
+jest.mock('../../../lib/services/realmService', () => ({
     RealmService: {
         createDefaultRealm: jest.fn(),
     },
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = prisma as any;
 const mockRealmService = RealmService as jest.Mocked<typeof RealmService>;
 
 describe('UserService', () => {

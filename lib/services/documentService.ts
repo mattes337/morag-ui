@@ -1,4 +1,4 @@
-import { Document, DocumentState } from '@prisma/client';
+import { Document, DocumentState, ProcessingMode } from '@prisma/client';
 import { prisma } from '../database';
 import { EnhancedDocumentDeletionService } from './enhancedDocumentDeletionService';
 
@@ -11,7 +11,7 @@ export class DocumentService {
         realmId: string;
         state?: DocumentState;
         version?: number;
-        processingMode?: string;
+        processingMode?: ProcessingMode;
     }) {
         const document = await prisma.document.create({
             data,

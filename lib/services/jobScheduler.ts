@@ -1,7 +1,5 @@
-'use client';
-
 import { backgroundJobService } from './backgroundJobService';
-import { PrismaClient, ProcessingMode } from '@prisma/client';
+import { PrismaClient, ProcessingMode, DocumentState } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -50,64 +48,83 @@ class JobScheduler {
   /**
    * Start the job scheduler
    */
-  async start(): Promise<void> {
+  async start(): Promise<{ success: boolean; error?: string }> {
     if (this.isRunning) {
       console.log('Job scheduler is already running');
-      return;
+      return { success: false, error: 'Scheduler is already running' };
     }
 
     if (!this.config.enabled) {
       console.log('Job scheduler is disabled');
-      return;
+      return { success: false, error: 'Scheduler is disabled' };
     }
 
-    console.log('Starting job scheduler...');
-    this.isRunning = true;
-    this.startTime = new Date();
+    try {
+      console.log('Starting job scheduler...');
+      this.isRunning = true;
+      this.startTime = new Date();
 
-    // Start the background job processor
-    backgroundJobService.startProcessor(this.config.processingIntervalMs);
+      // Start the background job processor
+      await backgroundJobService.startProcessor(this.config.processingIntervalMs);
 
-    // Start health check monitoring
-    this.startHealthCheck();
+      // Start health check monitoring
+      this.startHealthCheck();
 
-    // Schedule automatic jobs for documents with AUTOMATIC processing mode
-    await this.scheduleAutomaticProcessing();
+      // Schedule automatic jobs for documents with AUTOMATIC processing mode
+      await this.scheduleAutomaticProcessing();
 
-    console.log(`Job scheduler started with ${this.config.processingIntervalMs}ms interval`);
+      console.log(`Job scheduler started with ${this.config.processingIntervalMs}ms interval`);
+      return { success: true };
+    } catch (error) {
+      this.isRunning = false;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to start job scheduler:', errorMessage);
+      return { success: false, error: errorMessage };
+    }
   }
 
   /**
    * Stop the job scheduler
    */
-  async stop(): Promise<void> {
+  async stop(): Promise<{ success: boolean; error?: string }> {
     if (!this.isRunning) {
       console.log('Job scheduler is not running');
-      return;
+      return { success: false, error: 'Scheduler is not running' };
     }
 
-    console.log('Stopping job scheduler...');
-    this.isRunning = false;
+    try {
+      console.log('Stopping job scheduler...');
+      this.isRunning = false;
 
-    // Stop the background job processor
-    backgroundJobService.stopProcessor();
+      // Stop the background job processor
+      await backgroundJobService.stopProcessor();
 
-    // Stop health check monitoring
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = undefined;
+      // Stop health check monitoring
+      if (this.healthCheckInterval) {
+        clearInterval(this.healthCheckInterval);
+        this.healthCheckInterval = undefined;
+      }
+
+      console.log('Job scheduler stopped');
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to stop job scheduler:', errorMessage);
+      return { success: false, error: errorMessage };
     }
-
-    console.log('Job scheduler stopped');
   }
 
   /**
    * Restart the job scheduler
    */
-  async restart(): Promise<void> {
-    await this.stop();
+  async restart(): Promise<{ success: boolean; error?: string }> {
+    const stopResult = await this.stop();
+    if (!stopResult.success && stopResult.error !== 'Scheduler is not running') {
+      return stopResult;
+    }
+    
     await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-    await this.start();
+    return await this.start();
   }
 
   /**
@@ -120,7 +137,7 @@ class JobScheduler {
         where: {
           processingMode: ProcessingMode.AUTOMATIC,
           state: {
-            in: ['pending', 'ingesting']
+            in: [DocumentState.PENDING, DocumentState.INGESTING]
           }
         },
         include: {
@@ -143,9 +160,9 @@ class JobScheduler {
 
         // Determine the next stage to process based on document state
         let nextStage;
-        if (document.state === 'pending') {
+        if (document.state === DocumentState.PENDING) {
           nextStage = 'MARKDOWN_CONVERSION';
-        } else if (document.state === 'ingesting') {
+        } else if (document.state === DocumentState.INGESTING) {
           // For ingesting documents, we need to check which stage to process next
           // This is a simplified logic - in practice, you'd check the current stage status
           nextStage = 'CHUNKER';

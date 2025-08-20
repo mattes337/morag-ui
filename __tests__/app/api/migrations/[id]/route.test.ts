@@ -7,7 +7,7 @@ import { MigrationStatus } from '@prisma/client';
 // Mock dependencies
 jest.mock('../../../../../../lib/services/documentMigrationService', () => ({
   DocumentMigrationService: {
-    getMigration: jest.fn(),
+    getMigrationById: jest.fn(),
     cancelMigration: jest.fn(),
   },
 }));
@@ -38,7 +38,7 @@ describe('/api/migrations/[id]', () => {
         updatedAt: new Date(),
       };
 
-      mockDocumentMigrationService.getMigration.mockResolvedValue(mockMigration as any);
+      mockDocumentMigrationService.getMigrationById.mockResolvedValue(mockMigration as any);
 
       const mockRequest = new NextRequest(
         'http://localhost:3000/api/migrations/550e8400-e29b-41d4-a716-446655440000'
@@ -50,11 +50,11 @@ describe('/api/migrations/[id]', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.migration).toEqual(mockMigration);
-      expect(mockDocumentMigrationService.getMigration).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', 'user-1');
+      expect(mockDocumentMigrationService.getMigrationById).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('should return 404 for non-existent migration', async () => {
-      mockDocumentMigrationService.getMigration.mockResolvedValue(null);
+      mockDocumentMigrationService.getMigrationById.mockResolvedValue(null);
 
       const mockRequest = new NextRequest(
         'http://localhost:3000/api/migrations/550e8400-e29b-41d4-a716-446655440000'
@@ -100,7 +100,7 @@ describe('/api/migrations/[id]', () => {
     });
 
     it('should handle service errors', async () => {
-      mockDocumentMigrationService.getMigration.mockRejectedValue(
+      mockDocumentMigrationService.getMigrationById.mockRejectedValue(
         new Error('Database error')
       );
 

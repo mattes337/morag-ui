@@ -168,7 +168,7 @@ export function DocumentDetailView({
                                 </Badge>
                                 <ProcessingModeToggle
                                     mode={document.processingMode}
-                                    onChange={async (mode) => {
+                                    onModeChange={async (mode) => {
                                         // TODO: Implement mode change handler
                                         console.log('Change processing mode to:', mode);
                                     }}
@@ -182,6 +182,8 @@ export function DocumentDetailView({
                         <div className="space-y-4">
                             {/* Processing Status Display */}
                             <ProcessingStatusDisplay
+                                documentId={document.id}
+                                processingMode={document.processingMode || 'AUTOMATIC'}
                                 stages={[
                                     {
                                         stage: 'MARKDOWN_CONVERSION',

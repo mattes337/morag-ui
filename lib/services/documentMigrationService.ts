@@ -3,7 +3,7 @@ import { DocumentService } from './documentService';
 import { RealmService } from './realmService';
 import { Document, DocumentState, MigrationStatus } from '@prisma/client';
 import { promises as fs } from 'fs';
-import path from 'path';
+import * as path from 'path';
 
 export interface MigrationOptions {
   copyStageFiles: boolean;
@@ -63,16 +63,15 @@ export class DocumentMigrationService {
     await this.validateMigrationRequest(request, userId);
 
     // Create migration record
-    const migration = await prisma.migration.create({
+    const migration = await prisma.documentMigration.create({
       data: {
         sourceRealmId: request.sourceRealmId,
         targetRealmId: request.targetRealmId,
-        documentIds: request.documentIds,
-        migrationOptions: request.migrationOptions as any,
+        migrationOptions: JSON.stringify(request.migrationOptions),
         status: 'PENDING',
         totalDocuments: request.documentIds.length,
         processedDocuments: 0,
-        userId,
+        createdBy: userId,
       },
     });
 
@@ -96,7 +95,7 @@ export class DocumentMigrationService {
    * Get migration status
    */
   static async getMigrationStatus(migrationId: string): Promise<MigrationProgress | null> {
-    const migration = await prisma.migration.findUnique({
+    const migration = await prisma.documentMigration.findUnique({
       where: { id: migrationId },
     });
 
@@ -109,8 +108,6 @@ export class DocumentMigrationService {
       status: migration.status as MigrationStatus,
       totalDocuments: migration.totalDocuments,
       processedDocuments: migration.processedDocuments,
-      currentDocument: migration.currentDocument || undefined,
-      error: migration.error || undefined,
       createdAt: migration.createdAt,
       updatedAt: migration.updatedAt,
     };
@@ -138,7 +135,7 @@ export class DocumentMigrationService {
       where.status = status;
     }
 
-    const migrations = await prisma.migration.findMany({
+    const migrations = await prisma.documentMigration.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -150,18 +147,30 @@ export class DocumentMigrationService {
       status: migration.status as MigrationStatus,
       totalDocuments: migration.totalDocuments,
       processedDocuments: migration.processedDocuments,
-      currentDocument: migration.currentDocument || undefined,
-      error: migration.error || undefined,
       createdAt: migration.createdAt,
       updatedAt: migration.updatedAt,
     }));
   }
 
   /**
+   * Get migration by ID (alias for getMigrationStatus)
+   */
+  static async getMigrationById(migrationId: string): Promise<MigrationProgress | null> {
+    return this.getMigrationStatus(migrationId);
+  }
+
+  /**
+   * Get migration progress (alias for getMigrationStatus)
+   */
+  static async getMigrationProgress(migrationId: string): Promise<MigrationProgress | null> {
+    return this.getMigrationStatus(migrationId);
+  }
+
+  /**
    * Cancel a migration
    */
   static async cancelMigration(migrationId: string): Promise<void> {
-    await prisma.migration.update({
+    await prisma.documentMigration.update({
       where: { id: migrationId },
       data: {
         status: 'CANCELLED',
@@ -174,7 +183,7 @@ export class DocumentMigrationService {
    * Process migration asynchronously
    */
   private static async processMigration(migrationId: string): Promise<void> {
-    const migration = await prisma.migration.findUnique({
+    const migration = await prisma.documentMigration.findUnique({
       where: { id: migrationId },
     });
 
@@ -185,14 +194,19 @@ export class DocumentMigrationService {
     await this.updateMigrationStatus(migrationId, 'IN_PROGRESS');
 
     try {
-      const documentIds = migration.documentIds as string[];
-      const migrationOptions = migration.migrationOptions as MigrationOptions;
+      // Get document IDs from migration items
+      const migrationItems = await prisma.documentMigrationItem.findMany({
+        where: { migrationId },
+        select: { sourceDocumentId: true }
+      });
+      const documentIds = migrationItems.map(item => item.sourceDocumentId);
+      const migrationOptions = JSON.parse(migration.migrationOptions || '{}') as MigrationOptions;
 
       for (let i = 0; i < documentIds.length; i++) {
         const documentId = documentIds[i];
         
         // Check if migration was cancelled
-        const currentMigration = await prisma.migration.findUnique({
+        const currentMigration = await prisma.documentMigration.findUnique({
           where: { id: migrationId },
         });
         
@@ -200,11 +214,10 @@ export class DocumentMigrationService {
           return;
         }
 
-        // Update current document
-        await prisma.migration.update({
+        // Update migration progress
+        await prisma.documentMigration.update({
           where: { id: migrationId },
           data: {
-            currentDocument: documentId,
             updatedAt: new Date(),
           },
         });
@@ -234,7 +247,7 @@ export class DocumentMigrationService {
         await this.migrateDocument(context);
 
         // Update progress
-        await prisma.migration.update({
+        await prisma.documentMigration.update({
           where: { id: migrationId },
           data: {
             processedDocuments: i + 1,
@@ -509,11 +522,11 @@ export class DocumentMigrationService {
     status: MigrationStatus,
     error?: string
   ): Promise<void> {
-    await prisma.migration.update({
+    await prisma.documentMigration.update({
       where: { id: migrationId },
       data: {
         status,
-        error,
+        errorMessage: error,
         updatedAt: new Date(),
       },
     });

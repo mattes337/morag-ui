@@ -1,27 +1,28 @@
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+type Mock = jest.MockedFunction<any>;
 import { errorHandlingService, ErrorContext, RetryConfig } from '../../lib/services/errorHandlingService';
 import { backgroundJobService } from '../../lib/services/backgroundJobService';
 import { PrismaClient, JobStatus } from '@prisma/client';
 
 // Mock dependencies
-vi.mock('../../lib/services/backgroundJobService');
-vi.mock('@prisma/client');
+jest.mock('../../lib/services/backgroundJobService');
+jest.mock('@prisma/client');
 
 const mockBackgroundJobService = backgroundJobService as {
-  createJob: Mock;
+  createJob: jest.MockedFunction<any>;
 };
 
 const mockPrisma = {
   processingError: {
-    create: vi.fn(),
-    count: vi.fn(),
-    findMany: vi.fn(),
-    groupBy: vi.fn(),
-    update: vi.fn(),
-    deleteMany: vi.fn()
+    create: jest.fn(),
+    count: jest.fn(),
+    findMany: jest.fn(),
+    groupBy: jest.fn(),
+    update: jest.fn(),
+    deleteMany: jest.fn()
   },
   processingJob: {
-    update: vi.fn()
+    update: jest.fn()
   }
 } as any;
 
@@ -30,13 +31,13 @@ const mockPrisma = {
 
 describe('ErrorHandlingService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
+    jest.clearAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.useRealTimers();
+    jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   describe('handleProcessingError', () => {
@@ -186,7 +187,7 @@ describe('ErrorHandlingService', () => {
   describe('getErrorStats', () => {
     beforeEach(() => {
       mockPrisma.processingError.count.mockResolvedValue(10);
-      mockPrisma.processingError.groupBy.mockImplementation((params) => {
+      mockPrisma.processingError.groupBy.mockImplementation((params: any) => {
         if (params.by.includes('errorType')) {
           return Promise.resolve([
             { errorType: 'NETWORK_ERROR', _count: { id: 5 } },

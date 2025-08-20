@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-config';
-import { stageExecutionService } from '@/lib/services/stageExecutionService';
+import { requireAuth } from '../../../../lib/auth';
+import { stageExecutionService } from '../../../../lib/services/stageExecutionService';
 import { ProcessingStage } from '@prisma/client';
 
 /**
@@ -10,8 +9,8 @@ import { ProcessingStage } from '@prisma/client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await requireAuth(request);
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
             chainPosition: i + 1,
             totalStages: stages.length,
             stageOptions,
-            userId: session.user.id,
+            userId: user.userId,
           },
         });
 
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
             error: `Chain execution failed at stage ${stage}`,
             executedStages: executionResults,
             failedStage: stage,
-            stageError: stageError.message,
+            stageError: stageError instanceof Error ? stageError.message : 'Unknown error',
           },
           { status: 500 }
         );
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest) {
       executions: executionResults,
       pipelineStatus,
       totalExecutionTime: executionResults.reduce((total, exec) => {
-        if (exec.startedAt && exec.completedAt) {
+        if (exec && exec.startedAt && exec.completedAt) {
           return total + (new Date(exec.completedAt).getTime() - new Date(exec.startedAt).getTime());
         }
         return total;
@@ -143,8 +142,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const user = await requireAuth(request);
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

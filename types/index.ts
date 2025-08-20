@@ -117,6 +117,7 @@ export interface Document {
     uploadDate: string;
     processingMode?: 'MANUAL' | 'AUTOMATIC';
     metadata?: DocumentMetadata;
+    jobs?: Job[];
 }
 
 export interface Entity {
@@ -291,30 +292,29 @@ export interface Job {
     documentId: string;
     documentName: string;
     documentType: string;
+    taskId?: string;
     startDate: string;
     endDate?: string;
-    status:
-        | 'pending'
-        | 'waiting-for-remote-worker'
-        | 'processing'
-        | 'finished'
-        | 'failed'
-        | 'cancelled';
+    status: 'PENDING' | 'WAITING_FOR_REMOTE_WORKER' | 'PROCESSING' | 'FINISHED' | 'FAILED' | 'CANCELLED';
+    percentage: number;
+    summary: string;
     progress: {
         percentage: number;
         summary: string;
     };
-    createdAt: string;
-    updatedAt: string;
-    metadata?: DocumentMetadata;
     processingDetails?: {
         estimatedTimeRemaining?: number;
         currentStep?: string;
-        totalSteps?: number;
         completedSteps?: number;
+        totalSteps?: number;
         errorMessage?: string;
         warnings?: string[];
     };
+    metadata?: Record<string, any>;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+    realmId: string;
 }
 
 export interface Realm {

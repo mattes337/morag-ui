@@ -303,12 +303,18 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     startDate: new Date(job.startDate).toISOString(),
                     endDate: job.endDate ? new Date(job.endDate).toISOString() : undefined,
                     status: job.status.toLowerCase().replace('_', '-') as Job['status'],
+                    percentage: job.percentage || 0,
+                    summary: job.summary || '',
                     progress: {
-                        percentage: job.percentage,
-                        summary: job.summary,
+                        percentage: job.percentage || 0,
+                        summary: job.summary || '',
                     },
+                    processingDetails: job.processingDetails,
+                    metadata: job.metadata,
                     createdAt: new Date(job.createdAt).toISOString(),
                     updatedAt: new Date(job.updatedAt).toISOString(),
+                    userId: job.userId,
+                    realmId: job.realmId,
                 }));
                 setJobs(formattedJobs);
             }
@@ -537,20 +543,27 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             if (!response.ok) throw new Error('Failed to create job');
 
             const newJob = await response.json();
-            const formattedJob = {
+            const formattedJob: Job = {
                 id: newJob.id,
                 documentId: newJob.documentId,
                 documentName: newJob.documentName,
                 documentType: newJob.documentType,
+                taskId: newJob.taskId,
                 startDate: new Date(newJob.startDate).toISOString(),
                 endDate: newJob.endDate ? new Date(newJob.endDate).toISOString() : undefined,
-                status: newJob.status.toLowerCase().replace('_', '-') as Job['status'],
+                status: newJob.status as Job['status'],
+                percentage: newJob.percentage || 0,
+                summary: newJob.summary || '',
                 progress: {
-                    percentage: newJob.percentage,
-                    summary: newJob.summary,
+                    percentage: newJob.percentage || 0,
+                    summary: newJob.summary || '',
                 },
+                processingDetails: newJob.processingDetails,
+                metadata: newJob.metadata,
                 createdAt: new Date(newJob.createdAt).toISOString(),
                 updatedAt: new Date(newJob.updatedAt).toISOString(),
+                userId: newJob.userId || user.id,
+                realmId: newJob.realmId || '',
             };
             setJobs((prev) => [...prev, formattedJob]);
         } catch (error) {
@@ -580,12 +593,18 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     ? new Date(updatedJob.endDate).toISOString()
                     : undefined,
                 status: updatedJob.status.toLowerCase().replace('_', '-') as Job['status'],
+                percentage: updatedJob.percentage || 0,
+                summary: updatedJob.summary || '',
                 progress: {
-                    percentage: updatedJob.percentage,
-                    summary: updatedJob.summary,
+                    percentage: updatedJob.percentage || 0,
+                    summary: updatedJob.summary || '',
                 },
+                processingDetails: updatedJob.processingDetails,
+                metadata: updatedJob.metadata,
                 createdAt: new Date(updatedJob.createdAt).toISOString(),
                 updatedAt: new Date(updatedJob.updatedAt).toISOString(),
+                userId: updatedJob.userId,
+                realmId: updatedJob.realmId,
             };
             setJobs((prev) => prev.map((job) => (job.id === id ? formattedJob : job)));
         } catch (error) {

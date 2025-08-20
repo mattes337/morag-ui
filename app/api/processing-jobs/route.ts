@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backgroundJobService } from '@/lib/services/backgroundJobService';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { backgroundJobService } from '../../../lib/services/backgroundJobService';
+
+import { requireAuth } from '../../../lib/auth';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -12,10 +12,7 @@ const prisma = new PrismaClient();
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
+    const user = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
@@ -55,7 +52,7 @@ export async function GET(request: NextRequest) {
     const stats = {
       pending: await prisma.processingJob.count({ where: { status: 'PENDING' } }),
       processing: await prisma.processingJob.count({ where: { status: 'PROCESSING' } }),
-      completed: await prisma.processingJob.count({ where: { status: 'COMPLETED' } }),
+      completed: await prisma.processingJob.count({ where: { status: 'FINISHED' } }),
       failed: await prisma.processingJob.count({ where: { status: 'FAILED' } })
     };
 
@@ -84,10 +81,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
+    const user = await requireAuth(request);
 
     const body = await request.json();
     const { documentId, stage, priority = 0, scheduledAt } = body;
@@ -145,10 +139,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
+    const user = await requireAuth(request);
 
     const body = await request.json();
     const { jobIds, documentId } = body;

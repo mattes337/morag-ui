@@ -26,7 +26,7 @@ jest.mock('../../../lib/database', () => ({
     },
 }));
 
-const mockDatabase = prisma as jest.Mocked<typeof prisma>;
+const mockDatabase = prisma as any;
 
 describe('RealmService', () => {
     beforeEach(() => {

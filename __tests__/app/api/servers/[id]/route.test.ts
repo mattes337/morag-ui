@@ -22,12 +22,12 @@ const mockDeleteServer = jest.fn();
 (ServerService.deleteServer as jest.Mock) = mockDeleteServer;
 
 describe('/api/servers/[id]', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'USER', name: 'Test User', authMethod: 'jwt' as const };
     const mockParams = { id: 'server1' };
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
+        mockRequireAuth.mockResolvedValue(mockUser);
     });
 
     describe('GET', () => {

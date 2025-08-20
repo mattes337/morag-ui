@@ -200,7 +200,7 @@ describe('/api/migrations', () => {
     });
 
     it('should handle query parameters', async () => {
-      const mockMigrations = [];
+      const mockMigrations: any[] = [];
       mockDocumentMigrationService.getMigrations.mockResolvedValue(mockMigrations as any);
 
       const mockRequest = new NextRequest(

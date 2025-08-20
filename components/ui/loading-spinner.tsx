@@ -4,9 +4,10 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
-interface LoadingSpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'inline';
+  className?: string;
 }
 
 const sizeClasses = {
@@ -18,22 +19,19 @@ const sizeClasses = {
 export function LoadingSpinner({ 
   size = 'md', 
   variant = 'default',
-  className, 
-  ...props 
+  className
 }: LoadingSpinnerProps) {
   if (variant === 'inline') {
     return (
       <Loader2 
         className={cn('animate-spin', sizeClasses[size], className)} 
-        {...props} 
       />
     );
   }
 
   return (
     <div 
-      className={cn('flex items-center justify-center p-8', className)} 
-      {...props}
+      className={cn('flex items-center justify-center p-8', className)}
     >
       <Loader2 
         className={cn('animate-spin', sizeClasses[size])} 

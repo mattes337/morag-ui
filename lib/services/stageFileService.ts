@@ -1,7 +1,7 @@
 import { PrismaClient, ProcessingStage, DocumentStageFile } from '@prisma/client';
 import { promises as fs } from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -47,7 +47,7 @@ class StageFileService {
    */
   private generateFilePath(documentId: string, stage: ProcessingStage, filename: string): string {
     const stageDir = path.join(STAGE_FILES_DIR, documentId, stage.toLowerCase());
-    const uniqueId = uuidv4();
+    const uniqueId = randomUUID();
     const ext = path.extname(filename);
     const baseName = path.basename(filename, ext);
     return path.join(stageDir, `${baseName}_${uniqueId}${ext}`);

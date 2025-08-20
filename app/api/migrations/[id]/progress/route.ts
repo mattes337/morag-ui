@@ -26,8 +26,7 @@ export async function GET(
 
     // Get migration progress
     const progress = await DocumentMigrationService.getMigrationProgress(
-      migrationId,
-      user.userId
+      migrationId
     );
 
     if (!progress) {
