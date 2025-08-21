@@ -36,6 +36,7 @@ export function GlobalDialogs() {
         setShowEditPromptDialog,
         editPromptData,
         setEditPromptData,
+        deleteDocument,
     } = useApp();
 
     return (
@@ -90,10 +91,15 @@ export function GlobalDialogs() {
                     setShowDeleteConfirmDialog(false);
                     setDocumentToDelete(null);
                 }}
-                onConfirm={() => {
+                onConfirm={async () => {
                     if (documentToDelete) {
-                        // Here you would call the actual delete function
-                        console.log('Deleting document:', documentToDelete);
+                        try {
+                            await deleteDocument(documentToDelete.id);
+                            setShowDeleteConfirmDialog(false);
+                            setDocumentToDelete(null);
+                        } catch (error) {
+                            console.error('Failed to delete document:', error);
+                        }
                     }
                 }}
                 document={documentToDelete}
