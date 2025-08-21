@@ -25,10 +25,10 @@ export function AddDocumentDialog({
     const [documentName, setDocumentName] = useState('');
     const [documentUrl, setDocumentUrl] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [chunkSize, setChunkSize] = useState('1000');
+    const [chunkSize, setChunkSize] = useState('4000');
     const [chunkingMethod, setChunkingMethod] = useState('Semantic');
-    const [gpuProcessing, setGpuProcessing] = useState(false);
-    const [contextualEmbedding, setContextualEmbedding] = useState(false);
+
+
     const [processingMode, setProcessingMode] = useState<'MANUAL' | 'AUTOMATIC'>('AUTOMATIC');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,10 +72,10 @@ export function AddDocumentDialog({
             }
 
             // Set default values based on current document (these would typically come from the document's metadata)
-            setChunkSize('1000'); // Default, could be extracted from document metadata
+            setChunkSize('4000'); // Default, could be extracted from document metadata
             setChunkingMethod('Semantic'); // Default, could be extracted from document metadata
-            setGpuProcessing(false); // Default
-            setContextualEmbedding(true); // Default for supersede
+     // Default
+            // Default for supersede
         }
     }, [mode, documentToSupersede, documentTypes]);
 
@@ -86,10 +86,10 @@ export function AddDocumentDialog({
             setDocumentName('');
             setDocumentUrl('');
             setSelectedFile(null);
-            setChunkSize('1000');
+            setChunkSize('4000');
             setChunkingMethod('Semantic');
-            setGpuProcessing(false);
-            setContextualEmbedding(false);
+    
+    
             setProcessingMode('AUTOMATIC');
         }
     }, [isOpen, mode]);
@@ -99,10 +99,8 @@ export function AddDocumentDialog({
         setDocumentName('');
         setDocumentUrl('');
         setSelectedFile(null);
-        setChunkSize('1000');
+        setChunkSize('4000');
         setChunkingMethod('Semantic');
-        setGpuProcessing(false);
-        setContextualEmbedding(false);
         setProcessingMode('AUTOMATIC');
         setIsSubmitting(false);
         onClose();
@@ -301,48 +299,7 @@ export function AddDocumentDialog({
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid=":2cpxom">
-                            <div data-oid="z0nrybd">
-                                <label
-                                    htmlFor="gpu-processing"
-                                    className="flex items-center space-x-2"
-                                    data-oid="9ev49o3"
-                                >
-                                    <input
-                                        id="gpu-processing"
-                                        type="checkbox"
-                                        className="rounded"
-                                        checked={gpuProcessing}
-                                        onChange={(e) => setGpuProcessing(e.target.checked)}
-                                        data-oid=".1anw1v"
-                                    />
 
-                                    <span className="text-sm" data-oid="x5r-g.3">
-                                        GPU Processing
-                                    </span>
-                                </label>
-                            </div>
-                            <div data-oid="b8wf56q">
-                                <label
-                                    htmlFor="contextual-embedding"
-                                    className="flex items-center space-x-2"
-                                    data-oid="hng9.xe"
-                                >
-                                    <input
-                                        id="contextual-embedding"
-                                        type="checkbox"
-                                        className="rounded"
-                                        checked={contextualEmbedding}
-                                        onChange={(e) => setContextualEmbedding(e.target.checked)}
-                                        data-oid="ftzs_wu"
-                                    />
-
-                                    <span className="text-sm" data-oid="i0_pmze">
-                                        Contextual Embedding
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
 
                         {/* Processing Mode Selection */}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4" data-oid="processing-mode">

@@ -141,6 +141,16 @@ export class DocumentService {
     }
 
     static async deleteDocument(id: string, userId?: string) {
+        // Get document info before deletion for realm update
+        const document = await prisma.document.findUnique({
+            where: { id },
+            select: { realmId: true },
+        });
+
+        if (!document) {
+            throw new Error('Document not found');
+        }
+
         // Use enhanced deletion service for better cleanup
         const enhancedDeletionService = new EnhancedDocumentDeletionService();
 
@@ -152,12 +162,7 @@ export class DocumentService {
             });
 
             // Update realm document count
-            const document = await prisma.document.findUnique({
-                where: { id },
-                select: { realmId: true },
-            });
-
-            if (document?.realmId) {
+            if (document.realmId) {
                 await prisma.realm.update({
                     where: { id: document.realmId },
                     data: {
@@ -174,17 +179,12 @@ export class DocumentService {
             // Fallback to simple deletion if enhanced deletion fails
             console.warn('Enhanced deletion failed, falling back to simple deletion:', error);
 
-            const document = await prisma.document.findUnique({
-                where: { id },
-                select: { realmId: true },
-            });
-
             const deletedDocument = await prisma.document.delete({
                 where: { id },
             });
 
             // Update realm document count
-            if (document?.realmId) {
+            if (document.realmId) {
                 await prisma.realm.update({
                     where: { id: document.realmId },
                     data: {

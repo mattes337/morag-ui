@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '../contexts/AppContext';
 import { AuthWrapper } from '../components/layout/AuthWrapper';
+// Initialize background services on app startup
+import '../lib/startup';
 
 export const metadata: Metadata = {
     title: 'Vector Database Manager',

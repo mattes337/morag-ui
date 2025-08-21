@@ -116,6 +116,7 @@ export interface Document {
     quality: number;
     uploadDate: string;
     processingMode?: 'MANUAL' | 'AUTOMATIC';
+    markdown?: string; // Processed markdown content
     metadata?: DocumentMetadata;
     jobs?: Job[];
 }

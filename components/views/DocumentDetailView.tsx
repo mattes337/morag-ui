@@ -5,10 +5,11 @@ import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing-status-display';
 import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
-import { StageProgressIndicator } from '../ui/stage-progress-indicator';
+
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Activity, Settings } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -60,6 +61,54 @@ export function DocumentDetailView({
     const renderDocumentEmbed = () => {
         const docType = document.type.toLowerCase();
         const docName = document.name.toLowerCase();
+
+        // Handle markdown files
+        if (docType === 'markdown' || docName.includes('.md') || docName.includes('.markdown')) {
+            // Use actual document markdown content or fallback message
+            const markdownContent = document.markdown || `# ${document.name}
+
+## Document Preview
+
+This document is still being processed. The markdown content will appear here once processing is complete.
+
+### Processing Information
+- **Status**: ${document.state}
+- **Chunks**: ${document.chunks || 0}
+- **Quality**: ${document.quality ? (document.quality * 100).toFixed(1) : '0'}%
+
+Please check back later or refresh the page to see the processed content.`;
+
+            return (
+                <div className="w-full border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                        <span className="text-sm font-medium text-gray-700">Markdown Preview</span>
+                    </div>
+                    <div className="p-6 bg-white max-h-96 overflow-y-auto">
+                        <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                                components={{
+                                h1: ({children}) => <h1 className="text-2xl font-bold mb-4 text-gray-900">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-xl font-semibold mb-3 text-gray-800">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-lg font-medium mb-2 text-gray-700">{children}</h3>,
+                                p: ({children}) => <p className="mb-3 text-gray-600 leading-relaxed">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-3 text-gray-600">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-3 text-gray-600">{children}</ol>,
+                                li: ({children}) => <li className="mb-1">{children}</li>,
+                                blockquote: ({children}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-3">{children}</blockquote>,
+                                code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">{children}</code>,
+                                pre: ({children}) => <pre className="bg-gray-100 p-3 rounded overflow-x-auto mb-3">{children}</pre>,
+                                a: ({children, href}) => <a href={href} className="text-blue-600 hover:text-blue-800 underline">{children}</a>,
+                                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>
+                            }}
+                            >
+                            {markdownContent}
+                            </ReactMarkdown>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         // For testing purposes, using publicly available files
         if (docType === 'pdf' || docName.includes('.pdf')) {
@@ -154,30 +203,51 @@ export function DocumentDetailView({
             </div>
 
             {/* Processing Status Section */}
-            {document.processingMode && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                                <Activity className="w-5 h-5" />
-                                <span>Processing Status</span>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <Badge variant={document.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'}>
-                                    {document.processingMode} Mode
-                                </Badge>
-                                <ProcessingModeToggle
-                                    mode={document.processingMode}
-                                    onModeChange={async (mode) => {
-                                        // TODO: Implement mode change handler
-                                        console.log('Change processing mode to:', mode);
-                                    }}
-                                    disabled={document.state === 'ingesting'}
-                                    size="sm"
-                                />
-                            </div>
-                        </CardTitle>
-                    </CardHeader>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <Activity className="w-5 h-5" />
+                            <span>Processing Status</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <Badge variant={(document.processingMode || 'AUTOMATIC') === 'AUTOMATIC' ? 'default' : 'secondary'}>
+                                {document.processingMode || 'AUTOMATIC'} Mode
+                            </Badge>
+                            <ProcessingModeToggle
+                                mode={document.processingMode || 'AUTOMATIC'}
+                                onModeChange={async (mode) => {
+                                    try {
+                                        const response = await fetch(`/api/documents/${document.id}/processing`, {
+                                            method: 'PUT',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify({
+                                                processingMode: mode
+                                            })
+                                        });
+
+                                        if (!response.ok) {
+                                            throw new Error('Failed to update processing mode');
+                                        }
+
+                                        const result = await response.json();
+                                        console.log('Processing mode updated:', result.message);
+                                        
+                                        // Refresh the document data to show updated mode
+                                        window.location.reload();
+                                    } catch (error) {
+                                        console.error('Failed to update processing mode:', error);
+                                        // TODO: Show error toast to user
+                                    }
+                                }}
+                                disabled={document.state === 'ingesting'}
+                                size="sm"
+                            />
+                        </div>
+                    </CardTitle>
+                </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             {/* Processing Status Display */}
@@ -204,37 +274,9 @@ export function DocumentDetailView({
                                 currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
                                 compact={false}
                             />
-                            
-                            {/* Stage Progress Indicator */}
-                            <StageProgressIndicator
-                                stages={[
-                                    {
-                                        stage: 'MARKDOWN_CONVERSION',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 
-                                               document.state === 'ingesting' ? 'RUNNING' : 'PENDING',
-                                        progress: document.state === 'ingesting' ? 65 : undefined,
-                                        startedAt: document.state === 'ingesting' ? new Date(Date.now() - 120000) : undefined
-                                    },
-                                    {
-                                        stage: 'CHUNKER',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 'PENDING'
-                                    },
-                                    {
-                                        stage: 'INGESTOR',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 'PENDING'
-                                    }
-                                ]}
-                                currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
-                                overallProgress={document.state === 'ingested' ? 100 : 
-                                               document.state === 'ingesting' ? 35 : 0}
-                                compact={true}
-                                showLabels={false}
-                                showProgress={true}
-                            />
                         </div>
                     </CardContent>
                 </Card>
-            )}
 
             {/* Document Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
