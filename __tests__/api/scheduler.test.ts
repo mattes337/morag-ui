@@ -2,15 +2,24 @@ import { GET, POST, PUT } from '../../app/api/scheduler/route';
 import { jobScheduler } from '../../lib/services/jobScheduler';
 import { NextRequest } from 'next/server';
 
+// Mock the auth module
+jest.mock('../../lib/auth', () => ({
+  requireAuth: jest.fn().mockResolvedValue({
+    userId: 'test-user-id',
+    email: 'test@example.com',
+    role: 'ADMIN'
+  })
+}));
+
 // Mock the jobScheduler
 jest.mock('../../lib/services/jobScheduler', () => ({
   jobScheduler: {
     getStats: jest.fn(),
     getConfig: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-    restart: jest.fn(),
-    triggerProcessing: jest.fn(),
+    start: jest.fn().mockResolvedValue(undefined),
+    stop: jest.fn().mockResolvedValue(undefined),
+    restart: jest.fn().mockResolvedValue(undefined),
+    triggerProcessing: jest.fn().mockResolvedValue(undefined),
     updateConfig: jest.fn()
   }
 }));
@@ -60,7 +69,9 @@ describe('/api/scheduler', () => {
       const data = await response.json();
       
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockStatus);
+      expect(data.stats).toEqual(mockStatus);
+      expect(data.config).toBeDefined();
+      expect(data.timestamp).toBeDefined();
       expect(mockJobScheduler.getStats).toHaveBeenCalled();
     });
 
@@ -82,7 +93,9 @@ describe('/api/scheduler', () => {
       const data = await response.json();
       
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockStats);
+      expect(data.stats).toEqual(mockStats);
+      expect(data.config).toBeDefined();
+      expect(data.timestamp).toBeDefined();
       expect(mockJobScheduler.getStats).toHaveBeenCalled();
     });
 
@@ -165,7 +178,7 @@ describe('/api/scheduler', () => {
       const data = await response.json();
       
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Invalid action');
+      expect(data.error).toBe('Invalid action. Must be one of: start, stop, restart, trigger');
     });
 
     it('should return 400 for missing documentId in trigger action', async () => {

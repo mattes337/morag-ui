@@ -242,32 +242,113 @@ class BackgroundJobService {
    * Call the MoRAG backend to process a stage
    */
   private async callMoragBackend(job: any, executionId: string): Promise<void> {
-    // This is a placeholder for the actual MoRAG backend call
-    // The implementation will depend on the specific stage and backend API
-    
     const webhookUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/webhooks/stages`;
     const webhookToken = process.env.WEBHOOK_AUTH_TOKEN || 'default-token';
 
-    // Example call structure - this will need to be adapted based on the actual MoRAG API
-    const request = {
-      mode: this.getProcessingMode(job.stage),
-      source_type: 'file' as const,
-      document_id: job.documentId,
-      webhook_url: webhookUrl,
-      webhook_auth_token: webhookToken,
-      metadata: {
-        executionId,
-        jobId: job.id,
-        stage: job.stage,
-      },
-    };
+    try {
+      // Get document details for the request
+      const document = await prisma.document.findUnique({
+        where: { id: job.documentId },
+        include: {
+          realm: {
+            include: {
+              servers: {
+                include: {
+                  server: true
+                }
+              }
+            }
+          },
+          files: {
+            where: {
+              fileType: 'ORIGINAL_DOCUMENT'
+            },
+            orderBy: {
+              createdAt: 'desc'
+            },
+            take: 1
+          }
+        }
+      });
 
-    // This would be the actual call to MoRAG backend
-    // For now, we'll simulate it
-    console.log(`Would call MoRAG backend with:`, request);
-    
-    // TODO: Implement actual MoRAG backend call based on stage type
-    // await moragService.processUnified(request);
+      if (!document) {
+        throw new Error(`Document ${job.documentId} not found`);
+      }
+
+      // Get the original file for processing
+      const originalFile = document.files[0];
+      if (!originalFile && job.stage === ProcessingStage.MARKDOWN_CONVERSION) {
+        throw new Error(`No original file found for document ${job.documentId}`);
+      }
+
+      // Prepare the stage processing request
+      const stageRequest = {
+        documentId: job.documentId,
+        stage: job.stage,
+        executionId,
+        document: {
+          id: document.id,
+          title: document.name,
+          content: document.markdown || '',
+          filePath: originalFile?.filepath || '',
+          realmId: document.realmId
+        },
+        webhookUrl,
+        metadata: {
+          jobId: job.id,
+          documentName: document.name,
+          realmId: document.realmId,
+          originalFile: originalFile?.filepath,
+          databaseServers: document.realm.servers.map(realmServer => ({
+            type: realmServer.server.type.toLowerCase(),
+            host: realmServer.server.host,
+            port: realmServer.server.port,
+            username: realmServer.server.username,
+            password: realmServer.server.password,
+            apiKey: realmServer.server.apiKey,
+            database: realmServer.server.database,
+            collection: realmServer.server.collection,
+          }))
+        }
+      };
+
+      console.log(`Calling MoRAG backend for job ${job.id}, stage ${job.stage}:`, {
+        documentId: stageRequest.documentId,
+        stage: stageRequest.stage,
+        executionId: stageRequest.executionId
+      });
+
+      // Make the actual call to MoRAG backend
+      const response = await moragService.processStage(stageRequest);
+
+      if (!response.success) {
+        throw new Error(response.message || 'MoRAG processing failed');
+      }
+
+      console.log(`MoRAG backend call successful for job ${job.id}:`, {
+        taskId: response.taskId,
+        estimatedTime: response.estimatedTimeSeconds,
+        statusUrl: response.statusUrl
+      });
+
+      // Store the task ID for tracking
+      await prisma.processingJob.update({
+        where: { id: job.id },
+        data: {
+          metadata: JSON.stringify({
+            ...JSON.parse(job.metadata || '{}'),
+            moragTaskId: response.taskId,
+            estimatedTime: response.estimatedTimeSeconds,
+            statusUrl: response.statusUrl,
+            executionId: response.executionId
+          })
+        }
+      });
+
+    } catch (error) {
+      console.error(`MoRAG backend call failed for job ${job.id}:`, error);
+      throw error;
+    }
   }
 
   /**

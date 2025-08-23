@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DocumentType, Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { ToastService } from '../../lib/services/toastService';
 
 interface AddDocumentDialogProps {
     isOpen: boolean;
@@ -20,7 +21,7 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { createDocument, currentRealm } = useApp();
+    const { createDocument, currentRealm, refreshData } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
     const [documentName, setDocumentName] = useState('');
     const [documentUrl, setDocumentUrl] = useState('');
@@ -153,8 +154,8 @@ export function AddDocumentDialog({
                     throw new Error(errorData.error || 'Failed to upload document');
                 }
 
-                // Refresh documents list
-                // TODO: Add to context or trigger refresh
+                // Refresh documents list using AppContext
+                await refreshData();
             } else {
                 // Handle documents without files (manual entry)
                 const documentData: any = {
@@ -167,10 +168,38 @@ export function AddDocumentDialog({
                 await createDocument(documentData);
             }
 
+            ToastService.success('Document created successfully');
             handleClose();
         } catch (error) {
             console.error('Failed to create document:', error);
-            // TODO: Show error message to user
+
+            // Provide specific error messages based on error type
+            let errorTitle = 'Failed to create document';
+            let errorDescription = 'An unexpected error occurred';
+
+            if (error instanceof Error) {
+                errorDescription = error.message;
+
+                // Provide more specific error titles based on common failure scenarios
+                if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorTitle = 'Network Error';
+                    errorDescription = 'Unable to connect to the server. Please check your internet connection and try again.';
+                } else if (error.message.includes('file size') || error.message.includes('too large')) {
+                    errorTitle = 'File Too Large';
+                    errorDescription = 'The selected file is too large. Please choose a smaller file or compress it before uploading.';
+                } else if (error.message.includes('file type') || error.message.includes('not supported')) {
+                    errorTitle = 'Unsupported File Type';
+                    errorDescription = 'The selected file type is not supported. Please choose a different file format.';
+                } else if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+                    errorTitle = 'Permission Denied';
+                    errorDescription = 'You do not have permission to upload documents to this realm.';
+                } else if (error.message.includes('quota') || error.message.includes('limit')) {
+                    errorTitle = 'Storage Limit Reached';
+                    errorDescription = 'Your storage quota has been reached. Please delete some documents or contact your administrator.';
+                }
+            }
+
+            ToastService.error(errorTitle, { description: errorDescription });
         } finally {
             setIsSubmitting(false);
         }

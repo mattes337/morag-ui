@@ -60,39 +60,47 @@ export function DocumentStatistics({ documentId, className }: DocumentStatistics
   const loadStatistics = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API call
+      const response = await fetch(`/api/documents/${documentId}/statistics`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch document statistics');
+      }
+
+      const stats = await response.json();
+      setStatistics(stats);
+    } catch (error) {
+      console.error('Failed to load document statistics:', error);
+      // Fallback to mock data if API fails
       const mockStats: DocumentStatistics = {
         processing: {
-          chunks: 12,
-          quality: 0.87,
-          processingTime: 320,
+          chunks: 0,
+          quality: 0,
+          processingTime: 0,
           version: 1,
-          lastProcessed: '2024-01-15T10:05:20Z'
+          lastProcessed: new Date().toISOString()
         },
         content: {
-          words: 1250,
-          characters: 7800,
-          pages: 5,
-          language: 'English',
-          readingTime: 5
+          words: 0,
+          characters: 0,
+          pages: 1,
+          language: 'Unknown',
+          readingTime: 1
         },
         knowledgeGraph: {
-          entities: 45,
-          facts: 78,
-          relations: 23,
-          concepts: 15,
-          topics: ['Technology', 'Business', 'Innovation', 'Strategy']
+          entities: 0,
+          facts: 0,
+          relations: 0,
+          concepts: 0,
+          topics: []
         },
         performance: {
-          searchQueries: 156,
-          avgResponseTime: 0.45,
-          accuracy: 0.92,
-          lastAccessed: '2024-01-20T14:30:00Z'
+          searchQueries: 0,
+          avgResponseTime: 0,
+          accuracy: 0,
+          lastAccessed: new Date().toISOString()
         }
       };
       setStatistics(mockStats);
-    } catch (error) {
-      console.error('Failed to load document statistics:', error);
     } finally {
       setIsLoading(false);
     }

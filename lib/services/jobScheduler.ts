@@ -1,5 +1,6 @@
 import { backgroundJobService } from './backgroundJobService';
-import { PrismaClient, ProcessingMode, DocumentState } from '@prisma/client';
+import { PrismaClient, ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
+import { errorHandlingService } from './errorHandlingService';
 
 const prisma = new PrismaClient();
 
@@ -222,16 +223,19 @@ class JobScheduler {
       // Check for stuck jobs (processing for more than 30 minutes)
       const stuckJobs = await prisma.processingJob.findMany({
         where: {
-          status: 'PROCESSING',
+          status: JobStatus.PROCESSING,
           startedAt: {
             lt: new Date(Date.now() - 30 * 60 * 1000) // 30 minutes ago
           }
+        },
+        include: {
+          document: true
         }
       });
 
       if (stuckJobs.length > 0) {
-        console.warn(`Found ${stuckJobs.length} potentially stuck jobs`);
-        // TODO: Implement stuck job recovery logic
+        console.warn(`Found ${stuckJobs.length} potentially stuck jobs, initiating recovery...`);
+        await this.recoverStuckJobs(stuckJobs);
       }
 
       // Schedule new automatic jobs if needed
@@ -374,8 +378,175 @@ class JobScheduler {
 
     // Schedule processing if needed
     await this.scheduleAutomaticProcessing();
-    
+
     console.log(`Resumed processing for document ${documentId}`);
+  }
+
+  /**
+   * Recover stuck jobs by analyzing their state and taking appropriate action
+   */
+  private async recoverStuckJobs(stuckJobs: any[]): Promise<void> {
+    const recoveryActions = {
+      cancelled: 0,
+      retried: 0,
+      failed: 0,
+      errors: 0
+    };
+
+    for (const job of stuckJobs) {
+      try {
+        const stuckDuration = Date.now() - new Date(job.startedAt).getTime();
+        const stuckHours = Math.floor(stuckDuration / (60 * 60 * 1000));
+
+        console.log(`Recovering stuck job ${job.id} (${job.stage}) for document ${job.documentId}, stuck for ${stuckHours} hours`);
+
+        // Determine recovery action based on how long the job has been stuck
+        if (stuckHours >= 2) {
+          // Jobs stuck for 2+ hours: Cancel and create error record
+          await this.cancelStuckJob(job, `Job stuck for ${stuckHours} hours`);
+          recoveryActions.cancelled++;
+
+        } else if (stuckHours >= 1) {
+          // Jobs stuck for 1-2 hours: Fail and retry if retries available
+          if (job.retryCount < job.maxRetries) {
+            await this.retryStuckJob(job, `Job stuck for ${stuckHours} hours, retrying`);
+            recoveryActions.retried++;
+          } else {
+            await this.failStuckJob(job, `Job stuck for ${stuckHours} hours, max retries exceeded`);
+            recoveryActions.failed++;
+          }
+
+        } else {
+          // Jobs stuck for 30 minutes - 1 hour: Just retry once
+          await this.retryStuckJob(job, `Job stuck for ${Math.floor(stuckDuration / (60 * 1000))} minutes, retrying`);
+          recoveryActions.retried++;
+        }
+
+      } catch (error) {
+        console.error(`Error recovering stuck job ${job.id}:`, error);
+        recoveryActions.errors++;
+      }
+    }
+
+    console.log(`Stuck job recovery completed:`, recoveryActions);
+  }
+
+  /**
+   * Cancel a stuck job and create an error record
+   */
+  private async cancelStuckJob(job: any, reason: string): Promise<void> {
+    // Update job status
+    await prisma.processingJob.update({
+      where: { id: job.id },
+      data: {
+        status: JobStatus.CANCELLED,
+        completedAt: new Date(),
+        errorMessage: reason
+      }
+    });
+
+    // Create error record
+    const timeoutError = new Error(reason);
+    timeoutError.name = 'TIMEOUT';
+
+    await errorHandlingService.handleProcessingError({
+      jobId: job.id,
+      documentId: job.documentId,
+      stage: job.stage,
+      attempt: job.retryCount + 1,
+      error: timeoutError,
+      timestamp: new Date()
+    });
+
+    // Reset document status
+    await prisma.document.update({
+      where: { id: job.documentId },
+      data: {
+        stageStatus: 'FAILED',
+        lastStageError: reason
+      }
+    });
+
+    console.log(`Cancelled stuck job ${job.id}: ${reason}`);
+  }
+
+  /**
+   * Retry a stuck job
+   */
+  private async retryStuckJob(job: any, reason: string): Promise<void> {
+    // Mark current job as failed
+    await prisma.processingJob.update({
+      where: { id: job.id },
+      data: {
+        status: JobStatus.FAILED,
+        completedAt: new Date(),
+        errorMessage: reason
+      }
+    });
+
+    // Create new job for retry
+    await backgroundJobService.createJob({
+      documentId: job.documentId,
+      stage: job.stage,
+      priority: job.priority + 1, // Slightly higher priority for retries
+      scheduledAt: new Date(Date.now() + 60000), // Retry in 1 minute
+      metadata: {
+        ...JSON.parse(job.metadata || '{}'),
+        retryOf: job.id,
+        stuckJobRecovery: true,
+        originalStartTime: job.startedAt
+      }
+    });
+
+    // Reset document status
+    await prisma.document.update({
+      where: { id: job.documentId },
+      data: {
+        stageStatus: 'PENDING',
+        lastStageError: null
+      }
+    });
+
+    console.log(`Retrying stuck job ${job.id}: ${reason}`);
+  }
+
+  /**
+   * Mark a stuck job as permanently failed
+   */
+  private async failStuckJob(job: any, reason: string): Promise<void> {
+    // Update job status
+    await prisma.processingJob.update({
+      where: { id: job.id },
+      data: {
+        status: JobStatus.FAILED,
+        completedAt: new Date(),
+        errorMessage: reason
+      }
+    });
+
+    // Create error record
+    const timeoutError = new Error(reason);
+    timeoutError.name = 'TIMEOUT';
+
+    await errorHandlingService.handleProcessingError({
+      jobId: job.id,
+      documentId: job.documentId,
+      stage: job.stage,
+      attempt: job.retryCount + 1,
+      error: timeoutError,
+      timestamp: new Date()
+    });
+
+    // Reset document status
+    await prisma.document.update({
+      where: { id: job.documentId },
+      data: {
+        stageStatus: 'FAILED',
+        lastStageError: reason
+      }
+    });
+
+    console.log(`Failed stuck job ${job.id}: ${reason}`);
   }
 }
 

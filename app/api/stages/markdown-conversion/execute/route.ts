@@ -32,15 +32,38 @@ export async function POST(request: NextRequest) {
       metadata: { options, userId: user.userId },
     });
 
-    // TODO: Integrate with actual markdown conversion service
-    // For now, we'll simulate the process
+    // Integrate with actual markdown conversion service
     try {
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { MarkdownConversionService } = await import('@/lib/services/markdownConversionService');
 
-      // Create mock output file
+      let markdownContent: string;
+      let conversionMetadata: any = {};
+
+      if (inputFile) {
+        // Convert the input file to markdown
+        const conversionResult = await MarkdownConversionService.convertToMarkdown(inputFile, {
+          preserveFormatting: options?.preserveFormatting ?? true,
+          extractImages: options?.extractImages ?? false,
+          includeMetadata: options?.includeMetadata ?? true,
+          optimizeForReadability: options?.optimizeForReadability ?? true,
+        });
+
+        markdownContent = conversionResult.markdown;
+        conversionMetadata = conversionResult.metadata;
+      } else {
+        // No input file - create a basic markdown document
+        markdownContent = `# Document: ${documentId}\n\nThis document was created without an input file.\n\n## Information\n- Created at: ${new Date().toISOString()}\n- Document ID: ${documentId}\n`;
+        conversionMetadata = {
+          originalFilename: 'none',
+          fileType: 'generated',
+          conversionDate: new Date().toISOString(),
+          wordCount: markdownContent.split(/\s+/).length,
+          characterCount: markdownContent.length,
+        };
+      }
+
+      // Create output file
       const outputFilename = `${documentId}.md`;
-      const mockMarkdownContent = `# Document: ${documentId}\n\nThis is a mock markdown conversion result.\n\n## Metadata\n- Converted at: ${new Date().toISOString()}\n- Input file: ${inputFile || 'N/A'}\n`;
 
       // Store the output file
       const stageFile = await unifiedFileService.storeFile({
@@ -49,13 +72,14 @@ export async function POST(request: NextRequest) {
         stage: 'MARKDOWN_CONVERSION',
         filename: outputFilename,
         originalName: outputFilename,
-        content: Buffer.from(mockMarkdownContent),
+        content: Buffer.from(markdownContent),
         contentType: 'text/markdown',
         isPublic: false,
         accessLevel: 'REALM_MEMBERS',
         metadata: {
-          originalFilename: inputFile,
+          originalFilename: conversionMetadata.originalFilename,
           conversionOptions: options,
+          conversionMetadata,
         },
       });
 
@@ -66,6 +90,9 @@ export async function POST(request: NextRequest) {
         {
           outputFile: outputFilename,
           fileSize: stageFile.filesize,
+          conversionMetadata,
+          wordCount: conversionMetadata.wordCount,
+          characterCount: conversionMetadata.characterCount,
         }
       );
 

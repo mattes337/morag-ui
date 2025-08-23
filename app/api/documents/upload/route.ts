@@ -74,10 +74,25 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    // TODO: Trigger processing pipeline if in automatic mode
+    // Trigger processing pipeline if in automatic mode
     if (processingMode === 'AUTOMATIC') {
-      // This would trigger the first stage of processing
-      console.log(`Document ${document.id} uploaded, triggering automatic processing`);
+      try {
+        // Import the background job service to schedule processing
+        const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
+
+        // Schedule the first stage of processing (MARKDOWN_CONVERSION)
+        const jobId = await backgroundJobService.createJob({
+          documentId: document.id,
+          stage: 'MARKDOWN_CONVERSION',
+          priority: 0,
+          scheduledAt: new Date()
+        });
+
+        console.log(`Document ${document.id} uploaded, scheduled automatic processing with job ${jobId}`);
+      } catch (processingError) {
+        console.error(`Failed to schedule automatic processing for document ${document.id}:`, processingError);
+        // Don't fail the upload if processing scheduling fails
+      }
     }
     
     return NextResponse.json({

@@ -27,16 +27,36 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // TODO: Implement proper document filtering
-    const allDocuments = await DocumentService.getAllDocuments();
-    const filteredDocuments = allDocuments.filter(doc => doc.realmId === auth.realm!.id);
+    // Implement proper document filtering with database queries
+    const filters: any = {
+      realmId: auth.realm!.id,
+    };
 
-    const total = filteredDocuments.length;
-    const startIndex = (page - 1) * limit;
-    const documents = filteredDocuments.slice(startIndex, startIndex + limit);
+    // Add state filter
+    if (state) {
+      const validStates = ['UPLOADED', 'PROCESSING', 'INGESTED', 'FAILED', 'ARCHIVED'];
+      if (validStates.includes(state.toUpperCase())) {
+        filters.state = state.toUpperCase();
+      }
+    }
+
+    // Add type filter
+    if (type) {
+      filters.type = type;
+    }
+
+    // Get filtered documents with efficient database query
+    const { documents: filteredDocuments, total } = await DocumentService.getDocumentsWithFilters({
+      ...filters,
+      search,
+      page,
+      limit,
+    });
+
+    // Documents are already paginated from the service
     
     return NextResponse.json({
-      documents,
+      documents: filteredDocuments,
       pagination: {
         page,
         limit,

@@ -1,4 +1,4 @@
-import { PrismaClient, ProcessingStage, FileType, FileAccessLevel } from '@prisma/client';
+import { PrismaClient, ProcessingStage, FileType, FileAccessLevel, DocumentFile } from '@prisma/client';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
@@ -85,7 +85,7 @@ export class UnifiedFileService {
   /**
    * Map database record to output format
    */
-  private mapToOutput(file: any): FileOutput {
+  private mapToOutput(file: DocumentFile): FileOutput {
     return {
       id: file.id,
       documentId: file.documentId,

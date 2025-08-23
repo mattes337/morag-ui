@@ -1,9 +1,11 @@
 import { prisma } from '../database';
 import { DocumentService } from './documentService';
 import { RealmService } from './realmService';
-import { Document, DocumentState, MigrationStatus } from '@prisma/client';
+import { Document, DocumentState, MigrationStatus, ProcessingStage } from '@prisma/client';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { stageExecutionService } from './stageExecutionService';
+import { backgroundJobService } from './backgroundJobService';
 
 export interface MigrationOptions {
   copyStageFiles: boolean;
@@ -164,6 +166,76 @@ export class DocumentMigrationService {
    */
   static async getMigrationProgress(migrationId: string): Promise<MigrationProgress | null> {
     return this.getMigrationStatus(migrationId);
+  }
+
+  /**
+   * Get migration history for a specific document
+   */
+  static async getDocumentMigrationHistory(documentId: string, userId: string): Promise<any[]> {
+    // Get all migration items where this document was either source or target
+    const migrationItems = await prisma.documentMigrationItem.findMany({
+      where: {
+        OR: [
+          { sourceDocumentId: documentId },
+          { targetDocumentId: documentId },
+        ],
+      },
+      include: {
+        migration: {
+          include: {
+            sourceRealm: true,
+            targetRealm: true,
+            createdByUser: true,
+          },
+        },
+        sourceDocument: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        targetDocument: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Filter to only include migrations the user has access to
+    const accessibleItems = migrationItems.filter(item =>
+      item.migration.createdBy === userId
+    );
+
+    return accessibleItems.map(item => ({
+      id: item.id,
+      migrationId: item.migrationId,
+      status: item.status,
+      sourceDocument: item.sourceDocument,
+      targetDocument: item.targetDocument,
+      sourceRealm: {
+        id: item.migration.sourceRealm.id,
+        name: item.migration.sourceRealm.name,
+      },
+      targetRealm: {
+        id: item.migration.targetRealm.id,
+        name: item.migration.targetRealm.name,
+      },
+      migrationOptions: item.migration.migrationOptions ? JSON.parse(item.migration.migrationOptions) : {},
+      migratedStages: item.migratedStages ? JSON.parse(item.migratedStages) : [],
+      startedAt: item.startedAt,
+      completedAt: item.completedAt,
+      errorMessage: item.errorMessage,
+      createdAt: item.createdAt,
+      createdBy: {
+        id: item.migration.createdByUser.id,
+        email: item.migration.createdByUser.email,
+      },
+    }));
   }
 
   /**
@@ -424,12 +496,108 @@ export class DocumentMigrationService {
       return;
     }
 
-    // This would integrate with the stage execution system
-    // For now, we'll just mark the stages as needing reprocessing
-    context.migratedStages = context.migrationOptions.reprocessStages;
-    
-    // TODO: Integrate with stage execution system to actually reprocess stages
-    // This would involve calling the stage execution API endpoints
+    const targetDocumentId = context.targetDocument.id;
+    const stagesToReprocess = context.migrationOptions.reprocessStages;
+
+    console.log(`Reprocessing ${stagesToReprocess.length} stages for migrated document ${targetDocumentId}`);
+
+    try {
+      // Reset document to the first stage that needs reprocessing
+      const firstStage = this.getFirstStageToReprocess(stagesToReprocess);
+      if (firstStage) {
+        await stageExecutionService.resetToStage(targetDocumentId, firstStage);
+
+        // Update document processing mode to manual to prevent automatic progression
+        await prisma.document.update({
+          where: { id: targetDocumentId },
+          data: {
+            processingMode: 'MANUAL',
+            stageStatus: 'PENDING',
+            lastStageError: null
+          }
+        });
+      }
+
+      // Schedule jobs for each stage that needs reprocessing
+      const scheduledJobs: string[] = [];
+
+      for (let i = 0; i < stagesToReprocess.length; i++) {
+        const stage = stagesToReprocess[i] as ProcessingStage;
+
+        // Validate that the stage is a valid ProcessingStage
+        if (!Object.values(ProcessingStage).includes(stage)) {
+          console.warn(`Invalid stage for reprocessing: ${stage}`);
+          continue;
+        }
+
+        try {
+          // Create a processing job for this stage
+          const job = await backgroundJobService.createJob({
+            documentId: targetDocumentId,
+            stage: stage,
+            priority: 10, // High priority for migration reprocessing
+            scheduledAt: new Date(Date.now() + (i * 5000)), // Stagger jobs by 5 seconds
+            metadata: {
+              migrationId: context.migrationId,
+              migrationReprocess: true,
+              stageOrder: i,
+              totalStages: stagesToReprocess.length
+            }
+          });
+
+          scheduledJobs.push(job.id);
+          console.log(`Scheduled reprocessing job ${job.id} for stage ${stage} (${i + 1}/${stagesToReprocess.length})`);
+
+        } catch (error) {
+          console.error(`Failed to schedule reprocessing job for stage ${stage}:`, error);
+          throw new Error(`Failed to schedule reprocessing for stage ${stage}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Store the scheduled job IDs in the migration context
+      context.migratedStages = stagesToReprocess;
+
+      // Update migration record with reprocessing information
+      await prisma.documentMigration.update({
+        where: { id: context.migrationId },
+        data: {
+          migrationOptions: JSON.stringify({
+            ...context.migrationOptions,
+            scheduledJobs,
+            reprocessingStarted: new Date().toISOString()
+          })
+        }
+      });
+
+      console.log(`Successfully scheduled ${scheduledJobs.length} reprocessing jobs for document ${targetDocumentId}`);
+
+    } catch (error) {
+      console.error(`Failed to reprocess stages for document ${targetDocumentId}:`, error);
+      throw new Error(`Stage reprocessing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get the first stage in the processing pipeline from the list of stages to reprocess
+   */
+  private static getFirstStageToReprocess(stagesToReprocess: string[]): ProcessingStage | null {
+    // Define the processing pipeline order
+    const pipelineOrder: ProcessingStage[] = [
+      ProcessingStage.MARKDOWN_CONVERSION,
+      ProcessingStage.MARKDOWN_OPTIMIZER,
+      ProcessingStage.CHUNKER,
+      ProcessingStage.FACT_GENERATOR,
+      ProcessingStage.INGESTOR
+    ];
+
+    // Find the first stage in the pipeline that needs reprocessing
+    for (const stage of pipelineOrder) {
+      if (stagesToReprocess.includes(stage)) {
+        return stage;
+      }
+    }
+
+    return null;
   }
 
   /**

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiKey } from '@/lib/middleware/apiKeyAuth';
 import { RealmService } from '@/lib/services/realmService';
+import { prisma } from '@/lib/database';
+import { DocumentState, JobStatus } from '@prisma/client';
 
 /**
  * GET /api/v1/realms
@@ -21,27 +23,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get realm statistics
-    // TODO: Implement actual statistics gathering
-    const statistics = {
-      documents: {
-        total: 0,
-        pending: 0,
-        processing: 0,
-        completed: 0,
-        failed: 0,
-      },
-      storage: {
-        totalSize: 0,
-        fileCount: 0,
-      },
-      processing: {
-        totalJobs: 0,
-        activeJobs: 0,
-        completedJobs: 0,
-        failedJobs: 0,
-      },
-      lastActivity: new Date().toISOString(),
-    };
+    const statistics = await calculateRealmStatistics(auth.realm!.id);
     
     return NextResponse.json({
       realm: {
@@ -95,4 +77,105 @@ export async function PUT(request: NextRequest) {
       { status: error instanceof Error && error.message.includes('Authentication') ? 401 : 500 }
     );
   }
+}
+
+/**
+ * Calculate comprehensive statistics for a realm
+ */
+async function calculateRealmStatistics(realmId: string) {
+  // Get document statistics
+  const documentStats = await prisma.document.groupBy({
+    by: ['state'],
+    where: { realmId },
+    _count: { id: true },
+  });
+
+  const documents = {
+    total: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0,
+  };
+
+  // Process document statistics
+  for (const stat of documentStats) {
+    documents.total += stat._count.id;
+    switch (stat.state) {
+      case DocumentState.PENDING:
+        documents.pending += stat._count.id;
+        break;
+      case DocumentState.INGESTING:
+        documents.processing += stat._count.id;
+        break;
+      case DocumentState.INGESTED:
+        documents.completed += stat._count.id;
+        break;
+      case DocumentState.DEPRECATED:
+      case DocumentState.DELETED:
+        documents.failed += stat._count.id;
+        break;
+    }
+  }
+
+  // Get storage statistics
+  const storageStats = await prisma.documentFile.aggregate({
+    where: {
+      document: { realmId },
+    },
+    _sum: { filesize: true },
+    _count: { id: true },
+  });
+
+  const storage = {
+    totalSize: storageStats._sum.filesize || 0,
+    fileCount: storageStats._count.id || 0,
+  };
+
+  // Get processing job statistics
+  const jobStats = await prisma.processingJob.groupBy({
+    by: ['status'],
+    where: {
+      document: { realmId },
+    },
+    _count: { id: true },
+  });
+
+  const processing = {
+    totalJobs: 0,
+    activeJobs: 0,
+    completedJobs: 0,
+    failedJobs: 0,
+  };
+
+  // Process job statistics
+  for (const stat of jobStats) {
+    processing.totalJobs += stat._count.id;
+    switch (stat.status) {
+      case JobStatus.PENDING:
+      case JobStatus.PROCESSING:
+        processing.activeJobs += stat._count.id;
+        break;
+      case JobStatus.FINISHED:
+        processing.completedJobs += stat._count.id;
+        break;
+      case JobStatus.FAILED:
+        processing.failedJobs += stat._count.id;
+        break;
+    }
+  }
+
+  // Get last activity
+  const lastDocument = await prisma.document.findFirst({
+    where: { realmId },
+    orderBy: { uploadDate: 'desc' },
+    select: { uploadDate: true },
+  });
+
+  return {
+    documents,
+    storage,
+    processing,
+    lastActivity: lastDocument?.uploadDate?.toISOString() || new Date().toISOString(),
+  };
 }

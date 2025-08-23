@@ -87,6 +87,10 @@ export function MigrationHistory({ realmId, className }: MigrationHistoryProps) 
 
   // Auto-refresh for active migrations
   useEffect(() => {
+    if (!migrations || !Array.isArray(migrations)) {
+      return;
+    }
+
     const activeMigrations = migrations.filter(
       migration => migration.status === 'PENDING' || migration.status === 'IN_PROGRESS'
     );
@@ -222,7 +226,7 @@ export function MigrationHistory({ realmId, className }: MigrationHistoryProps) 
         </div>
       </CardHeader>
       <CardContent>
-        {migrations.length === 0 ? (
+        {!migrations || migrations.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No migrations found</p>

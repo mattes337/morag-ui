@@ -5,16 +5,16 @@ import { getAuthUser } from '../../../../../../lib/auth';
 import { MigrationStatus } from '@prisma/client';
 
 // Mock dependencies
-jest.mock('../../../../../../../lib/services/documentMigrationService', () => ({
+jest.mock('../../../../../../lib/services/documentMigrationService', () => ({
   DocumentMigrationService: {
     getMigration: jest.fn(),
     getMigrationProgress: jest.fn(),
   },
 }));
-jest.mock('../../../../../../../lib/auth');
+jest.mock('../../../../../../lib/auth');
 
 const mockDocumentMigrationService = DocumentMigrationService as jest.Mocked<typeof DocumentMigrationService>;
-const mockRequireAuth = require('../../../../../../../lib/auth').requireAuth as jest.MockedFunction<any>;
+const mockRequireAuth = require('../../../../../../lib/auth').requireAuth as jest.MockedFunction<any>;
 
 describe('/api/migrations/[id]/progress', () => {
   beforeEach(() => {

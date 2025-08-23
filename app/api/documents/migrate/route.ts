@@ -130,8 +130,7 @@ export async function GET(request: NextRequest) {
     
     if (documentId) {
       // Get migration history for a specific document
-      // TODO: Implement document migration history
-      const history: any[] = [];
+      const history = await DocumentMigrationService.getDocumentMigrationHistory(documentId, user.userId);
       return NextResponse.json({ history });
     }
     

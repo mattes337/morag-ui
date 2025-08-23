@@ -120,6 +120,7 @@ model Document {
   files                 DocumentFile[]
   stageExecutions       StageExecution[]
   processingJobs        ProcessingJob[]
+  processingErrors      ProcessingError[]
   sourceMigrationItems  DocumentMigrationItem[] @relation("SourceMigrationItems")
   targetMigrationItems  DocumentMigrationItem[] @relation("TargetMigrationItems")
 
@@ -390,12 +391,37 @@ model ProcessingJob {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  errors       ProcessingError[]
 
   @@index([documentId], map: "processing_jobs_documentId_fkey")
   @@index([status], map: "processing_jobs_status_idx")
   @@index([scheduledAt], map: "processing_jobs_scheduledAt_idx")
   @@index([stage], map: "processing_jobs_stage_idx")
   @@map("processing_jobs")
+}
+
+model ProcessingError {
+  id           String          @id @default(uuid())
+  jobId        String
+  documentId   String
+  stage        ProcessingStage
+  errorType    String
+  errorMessage String          @db.Text
+  errorStack   String?         @db.LongText
+  attempt      Int
+  isRetryable  Boolean         @default(true)
+  retryAt      DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  job          ProcessingJob   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([jobId], map: "processing_errors_jobId_fkey")
+  @@index([documentId], map: "processing_errors_documentId_fkey")
+  @@index([stage], map: "processing_errors_stage_idx")
+  @@index([createdAt], map: "processing_errors_createdAt_idx")
+  @@map("processing_errors")
 }
 
 enum UserRole {

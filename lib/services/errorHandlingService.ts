@@ -185,15 +185,34 @@ class ErrorHandlingService {
    * Create error record in database
    */
   private async createErrorRecord(data: Omit<ProcessingError, 'id' | 'createdAt'>): Promise<ProcessingError> {
-    // TODO: Implement processingError model in Prisma schema
-    const errorRecord: ProcessingError = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...data,
-      createdAt: new Date()
-    };
+    const errorRecord = await prisma.processingError.create({
+      data: {
+        jobId: data.jobId,
+        documentId: data.documentId,
+        stage: data.stage as ProcessingStage,
+        errorType: data.errorType,
+        errorMessage: data.errorMessage,
+        errorStack: data.errorStack,
+        attempt: data.attempt,
+        isRetryable: data.isRetryable,
+        retryAt: data.retryAt
+      }
+    });
 
-    console.warn('ProcessingError model not implemented in database, using in-memory record:', errorRecord);
-    return errorRecord;
+    return {
+      id: errorRecord.id,
+      jobId: errorRecord.jobId,
+      documentId: errorRecord.documentId,
+      stage: errorRecord.stage,
+      errorType: errorRecord.errorType,
+      errorMessage: errorRecord.errorMessage,
+      errorStack: errorRecord.errorStack || undefined,
+      attempt: errorRecord.attempt,
+      isRetryable: errorRecord.isRetryable,
+      retryAt: errorRecord.retryAt || undefined,
+      resolvedAt: errorRecord.resolvedAt || undefined,
+      createdAt: errorRecord.createdAt
+    };
   }
 
   /**
@@ -237,14 +256,42 @@ class ErrorHandlingService {
    * Get error statistics
    */
   async getErrorStats(timeRange?: { from: Date; to: Date }) {
-    // TODO: Implement processingError model in Prisma schema
-    console.warn('ProcessingError model not implemented, returning mock stats');
+    const whereClause = timeRange ? {
+      createdAt: {
+        gte: timeRange.from,
+        lte: timeRange.to
+      }
+    } : {};
+
+    const [totalErrors, retryableErrors, errorsByType, errorsByStage] = await Promise.all([
+      prisma.processingError.count({ where: whereClause }),
+      prisma.processingError.count({
+        where: { ...whereClause, isRetryable: true }
+      }),
+      prisma.processingError.groupBy({
+        by: ['errorType'],
+        where: whereClause,
+        _count: { id: true }
+      }),
+      prisma.processingError.groupBy({
+        by: ['stage'],
+        where: whereClause,
+        _count: { id: true }
+      })
+    ]);
+
     return {
-      totalErrors: 0,
-      retryableErrors: 0,
-      nonRetryableErrors: 0,
-      errorsByType: [],
-      errorsByStage: []
+      totalErrors,
+      retryableErrors,
+      nonRetryableErrors: totalErrors - retryableErrors,
+      errorsByType: errorsByType.map(item => ({
+        type: item.errorType,
+        count: item._count.id
+      })),
+      errorsByStage: errorsByStage.map(item => ({
+        stage: item.stage,
+        count: item._count.id
+      }))
     };
   }
 
@@ -252,26 +299,44 @@ class ErrorHandlingService {
    * Get recent errors for a document
    */
   async getDocumentErrors(documentId: string, limit = 10) {
-    // TODO: Implement processingError model in Prisma schema
-    console.warn('ProcessingError model not implemented, returning empty array');
-    return [];
+    return await prisma.processingError.findMany({
+      where: { documentId },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
   }
 
   /**
    * Resolve error (mark as resolved)
    */
   async resolveError(errorId: string): Promise<void> {
-    // TODO: Implement processingError model in Prisma schema
-    console.warn('ProcessingError model not implemented, cannot resolve error:', errorId);
+    await prisma.processingError.update({
+      where: { id: errorId },
+      data: {
+        resolvedAt: new Date()
+      }
+    });
   }
 
   /**
    * Clean up old error records
    */
   async cleanupOldErrors(olderThanDays = 30): Promise<number> {
-    // TODO: Implement processingError model in Prisma schema
-    console.warn('ProcessingError model not implemented, cannot cleanup old errors');
-    return 0;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+    const result = await prisma.processingError.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate
+        },
+        resolvedAt: {
+          not: null
+        }
+      }
+    });
+
+    return result.count;
   }
 
   /**

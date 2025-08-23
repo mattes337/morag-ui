@@ -6,24 +6,24 @@ import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing-status-display';
 import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
-import { ProcessingWorkflowManager } from '../ui/processing-workflow-manager';
+
 import { ProcessingHistory } from '../ui/processing-history';
 import { DocumentStatistics } from '../ui/document-statistics';
+import { ToastService } from '../../lib/services/toastService';
 
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import {
   Activity,
   Settings,
   FileText,
   Download,
   Eye,
-  Clock,
-  User,
-  Database,
-  BarChart3,
+
+
   RotateCcw,
   Trash2
 } from 'lucide-react';
@@ -37,6 +37,7 @@ interface DocumentFile {
   originalName?: string;
   filesize: number;
   contentType: string;
+  content?: string;
   createdAt: string;
 }
 
@@ -65,6 +66,8 @@ export function DocumentDetailView({
     const [activeTab, setActiveTab] = useState('overview');
     const [files, setFiles] = useState<DocumentFile[]>([]);
     const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+    const [isExecutingStage, setIsExecutingStage] = useState(false);
+    const [viewingFile, setViewingFile] = useState<DocumentFile | null>(null);
 
     useEffect(() => {
         loadDocumentFiles();
@@ -80,6 +83,7 @@ export function DocumentDetailView({
           }
         } catch (error) {
           console.error('Failed to load document files:', error);
+          ToastService.error('Failed to load document files');
         } finally {
           setIsLoadingFiles(false);
         }
@@ -95,22 +99,161 @@ export function DocumentDetailView({
         setShowDeleteConfirmDialog(true);
     };
 
-    const handleDownloadFile = async (fileId: string) => {
+    const handleExecuteStage = async (stage: string) => {
         try {
-          const response = await fetch(`/api/files/${fileId}/download`);
-          if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = window.document.createElement('a');
-            a.href = url;
-            a.download = files.find(f => f.id === fileId)?.originalName || 'download';
-            window.document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            window.document.body.removeChild(a);
-          }
+            setIsExecutingStage(true);
+
+            const response = await fetch('/api/stages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    documentId: document.id,
+                    stage: stage,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to execute stage');
+            }
+
+            const result = await response.json();
+            ToastService.success(`Stage ${stage} execution started successfully`);
+
+            // Refresh the page to show updated status
+            window.location.reload();
         } catch (error) {
-          console.error('Failed to download file:', error);
+            console.error('Failed to execute stage:', error);
+            ToastService.error(
+                'Failed to execute stage',
+                {
+                    description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                }
+            );
+        } finally {
+            setIsExecutingStage(false);
+        }
+    };
+
+    const handleViewFile = async (fileId: string) => {
+        try {
+            const response = await fetch(`/api/files/${fileId}?includeContent=true`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch file details');
+            }
+
+            const fileData = await response.json();
+            setViewingFile(fileData);
+        } catch (error) {
+            console.error('Failed to view file:', error);
+            ToastService.error('Failed to view file');
+        }
+    };
+
+    const handleDownloadFile = async (fileId: string) => {
+        const file = files.find(f => f.id === fileId);
+        const fileName = file?.originalName || file?.filename || 'download';
+
+        try {
+            ToastService.info('Starting download...', { description: `Downloading ${fileName}` });
+
+            const response = await fetch(`/api/files/${fileId}/download`);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            // Check if the response has content-length for progress tracking
+            const contentLength = response.headers.get('content-length');
+            const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+            if (total > 0) {
+                // Use ReadableStream for progress tracking
+                const reader = response.body?.getReader();
+                if (!reader) {
+                    throw new Error('Failed to get response reader');
+                }
+
+                const chunks: Uint8Array[] = [];
+                let received = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) break;
+
+                    chunks.push(value);
+                    received += value.length;
+
+                    // Update progress (throttled to avoid too many updates)
+                    const progress = Math.round((received / total) * 100);
+                    if (progress % 10 === 0 || progress === 100) {
+                        ToastService.info(`Downloading ${fileName}...`, {
+                            description: `${progress}% complete (${(received / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB)`
+                        });
+                    }
+                }
+
+                // Combine chunks into blob
+                const blob = new Blob(chunks as BlobPart[]);
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = window.document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                window.document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                window.document.body.removeChild(a);
+
+                ToastService.success('Download completed', { description: `${fileName} has been downloaded successfully` });
+            } else {
+                // Fallback for responses without content-length
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = window.document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                window.document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                window.document.body.removeChild(a);
+
+                ToastService.success('Download completed', { description: `${fileName} has been downloaded successfully` });
+            }
+        } catch (error) {
+            console.error('Failed to download file:', error);
+
+            let errorMessage = 'Failed to download file';
+            let errorDescription = 'An unexpected error occurred';
+
+            if (error instanceof Error) {
+                errorDescription = error.message;
+
+                // Provide specific error messages
+                if (error.message.includes('404')) {
+                    errorMessage = 'File Not Found';
+                    errorDescription = 'The requested file could not be found. It may have been deleted or moved.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Access Denied';
+                    errorDescription = 'You do not have permission to download this file.';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'Network Error';
+                    errorDescription = 'Unable to connect to the server. Please check your internet connection and try again.';
+                } else if (error.message.includes('quota') || error.message.includes('storage')) {
+                    errorMessage = 'Storage Error';
+                    errorDescription = 'Insufficient storage space to download the file.';
+                }
+            }
+
+            ToastService.error(errorMessage, { description: errorDescription });
         }
     };
 
@@ -403,7 +546,12 @@ Please check back later or refresh the page to see the processed content.`;
                                                 window.location.reload();
                                             } catch (error) {
                                                 console.error('Failed to update processing mode:', error);
-                                                // TODO: Show error toast to user
+                                                ToastService.error(
+                                                    'Failed to update processing mode',
+                                                    {
+                                                        description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                                                    }
+                                                );
                                             }
                                         }}
                                         disabled={document.state === 'ingesting'}
@@ -445,14 +593,8 @@ Please check back later or refresh the page to see the processed content.`;
                     {/* Processing History */}
                     <ProcessingHistory
                         documentId={document.id}
-                        onExecuteStage={async (stage) => {
-                            // TODO: Implement stage execution
-                            console.log('Execute stage:', stage);
-                        }}
-                        onViewOutput={(fileId) => {
-                            // TODO: Implement file viewing
-                            console.log('View file:', fileId);
-                        }}
+                        onExecuteStage={handleExecuteStage}
+                        onViewOutput={handleViewFile}
                         onDownloadOutput={handleDownloadFile}
                     />
                 </TabsContent>
@@ -521,6 +663,51 @@ Please check back later or refresh the page to see the processed content.`;
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* File Viewing Modal */}
+            <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {viewingFile?.originalName || viewingFile?.filename}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        {viewingFile && (
+                            <div className="space-y-4">
+                                <div className="text-sm text-gray-600">
+                                    <p><strong>Type:</strong> {viewingFile.contentType}</p>
+                                    <p><strong>Size:</strong> {(viewingFile.filesize / 1024).toFixed(2)} KB</p>
+                                    <p><strong>Stage:</strong> {viewingFile.stage || 'N/A'}</p>
+                                    <p><strong>Created:</strong> {new Date(viewingFile.createdAt).toLocaleString()}</p>
+                                </div>
+
+                                {viewingFile.content && (
+                                    <div className="border rounded-lg p-4 bg-gray-50">
+                                        <h4 className="font-medium mb-2">Content Preview:</h4>
+                                        <pre className="text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                                            {viewingFile.content}
+                                        </pre>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end space-x-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => handleDownloadFile(viewingFile.id)}
+                                    >
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Download
+                                    </Button>
+                                    <Button onClick={() => setViewingFile(null)}>
+                                        Close
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -132,10 +132,43 @@ export async function requireAuth(request: NextRequest): Promise<AuthUser> {
 
 export async function requireRole(request: NextRequest, allowedRoles: string[]): Promise<AuthUser> {
     const user = await requireAuth(request);
-    
+
     if (!allowedRoles.includes(user.role)) {
         throw new Error('Insufficient permissions');
     }
-    
+
     return user;
+}
+
+/**
+ * Get the user's current realm ID from request context
+ * This checks for a realm ID in the request headers or cookies
+ */
+export async function getCurrentRealmId(request: NextRequest, userId: string): Promise<string | null> {
+    // First check if realm ID is provided in headers (for API calls)
+    const realmIdFromHeader = request.headers.get('x-realm-id');
+    if (realmIdFromHeader) {
+        return realmIdFromHeader;
+    }
+
+    // Check for realm ID in cookies (for web requests)
+    const realmIdFromCookie = request.cookies.get('current-realm')?.value;
+    if (realmIdFromCookie) {
+        return realmIdFromCookie;
+    }
+
+    // If no realm specified, try to get the user's default realm
+    try {
+        const { RealmService } = await import('./services/realmService');
+        const userRealms = await RealmService.getUserRealms(userId);
+
+        // Return the first realm (which should be the default or most recently used)
+        if (userRealms.length > 0) {
+            return userRealms[0].id;
+        }
+    } catch (error) {
+        console.error('Error getting user realms:', error);
+    }
+
+    return null;
 }

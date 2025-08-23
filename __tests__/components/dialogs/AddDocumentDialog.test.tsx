@@ -82,8 +82,7 @@ describe('AddDocumentDialog', () => {
             expect(screen.getByText('File *')).toBeInTheDocument();
             expect(screen.getByLabelText('Chunk Size')).toBeInTheDocument();
             expect(screen.getByLabelText('Chunking Method')).toBeInTheDocument();
-            expect(screen.getByLabelText('GPU Processing')).toBeInTheDocument();
-            expect(screen.getByLabelText('Contextual Embedding')).toBeInTheDocument();
+            expect(screen.getByText('Processing Mode')).toBeInTheDocument();
         });
     });
 
@@ -108,18 +107,17 @@ describe('AddDocumentDialog', () => {
         await waitFor(() => {
             const chunkSizeSelect = screen.getByLabelText('Chunk Size');
             const chunkingMethodSelect = screen.getByLabelText('Chunking Method');
-            const gpuCheckbox = screen.getByLabelText('GPU Processing');
-            const contextualCheckbox = screen.getByLabelText('Contextual Embedding');
+            const automaticRadio = screen.getByDisplayValue('AUTOMATIC');
+            const manualRadio = screen.getByDisplayValue('MANUAL');
 
             fireEvent.change(chunkSizeSelect, { target: { value: '2000' } });
             fireEvent.change(chunkingMethodSelect, { target: { value: 'Fixed Size' } });
-            fireEvent.click(gpuCheckbox);
-            fireEvent.click(contextualCheckbox);
+            fireEvent.click(manualRadio);
 
             expect(chunkSizeSelect).toHaveValue('2000');
             expect(chunkingMethodSelect).toHaveValue('Fixed Size');
-            expect(gpuCheckbox).toBeChecked();
-            expect(contextualCheckbox).toBeChecked();
+            expect(manualRadio).toBeChecked();
+            expect(automaticRadio).not.toBeChecked();
         });
     });
 

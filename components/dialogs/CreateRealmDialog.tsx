@@ -26,17 +26,48 @@ export function CreateRealmDialog({ isOpen, onClose }: CreateRealmDialogProps) {
 
         try {
             setIsLoading(true);
-            // TODO: Implement realm-level database configuration
-            console.log('Database creation moved to realm-level configuration');
+
+            // Create realm with database configuration
+            const response = await fetch('/api/realms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    description: description.trim(),
+                    serverIds: selectedServerIds,
+                    prompts: {
+                        ingestion: ingestionPrompt.trim() || undefined,
+                        system: systemPrompt.trim() || undefined,
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create realm');
+            }
+
+            const result = await response.json();
+            console.log('Realm created successfully:', result);
+
+            // Reset form
             setName('');
             setDescription('');
             setIngestionPrompt('');
             setSystemPrompt('');
             setSelectedServerIds([]);
             onClose();
+
+            // Trigger a refresh of the parent component if needed
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('realm-created', { detail: result }));
+            }
         } catch (error) {
-            console.error('Failed to create database:', error);
-            // You could add error handling UI here
+            console.error('Failed to create realm:', error);
+            // Show error to user - you could integrate with a toast service here
+            alert(`Failed to create realm: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsLoading(false);
         }

@@ -21,11 +21,15 @@ export async function GET(
       );
     }
     
+    // Get user's current realm
+    const { getCurrentRealmId } = await import('@/lib/auth');
+    const currentRealmId = await getCurrentRealmId(request, user.userId);
+
     // Check access permissions
     const hasAccess = await unifiedFileService.checkFileAccess(
       fileId,
       user.userId,
-      // TODO: Get user's current realm
+      currentRealmId || undefined
     );
     
     if (!hasAccess) {
@@ -47,7 +51,7 @@ export async function GET(
       );
     }
     
-    return NextResponse.json({ file });
+    return NextResponse.json(file);
   } catch (error) {
     console.error('Error fetching file:', error);
     return NextResponse.json(
@@ -76,11 +80,15 @@ export async function DELETE(
       );
     }
     
+    // Get user's current realm
+    const { getCurrentRealmId } = await import('@/lib/auth');
+    const currentRealmId = await getCurrentRealmId(request, user.userId);
+
     // Check access permissions
     const hasAccess = await unifiedFileService.checkFileAccess(
       fileId,
       user.userId,
-      // TODO: Get user's current realm
+      currentRealmId || undefined
     );
     
     if (!hasAccess) {

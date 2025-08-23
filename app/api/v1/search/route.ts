@@ -148,6 +148,182 @@ async function performSearch(options: SearchOptions): Promise<SearchResponse> {
   }
 }
 
+interface Suggestion {
+  text: string;
+  type: 'completion' | 'entity' | 'document' | 'fact';
+  score: number;
+  metadata?: any;
+}
+
+async function generateSearchSuggestions(query: string, realmId: string, limit: number): Promise<Suggestion[]> {
+  const suggestions: Suggestion[] = [];
+  const queryLower = query.toLowerCase().trim();
+
+  if (queryLower.length < 2) {
+    return suggestions;
+  }
+
+  try {
+    // Get documents that match the query prefix
+    const documents = await prisma.document.findMany({
+      where: {
+        realmId,
+        state: 'INGESTED',
+        OR: [
+          { name: { contains: queryLower } },
+          { markdown: { contains: queryLower } }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        subType: true,
+      },
+      take: 5,
+    });
+
+    // Add document name suggestions
+    for (const doc of documents) {
+      if (doc.name.toLowerCase().includes(queryLower)) {
+        suggestions.push({
+          text: doc.name,
+          type: 'document',
+          score: 0.9,
+          metadata: {
+            documentId: doc.id,
+            type: doc.type,
+            subType: doc.subType,
+          }
+        });
+      }
+    }
+
+    // Get entities that match the query
+    const entities = await prisma.entity.findMany({
+      where: {
+        name: { contains: queryLower },
+        documents: {
+          some: {
+            document: {
+              realmId,
+              state: 'INGESTED'
+            }
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        documents: {
+          select: { id: true }
+        }
+      },
+      take: 5,
+    });
+
+    // Add entity suggestions
+    for (const entity of entities) {
+      suggestions.push({
+        text: entity.name,
+        type: 'entity',
+        score: 0.8 + (entity.documents.length * 0.01), // Higher score for more referenced entities
+        metadata: {
+          entityId: entity.id,
+          entityType: entity.type,
+          documentCount: entity.documents.length,
+        }
+      });
+    }
+
+    // Get facts that contain the query
+    const facts = await prisma.fact.findMany({
+      where: {
+        document: {
+          realmId,
+          state: 'INGESTED'
+        },
+        OR: [
+          { subject: { contains: queryLower } },
+          { predicate: { contains: queryLower } },
+          { object: { contains: queryLower } }
+        ]
+      },
+      select: {
+        id: true,
+        subject: true,
+        predicate: true,
+        object: true,
+        confidence: true,
+      },
+      take: 3,
+    });
+
+    // Add fact-based suggestions
+    for (const fact of facts) {
+      const factText = `${fact.subject} ${fact.predicate} ${fact.object}`;
+      if (factText.toLowerCase().includes(queryLower)) {
+        suggestions.push({
+          text: factText,
+          type: 'fact',
+          score: 0.7 + (fact.confidence || 0) * 0.1,
+          metadata: {
+            factId: fact.id,
+            subject: fact.subject,
+            predicate: fact.predicate,
+            object: fact.object,
+            confidence: fact.confidence,
+          }
+        });
+      }
+    }
+
+    // Add query completion suggestions
+    const commonCompletions = [
+      'documents',
+      'analysis',
+      'summary',
+      'overview',
+      'details',
+      'information',
+      'data',
+      'research',
+      'findings',
+      'results'
+    ];
+
+    for (const completion of commonCompletions) {
+      if (completion.startsWith(queryLower) || queryLower.length >= 3) {
+        suggestions.push({
+          text: `${query} ${completion}`,
+          type: 'completion',
+          score: 0.6,
+        });
+      }
+    }
+
+    // Sort by score and limit results
+    return suggestions
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(suggestion => ({
+        ...suggestion,
+        score: Math.round(suggestion.score * 100) / 100 // Round to 2 decimal places
+      }));
+
+  } catch (error) {
+    console.error('Error generating search suggestions:', error);
+
+    // Fallback to simple completions
+    return [
+      { text: `${query} documents`, type: 'completion' as const, score: 0.9 },
+      { text: `${query} analysis`, type: 'completion' as const, score: 0.8 },
+      { text: `${query} summary`, type: 'completion' as const, score: 0.7 }
+    ].slice(0, limit);
+  }
+}
+
 /**
  * POST /api/v1/search
  * Execute a search query on the realm
@@ -241,31 +417,17 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // TODO: Implement actual suggestion functionality
-    const mockSuggestions = {
+    // Generate intelligent suggestions based on document content and entities
+    const suggestions = await generateSearchSuggestions(query, auth.realm!.id, limit);
+
+    const response = {
       query,
-      suggestions: [
-        {
-          text: `${query} documents`,
-          type: 'completion',
-          score: 0.9,
-        },
-        {
-          text: `${query} analysis`,
-          type: 'completion',
-          score: 0.8,
-        },
-        {
-          text: `${query} summary`,
-          type: 'completion',
-          score: 0.7,
-        }
-      ].slice(0, limit),
+      suggestions,
       realmId: auth.realm!.id,
       timestamp: new Date().toISOString(),
     };
     
-    return NextResponse.json(mockSuggestions);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error getting search suggestions:', error);
     return NextResponse.json(

@@ -29,13 +29,17 @@ export async function GET(request: NextRequest) {
       stage || undefined
     );
     
+    // Get user's current realm
+    const { getCurrentRealmId } = await import('@/lib/auth');
+    const currentRealmId = await getCurrentRealmId(request, user.userId);
+
     // Filter files based on access permissions
     const accessibleFiles = [];
     for (const file of files) {
       const hasAccess = await unifiedFileService.checkFileAccess(
         file.id,
         user.userId,
-        // TODO: Get user's current realm
+        currentRealmId || undefined
       );
       if (hasAccess) {
         accessibleFiles.push(file);
