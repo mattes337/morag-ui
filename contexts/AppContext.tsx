@@ -255,6 +255,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
+                console.log('📄 [AppContext] Raw documents data from API:', documentsData.slice(0, 2).map(d => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
                 const formattedDocuments = documentsData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.name,
@@ -264,8 +265,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     chunks: doc.chunks,
                     quality: doc.quality,
                     uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
+                    processingMode: doc.processingMode || 'AUTOMATIC',
                 }));
-                console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents');
+                console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents. First doc processingMode:', formattedDocuments[0]?.processingMode);
                 setDocuments(formattedDocuments);
             }
 

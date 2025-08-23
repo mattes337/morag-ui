@@ -15,11 +15,14 @@ export async function GET(request: NextRequest) {
 
         let documents;
         if (realmId) {
+            console.log('Calling DocumentService.getDocumentsByRealm with realmId:', realmId);
             documents = await DocumentService.getDocumentsByRealm(realmId);
         } else {
+            console.log('Calling DocumentService.getDocumentsByUserId with userId:', user.userId, 'realmId:', realmId);
             documents = await DocumentService.getDocumentsByUserId(user.userId, realmId);
         }
-        
+
+        console.log('Documents API returning', documents.length, 'documents. First document processingMode:', documents[0]?.processingMode, 'UPDATED');
         return NextResponse.json(documents);
     } catch (error) {
         console.error('Error fetching documents:', error);

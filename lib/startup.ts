@@ -40,8 +40,8 @@ export async function cleanupBackgroundServices(): Promise<void> {
   }
 }
 
-// Auto-start in production or when explicitly enabled
-if (process.env.NODE_ENV === 'production' || process.env.AUTO_START_BACKGROUND_JOBS === 'true') {
+// Auto-start in production, development, or when explicitly enabled
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development' || process.env.AUTO_START_BACKGROUND_JOBS === 'true') {
   // Use a small delay to ensure the application is fully initialized
   setTimeout(() => {
     initializeBackgroundServices();

@@ -324,20 +324,35 @@ Please check back later or refresh the page to see the processed content.`;
             );
         }
 
-        // For testing purposes, using publicly available files
+        // Handle PDF files
         if (docType === 'pdf' || docName.includes('.pdf')) {
-            // Using a sample PDF from Mozilla
-            const pdfUrl =
-                'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
-            return (
-                <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
-                    <iframe
-                        src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`}
-                        className="w-full h-full"
-                        title={`PDF Viewer - ${document.name}`}
-                    />
-                </div>
-            );
+            // Find the original PDF file
+            const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT' && f.contentType === 'application/pdf');
+
+            if (originalFile) {
+                // Use the actual uploaded PDF file with the view endpoint
+                const pdfUrl = `/api/files/${originalFile.id}/view`;
+                return (
+                    <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
+                        <iframe
+                            src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`}
+                            className="w-full h-full"
+                            title={`PDF Viewer - ${document.name}`}
+                        />
+                    </div>
+                );
+            } else {
+                // Fallback if no original file found
+                return (
+                    <div className="w-full h-96 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                        <div className="text-center">
+                            <div className="text-4xl mb-4">📄</div>
+                            <p className="text-gray-600">PDF file is being processed</p>
+                            <p className="text-sm text-gray-500 mt-2">Please check back later</p>
+                        </div>
+                    </div>
+                );
+            }
         }
 
         if (docType === 'youtube' || docName.includes('youtube')) {
@@ -384,17 +399,17 @@ Please check back later or refresh the page to see the processed content.`;
     };
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             {/* Header */}
             <div className="flex justify-between items-start">
-                <div>
+                <div className="flex-1 min-w-0 max-w-4xl">
                     <button
                         onClick={onBack}
                         className="text-blue-600 hover:text-blue-800 text-sm mb-2"
                     >
                         ← Back to Documents
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900">{document.name}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 truncate" title={document.name}>{document.name}</h1>
                     <div className="flex items-center space-x-4 mt-2">
                         <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${getStateColor(document.state)}`}

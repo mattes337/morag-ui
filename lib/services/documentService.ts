@@ -13,6 +13,8 @@ export class DocumentService {
         version?: number;
         processingMode?: ProcessingMode;
     }) {
+        console.log('DocumentService.createDocument called with data:', data);
+
         const document = await prisma.document.create({
             data,
             include: {
@@ -21,6 +23,8 @@ export class DocumentService {
                 jobs: true,
             },
         });
+
+        console.log('Document created in database with processingMode:', document.processingMode);
 
         // Update realm document count
         await prisma.realm.update({
@@ -78,8 +82,8 @@ export class DocumentService {
         if (realmId) {
             whereClause.realmId = realmId;
         }
-        
-        return await prisma.document.findMany({
+
+        const documents = await prisma.document.findMany({
             where: whereClause,
             include: {
                 realm: true,
@@ -95,6 +99,9 @@ export class DocumentService {
                 uploadDate: 'desc',
             },
         });
+
+        console.log('DocumentService.getDocumentsByUserId - First document processingMode:', documents[0]?.processingMode);
+        return documents;
     }
 
     static async getDocumentById(id: string) {
@@ -113,7 +120,7 @@ export class DocumentService {
     }
 
     static async getDocumentsByRealm(realmId: string) {
-        return await prisma.document.findMany({
+        const documents = await prisma.document.findMany({
             where: { realmId },
             include: {
                 jobs: {
@@ -127,6 +134,9 @@ export class DocumentService {
                 uploadDate: 'desc',
             },
         });
+
+        console.log('DocumentService.getDocumentsByRealm - First document processingMode:', documents[0]?.processingMode);
+        return documents;
     }
 
     static async updateDocument(id: string, data: Partial<Document>) {

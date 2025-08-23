@@ -19,9 +19,25 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
     const realmId = formData.get('realmId') as string;
-    const processingMode = formData.get('processingMode') as string || 'AUTOMATIC';
+    const processingMode = (formData.get('processingMode') as string) || 'AUTOMATIC';
     const type = formData.get('type') as string;
     const subType = formData.get('subType') as string;
+
+    console.log('Upload form data (UPDATED):', {
+      processingMode,
+      type,
+      subType,
+      fileName: file?.name,
+      formDataKeys: Array.from(formData.keys())
+    });
+
+    // Validate processing mode
+    if (processingMode && !['AUTOMATIC', 'MANUAL'].includes(processingMode)) {
+      return NextResponse.json(
+        { error: `Invalid processing mode: ${processingMode}. Must be AUTOMATIC or MANUAL.` },
+        { status: 400 }
+      );
+    }
     
     if (!file || !realmId) {
       return NextResponse.json(
@@ -78,14 +94,20 @@ export async function POST(request: NextRequest) {
     }
     
     // Create document record
-    const document = await DocumentService.createDocument({
+    const documentData = {
       name: name || file.name,
       type: finalType,
       subType: finalSubType,
       realmId,
       userId: user.userId,
-      processingMode: processingMode as any,
-    });
+      processingMode: processingMode as 'AUTOMATIC' | 'MANUAL',
+    };
+
+    console.log('Creating document with data:', documentData);
+
+    const document = await DocumentService.createDocument(documentData);
+
+    console.log(`Document created with ID ${document.id} and processing mode: ${document.processingMode}`);
     
     // Read file content
     const buffer = await file.arrayBuffer();
@@ -110,6 +132,9 @@ export async function POST(request: NextRequest) {
     });
     
     // Trigger processing pipeline if in automatic mode
+    console.log(`Processing mode check: "${processingMode}" === "AUTOMATIC" = ${processingMode === 'AUTOMATIC'}`);
+    console.log(`Processing mode type: ${typeof processingMode}, length: ${processingMode?.length}`);
+
     if (processingMode === 'AUTOMATIC') {
       try {
         // Import the background job service to schedule processing
@@ -128,6 +153,8 @@ export async function POST(request: NextRequest) {
         console.error(`Failed to schedule automatic processing for document ${document.id}:`, processingError);
         // Don't fail the upload if processing scheduling fails
       }
+    } else {
+      console.log(`Document ${document.id} uploaded with ${processingMode} mode - no automatic processing scheduled`);
     }
     
     return NextResponse.json({

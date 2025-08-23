@@ -552,8 +552,8 @@ class JobScheduler {
 // Create singleton instance
 export const jobScheduler = new JobScheduler();
 
-// Auto-start the scheduler in production
-if (process.env.NODE_ENV === 'production' && process.env.AUTO_START_SCHEDULER !== 'false') {
+// Auto-start the scheduler in production and development
+if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') && process.env.AUTO_START_SCHEDULER !== 'false') {
   jobScheduler.start().catch(error => {
     console.error('Failed to auto-start job scheduler:', error);
   });

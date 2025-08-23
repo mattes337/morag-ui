@@ -55,7 +55,7 @@ export function ProcessingHistory({
       setIsLoading(true);
 
       // Load actual processing history from API
-      const response = await fetch(`/api/v1/documents/${documentId}/process`);
+      const response = await fetch(`/api/documents/${documentId}/processing`);
       if (!response.ok) {
         throw new Error('Failed to load processing history');
       }
