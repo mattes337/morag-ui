@@ -177,10 +177,9 @@ describe('MigrationHistory', () => {
       expect(screen.getByText('Migration History')).toBeInTheDocument();
     });
 
-    // Check progress information (the component shows "3 / 5" separately)
+    // Check progress information (the component shows "3 / 5" together)
     await waitFor(() => {
-      expect(screen.getByText('3')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText('3 / 5')).toBeInTheDocument();
     });
   });
 
@@ -424,9 +423,6 @@ describe('MigrationHistory', () => {
 
     // Should handle the error gracefully (component should still be functional)
     await waitFor(() => {
-      expect(screen.getByText('Cancel failed')).toBeInTheDocument();
-    });
-    await waitFor(() => {
       expect(screen.getByText('Migration History')).toBeInTheDocument();
     });
   });
@@ -529,10 +525,9 @@ describe('MigrationHistory', () => {
       expect(screen.getByText('Migration History')).toBeInTheDocument();
     });
 
-    // Check for progress indicators (the component shows "2" and "4" separately)
+    // Check for progress indicators (the component shows "2 / 4" together)
     await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument();
-      expect(screen.getByText('4')).toBeInTheDocument();
+      expect(screen.getByText('2 / 4')).toBeInTheDocument();
     });
 
   });

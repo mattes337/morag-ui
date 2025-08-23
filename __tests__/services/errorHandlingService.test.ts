@@ -27,7 +27,9 @@ const mockPrisma = {
 } as any;
 
 // Mock PrismaClient constructor
-(PrismaClient as any).mockImplementation(() => mockPrisma);
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
 describe('ErrorHandlingService', () => {
   beforeEach(() => {

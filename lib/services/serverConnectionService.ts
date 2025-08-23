@@ -2,6 +2,9 @@
  * Service for testing and managing database server connections
  */
 
+import { prisma } from '../database';
+import { logger, PerformanceLogger } from '../logging';
+
 export interface ConnectionTestResult {
   success: boolean;
   message: string;
@@ -210,20 +213,63 @@ export class ServerConnectionService {
    */
   private static async testMySQLConnection(config: ServerConnectionConfig, startTime: number): Promise<ConnectionTestResult> {
     try {
-      // For MySQL, we would typically use the mysql2 package
-      // For now, we'll simulate the connection test
+      PerformanceLogger.startTimer('mysql_connection_test');
+
+      // Test basic connection using Prisma
+      await prisma.$queryRaw`SELECT 1 as test`;
+
+      // Get database version and info
+      const versionResult = await prisma.$queryRaw<Array<{ version: string }>>`SELECT VERSION() as version`;
+      const version = versionResult[0]?.version || 'Unknown';
+
+      // Test transaction capability
+      await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT 1`;
+      });
+
+      // Get database statistics
+      const dbStats = await prisma.$queryRaw<Array<{
+        table_schema: string;
+        table_count: number;
+      }>>`
+        SELECT
+          table_schema,
+          COUNT(*) as table_count
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+        GROUP BY table_schema
+      `;
+
       const latency = Date.now() - startTime;
-      
-      // TODO: Implement actual MySQL connection test
+      PerformanceLogger.endTimer('mysql_connection_test', { latency, version });
+
+      logger.info('MySQL connection test successful', {
+        latency,
+        version,
+        tableCount: dbStats[0]?.table_count || 0,
+      });
+
       return {
         success: true,
-        message: 'MySQL connection test simulated (not implemented)',
+        message: 'MySQL connection test successful',
         details: {
           latency,
-          features: ['sql_queries', 'transactions', 'full_text_search']
+          version,
+          features: ['sql_queries', 'transactions', 'full_text_search', 'json_support'],
+          databases: dbStats.map(stat => `${stat.table_schema} (${stat.table_count} tables)`)
         }
       };
     } catch (error) {
+      const latency = Date.now() - startTime;
+      PerformanceLogger.endTimer('mysql_connection_test', { latency, error: true });
+
+      logger.error('MySQL connection test failed', {
+        latency,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        host: config.host,
+        port: config.port,
+      });
+
       return {
         success: false,
         message: 'Failed to connect to MySQL',

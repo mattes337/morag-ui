@@ -147,7 +147,8 @@ describe('AppContext', () => {
         expect(result.current.documents).toEqual([{
             id: '1',
             name: 'Test Document.pdf',
-            type: 'PDF',
+            type: 'document',
+            subType: 'pdf',
             state: 'ingested',
             version: 1,
             chunks: 10,
@@ -335,6 +336,22 @@ describe('AppContext', () => {
                     json: () => Promise.resolve([]),
                 });
             }
+            if (url === '/api/documents' && options?.method === 'POST') {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        id: '2',
+                        name: 'New Document.pdf',
+                        type: 'document',
+                        subType: 'pdf',
+                        state: 'pending',
+                        version: 1,
+                        chunks: 0,
+                        quality: 0,
+                        uploadDate: new Date().toISOString().split('T')[0],
+                    }),
+                });
+            }
             // Default response
             return Promise.resolve({
                 ok: true,
@@ -359,7 +376,8 @@ describe('AppContext', () => {
         await act(async () => {
             await result.current.createDocument({
                 name: 'New Document.pdf',
-                type: 'PDF',
+                type: 'document',
+                subType: 'pdf',
                 realmId: '1',
             });
         });
@@ -369,8 +387,9 @@ describe('AppContext', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: 'New Document.pdf',
-                type: 'PDF',
-                databaseId: '1',
+                type: 'document',
+                subType: 'pdf',
+                realmId: '1',
             }),
         });
     });

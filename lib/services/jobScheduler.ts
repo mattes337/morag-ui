@@ -1,8 +1,7 @@
 import { backgroundJobService } from './backgroundJobService';
-import { PrismaClient, ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
+import { ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
+import { prisma } from '../database';
 import { errorHandlingService } from './errorHandlingService';
-
-const prisma = new PrismaClient();
 
 export interface SchedulerConfig {
   enabled: boolean;

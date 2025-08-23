@@ -36,7 +36,8 @@ export const mockRealm = {
 export const mockDocument = {
     id: '1',
     name: 'Test Document.pdf',
-    type: 'PDF',
+    type: 'document',
+    subType: 'pdf',
     state: 'ingested' as const,
     version: 1,
     chunks: 10,

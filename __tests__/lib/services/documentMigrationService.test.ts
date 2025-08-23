@@ -1,5 +1,3 @@
-import { DocumentMigrationService } from '../../../lib/services/documentMigrationService';
-import { prisma } from '../../../lib/database';
 import { MigrationStatus } from '@prisma/client';
 
 // Mock Prisma client
@@ -24,6 +22,8 @@ const mockPrisma = {
 jest.mock('../../../lib/database', () => ({
   prisma: mockPrisma,
 }));
+
+import { DocumentMigrationService } from '../../../lib/services/documentMigrationService';
 
 // Mock file system operations
 jest.mock('fs/promises', () => ({

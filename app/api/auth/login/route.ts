@@ -5,7 +5,11 @@ import bcrypt from 'bcryptjs';
 import { authConfig } from '../../../../lib/auth-config';
 import { getAuthUser } from '../../../../lib/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -71,42 +75,22 @@ export async function POST(request: NextRequest) {
         }
 
         // Get user from database
-        let user = await UserService.getUserByEmail(email);
-        
+        const user = await UserService.getUserByEmail(email);
+
         if (!user) {
-            // For demo purposes, create admin user if credentials match
-            if (email === 'admin@example.com' && password === 'admin123') {
-                const hashedPassword = await bcrypt.hash('admin123', 12);
-                user = await UserService.createUser({
-                    name: 'Admin User',
-                    email: 'admin@example.com',
-                    role: 'ADMIN',
-                    password: hashedPassword
-                });
-            } else {
-                return NextResponse.json(
-                    { error: 'Invalid credentials' },
-                    { status: 401 }
-                );
-            }
+            return NextResponse.json(
+                { error: 'Invalid credentials' },
+                { status: 401 }
+            );
         }
 
         // Verify password against hashed password in database
         if (!user.password) {
-            // Check if this is the admin user with correct credentials
-            if (email === 'admin@example.com' && password === 'admin123') {
-                // Update the existing admin user with a password
-                const hashedPassword = await bcrypt.hash('admin123', 12);
-                user = await UserService.updateUser(user.id, {
-                    password: hashedPassword
-                });
-            } else {
-                // User doesn't have a password set (SSO user or legacy user)
-                return NextResponse.json(
-                    { error: 'Password authentication not available for this user' },
-                    { status: 401 }
-                );
-            }
+            // User doesn't have a password set (SSO user or legacy user)
+            return NextResponse.json(
+                { error: 'Password authentication not available for this user' },
+                { status: 401 }
+            );
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password || '');
@@ -118,6 +102,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Create JWT token
+        if (!JWT_SECRET) {
+            return NextResponse.json(
+                { error: 'Server configuration error' },
+                { status: 500 }
+            );
+        }
+
         const token = sign(
             { userId: user.id, email: user.email, role: user.role, name: user.name },
             JWT_SECRET,

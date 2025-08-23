@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
@@ -69,11 +69,7 @@ export function DocumentDetailView({
     const [isExecutingStage, setIsExecutingStage] = useState(false);
     const [viewingFile, setViewingFile] = useState<DocumentFile | null>(null);
 
-    useEffect(() => {
-        loadDocumentFiles();
-    }, [document.id]);
-
-    const loadDocumentFiles = async () => {
+    const loadDocumentFiles = useCallback(async () => {
         try {
           setIsLoadingFiles(true);
           const response = await fetch(`/api/files?documentId=${document.id}`);
@@ -87,7 +83,11 @@ export function DocumentDetailView({
         } finally {
           setIsLoadingFiles(false);
         }
-    };
+    }, [document.id]);
+
+    useEffect(() => {
+        loadDocumentFiles();
+    }, [loadDocumentFiles]);
 
     const handleReingestClick = () => {
         setDocumentToReingest(document);

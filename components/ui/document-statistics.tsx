@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -53,11 +53,7 @@ export function DocumentStatistics({ documentId, className }: DocumentStatistics
   const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadStatistics();
-  }, [documentId]);
-
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/documents/${documentId}/statistics`);
@@ -104,7 +100,11 @@ export function DocumentStatistics({ documentId, className }: DocumentStatistics
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   const formatDuration = (seconds: number) => {
     if (seconds < 60) {

@@ -1,8 +1,7 @@
-import { PrismaClient, ProcessingStage, JobStatus, ProcessingMode, StageStatus } from '@prisma/client';
+import { ProcessingStage, JobStatus, ProcessingMode, StageStatus } from '@prisma/client';
+import { prisma } from '../database';
 import { stageExecutionService } from './stageExecutionService';
 import { moragService } from './moragService';
-
-const prisma = new PrismaClient();
 
 export interface ProcessingJobInput {
   documentId: string;

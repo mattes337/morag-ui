@@ -61,18 +61,28 @@ describe('/api/scheduler', () => {
         uptime: 3600000,
         averageProcessingTime: 2500
       };
-      
+
+      const mockConfig = {
+        enabled: true,
+        processingIntervalMs: 30000,
+        maxConcurrentJobs: 5,
+        retryDelayMs: 60000,
+        healthCheckIntervalMs: 300000
+      };
+
       mockJobScheduler.getStats.mockReturnValue(mockStatus);
-      
+      mockJobScheduler.getConfig.mockReturnValue(mockConfig);
+
       const request = createMockRequest('GET', '/api/scheduler');
       const response = await GET(request);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(data.stats).toEqual(mockStatus);
-      expect(data.config).toBeDefined();
+      expect(data.config).toEqual(mockConfig);
       expect(data.timestamp).toBeDefined();
       expect(mockJobScheduler.getStats).toHaveBeenCalled();
+      expect(mockJobScheduler.getConfig).toHaveBeenCalled();
     });
 
     it('should return scheduler statistics when stats=true', async () => {
@@ -85,18 +95,28 @@ describe('/api/scheduler', () => {
         uptime: 7200000,
         averageProcessingTime: 45000
       };
-      
+
+      const mockConfig = {
+        enabled: true,
+        processingIntervalMs: 30000,
+        maxConcurrentJobs: 5,
+        retryDelayMs: 60000,
+        healthCheckIntervalMs: 300000
+      };
+
       mockJobScheduler.getStats.mockReturnValue(mockStats);
-      
+      mockJobScheduler.getConfig.mockReturnValue(mockConfig);
+
       const request = createMockRequest('GET', '/api/scheduler?stats=true');
       const response = await GET(request);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(data.stats).toEqual(mockStats);
-      expect(data.config).toBeDefined();
+      expect(data.config).toEqual(mockConfig);
       expect(data.timestamp).toBeDefined();
       expect(mockJobScheduler.getStats).toHaveBeenCalled();
+      expect(mockJobScheduler.getConfig).toHaveBeenCalled();
     });
 
     it('should handle scheduler errors', async () => {
@@ -115,31 +135,56 @@ describe('/api/scheduler', () => {
 
   describe('POST /api/scheduler', () => {
     it('should start the scheduler', async () => {
+      const mockStats = {
+        isRunning: true,
+        totalJobsProcessed: 0,
+        pendingJobs: 0,
+        failedJobs: 0,
+        lastProcessedAt: undefined,
+        uptime: 0,
+        averageProcessingTime: 0
+      };
+
       mockJobScheduler.start.mockResolvedValue({
         success: true
       });
-      
+      mockJobScheduler.getStats.mockReturnValue(mockStats);
+
       const request = createMockRequest('POST', '/api/scheduler', { action: 'start' });
       const response = await POST(request);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toBe('Scheduler started successfully');
+      expect(data.message).toBe('Job scheduler started successfully');
+      expect(data.stats).toEqual(mockStats);
       expect(mockJobScheduler.start).toHaveBeenCalled();
     });
 
     it('should stop the scheduler', async () => {
+      const mockStats = {
+        isRunning: false,
+        totalJobsProcessed: 10,
+        pendingJobs: 0,
+        failedJobs: 0,
+        lastProcessedAt: new Date(),
+        uptime: 3600000,
+        averageProcessingTime: 2500
+      };
+
       mockJobScheduler.stop.mockResolvedValue({
         success: true
       });
-      
+      mockJobScheduler.getStats.mockReturnValue(mockStats);
+
       const request = createMockRequest('POST', '/api/scheduler', { action: 'stop' });
       const response = await POST(request);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
+      expect(data.message).toBe('Job scheduler stopped successfully');
+      expect(data.stats).toEqual(mockStats);
       expect(mockJobScheduler.stop).toHaveBeenCalled();
     });
 

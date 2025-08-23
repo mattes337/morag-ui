@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/auth';
 import { DocumentService } from '@/lib/services/documentService';
 import { unifiedFileService } from '@/lib/services/unifiedFileService';
 import { detectDocumentType } from '@/lib/utils/documentTypeDetection';
+import { validateFileUploadSecurity, generateSecureFilePath } from '@/lib/middleware/fileUploadSecurity';
+import { validateRequestBody, documentUploadSchema } from '@/lib/validation';
 
 /**
  * POST /api/documents/upload
@@ -27,6 +29,23 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate file security
+    const securityValidation = await validateFileUploadSecurity(file);
+    if (!securityValidation.isSecure) {
+      return NextResponse.json(
+        {
+          error: 'File security validation failed',
+          details: securityValidation.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // Log security warnings if any
+    if (securityValidation.warnings.length > 0) {
+      console.warn('File upload security warnings:', securityValidation.warnings);
+    }
     
     // Auto-detect type and subType if not provided
     let finalType = type;
@@ -41,6 +60,22 @@ export async function POST(request: NextRequest) {
     // Ensure we have valid types
     finalType = finalType || 'document';
     finalSubType = finalSubType || 'unknown';
+
+    // Validate the document data
+    try {
+      validateRequestBody(documentUploadSchema, {
+        name: name || file.name,
+        realmId,
+        processingMode,
+        type: finalType,
+        subType: finalSubType,
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Validation failed' },
+        { status: 400 }
+      );
+    }
     
     // Create document record
     const document = await DocumentService.createDocument({

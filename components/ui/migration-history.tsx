@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { Badge } from './badge';
@@ -55,7 +55,7 @@ export function MigrationHistory({ realmId, className }: MigrationHistoryProps) 
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchMigrations = async () => {
+  const fetchMigrations = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (realmId) {
@@ -79,11 +79,11 @@ export function MigrationHistory({ realmId, className }: MigrationHistoryProps) 
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [realmId]);
 
   useEffect(() => {
     fetchMigrations();
-  }, [realmId]);
+  }, [fetchMigrations]);
 
   // Auto-refresh for active migrations
   useEffect(() => {
@@ -104,7 +104,7 @@ export function MigrationHistory({ realmId, className }: MigrationHistoryProps) 
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [migrations]);
+  }, [migrations, fetchMigrations]);
 
   const handleRefresh = () => {
     setRefreshing(true);

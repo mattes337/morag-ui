@@ -24,7 +24,7 @@ describe('DocumentsView', () => {
 
         expect(screen.getByText('Documents - Test Realm')).toBeInTheDocument();
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
-        expect(screen.getByText('PDF')).toBeInTheDocument();
+        expect(screen.getByText('PDF Document')).toBeInTheDocument();
         expect(screen.getByText('ingested')).toBeInTheDocument();
         expect(screen.getByText('v1')).toBeInTheDocument();
     });

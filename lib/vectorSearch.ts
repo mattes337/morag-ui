@@ -46,58 +46,12 @@ export async function performVectorSearch(options: VectorSearchOptions): Promise
         // TODO: Implement actual vector database query
         // This should query the configured vector database (Qdrant, Pinecone, etc.)
         // based on the database server configuration
-        
-        // For now, return mock results for testing until vector database integration is implemented
+
         console.log('⚠️ [VectorSearch] Vector database integration not yet implemented');
-        
-        // Generate mock results for testing
-        const mockResults = [
-            {
-                id: '1',
-                content: 'Machine learning is a subset of artificial intelligence that focuses on algorithms.',
-                document: 'ML Fundamentals.pdf',
-                realm: 'Research Papers',
-                similarity: 0.95,
-                chunk: 1,
-            },
-            {
-                id: '2',
-                content: 'Deep learning uses neural networks with multiple layers.',
-                document: 'Deep Learning Guide.pdf',
-                realm: 'Research Papers',
-                similarity: 0.87,
-                chunk: 2,
-            },
-            {
-                id: '3',
-                content: 'Natural language processing enables computers to understand human language.',
-                document: 'NLP Handbook.pdf',
-                realm: 'Research Papers',
-                similarity: 0.82,
-                chunk: 1,
-            },
-            {
-                id: '4',
-                content: 'Computer vision allows machines to interpret visual information.',
-                document: 'Computer Vision.pdf',
-                realm: 'Research Papers',
-                similarity: 0.78,
-                chunk: 3,
-            },
-            {
-                id: '5',
-                content: 'Reinforcement learning trains agents through rewards and penalties.',
-                document: 'RL Concepts.pdf',
-                realm: 'Research Papers',
-                similarity: 0.75,
-                chunk: 1,
-            },
-        ];
-        
-        // Filter by minimum similarity if specified
-        const filteredResults = minSimilarity 
-            ? mockResults.filter(result => result.similarity >= minSimilarity)
-            : mockResults;
+        console.log('Returning empty results until vector database is configured');
+
+        // Return empty results until vector database is properly configured
+        const filteredResults: any[] = [];
         
         // Return limited results based on numResults parameter, sorted by similarity
         return filteredResults.slice(0, numResults).sort((a, b) => b.similarity - a.similarity);

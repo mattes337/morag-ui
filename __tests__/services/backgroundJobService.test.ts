@@ -28,7 +28,9 @@ const mockErrorHandlingService = errorHandlingService as {
 };
 
 // Mock PrismaClient constructor
-(PrismaClient as any).mockImplementation(() => mockPrisma);
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+}));
 
 // Mock fetch for webhook calls
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;

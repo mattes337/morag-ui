@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,11 +50,7 @@ export function ProcessingHistory({
   const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadProcessingHistory();
-  }, [documentId]);
-
-  const loadProcessingHistory = async () => {
+  const loadProcessingHistory = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -138,7 +134,11 @@ export function ProcessingHistory({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    loadProcessingHistory();
+  }, [loadProcessingHistory]);
 
   const handleExecuteStage = async (stage: string) => {
     if (!onExecuteStage) return;

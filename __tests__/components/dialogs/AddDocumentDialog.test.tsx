@@ -195,9 +195,9 @@ describe('AddDocumentDialog', () => {
         fireEvent.click(documentButton);
 
         await waitFor(() => {
-            const gpuCheckbox = screen.getByLabelText('GPU Processing');
-            fireEvent.click(gpuCheckbox);
-            expect(gpuCheckbox).toBeChecked();
+            const manualRadio = screen.getByLabelText(/Manual Processing/);
+            fireEvent.click(manualRadio);
+            expect(manualRadio).toBeChecked();
         });
 
         // Close and reopen dialog

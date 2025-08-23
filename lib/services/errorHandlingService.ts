@@ -1,7 +1,6 @@
-import { PrismaClient, JobStatus, ProcessingStage } from '@prisma/client';
+import { JobStatus, ProcessingStage } from '@prisma/client';
+import { prisma } from '../database';
 import { backgroundJobService } from './backgroundJobService';
-
-const prisma = new PrismaClient();
 
 export interface RetryConfig {
   maxRetries: number;

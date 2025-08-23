@@ -9,8 +9,8 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: rootpassword
             MYSQL_DATABASE: morag_dev_db
-      MYSQL_USER: morag_user
-      MYSQL_PASSWORD: morag_password
+            MYSQL_USER: morag_user
+            MYSQL_PASSWORD: morag_password
         ports:
             - '3307:3306' # Different port to avoid conflicts
         volumes:

@@ -3,7 +3,11 @@ import { verify } from 'jsonwebtoken';
 import { authConfig } from './auth-config';
 import { UserService } from './services/userService';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
 
 export interface AuthUser {
     userId: string;
@@ -95,8 +99,13 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
     // Fall back to JWT authentication
     try {
         const token = request.cookies.get('auth-token')?.value;
-        
+
         if (!token) {
+            return null;
+        }
+
+        if (!JWT_SECRET) {
+            console.error('JWT_SECRET environment variable is not set');
             return null;
         }
 

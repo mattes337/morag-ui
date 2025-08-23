@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,11 +64,7 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
     domain: realm.domain || '',
   });
 
-  useEffect(() => {
-    loadRealmData();
-  }, [realm.id]);
-
-  const loadRealmData = async () => {
+  const loadRealmData = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -90,7 +86,11 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [realm.id]);
+
+  useEffect(() => {
+    loadRealmData();
+  }, [loadRealmData]);
 
   const handleSaveRealm = async () => {
     try {
