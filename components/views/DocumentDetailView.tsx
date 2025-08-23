@@ -1,15 +1,44 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing-status-display';
 import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
+import { ProcessingWorkflowManager } from '../ui/processing-workflow-manager';
+import { ProcessingHistory } from '../ui/processing-history';
+import { DocumentStatistics } from '../ui/document-statistics';
 
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Activity, Settings } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import {
+  Activity,
+  Settings,
+  FileText,
+  Download,
+  Eye,
+  Clock,
+  User,
+  Database,
+  BarChart3,
+  RotateCcw,
+  Trash2
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+interface DocumentFile {
+  id: string;
+  fileType: string;
+  stage?: string;
+  filename: string;
+  originalName?: string;
+  filesize: number;
+  contentType: string;
+  createdAt: string;
+}
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -33,6 +62,29 @@ export function DocumentDetailView({
         setDocumentToDelete,
     } = useApp();
 
+    const [activeTab, setActiveTab] = useState('overview');
+    const [files, setFiles] = useState<DocumentFile[]>([]);
+    const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+
+    useEffect(() => {
+        loadDocumentFiles();
+    }, [document.id]);
+
+    const loadDocumentFiles = async () => {
+        try {
+          setIsLoadingFiles(true);
+          const response = await fetch(`/api/files?documentId=${document.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setFiles(data.files || []);
+          }
+        } catch (error) {
+          console.error('Failed to load document files:', error);
+        } finally {
+          setIsLoadingFiles(false);
+        }
+    };
+
     const handleReingestClick = () => {
         setDocumentToReingest(document);
         setShowReingestConfirmDialog(true);
@@ -41,6 +93,25 @@ export function DocumentDetailView({
     const handleDeleteClick = () => {
         setDocumentToDelete(document);
         setShowDeleteConfirmDialog(true);
+    };
+
+    const handleDownloadFile = async (fileId: string) => {
+        try {
+          const response = await fetch(`/api/files/${fileId}/download`);
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = window.document.createElement('a');
+            a.href = url;
+            a.download = files.find(f => f.id === fileId)?.originalName || 'download';
+            window.document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            window.document.body.removeChild(a);
+          }
+        } catch (error) {
+          console.error('Failed to download file:', error);
+        }
     };
 
     const getStateColor = (state: string) => {
@@ -202,174 +273,254 @@ Please check back later or refresh the page to see the processed content.`;
                 <div className="flex space-x-3"></div>
             </div>
 
-            {/* Processing Status Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                            <Activity className="w-5 h-5" />
-                            <span>Processing Status</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <Badge variant={(document.processingMode || 'AUTOMATIC') === 'AUTOMATIC' ? 'default' : 'secondary'}>
-                                {document.processingMode || 'AUTOMATIC'} Mode
-                            </Badge>
-                            <ProcessingModeToggle
-                                mode={document.processingMode || 'AUTOMATIC'}
-                                onModeChange={async (mode) => {
-                                    try {
-                                        const response = await fetch(`/api/documents/${document.id}/processing`, {
-                                            method: 'PUT',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                            },
-                                            body: JSON.stringify({
-                                                processingMode: mode
-                                            })
-                                        });
+            {/* Main Content Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="processing">Processing</TabsTrigger>
+                    <TabsTrigger value="files">Files</TabsTrigger>
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
 
-                                        if (!response.ok) {
-                                            throw new Error('Failed to update processing mode');
+                <TabsContent value="overview" className="space-y-6">
+                    {/* Original File Display */}
+                    {files.find(f => f.fileType === 'ORIGINAL_DOCUMENT') && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center space-x-2">
+                                    <FileText className="w-5 h-5" />
+                                    <span>Original File</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {(() => {
+                                    const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT');
+                                    return originalFile ? (
+                                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                                            <div className="flex items-center space-x-3">
+                                                <FileText className="w-8 h-8 text-blue-600" />
+                                                <div>
+                                                    <p className="font-medium">{originalFile.originalName || originalFile.filename}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {(originalFile.filesize / 1024 / 1024).toFixed(2)} MB • {originalFile.contentType}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDownloadFile(originalFile.id)}
+                                            >
+                                                <Download className="w-4 h-4 mr-1" />
+                                                Download
+                                            </Button>
+                                        </div>
+                                    ) : null;
+                                })()}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Document Statistics */}
+                    <DocumentStatistics documentId={document.id} />
+
+                    {/* Quick Actions */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Settings className="w-5 h-5" />
+                                <span>Actions</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleReingestClick}
+                                    disabled={document.state === 'ingesting'}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Reingest Document</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onSupersede(document)}
+                                    disabled={document.state === 'deleted'}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Supersede Version</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleDeleteClick}
+                                    disabled={document.state === 'deleted'}
+                                    className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Delete Document</span>
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="processing" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <Activity className="w-5 h-5" />
+                                    <span>Processing Status</span>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Badge variant={(document.processingMode || 'AUTOMATIC') === 'AUTOMATIC' ? 'default' : 'secondary'}>
+                                        {document.processingMode || 'AUTOMATIC'} Mode
+                                    </Badge>
+                                    <ProcessingModeToggle
+                                        mode={document.processingMode || 'AUTOMATIC'}
+                                        onModeChange={async (mode) => {
+                                            try {
+                                                const response = await fetch(`/api/documents/${document.id}/processing`, {
+                                                    method: 'PUT',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                    },
+                                                    body: JSON.stringify({
+                                                        processingMode: mode
+                                                    })
+                                                });
+
+                                                if (!response.ok) {
+                                                    throw new Error('Failed to update processing mode');
+                                                }
+
+                                                const result = await response.json();
+                                                console.log('Processing mode updated:', result.message);
+
+                                                // Refresh the document data to show updated mode
+                                                window.location.reload();
+                                            } catch (error) {
+                                                console.error('Failed to update processing mode:', error);
+                                                // TODO: Show error toast to user
+                                            }
+                                        }}
+                                        disabled={document.state === 'ingesting'}
+                                        size="sm"
+                                    />
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {/* Processing Status Display */}
+                                <ProcessingStatusDisplay
+                                    documentId={document.id}
+                                    processingMode={document.processingMode || 'AUTOMATIC'}
+                                    stages={[
+                                        {
+                                            stage: 'MARKDOWN_CONVERSION',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'RUNNING' : 'PENDING'
+                                        },
+                                        {
+                                            stage: 'CHUNKER',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
+                                        },
+                                        {
+                                            stage: 'INGESTOR',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
                                         }
-
-                                        const result = await response.json();
-                                        console.log('Processing mode updated:', result.message);
-                                        
-                                        // Refresh the document data to show updated mode
-                                        window.location.reload();
-                                    } catch (error) {
-                                        console.error('Failed to update processing mode:', error);
-                                        // TODO: Show error toast to user
-                                    }
-                                }}
-                                disabled={document.state === 'ingesting'}
-                                size="sm"
-                            />
-                        </div>
-                    </CardTitle>
-                </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {/* Processing Status Display */}
-                            <ProcessingStatusDisplay
-                                documentId={document.id}
-                                processingMode={document.processingMode || 'AUTOMATIC'}
-                                stages={[
-                                    {
-                                        stage: 'MARKDOWN_CONVERSION',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 
-                                               document.state === 'ingesting' ? 'RUNNING' : 'PENDING'
-                                    },
-                                    {
-                                        stage: 'CHUNKER',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 
-                                               document.state === 'ingesting' ? 'PENDING' : 'PENDING'
-                                    },
-                                    {
-                                        stage: 'INGESTOR',
-                                        status: document.state === 'ingested' ? 'COMPLETED' : 
-                                               document.state === 'ingesting' ? 'PENDING' : 'PENDING'
-                                    }
-                                ]}
-                                currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
-                                compact={false}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-            {/* Document Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Stats</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Chunks:</span>
-                            <span className="font-medium">{document.chunks}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Quality:</span>
-                            <span className="font-medium">
-                                {(document.quality * 100).toFixed(1)}%
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Version:</span>
-                            <span className="font-medium">v{document.version}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Document Info</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Type:</span>
-                            <div className="text-right">
-                                <div className="font-medium">{getDocumentTypeDescription(document.type, document.subType)}</div>
-                                {document.subType && (
-                                    <div className="text-xs text-gray-500">{document.subType}</div>
-                                )}
+                                    ]}
+                                    currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
+                                    compact={false}
+                                />
                             </div>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">State:</span>
-                            <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(document.state)}`}
-                            >
-                                {document.state}
-                            </span>
-                        </div>
-                        {document.processingMode && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Processing:</span>
-                                <Badge variant={document.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'} className="text-xs">
-                                    {document.processingMode}
-                                </Badge>
-                            </div>
-                        )}
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Uploaded:</span>
-                            <span className="font-medium">{document.uploadDate}</span>
-                        </div>
-                    </div>
-                </div>
+                        </CardContent>
+                    </Card>
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Actions</h3>
-                    <div className="space-y-2">
-                        <button
-                            onClick={handleReingestClick}
-                            className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
-                            disabled={document.state === 'ingesting'}
-                        >
-                            🔄 Reingest Document
-                        </button>
-                        <button
-                            onClick={() => onSupersede(document)}
-                            className="w-full text-left px-3 py-2 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
-                            disabled={
-                                document.state === 'deleted'
-                            }
-                        >
-                            📝 Supersede Version
-                        </button>
-                        <button
-                            onClick={handleDeleteClick}
-                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                            disabled={document.state === 'deleted'}
-                        >
-                            🗑️ Delete Document
-                        </button>
-                    </div>
-                </div>
-            </div>
+                    {/* Processing History */}
+                    <ProcessingHistory
+                        documentId={document.id}
+                        onExecuteStage={async (stage) => {
+                            // TODO: Implement stage execution
+                            console.log('Execute stage:', stage);
+                        }}
+                        onViewOutput={(fileId) => {
+                            // TODO: Implement file viewing
+                            console.log('View file:', fileId);
+                        }}
+                        onDownloadOutput={handleDownloadFile}
+                    />
+                </TabsContent>
 
-            {/* Document Preview */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Preview</h3>
-                {renderDocumentEmbed()}
-            </div>
+                <TabsContent value="files" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <FileText className="w-5 h-5" />
+                                <span>All Files</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingFiles ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                        <p className="text-sm text-gray-600">Loading files...</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {files.map((file) => (
+                                        <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center space-x-3">
+                                                <FileText className="w-6 h-6 text-gray-600" />
+                                                <div>
+                                                    <p className="font-medium">{file.originalName || file.filename}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {file.fileType} {file.stage && `• ${file.stage}`} •
+                                                        {(file.filesize / 1024).toFixed(1)} KB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDownloadFile(file.id)}
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {files.length === 0 && (
+                                        <p className="text-center text-gray-500 py-8">No files found</p>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="preview" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Eye className="w-5 h-5" />
+                                <span>Document Preview</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {renderDocumentEmbed()}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

@@ -117,7 +117,7 @@ model Document {
   user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   facts                 Fact[]
   jobs                  Job[]
-  stageFiles            DocumentStageFile[]
+  files                 DocumentFile[]
   stageExecutions       StageExecution[]
   processingJobs        ProcessingJob[]
   sourceMigrationItems  DocumentMigrationItem[] @relation("SourceMigrationItems")
@@ -197,24 +197,31 @@ model DocumentChunk {
   @@map("document_chunks")
 }
 
-model DocumentStageFile {
+model DocumentFile {
   id           String          @id @default(uuid())
   documentId   String
-  stage        ProcessingStage
+  fileType     FileType        @default(STAGE_OUTPUT)
+  stage        ProcessingStage?
   filename     String
+  originalName String?
   filepath     String
   filesize     Int
   contentType  String
   content      String?         @db.LongText
   metadata     String?         @db.LongText
+  isPublic     Boolean         @default(false)
+  accessLevel  FileAccessLevel @default(REALM_MEMBERS)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  @@unique([documentId, stage, filename])
-  @@index([documentId], map: "document_stage_files_documentId_fkey")
-  @@map("document_stage_files")
+  @@unique([documentId, fileType, stage, filename])
+  @@index([documentId], map: "document_files_documentId_fkey")
+  @@index([fileType], map: "document_files_fileType_idx")
+  @@map("document_files")
 }
+
+
 
 model StageExecution {
   id           String          @id @default(uuid())
@@ -462,4 +469,19 @@ enum MigrationStatus {
 enum ProcessingMode {
   MANUAL
   AUTOMATIC
+}
+
+enum FileType {
+  ORIGINAL_DOCUMENT
+  STAGE_OUTPUT
+  ARTIFACT
+  THUMBNAIL
+  PREVIEW
+}
+
+enum FileAccessLevel {
+  PUBLIC
+  REALM_MEMBERS
+  DOCUMENT_OWNER
+  ADMIN_ONLY
 }

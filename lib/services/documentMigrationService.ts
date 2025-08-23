@@ -40,7 +40,7 @@ export interface MigrationProgress {
 
 export interface DocumentWithStages extends Document {
   stages?: any[];
-  stageFiles?: string[];
+  files?: any[];
 }
 
 export interface DocumentMigrationContext {
@@ -53,7 +53,7 @@ export interface DocumentMigrationContext {
 }
 
 export class DocumentMigrationService {
-  private static readonly STAGE_FILES_BASE_PATH = process.env.STAGE_FILES_PATH || './storage/stages';
+  private static readonly FILES_BASE_PATH = process.env.FILES_PATH || './storage/files';
 
   /**
    * Create a new migration job
@@ -369,8 +369,8 @@ export class DocumentMigrationService {
     const sourceDocId = context.sourceDocument.id;
     const targetDocId = context.targetDocument.id;
 
-    const sourcePath = path.join(this.STAGE_FILES_BASE_PATH, sourceDocId);
-    const targetPath = path.join(this.STAGE_FILES_BASE_PATH, targetDocId);
+    const sourcePath = path.join(this.FILES_BASE_PATH, sourceDocId);
+    const targetPath = path.join(this.FILES_BASE_PATH, targetDocId);
 
     try {
       // Check if source directory exists
@@ -471,12 +471,12 @@ export class DocumentMigrationService {
       return;
     }
 
-    // Delete stage files
-    const sourcePath = path.join(this.STAGE_FILES_BASE_PATH, context.sourceDocument.id);
+    // Delete document files
+    const sourcePath = path.join(this.FILES_BASE_PATH, context.sourceDocument.id);
     try {
       await fs.rm(sourcePath, { recursive: true, force: true });
     } catch (error) {
-      console.warn(`Failed to cleanup stage files for ${context.sourceDocument.id}:`, error);
+      console.warn(`Failed to cleanup files for ${context.sourceDocument.id}:`, error);
     }
   }
 

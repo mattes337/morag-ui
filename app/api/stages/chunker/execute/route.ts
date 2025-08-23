@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stageExecutionService } from '@/lib/services/stageExecutionService';
-import { stageFileService } from '@/lib/services/stageFileService';
+import { unifiedFileService } from '@/lib/services/unifiedFileService';
 
 /**
  * POST /api/stages/chunker/execute
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get input file (markdown or optimized markdown)
     let inputFile = null;
     if (inputFileId) {
-      inputFile = await stageFileService.getStageFile(inputFileId, true);
+      inputFile = await unifiedFileService.getFile(inputFileId, true);
       if (!inputFile) {
         return NextResponse.json(
           { error: 'Input file not found' },
@@ -35,14 +35,26 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Try to get the latest markdown file
-      inputFile = await stageFileService.getLatestStageFile(documentId, 'MARKDOWN_OPTIMIZER') ||
-                  await stageFileService.getLatestStageFile(documentId, 'MARKDOWN_CONVERSION');
-      
+      // Try to get the latest markdown file from stage outputs
+      const optimizerFiles = await unifiedFileService.getStageFiles(documentId, 'MARKDOWN_OPTIMIZER');
+      const conversionFiles = await unifiedFileService.getStageFiles(documentId, 'MARKDOWN_CONVERSION');
+
+      inputFile = optimizerFiles[0] || conversionFiles[0];
+
       if (!inputFile) {
         return NextResponse.json(
           { error: 'No markdown input file found. Run markdown-conversion first.' },
           { status: 400 }
+        );
+      }
+
+      // Get file content
+      inputFile = await unifiedFileService.getFile(inputFile.id, true);
+
+      if (!inputFile) {
+        return NextResponse.json(
+          { error: 'Failed to load input file content' },
+          { status: 500 }
         );
       }
     }
@@ -91,12 +103,16 @@ export async function POST(request: NextRequest) {
 
       // Store the chunks file
       const outputFilename = `${documentId}.chunks.json`;
-      const stageFile = await stageFileService.storeStageFile({
+      const stageFile = await unifiedFileService.storeFile({
         documentId,
+        fileType: 'STAGE_OUTPUT',
         stage: 'CHUNKER',
         filename: outputFilename,
-        content: JSON.stringify(chunksData, null, 2),
+        originalName: outputFilename,
+        content: Buffer.from(JSON.stringify(chunksData, null, 2)),
         contentType: 'application/json',
+        isPublic: false,
+        accessLevel: 'REALM_MEMBERS',
         metadata: {
           inputFile: inputFile.filename,
           chunkCount: chunks.length,

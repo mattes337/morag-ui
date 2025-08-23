@@ -113,6 +113,7 @@ describe('/api/documents', () => {
                 subType: 'pdf',
                 userId: 'user1',
                 realmId: 'realm1',
+                processingMode: 'AUTOMATIC',
             });
         });
 

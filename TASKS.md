@@ -1,163 +1,242 @@
 # TASKS
 
-## Completed Tasks
-- ✅ Fixed DocumentsView.test.tsx import errors and test failures
-  - Corrected Jest configuration (moduleNameMapping → moduleNameMapper)
-  - Fixed import path for test-utils
-  - Simplified failing metadata test to check for basic table structure
-- ✅ Fixed authentication issue in /api/servers endpoint
-  - Added missing NextRequest and NextResponse imports
-  - Fixed missing await keyword for requireAuth() calls
-  - Resolved "User ID is missing from authentication" error
-- ✅ Fixed realm switching layout issue
-  - Removed window.location.reload() from RealmSelector component
-  - Now uses AppContext's automatic data reloading when realm changes
-  - Preserves header and navigation layout during realm switching
-- ✅ Fixed authentication redirect issue
-  - Updated AuthWrapper component to properly redirect unauthenticated users to login
-  - Prevents pages from rendering without header/frame when not authenticated
-  - Added loading spinner during redirect for better UX
-  - Ensures all protected routes require authentication
-  - Fixed SSR compatibility issue by moving router.push() into useEffect
-  - Resolved 'location is not defined' error during server-side rendering
-- ✅ Fixed session persistence across browser refreshes
-  - Updated AppContext to include credentials in /api/auth/me calls
-  - Enhanced AuthWrapper to check both header auth and JWT auth on mount
-  - Ensured authentication state persists when user refreshes browser
-  - Updated test expectations to match new authentication call format
-  - All tests passing with improved session management
-- ✅ Fixed session persistence on page reload (F5)
-  - Modified AuthWrapper to always run auth check on mount, not just when user is null
-- ✅ Implemented Domain Configuration for Realms (Simplified)
-  - Added domain, ingestionPrompt, systemPrompt, extractionPrompt, and domainPrompt fields to Realm model
-  - Made all prompt fields optional with default fallbacks when not specified
-  - Created default prompt constants for consistent behavior across the application
-  - Updated database schema with new realm fields (no domain template table)
-  - Enhanced RealmService with getEffectivePrompts method for default prompt handling
-  - Updated realm API endpoints to support optional domain configuration
-  - Built RealmPromptEditor component for configuring domain-specific prompts (no templates)
-  - Enhanced RealmManagementDialog to include domain configuration UI
-  - Updated all services (ApiKeyService, JobService, ServerService) to include realmId
-  - Successfully migrated database and seeded with sample domain-configured realms
-  - Removed domain template system completely - prompts are now optional with sensible defaults
-  - Added proper loading state to prevent premature redirects to login
-  - Enhanced auth check logic to prevent redirect loops
-  - Users now stay logged in across browser refreshes and direct page access
-- ✅ Verified navigation URL changes work correctly
-  - Navigation component uses Next.js Link components properly
-  - Browser URL updates correctly when clicking menu items
-  - Direct page access via URLs works as expected
-  - All routing functionality working as intended
-- ✅ Fixed database creation Prisma validation error
-  - Added missing realmId field to Database model requirements
-  - Updated createDatabase API endpoint to require and handle realmId
-  - Modified AppContext to automatically include current realm ID in database creation
-  - Updated all related tests to include realmId parameter
-  - Resolved "Argument `user` is missing" Prisma validation error
-- ✅ Fixed Prisma client sync issue causing "server" field validation error
-  - Terminated running Node.js processes that were locking Prisma client files
-  - Successfully regenerated Prisma client to match current schema
-  - Resolved "Argument `server` is missing" validation error
-  - Verified database creation functionality works correctly
-  - All database-related tests passing
-- ✅ Fixed missing realm connection in database creation
-  - Added explicit realm connection in createDatabase function
-  - Properly destructured realmId from data and connected to realm relation
-  - Resolved "Argument `realm` is missing" Prisma validation error
-  - All database service and API tests passing (15/15 tests)
-- ✅ Fixed serverId constraint violation in database creation
-  - Synchronized database schema with Prisma schema using `prisma db push`
-  - Regenerated Prisma client after terminating conflicting Node.js processes
-  - Resolved "Null constraint violation on the fields: (`serverId`)" error
-  - Database schema now properly uses many-to-many relationship through RealmServerLink (Note: Server and Database are synonymous)
-  - All database tests passing, development server running successfully
-- ✅ **Phase 2: Enhanced Document Deletion Implementation Complete**
-  - Added Entity, Fact, DocumentChunk, and DocumentEntity models to Prisma schema
-  - Implemented EnhancedDocumentDeletionService with deletion planning and impact analysis
-  - Created DeletionImpactAnalyzer for batch deletion impact assessment
-  - Built comprehensive API endpoints for deletion analysis and execution
-  - Developed DeletionConfirmationDialog with impact visualization
-  - Updated DocumentService to use enhanced deletion with entity preservation
-  - Created comprehensive test suite for enhanced deletion functionality
-  - All tests passing (196 total, 6 legacy API test failures due to schema changes)
-  - Successfully migrated database schema with new entity management tables
+## 🎯 Current Implementation TODOs
 
-## Pending Tasks
+### High Priority - Core Functionality
 
-### Vision Implementation
-- 📋 **Vision Analysis Complete**: Comprehensive analysis of VISION.md requirements completed
-  - Created detailed task breakdown in `tasks/vision/` folder
-  - Identified 4 major phases with 12+ specific implementation tasks
-  - **Corrected Understanding**: Realm-level prompts are correctly implemented, focus on domain configuration
-  - **Corrected Architecture**: MoRAG backend handles database operations, UI backend handles metadata
-  - **Priority**: Document deletion moved to high priority, blog authoring to medium priority
-  - **Next Action**: Begin with Task 1.1 (Realm Domain Configuration) and Task 1.2 (MoRAG API)
-  - **See**: [Vision Implementation Overview](./tasks/vision/README.md)
+#### 1. Error Handling Service - ProcessingError Model
+**File:** `lib/services/errorHandlingService.ts`
+**Lines:** 255-275
+**Context:** Error handling service has placeholder methods that need ProcessingError model implementation
+```typescript
+// TODO: Implement processingError model in Prisma schema
+async getDocumentErrors(documentId: string, limit = 10) {
+  console.warn('ProcessingError model not implemented, returning empty array');
+  return [];
+}
 
-## Implementation Plan
-### 1. API Endpoints Implementation
-- Document required endpoints in ENDPOINTS.md
-- Create /app/api/servers directory
-- Implement server API endpoints:
-  - GET /api/servers - List all servers for authenticated user
-  - POST /api/servers - Create new server
-  - GET /api/servers/[id] - Get specific server
-  - PUT /api/servers/[id] - Update server
-  - DELETE /api/servers/[id] - Delete server
-### 2. Service Layer Implementation
-- Enhance serverService.ts with CRUD operations
-- Add proper validation for server creation/updates
-- Implement authentication checks
-- Add error handling for all operations
-### 3. Frontend Integration
-- Update ServersDialog.tsx to use API endpoints instead of local state
-- Update app/servers/page.tsx to use API endpoints
-- Modify AppContext.tsx to fetch servers from API
-- Update server management functions to use API calls
-### 4. Testing
-- Create unit tests for server API endpoints
-- Test database creation with valid serverId
-- Test error handling for invalid serverIds
-- Verify UI components correctly display server data
-## Technical Specifications
-### Database Server Model (synonym: Database)
-```
-interface Server {
-  id: string;
-  name: string;
-  type: 'qdrant' | 'neo4j' | 'pinecone' | 
-  'weaviate' | 'chroma';
-  host: string;
-  port: number;
-  username?: string;
-  password?: string;
-  apiKey?: string;
-  database?: string;
-  collection?: string;
-  isActive: boolean;
-  createdAt: string;
-  lastConnected?: string;
+async resolveError(errorId: string): Promise<void> {
+  console.warn('ProcessingError model not implemented, cannot resolve error:', errorId);
+}
+
+async cleanupOldErrors(olderThanDays = 30): Promise<number> {
+  console.warn('ProcessingError model not implemented, cannot cleanup old errors');
+  return 0;
 }
 ```
-### API Endpoint Specifications GET /api/servers
-- Authentication: Required
-- Response: Array of server objects
-- Error cases: 401 (Unauthorized) POST /api/servers
-- Authentication: Required
-- Request body: Server creation data
-- Response: Created server object
-- Error cases: 400 (Bad Request), 401 (Unauthorized) GET /api/servers/[id]
-- Authentication: Required
-- Response: Server object
-- Error cases: 404 (Not Found), 401 (Unauthorized) PUT /api/servers/[id]
-- Authentication: Required
-- Request body: Server update data
-- Response: Updated server object
-- Error cases: 404 (Not Found), 401 (Unauthorized) DELETE /api/servers/[id]
-- Authentication: Required
-- Response: Success message
-- Error cases: 404 (Not Found), 401 (Unauthorized)
-## Next Steps
-To resolve the foreign key constraint error, we need to implement the server API endpoints first, then update the frontend components to use these endpoints instead of local state management.
+**Action Required:** Add ProcessingError model to Prisma schema and implement these methods
 
-Once implemented, users will be able to create and manage database servers through the API, which will then be available for selection when creating databases.
+#### 2. Search Suggestions Implementation
+**File:** `app/api/v1/search/route.ts`
+**Lines:** 244-268
+**Context:** Search suggestions endpoint returns mock data
+```typescript
+// TODO: Implement actual suggestion functionality
+const mockSuggestions = {
+  query,
+  suggestions: [
+    { text: `${query} documents`, type: 'completion', score: 0.9 },
+    { text: `${query} analysis`, type: 'completion', score: 0.8 },
+    { text: `${query} summary`, type: 'completion', score: 0.7 }
+  ].slice(0, limit),
+  realmId: auth.realm!.id,
+  timestamp: new Date().toISOString(),
+};
+```
+**Action Required:** Implement intelligent search suggestions based on document content and user history
+
+#### 3. Document Statistics API
+**File:** `components/ui/document-statistics.tsx`
+**Lines:** 63-93
+**Context:** Document statistics component uses mock data
+```typescript
+// TODO: Replace with actual API call
+const mockStats: DocumentStatistics = {
+  processing: { chunks: 12, quality: 0.87, processingTime: 320, version: 1 },
+  content: { words: 1250, characters: 7800, pages: 5, language: 'English' },
+  knowledgeGraph: { entities: 45, facts: 78, relations: 23, concepts: 15 },
+  performance: { searchQueries: 156, avgResponseTime: 0.45, accuracy: 0.92 }
+};
+```
+**Action Required:** Create API endpoint for document statistics and connect to real data
+
+### Medium Priority - User Experience
+
+#### 4. Document Processing Stage Execution
+**File:** `components/views/DocumentDetailView.tsx`
+**Lines:** 449-455
+**Context:** Stage execution and file viewing not implemented
+```typescript
+onExecuteStage={async (stage) => {
+  // TODO: Implement stage execution
+  console.log('Execute stage:', stage);
+}}
+onViewOutput={(fileId) => {
+  // TODO: Implement file viewing
+  console.log('View file:', fileId);
+}}
+```
+**Action Required:** Implement stage execution API calls and file viewing modal
+
+#### 5. Error Toast Notifications
+**File:** `components/views/DocumentDetailView.tsx`
+**Lines:** 406
+**Context:** Error handling lacks user feedback
+```typescript
+} catch (error) {
+  console.error('Failed to update processing mode:', error);
+  // TODO: Show error toast to user
+}
+```
+**Action Required:** Implement toast notification system for user feedback
+
+#### 6. Document Upload Context Integration
+**File:** `components/dialogs/AddDocumentDialog.tsx`
+**Lines:** 157, 173
+**Context:** Document upload lacks proper context integration and error handling
+```typescript
+// Refresh documents list
+// TODO: Add to context or trigger refresh
+
+} catch (error) {
+  console.error('Failed to create document:', error);
+  // TODO: Show error message to user
+}
+```
+**Action Required:** Integrate with AppContext for automatic refresh and add error notifications
+
+#### 7. Document Migration History
+**File:** `app/api/documents/migrate/route.ts`
+**Lines:** 133-135
+**Context:** Migration history endpoint not implemented
+```typescript
+if (documentId) {
+  // TODO: Implement document migration history
+  const history: any[] = [];
+  return NextResponse.json({ history });
+}
+```
+**Action Required:** Implement migration history tracking and retrieval
+
+### Low Priority - Database Connections
+
+#### 8. Database Connection Testing
+**File:** `lib/services/serverConnectionService.ts`
+**Lines:** 190, 217, 244, 271
+**Context:** Database connection tests are simulated, not real
+```typescript
+// TODO: Implement actual PostgreSQL connection test
+// TODO: Implement actual MySQL connection test  
+// TODO: Implement actual MongoDB connection test
+// TODO: Implement actual Redis connection test
+```
+**Action Required:** Implement real database connection testing using appropriate drivers
+
+#### 9. File Download Implementation
+**File:** `components/views/DocumentDetailView.tsx`
+**Lines:** 104-110
+**Context:** File download functionality needs proper implementation
+```typescript
+const a = window.document.createElement('a');
+a.href = url;
+a.download = files.find(f => f.id === fileId)?.originalName || 'download';
+window.document.body.appendChild(a);
+a.click();
+window.URL.revokeObjectURL(url);
+window.document.body.removeChild(a);
+```
+**Action Required:** Implement proper file download with error handling and progress indication
+
+#### 10. Processing Job Monitoring
+**File:** `lib/services/processingMonitorService.ts`
+**Lines:** 147-148
+**Context:** Background job processor status check not implemented
+```typescript
+// Check if processor is running
+const processorRunning = backgroundJobService.isProcessorRunning();
+```
+**Action Required:** Implement processor status monitoring in backgroundJobService
+
+#### 11. Unified File Service Type Safety
+**File:** `lib/services/unifiedFileService.ts`
+**Lines:** 88
+**Context:** File mapping uses any type instead of proper typing
+```typescript
+private mapToOutput(file: any): FileOutput {
+```
+**Action Required:** Fix type safety by properly importing DocumentFile type from Prisma
+
+#### 12. Stage File Retrieval Methods
+**File:** `app/api/stages/chunker/execute/route.ts`
+**Lines:** 40-42
+**Context:** Stage file retrieval methods need implementation in unifiedFileService
+```typescript
+const optimizerFiles = await unifiedFileService.getStageFiles(documentId, 'MARKDOWN_OPTIMIZER');
+const conversionFiles = await unifiedFileService.getStageFiles(documentId, 'MARKDOWN_CONVERSION');
+```
+**Action Required:** Implement getStageFiles method in unifiedFileService
+
+## 🚀 Vision Implementation Tasks
+
+### Phase 1: Blog Content Management System
+- **Blog Models**: Implement BlogIdea, BlogArticle, and related models in Prisma schema
+- **Idea Management**: Create idea creation, approval workflow, and management interface
+- **Content Generation**: Implement automated idea generation from document analysis
+- **Article Authoring**: Build article creation and editing interface
+
+### Phase 2: Advanced Document Processing
+- **MoRAG API Integration**: Implement communication with MoRAG backend for processing
+- **Enhanced Entity Management**: Improve entity extraction and relationship mapping
+- **Advanced Search**: Implement semantic search with entity and fact integration
+
+### Phase 3: Workflow Automation
+- **n8n Integration**: Complete workflow automation capabilities
+- **Webhook System**: Implement comprehensive webhook system for external integrations
+- **Batch Operations**: Add bulk document processing and management
+
+## 📋 Implementation Priority
+
+### Immediate (This Week)
+1. **ProcessingError Model** - Add to Prisma schema and implement error handling
+2. **Unified File Service Type Safety** - Fix type imports and method implementations
+3. **Error Toast System** - Implement user feedback for errors
+4. **Stage File Retrieval Methods** - Implement missing methods in unifiedFileService
+
+### Short Term (Next 2 Weeks)
+1. **Document Statistics API** - Replace mock data with real statistics
+2. **Search Suggestions** - Implement intelligent search suggestions
+3. **Stage Execution** - Complete document processing stage controls
+4. **Migration History** - Implement migration tracking
+5. **Processing Job Monitoring** - Add processor status monitoring
+
+### Medium Term (Next Month)
+1. **File Download Implementation** - Improve file download with progress indication
+2. **Document Upload Context Integration** - Better error handling and context refresh
+3. **Database Connection Testing** - Implement real connection tests
+4. **Blog Content System** - Begin blog management implementation
+
+### Long Term (Next Quarter)
+1. **MoRAG API Integration** - Start backend integration
+2. **Advanced Search Features** - Semantic search enhancements
+3. **Workflow Automation** - Complete n8n integration
+4. **Performance Optimization** - Scale for production use
+
+## 🔧 Technical Debt Items
+
+### Code Quality Issues
+- **Type Safety**: Multiple files use `any` types that should be properly typed
+- **Error Handling**: Many API endpoints lack comprehensive error handling
+- **Mock Data**: Several components still use mock data instead of real APIs
+- **File Management**: Legacy file handling code remnants need cleanup
+
+### Performance Optimizations
+- **Database Queries**: Optimize N+1 queries in document and file retrieval
+- **File Storage**: Implement file caching and compression
+- **Search Performance**: Add indexing for better search performance
+- **Background Jobs**: Optimize job queue processing and monitoring
+
+### Security Enhancements
+- **Input Validation**: Add comprehensive input validation across all APIs
+- **File Upload Security**: Implement file type validation and virus scanning
+- **Rate Limiting**: Add rate limiting to prevent abuse
+- **Audit Logging**: Implement comprehensive audit logging for security events

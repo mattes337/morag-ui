@@ -122,23 +122,51 @@ export function AddDocumentDialog({
 
         try {
             setIsSubmitting(true);
-            
-            // Prepare data for type detection
-            const documentData: any = {
-                name,
-                type: selectedDocumentType.type,
-                realmId: currentRealm.id,
-                processingMode,
-            };
 
-            // Add filename or URL for automatic type/subtype detection
             if (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') {
-                documentData.url = documentUrl;
+                // Handle URL-based documents
+                const documentData: any = {
+                    name,
+                    type: selectedDocumentType.type,
+                    realmId: currentRealm.id,
+                    processingMode,
+                    url: documentUrl,
+                };
+
+                await createDocument(documentData);
             } else if (selectedFile) {
-                documentData.filename = selectedFile.name;
+                // Handle file uploads
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('name', name || selectedFile.name);
+                formData.append('realmId', currentRealm.id);
+                formData.append('processingMode', processingMode);
+                formData.append('type', selectedDocumentType.type);
+
+                const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to upload document');
+                }
+
+                // Refresh documents list
+                // TODO: Add to context or trigger refresh
+            } else {
+                // Handle documents without files (manual entry)
+                const documentData: any = {
+                    name,
+                    type: selectedDocumentType.type,
+                    realmId: currentRealm.id,
+                    processingMode,
+                };
+
+                await createDocument(documentData);
             }
 
-            await createDocument(documentData);
             handleClose();
         } catch (error) {
             console.error('Failed to create document:', error);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stageExecutionService } from '../../../../lib/services/stageExecutionService';
 import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
-import { stageFileService } from '../../../../lib/services/stageFileService';
+import { unifiedFileService } from '../../../../lib/services/unifiedFileService';
 import { StageStatus, ProcessingStage } from '@prisma/client';
 
 export interface StageWebhookPayload {
@@ -124,15 +124,19 @@ async function handleStageCompleted(payload: StageWebhookPayload): Promise<void>
     
     if (payload.result?.files) {
       for (const file of payload.result.files) {
-        const stageFile = await stageFileService.storeStageFile({
+        const stageFile = await unifiedFileService.storeFile({
           documentId: payload.document_id,
+          fileType: 'STAGE_OUTPUT',
           stage: payload.stage,
           filename: file.filename,
-          content: file.content || '',
+          originalName: file.filename,
+          content: Buffer.from(file.content || ''),
           contentType: file.contentType,
+          isPublic: false,
+          accessLevel: 'REALM_MEMBERS',
           metadata: file.metadata,
         });
-        
+
         outputFiles.push(stageFile.filename);
       }
     }

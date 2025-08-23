@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stageExecutionService } from '@/lib/services/stageExecutionService';
-import { stageFileService } from '@/lib/services/stageFileService';
+import { unifiedFileService } from '@/lib/services/unifiedFileService';
 
 /**
  * POST /api/stages/markdown-conversion/execute
@@ -43,12 +43,16 @@ export async function POST(request: NextRequest) {
       const mockMarkdownContent = `# Document: ${documentId}\n\nThis is a mock markdown conversion result.\n\n## Metadata\n- Converted at: ${new Date().toISOString()}\n- Input file: ${inputFile || 'N/A'}\n`;
 
       // Store the output file
-      const stageFile = await stageFileService.storeStageFile({
+      const stageFile = await unifiedFileService.storeFile({
         documentId,
+        fileType: 'STAGE_OUTPUT',
         stage: 'MARKDOWN_CONVERSION',
         filename: outputFilename,
-        content: mockMarkdownContent,
+        originalName: outputFilename,
+        content: Buffer.from(mockMarkdownContent),
         contentType: 'text/markdown',
+        isPublic: false,
+        accessLevel: 'REALM_MEMBERS',
         metadata: {
           originalFilename: inputFile,
           conversionOptions: options,

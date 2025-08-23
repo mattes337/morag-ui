@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stageExecutionService } from '@/lib/services/stageExecutionService';
-import { stageFileService } from '@/lib/services/stageFileService';
+import { unifiedFileService } from '@/lib/services/unifiedFileService';
 import { ProcessingStage } from '@prisma/client';
 
 interface RouteParams {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Include stage files if requested
     if (includeFiles) {
-      response.stageFiles = await stageFileService.getDocumentStageFiles(documentId);
+      response.stageFiles = await unifiedFileService.getFilesByDocument(documentId, 'STAGE_OUTPUT');
     }
 
     // Include execution history if requested

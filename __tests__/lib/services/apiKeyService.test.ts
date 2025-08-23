@@ -58,8 +58,9 @@ describe('ApiKeyService', () => {
 
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'Test API Key',
-                key: 'test-key-123',
+                key: 'test-key',
                 userId: 'user1',
+                realmId: 'realm1',
             });
             expect(result).toEqual(mockApiKey);
         });

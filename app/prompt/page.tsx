@@ -1,85 +1,30 @@
 'use client';
 
 import { useApp } from '../../contexts/AppContext';
-import { PromptView } from '../../components/views/PromptView';
-import { performVectorSearch, executePromptWithContext } from '../../lib/vectorSearch';
+import { PromptExecutionView } from '../../components/views/PromptExecutionView';
 
 export default function PromptPage() {
-    const {
-        currentRealm,
-        selectedDocument,
-        setSelectedDocument,
-        setCurrentRealm,
-        promptText,
-        setPromptText,
-        numDocuments,
-        setNumDocuments,
-        searchResults,
-        setSearchResults,
-        promptResponse,
-        setPromptResponse,
-        isLoading,
-        setIsLoading,
-    } = useApp();
+    const { currentRealm } = useApp();
 
-    const handlePromptSubmit = async () => {
-        if (!promptText.trim()) return;
-
-        setIsLoading(true);
-
-        try {
-            // Perform vector search first
-            const searchOptions = {
-                query: promptText,
-                numResults: numDocuments,
-                documentId: selectedDocument?.id?.toString(),
-                realmId: currentRealm?.id?.toString(),
-            };
-
-            const results = await performVectorSearch(searchOptions);
-            setSearchResults(results);
-
-            // Execute prompt with context
-            const promptOptions = {
-                prompt: promptText,
-                context: results,
-            };
-
-            const response = await executePromptWithContext(promptOptions);
-            setPromptResponse(response);
-        } catch (error) {
-            console.error('Error processing prompt:', error);
-            setPromptResponse(
-                'Sorry, there was an error processing your request. Please try again.',
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClearDocumentFilter = () => {
-        setSelectedDocument(null);
-    };
-
-    const handleClearRealmFilter = () => {
-        setCurrentRealm(null);
-    };
+    if (!currentRealm) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        No Realm Selected
+                    </h2>
+                    <p className="text-gray-600">
+                        Please select a realm to start searching and querying your knowledge base.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <PromptView
-            selectedRealm={currentRealm}
-            selectedDocument={selectedDocument}
-            promptText={promptText}
-            numDocuments={numDocuments}
-            searchResults={searchResults}
-            promptResponse={promptResponse}
-            isLoading={isLoading}
-            onPromptTextChange={setPromptText}
-            onNumDocumentsChange={setNumDocuments}
-            onSubmitPrompt={handlePromptSubmit}
-            onClearDocumentFilter={handleClearDocumentFilter}
-            onClearRealmFilter={handleClearRealmFilter}
-            data-oid="edb_lg-"
+        <PromptExecutionView
+            realmId={currentRealm.id}
+            realmName={currentRealm.name}
         />
     );
 }
