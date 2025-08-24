@@ -3,10 +3,12 @@ import { verify } from 'jsonwebtoken';
 import { authConfig } from './auth-config';
 import { UserService } from './services/userService';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required');
+function getJwtSecret(): string {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+        throw new Error('JWT_SECRET environment variable is required');
+    }
+    return JWT_SECRET;
 }
 
 export interface AuthUser {
@@ -104,12 +106,8 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
             return null;
         }
 
-        if (!JWT_SECRET) {
-            console.error('JWT_SECRET environment variable is not set');
-            return null;
-        }
-
-        const decoded = verify(token, JWT_SECRET) as any;
+        const jwtSecret = getJwtSecret();
+        const decoded = verify(token, jwtSecret) as any;
         
         if (!decoded.userId) {
             console.error('JWT token missing userId field:', decoded);

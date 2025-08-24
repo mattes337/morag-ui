@@ -5,10 +5,12 @@ import bcrypt from 'bcryptjs';
 import { authConfig } from '../../../../lib/auth-config';
 import { getAuthUser } from '../../../../lib/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required');
+function getJwtSecret(): string {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+        throw new Error('JWT_SECRET environment variable is required');
+    }
+    return JWT_SECRET;
 }
 
 export async function GET(request: NextRequest) {
@@ -102,16 +104,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Create JWT token
-        if (!JWT_SECRET) {
-            return NextResponse.json(
-                { error: 'Server configuration error' },
-                { status: 500 }
-            );
-        }
+        const jwtSecret = getJwtSecret();
 
         const token = sign(
             { userId: user.id, email: user.email, role: user.role, name: user.name },
-            JWT_SECRET,
+            jwtSecret,
             { expiresIn: '24h' }
         );
 

@@ -15,6 +15,11 @@ RUN npm ci
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Set dummy environment variables for build time
+ENV JWT_SECRET=build-time-dummy-secret
+ENV DATABASE_URL=mysql://dummy:dummy@localhost:3306/dummy
+
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
