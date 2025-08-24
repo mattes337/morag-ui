@@ -101,7 +101,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen bg-gray-50 flex flex-col" data-oid="zanke6-">
             <Header data-oid="oqu6f7g" />
             <Navigation data-oid="7sa8_r5" />
-            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-oid="gk_t--6">
+            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full" data-oid="gk_t--6">
                 {children}
             </main>
             <footer className="bg-white border-t border-gray-200" data-oid="gwmbsdd">

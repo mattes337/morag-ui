@@ -262,6 +262,39 @@ export class MoragService {
   }
 
   /**
+   * Get files for a task
+   */
+  async getTaskFiles(taskId: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/api/v1/files/${taskId}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Download a file from the backend
+   */
+  async downloadFile(taskId: string, filename: string): Promise<Buffer> {
+    const response = await fetch(`${this.baseUrl}/api/v1/files/${taskId}/${filename}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  /**
    * Health check endpoint
    */
   async healthCheck(): Promise<any> {

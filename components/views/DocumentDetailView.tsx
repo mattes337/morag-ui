@@ -112,10 +112,25 @@ export function DocumentDetailView({
                     documentId: document.id,
                     stage: stage,
                 }),
+                credentials: 'include', // Include cookies for authentication
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
+
+                // Handle authentication errors specifically
+                if (response.status === 401) {
+                    ToastService.error(
+                        'Authentication required',
+                        {
+                            description: 'Please log in to execute processing stages'
+                        }
+                    );
+                    // Redirect to login page
+                    window.location.href = '/login';
+                    return;
+                }
+
                 throw new Error(errorData.error || 'Failed to execute stage');
             }
 
@@ -333,7 +348,7 @@ Please check back later or refresh the page to see the processed content.`;
                 // Use the actual uploaded PDF file with the view endpoint
                 const pdfUrl = `/api/files/${originalFile.id}/view`;
                 return (
-                    <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="w-full h-96 sm:h-[500px] lg:h-[600px] border border-gray-300 rounded-lg overflow-hidden">
                         <iframe
                             src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`}
                             className="w-full h-full"
@@ -399,18 +414,18 @@ Please check back later or refresh the page to see the processed content.`;
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="w-full space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0 max-w-4xl">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+                <div className="flex-1 min-w-0">
                     <button
                         onClick={onBack}
                         className="text-blue-600 hover:text-blue-800 text-sm mb-2"
                     >
                         ← Back to Documents
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900 truncate" title={document.name}>{document.name}</h1>
-                    <div className="flex items-center space-x-4 mt-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words" title={document.name}>{document.name}</h1>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                         <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${getStateColor(document.state)}`}
                         >
@@ -433,7 +448,7 @@ Please check back later or refresh the page to see the processed content.`;
 
             {/* Main Content Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="processing">Processing</TabsTrigger>
                     <TabsTrigger value="files">Files</TabsTrigger>
@@ -454,11 +469,11 @@ Please check back later or refresh the page to see the processed content.`;
                                 {(() => {
                                     const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT');
                                     return originalFile ? (
-                                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <FileText className="w-8 h-8 text-blue-600" />
-                                                <div>
-                                                    <p className="font-medium">{originalFile.originalName || originalFile.filename}</p>
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-3">
+                                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                                <FileText className="w-8 h-8 text-blue-600 flex-shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium break-words">{originalFile.originalName || originalFile.filename}</p>
                                                     <p className="text-sm text-gray-600">
                                                         {(originalFile.filesize / 1024 / 1024).toFixed(2)} MB • {originalFile.contentType}
                                                     </p>
@@ -468,6 +483,7 @@ Please check back later or refresh the page to see the processed content.`;
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleDownloadFile(originalFile.id)}
+                                                className="flex-shrink-0"
                                             >
                                                 <Download className="w-4 h-4 mr-1" />
                                                 Download
@@ -612,6 +628,35 @@ Please check back later or refresh the page to see the processed content.`;
                         onViewOutput={handleViewFile}
                         onDownloadOutput={handleDownloadFile}
                     />
+
+                    {/* Quick Stage Execution */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Activity className="w-5 h-5" />
+                                <span>Quick Stage Execution</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {['MARKDOWN_CONVERSION', 'CHUNKER', 'INGESTOR'].map((stage) => (
+                                    <Button
+                                        key={stage}
+                                        variant="outline"
+                                        onClick={() => handleExecuteStage(stage)}
+                                        disabled={isExecutingStage}
+                                        className="flex items-center space-x-2 h-auto py-3"
+                                    >
+                                        <Activity className="w-4 h-4" />
+                                        <span className="text-sm">{stage.replace('_', ' ')}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3">
+                                Click any stage to execute it for this document. Make sure you&apos;re logged in.
+                            </p>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="files" className="space-y-6">
@@ -633,18 +678,18 @@ Please check back later or refresh the page to see the processed content.`;
                             ) : (
                                 <div className="space-y-3">
                                     {files.map((file) => (
-                                        <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <FileText className="w-6 h-6 text-gray-600" />
-                                                <div>
-                                                    <p className="font-medium">{file.originalName || file.filename}</p>
+                                        <div key={file.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-3">
+                                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                                <FileText className="w-6 h-6 text-gray-600 flex-shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium break-words">{file.originalName || file.filename}</p>
                                                     <p className="text-sm text-gray-600">
                                                         {file.fileType} {file.stage && `• ${file.stage}`} •
                                                         {(file.filesize / 1024).toFixed(1)} KB
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center space-x-2 flex-shrink-0">
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -681,9 +726,9 @@ Please check back later or refresh the page to see the processed content.`;
 
             {/* File Viewing Modal */}
             <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="break-words">
                             {viewingFile?.originalName || viewingFile?.filename}
                         </DialogTitle>
                     </DialogHeader>

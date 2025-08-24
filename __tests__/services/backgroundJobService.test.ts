@@ -5,32 +5,19 @@ import { PrismaClient, JobStatus, ProcessingStage } from '@prisma/client';
 import { errorHandlingService } from '../../lib/services/errorHandlingService';
 
 // Mock dependencies
-jest.mock('@prisma/client');
-jest.mock('../../lib/services/errorHandlingService');
+jest.mock('../../lib/database');
 
-const mockPrisma = {
-  processingJob: {
-    create: jest.fn(),
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    update: jest.fn(),
-    count: jest.fn(),
-    groupBy: jest.fn()
-  },
-  document: {
-    findUnique: jest.fn(),
-    update: jest.fn()
-  }
-} as any;
+jest.mock('../../lib/services/errorHandlingService');
+jest.mock('../../lib/services/stageExecutionService');
+jest.mock('../../lib/services/moragService');
+
+import { prisma } from '../../lib/database';
+const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+
 
 const mockErrorHandlingService = errorHandlingService as {
   handleProcessingError: jest.MockedFunction<any>;
 };
-
-// Mock PrismaClient constructor
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
-}));
 
 // Mock fetch for webhook calls
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
@@ -67,7 +54,14 @@ describe('BackgroundJobService', () => {
       ...jobData,
       status: JobStatus.PENDING,
       createdAt: new Date(),
-      scheduledAt: new Date()
+      updatedAt: new Date(),
+      scheduledAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+      retryCount: 0,
+      maxRetries: 3,
+      errorMessage: null,
+      metadata: null
     };
 
     beforeEach(() => {
@@ -129,7 +123,22 @@ describe('BackgroundJobService', () => {
     ];
 
     beforeEach(() => {
-      mockPrisma.processingJob.create.mockResolvedValue({ id: 'job-1' });
+      mockPrisma.processingJob.create.mockResolvedValue({
+        id: 'job-1',
+        documentId: 'doc-1',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
+        status: JobStatus.PENDING,
+        priority: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        scheduledAt: new Date(),
+        startedAt: null,
+        completedAt: null,
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: null,
+        metadata: null
+      });
     });
 
     it('should schedule jobs for documents needing processing', async () => {
@@ -176,20 +185,45 @@ describe('BackgroundJobService', () => {
       status: JobStatus.PENDING,
       priority: 1,
       scheduledAt: new Date(Date.now() - 1000),
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+      retryCount: 0,
+      maxRetries: 3,
+      errorMessage: null,
+      metadata: null
     };
 
     const mockDocument = {
       id: 'doc-1',
       name: 'test.pdf',
-      state: 'uploaded'
+      type: 'document',
+      state: 'UPLOADED' as any,
+      version: 1,
+      chunks: 0,
+      quality: 0,
+      markdown: null,
+      uploadDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'user-1',
+      realmId: 'realm-1',
+      subType: 'pdf',
+      currentStage: ProcessingStage.MARKDOWN_CONVERSION,
+      stageStatus: 'PENDING' as any,
+      lastStageError: null,
+      processingMode: 'AUTOMATIC' as any,
+      isProcessingPaused: false,
+      nextScheduledStage: null,
+      scheduledAt: null
     };
 
     beforeEach(() => {
       mockPrisma.processingJob.findMany.mockResolvedValue([mockPendingJob]);
       mockPrisma.document.findUnique.mockResolvedValue(mockDocument);
-      mockPrisma.processingJob.update.mockResolvedValue({});
-      mockPrisma.document.update.mockResolvedValue({});
+      mockPrisma.processingJob.update.mockResolvedValue(mockPendingJob);
+      mockPrisma.document.update.mockResolvedValue(mockDocument);
     });
 
     it('should process pending jobs successfully', async () => {
@@ -259,10 +293,22 @@ describe('BackgroundJobService', () => {
     it('should cancel a pending job', async () => {
       const pendingJob = {
         id: 'job-1',
-        status: JobStatus.PENDING
+        documentId: 'doc-1',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
+        status: JobStatus.PENDING,
+        priority: 0,
+        scheduledAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        startedAt: null,
+        completedAt: null,
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: null,
+        metadata: null
       };
       mockPrisma.processingJob.findFirst.mockResolvedValue(pendingJob);
-      mockPrisma.processingJob.update.mockResolvedValue({});
+      mockPrisma.processingJob.update.mockResolvedValue(pendingJob);
 
       const result = await backgroundJobService.cancelJob('job-1');
 
@@ -280,7 +326,19 @@ describe('BackgroundJobService', () => {
     it('should not cancel a running job', async () => {
       const runningJob = {
         id: 'job-1',
-        status: JobStatus.PROCESSING
+        documentId: 'doc-1',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
+        status: JobStatus.PROCESSING,
+        priority: 0,
+        scheduledAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: null,
+        metadata: null
       };
       mockPrisma.processingJob.findFirst.mockResolvedValue(runningJob);
 

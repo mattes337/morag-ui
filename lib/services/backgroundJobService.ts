@@ -30,6 +30,7 @@ export interface ProcessingJobOutput {
 
 class BackgroundJobService {
   private isProcessing = false;
+  private isPolling = false;
   private processingInterval: NodeJS.Timeout | null = null;
 
   /**
@@ -42,15 +43,34 @@ class BackgroundJobService {
     }
 
     console.log(`Starting background job processor with ${intervalMs}ms interval`);
-    this.processingInterval = setInterval(() => {
-      this.processNextJobs().catch(error => {
-        console.error('Error in background job processor:', error);
+    this.processingInterval = setInterval(async () => {
+      // Run both job processing and status polling in parallel
+      // Use Promise.allSettled to ensure one error doesn't stop the other
+      const results = await Promise.allSettled([
+        this.processNextJobs(),
+        this.pollJobStatuses()
+      ]);
+
+      // Log any errors but don't stop the processor
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const operation = index === 0 ? 'job processing' : 'status polling';
+          console.error(`Error in background ${operation}:`, result.reason);
+        }
       });
     }, intervalMs);
 
     // Process immediately on start
-    this.processNextJobs().catch(error => {
-      console.error('Error in initial background job processing:', error);
+    Promise.allSettled([
+      this.processNextJobs(),
+      this.pollJobStatuses()
+    ]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const operation = index === 0 ? 'initial job processing' : 'initial status polling';
+          console.error(`Error in ${operation}:`, result.reason);
+        }
+      });
     });
   }
 
@@ -198,6 +218,183 @@ class BackgroundJobService {
   }
 
   /**
+   * Poll job statuses for pending jobs and download files when completed
+   */
+  async pollJobStatuses(batchSize: number = 10): Promise<{
+    polled: number;
+    updated: number;
+    failed: number;
+  }> {
+    if (this.isPolling) {
+      return { polled: 0, updated: 0, failed: 0 };
+    }
+
+    this.isPolling = true;
+    let polled = 0;
+    let updated = 0;
+    let failed = 0;
+
+    try {
+      // Get processing jobs that have MoRAG task IDs
+      const jobs = await prisma.processingJob.findMany({
+        where: {
+          status: JobStatus.PROCESSING,
+          metadata: {
+            not: null,
+          },
+        },
+        take: batchSize,
+        include: {
+          document: true,
+        },
+      });
+
+      for (const job of jobs) {
+        try {
+          const metadata = job.metadata ? JSON.parse(job.metadata) : {};
+          const moragTaskId = metadata.moragTaskId;
+
+          if (!moragTaskId) {
+            continue; // Skip jobs without MoRAG task IDs
+          }
+
+          polled++;
+
+          // Get task status from MoRAG backend
+          const taskStatus = await moragService.getTaskStatus(moragTaskId);
+
+          // Check if status has changed
+          if (taskStatus.status === 'completed') {
+            // Download files and complete the job
+            await this.handleJobCompletion(job, taskStatus);
+            updated++;
+          } else if (taskStatus.status === 'failed') {
+            // Mark job as failed
+            await this.failJob(job.id, taskStatus.error?.message || 'Task failed on MoRAG backend');
+            updated++;
+          } else if (taskStatus.status === 'in_progress') {
+            // Update progress if available
+            if (taskStatus.progress?.percentage !== undefined) {
+              await prisma.processingJob.update({
+                where: { id: job.id },
+                data: {
+                  metadata: JSON.stringify({
+                    ...metadata,
+                    progress: taskStatus.progress.percentage,
+                    currentStep: taskStatus.progress.current_step,
+                  }),
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error polling status for job ${job.id}:`, error);
+          failed++;
+        }
+      }
+    } finally {
+      this.isPolling = false;
+    }
+
+    if (polled > 0) {
+      console.log(`Status polling completed: ${polled} polled, ${updated} updated, ${failed} failed`);
+    }
+
+    return { polled, updated, failed };
+  }
+
+  /**
+   * Handle job completion by downloading files and updating the job status
+   */
+  private async handleJobCompletion(job: any, taskStatus: any): Promise<void> {
+    const metadata = job.metadata ? JSON.parse(job.metadata) : {};
+    const moragTaskId = metadata.moragTaskId;
+
+    try {
+      // Get available files from MoRAG backend
+      const filesResponse = await moragService.getTaskFiles(moragTaskId);
+      const availableFiles = filesResponse.files || [];
+
+      // Download and store each file
+      for (const fileInfo of availableFiles) {
+        try {
+          const fileContent = await moragService.downloadFile(moragTaskId, fileInfo.filename);
+
+          // Import the unified file service
+          const { unifiedFileService } = await import('./unifiedFileService');
+
+          // Determine file type based on stage and filename
+          const fileType = this.determineFileType(job.stage, fileInfo.filename);
+
+          // Store the downloaded file
+          await unifiedFileService.storeFile({
+            documentId: job.documentId,
+            fileType,
+            stage: job.stage,
+            filename: fileInfo.filename,
+            originalName: fileInfo.original_name || fileInfo.filename,
+            content: fileContent,
+            contentType: fileInfo.content_type || 'application/octet-stream',
+            isPublic: false,
+            accessLevel: 'REALM_MEMBERS',
+            metadata: {
+              downloadedFrom: 'morag-backend',
+              taskId: moragTaskId,
+              downloadedAt: new Date().toISOString(),
+              fileSize: fileContent.length,
+              ...fileInfo.metadata,
+            },
+          });
+
+          console.log(`Downloaded and stored file ${fileInfo.filename} for job ${job.id}`);
+        } catch (fileError) {
+          console.error(`Failed to download file ${fileInfo.filename} for job ${job.id}:`, fileError);
+          // Continue with other files even if one fails
+        }
+      }
+
+      // Complete the job with the task result
+      await this.completeJob(job.id, {
+        ...metadata,
+        taskResult: taskStatus.result,
+        completedAt: new Date().toISOString(),
+        downloadedFiles: availableFiles.length,
+      });
+
+      console.log(`Job ${job.id} completed successfully with ${availableFiles.length} files downloaded`);
+    } catch (error) {
+      console.error(`Failed to handle job completion for ${job.id}:`, error);
+      await this.failJob(job.id, `Failed to download files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Determine file type based on processing stage and filename
+   */
+  private determineFileType(stage: ProcessingStage, filename: string): any {
+    // Map stage to appropriate file type
+    switch (stage) {
+      case ProcessingStage.MARKDOWN_CONVERSION:
+        if (filename.endsWith('.md') || filename.endsWith('.markdown')) {
+          return 'STAGE_OUTPUT';
+        }
+        break;
+      case ProcessingStage.MARKDOWN_OPTIMIZER:
+        return 'STAGE_OUTPUT';
+      case ProcessingStage.CHUNKER:
+        return 'STAGE_OUTPUT';
+      case ProcessingStage.FACT_GENERATOR:
+        return 'STAGE_OUTPUT';
+      case ProcessingStage.INGESTOR:
+        return 'STAGE_OUTPUT';
+      default:
+        return 'STAGE_OUTPUT';
+    }
+
+    return 'STAGE_OUTPUT';
+  }
+
+  /**
    * Process a specific job
    */
   async processJob(jobId: string): Promise<void> {
@@ -275,8 +472,8 @@ class BackgroundJobService {
       }
 
       // Get the original file for processing
-      const originalFile = document.files[0];
-      if (!originalFile && job.stage === ProcessingStage.MARKDOWN_CONVERSION) {
+      const originalFile = document.files?.[0];
+      if (!originalFile) {
         throw new Error(`No original file found for document ${job.documentId}`);
       }
 
@@ -298,7 +495,7 @@ class BackgroundJobService {
           documentName: document.name,
           realmId: document.realmId,
           originalFile: originalFile?.filepath,
-          databaseServers: document.realm.servers.map(realmServer => ({
+          databaseServers: document.realm?.servers?.map((realmServer: any) => ({
             type: realmServer.server.type.toLowerCase(),
             host: realmServer.server.host,
             port: realmServer.server.port,
@@ -307,7 +504,7 @@ class BackgroundJobService {
             apiKey: realmServer.server.apiKey,
             database: realmServer.server.database,
             collection: realmServer.server.collection,
-          }))
+          })) || []
         }
       };
 

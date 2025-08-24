@@ -11,7 +11,10 @@ jest.mock('../../../../../lib/services/documentMigrationService', () => ({
     cancelMigration: jest.fn(),
   },
 }));
-jest.mock('../../../../../lib/auth');
+jest.mock('../../../../../lib/auth', () => ({
+  requireAuth: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
+  getAuthUser: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+}));
 
 const mockDocumentMigrationService = DocumentMigrationService as jest.Mocked<typeof DocumentMigrationService>;
 const mockRequireAuth = require('../../../../../lib/auth').requireAuth as jest.MockedFunction<any>;

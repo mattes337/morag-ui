@@ -1,29 +1,12 @@
 import { MigrationStatus } from '@prisma/client';
 
 // Mock Prisma client
-const mockPrisma = {
-  documentMigration: {
-    create: jest.fn(),
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    update: jest.fn(),
-  },
-  documentMigrationItem: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-      create: jest.fn(),
-    },
-  document: {
-    findMany: jest.fn(),
-  },
-  $transaction: jest.fn(),
-};
-
-jest.mock('../../../lib/database', () => ({
-  prisma: mockPrisma,
-}));
+jest.mock('../../../lib/database');
 
 import { DocumentMigrationService } from '../../../lib/services/documentMigrationService';
+import { prisma } from '../../../lib/database';
+
+const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
 // Mock file system operations
 jest.mock('fs/promises', () => ({

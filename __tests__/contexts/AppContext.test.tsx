@@ -148,12 +148,12 @@ describe('AppContext', () => {
             id: '1',
             name: 'Test Document.pdf',
             type: 'document',
-            subType: 'pdf',
             state: 'ingested',
             version: 1,
             chunks: 10,
             quality: 0.95,
-            uploadDate: '2024-01-15'
+            uploadDate: '2024-01-15',
+            processingMode: 'AUTOMATIC'
         }]);
         expect(result.current.apiKeys).toEqual([mockApiKey]);
         expect(result.current.jobs).toEqual([{
@@ -377,7 +377,6 @@ describe('AppContext', () => {
             await result.current.createDocument({
                 name: 'New Document.pdf',
                 type: 'document',
-                subType: 'pdf',
                 realmId: '1',
             });
         });
@@ -388,7 +387,6 @@ describe('AppContext', () => {
             body: JSON.stringify({
                 name: 'New Document.pdf',
                 type: 'document',
-                subType: 'pdf',
                 realmId: '1',
             }),
         });

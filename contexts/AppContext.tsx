@@ -255,7 +255,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
-                console.log('📄 [AppContext] Raw documents data from API:', documentsData.slice(0, 2).map(d => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
+                console.log('📄 [AppContext] Raw documents data from API:', documentsData.slice(0, 2).map((d: any) => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
                 const formattedDocuments = documentsData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.name,

@@ -7,35 +7,23 @@ import { PrismaClient, JobStatus } from '@prisma/client';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-jest.mock('../../lib/services/backgroundJobService');
-jest.mock('@prisma/client');
-
-const mockBackgroundJobService = backgroundJobService as {
-  createJob: MockedFunction<any>;
-  cancelJob: MockedFunction<any>;
-  getStats: MockedFunction<any>;
-};
-
-const mockPrisma = {
-  processingJob: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    deleteMany: jest.fn(),
-    count: jest.fn(),
-    groupBy: jest.fn()
-  },
-  document: {
-    findUnique: jest.fn()
+jest.mock('../../lib/services/backgroundJobService', () => ({
+  backgroundJobService: {
+    createJob: jest.fn(),
+    cancelJob: jest.fn(),
+    getStats: jest.fn(),
   }
-} as any;
-
-// Mock PrismaClient constructor
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
 }));
+jest.mock('../../lib/database');
+jest.mock('../../lib/auth', () => ({
+  requireAuth: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
+  getAuthUser: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' })
+}));
+
+import { prisma } from '../../lib/database';
+
+const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockBackgroundJobService = backgroundJobService as jest.Mocked<typeof backgroundJobService>;
 
 // Helper to create mock NextRequest
 function createMockRequest(method: string, url: string, body?: any): NextRequest {
