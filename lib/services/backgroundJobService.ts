@@ -44,18 +44,19 @@ class BackgroundJobService {
 
     console.log(`Starting background job processor with ${intervalMs}ms interval`);
     this.processingInterval = setInterval(async () => {
-      // Run both job processing and status polling in parallel
-      // Use Promise.allSettled to ensure one error doesn't stop the other
+      // Run job processing, status polling, and cleanup in parallel
+      // Use Promise.allSettled to ensure one error doesn't stop the others
       const results = await Promise.allSettled([
         this.processNextJobs(),
-        this.pollJobStatuses()
+        this.pollJobStatuses(),
+        this.cleanupCompletedJobs()
       ]);
 
       // Log any errors but don't stop the processor
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const operation = index === 0 ? 'job processing' : 'status polling';
-          console.error(`Error in background ${operation}:`, result.reason);
+          const operations = ['job processing', 'status polling', 'cleanup'];
+          console.error(`Error in background ${operations[index]}:`, result.reason);
         }
       });
     }, intervalMs);
@@ -63,12 +64,13 @@ class BackgroundJobService {
     // Process immediately on start
     Promise.allSettled([
       this.processNextJobs(),
-      this.pollJobStatuses()
+      this.pollJobStatuses(),
+      this.cleanupCompletedJobs()
     ]).then(results => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const operation = index === 0 ? 'initial job processing' : 'initial status polling';
-          console.error(`Error in ${operation}:`, result.reason);
+          const operations = ['initial job processing', 'initial status polling', 'initial cleanup'];
+          console.error(`Error in ${operations[index]}:`, result.reason);
         }
       });
     });
@@ -265,9 +267,20 @@ class BackgroundJobService {
 
           // Check if status has changed
           if (taskStatus.status === 'completed') {
-            // Download files and complete the job
-            await this.handleJobCompletion(job, taskStatus);
-            updated++;
+            // CRITICAL: Only attempt to complete job if we can access the files endpoint
+            // This prevents losing the ability to download files if there's a backend issue
+            try {
+              // Test if we can access the files endpoint before proceeding
+              await moragService.getTaskFiles(moragTaskId);
+
+              // Download files and complete the job
+              await this.handleJobCompletion(job, taskStatus);
+              updated++;
+            } catch (filesError) {
+              console.warn(`Cannot access files for completed job ${job.id}, task ${moragTaskId}. Will retry later:`, filesError);
+              // Don't mark as failed - just skip this polling cycle so we can retry later
+              // when the backend files endpoint is accessible again
+            }
           } else if (taskStatus.status === 'failed') {
             // Mark job as failed
             await this.failJob(job.id, taskStatus.error?.message || 'Task failed on MoRAG backend');
@@ -304,6 +317,111 @@ class BackgroundJobService {
   }
 
   /**
+   * Clean up completed jobs by calling the MoRAG backend cleanup endpoint
+   */
+  async cleanupCompletedJobs(batchSize: number = 5): Promise<{
+    processed: number;
+    cleaned: number;
+    failed: number;
+  }> {
+    let processed = 0;
+    let cleaned = 0;
+    let failed = 0;
+
+    try {
+      // Get completed jobs that haven't been cleaned up yet
+      const jobs = await prisma.processingJob.findMany({
+        where: {
+          status: JobStatus.FINISHED,
+          cleanedUp: false,
+          // Only cleanup jobs that completed at least 1 hour ago to ensure files are no longer needed
+          completedAt: {
+            lt: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
+          },
+        },
+        take: batchSize,
+        orderBy: {
+          completedAt: 'asc', // Clean up oldest jobs first
+        },
+      });
+
+      for (const job of jobs) {
+        try {
+          processed++;
+          const metadata = job.metadata ? JSON.parse(job.metadata) : {};
+          const moragTaskId = metadata.moragTaskId;
+
+          if (!moragTaskId) {
+            // Mark as cleaned up even if no MoRAG task ID (nothing to clean)
+            await prisma.processingJob.update({
+              where: { id: job.id },
+              data: {
+                cleanedUp: true,
+                cleanedUpAt: new Date(),
+                cleanupStats: JSON.stringify({
+                  reason: 'no_morag_task_id',
+                  message: 'No MoRAG task ID found, nothing to clean up',
+                }),
+              },
+            });
+            cleaned++;
+            continue;
+          }
+
+          // Call MoRAG backend to cleanup job files
+          const cleanupResult = await moragService.cleanupJob(moragTaskId, false);
+
+          // Update job with cleanup information
+          await prisma.processingJob.update({
+            where: { id: job.id },
+            data: {
+              cleanedUp: true,
+              cleanedUpAt: new Date(),
+              cleanupStats: JSON.stringify({
+                filesDeleted: cleanupResult.files_deleted,
+                directoriesRemoved: cleanupResult.directories_removed,
+                totalSizeFreed: cleanupResult.total_size_freed,
+                deletedFiles: cleanupResult.deleted_files,
+                message: cleanupResult.message,
+              }),
+            },
+          });
+
+          cleaned++;
+          console.log(`Cleaned up job ${job.id} (MoRAG task ${moragTaskId}): ${cleanupResult.files_deleted} files, ${cleanupResult.total_size_freed} bytes freed`);
+        } catch (error) {
+          failed++;
+          console.error(`Failed to cleanup job ${job.id}:`, error);
+
+          // If cleanup fails, mark it as attempted but failed so we don't keep retrying immediately
+          try {
+            await prisma.processingJob.update({
+              where: { id: job.id },
+              data: {
+                cleanupStats: JSON.stringify({
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                  attemptedAt: new Date().toISOString(),
+                  retryAfter: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Retry after 24 hours
+                }),
+              },
+            });
+          } catch (updateError) {
+            console.error(`Failed to update cleanup error for job ${job.id}:`, updateError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in cleanup process:', error);
+    }
+
+    if (processed > 0) {
+      console.log(`Cleanup completed: ${processed} processed, ${cleaned} cleaned, ${failed} failed`);
+    }
+
+    return { processed, cleaned, failed };
+  }
+
+  /**
    * Handle job completion by downloading files and updating the job status
    */
   private async handleJobCompletion(job: any, taskStatus: any): Promise<void> {
@@ -315,13 +433,43 @@ class BackgroundJobService {
       const filesResponse = await moragService.getTaskFiles(moragTaskId);
       const availableFiles = filesResponse.files || [];
 
-      // Download and store each file
-      for (const fileInfo of availableFiles) {
-        try {
-          const fileContent = await moragService.downloadFile(moragTaskId, fileInfo.filename);
+      console.log(`Starting file download for job ${job.id}: ${availableFiles.length} files available`);
 
-          // Import the unified file service
-          const { unifiedFileService } = await import('./unifiedFileService');
+      // Import the unified file service
+      const { unifiedFileService } = await import('./unifiedFileService');
+
+      // Check if files have already been downloaded to prevent duplicates
+      const existingFiles = await unifiedFileService.getFilesByDocument(job.documentId, undefined, job.stage);
+      const existingFilenames = existingFiles.map(f => f.filename);
+
+      // Filter out files that have already been downloaded
+      const filesToDownload = availableFiles.filter((fileInfo: any) =>
+        !existingFilenames.includes(fileInfo.filename)
+      );
+
+      if (filesToDownload.length === 0 && availableFiles.length > 0) {
+        console.log(`All ${availableFiles.length} files already downloaded for job ${job.id}, marking as complete`);
+        // All files already exist, mark job as complete
+        await this.completeJob(job.id, {
+          ...metadata,
+          taskResult: taskStatus.result,
+          completedAt: new Date().toISOString(),
+          downloadedFiles: availableFiles.length,
+          downloadedFilesList: existingFilenames,
+          note: 'Files already existed, no download needed',
+        });
+        return;
+      }
+
+      // Track successful downloads
+      const downloadedFiles: string[] = [];
+      const failedFiles: string[] = [];
+
+      // Download and store each file - collect all errors instead of continuing on failure
+      for (const fileInfo of filesToDownload) {
+        try {
+          console.log(`Downloading file ${fileInfo.filename} for job ${job.id}...`);
+          const fileContent = await moragService.downloadFile(moragTaskId, fileInfo.filename);
 
           // Determine file type based on stage and filename
           const fileType = this.determineFileType(job.stage, fileInfo.filename);
@@ -346,25 +494,38 @@ class BackgroundJobService {
             },
           });
 
-          console.log(`Downloaded and stored file ${fileInfo.filename} for job ${job.id}`);
+          downloadedFiles.push(fileInfo.filename);
+          console.log(`Successfully downloaded and stored file ${fileInfo.filename} for job ${job.id}`);
         } catch (fileError) {
+          failedFiles.push(fileInfo.filename);
           console.error(`Failed to download file ${fileInfo.filename} for job ${job.id}:`, fileError);
-          // Continue with other files even if one fails
         }
       }
 
-      // Complete the job with the task result
-      await this.completeJob(job.id, {
-        ...metadata,
-        taskResult: taskStatus.result,
-        completedAt: new Date().toISOString(),
-        downloadedFiles: availableFiles.length,
-      });
+      // Only mark job as completed if ALL files were downloaded successfully
+      if (failedFiles.length === 0) {
+        // All files downloaded successfully - complete the job
+        const totalDownloadedFiles = downloadedFiles.length + existingFilenames.length;
+        await this.completeJob(job.id, {
+          ...metadata,
+          taskResult: taskStatus.result,
+          completedAt: new Date().toISOString(),
+          downloadedFiles: totalDownloadedFiles,
+          newlyDownloadedFiles: downloadedFiles.length,
+          existingFiles: existingFilenames.length,
+          downloadedFilesList: [...existingFilenames, ...downloadedFiles],
+        });
 
-      console.log(`Job ${job.id} completed successfully with ${availableFiles.length} files downloaded`);
+        console.log(`Job ${job.id} completed successfully with ${downloadedFiles.length} new files downloaded (${existingFilenames.length} already existed, ${totalDownloadedFiles} total)`);
+      } else {
+        // Some files failed to download - fail the job so it can be retried
+        const errorMessage = `Failed to download ${failedFiles.length} of ${filesToDownload.length} new files: ${failedFiles.join(', ')}. Successfully downloaded: ${downloadedFiles.join(', ')}. Existing files: ${existingFilenames.length}`;
+        await this.failJob(job.id, errorMessage);
+        console.error(`Job ${job.id} failed due to file download errors: ${errorMessage}`);
+      }
     } catch (error) {
       console.error(`Failed to handle job completion for ${job.id}:`, error);
-      await this.failJob(job.id, `Failed to download files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      await this.failJob(job.id, `Failed to retrieve files from backend: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

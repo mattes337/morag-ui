@@ -295,6 +295,27 @@ export class MoragService {
   }
 
   /**
+   * Clean up job files in the backend
+   */
+  async cleanupJob(jobId: string, force: boolean = false): Promise<any> {
+    const url = new URL(`${this.baseUrl}/api/v1/stages/cleanup/${jobId}`);
+    if (force) {
+      url.searchParams.set('force', 'true');
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
    * Health check endpoint
    */
   async healthCheck(): Promise<any> {

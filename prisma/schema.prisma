@@ -388,6 +388,9 @@ model ProcessingJob {
   maxRetries   Int             @default(3)
   errorMessage String?         @db.Text
   metadata     String?         @db.LongText
+  cleanedUp    Boolean         @default(false)
+  cleanedUpAt  DateTime?
+  cleanupStats String?         @db.Text
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -397,6 +400,8 @@ model ProcessingJob {
   @@index([status], map: "processing_jobs_status_idx")
   @@index([scheduledAt], map: "processing_jobs_scheduledAt_idx")
   @@index([stage], map: "processing_jobs_stage_idx")
+  @@index([cleanedUp], map: "processing_jobs_cleanedUp_idx")
+  @@index([status, cleanedUp], map: "processing_jobs_status_cleanedUp_idx")
   @@map("processing_jobs")
 }
 
