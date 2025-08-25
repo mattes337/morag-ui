@@ -117,6 +117,7 @@ export interface StageProcessResponse {
   estimatedTimeSeconds: number;
   statusUrl: string;
   message: string;
+  immediateResult?: any; // For synchronous processing results
 }
 
 export class MoragService {
@@ -298,6 +299,23 @@ export class MoragService {
 
     // Handle both task_id and taskId formats from backend
     const taskId = result.task_id || result.taskId;
+
+    // Check if this is an immediate completion (synchronous processing)
+    if (!taskId && result.status === 'completed' && result.success) {
+      console.log(`✅ [MoRAG] Stage ${canonicalStage} completed immediately (synchronous processing)`);
+
+      // Return a special response indicating immediate completion
+      return {
+        success: result.success,
+        taskId: 'IMMEDIATE_COMPLETION', // Special marker for immediate completion
+        executionId: request.executionId,
+        stage: request.stage,
+        estimatedTimeSeconds: 0,
+        statusUrl: '',
+        message: 'Stage completed immediately',
+        immediateResult: result, // Include the full result for immediate processing
+      };
+    }
 
     if (!taskId) {
       console.error(`❌ [MoRAG] No task ID in response:`, result);

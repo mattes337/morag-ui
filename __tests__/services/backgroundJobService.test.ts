@@ -1,11 +1,31 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 type Mock = jest.MockedFunction<any>;
 import { backgroundJobService } from '../../lib/services/backgroundJobService';
-import { PrismaClient, JobStatus, ProcessingStage } from '@prisma/client';
+import { PrismaClient, JobStatus, ProcessingStage, DocumentState } from '@prisma/client';
 import { errorHandlingService } from '../../lib/services/errorHandlingService';
+import { moragService } from '../../lib/services/moragService';
 
 // Mock dependencies
-jest.mock('../../lib/database');
+jest.mock('../../lib/database', () => ({
+  prisma: {
+    processingJob: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      groupBy: jest.fn(),
+    },
+    document: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    $transaction: jest.fn(),
+  },
+}));
 
 jest.mock('../../lib/services/errorHandlingService');
 jest.mock('../../lib/services/stageExecutionService');
@@ -14,6 +34,7 @@ jest.mock('../../lib/services/moragService');
 import { prisma } from '../../lib/database';
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
+const mockMoragService = moragService as jest.Mocked<typeof moragService>;
 
 const mockErrorHandlingService = errorHandlingService as {
   handleProcessingError: jest.MockedFunction<any>;
@@ -26,11 +47,18 @@ describe('BackgroundJobService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
-    // Default mock implementations
-    mockPrisma.processingJob.findMany.mockResolvedValue([]);
-    mockPrisma.processingJob.count.mockResolvedValue(0);
-    mockPrisma.processingJob.groupBy.mockResolvedValue([]);
+
+    // Setup mock implementations
+    (mockPrisma.processingJob.findMany as jest.Mock).mockResolvedValue([]);
+    (mockPrisma.processingJob.count as jest.Mock).mockResolvedValue(0);
+    (mockPrisma.processingJob.groupBy as jest.Mock).mockResolvedValue([]);
+    (mockPrisma.processingJob.create as jest.Mock).mockResolvedValue({} as any);
+    (mockPrisma.processingJob.update as jest.Mock).mockResolvedValue({} as any);
+    (mockPrisma.processingJob.findFirst as jest.Mock).mockResolvedValue(null);
+    (mockPrisma.processingJob.findUnique as jest.Mock).mockResolvedValue(null);
+    (mockPrisma.document.findUnique as jest.Mock).mockResolvedValue(null);
+    (mockPrisma.document.update as jest.Mock).mockResolvedValue({} as any);
+
     (global.fetch as Mock).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true })
@@ -435,6 +463,182 @@ describe('BackgroundJobService', () => {
 
       expect(processSpy).not.toHaveBeenCalled();
       processSpy.mockRestore();
+    });
+  });
+
+  describe('immediate completion handling', () => {
+    const mockJob = {
+      id: 'job-1',
+      documentId: 'doc-1',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
+      status: JobStatus.PROCESSING,
+      priority: 1,
+      scheduledAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+      retryCount: 0,
+      maxRetries: 3,
+      errorMessage: null,
+      metadata: '{}'
+    };
+
+    const mockDocument = {
+      id: 'doc-1',
+      name: 'test.pdf',
+      type: 'document',
+      state: DocumentState.PENDING,
+      version: 1,
+      chunks: 0,
+      quality: 0,
+      markdown: null,
+      uploadDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'user-1',
+      realmId: 'realm-1',
+      subType: 'pdf',
+      currentStage: ProcessingStage.MARKDOWN_CONVERSION,
+      stageStatus: 'PENDING' as any,
+      lastStageError: null,
+      processingMode: 'AUTOMATIC' as any,
+      isProcessingPaused: false,
+      nextScheduledStage: null,
+      scheduledAt: null
+    };
+
+    const immediateCompletionResult = {
+      success: true,
+      stage_type: 'markdown-conversion',
+      status: 'completed',
+      output_files: [
+        {
+          filename: 'test.md',
+          file_path: '/app/temp/output/test.md',
+          file_size: 1024,
+          created_at: '2025-08-25T16:06:45.140000',
+          stage_type: 'markdown-conversion',
+          content_type: 'text/markdown',
+          checksum: null,
+          content: null
+        }
+      ],
+      metadata: {
+        execution_time: 0.029,
+        start_time: '2025-08-25T16:06:45.127535',
+        end_time: '2025-08-25T16:06:45.173260',
+        input_files: ['/app/temp/input/test.pdf'],
+        config_used: {},
+        warnings: []
+      },
+      error_message: null,
+      webhook_sent: false
+    };
+
+    beforeEach(() => {
+      mockPrisma.document.findUnique.mockResolvedValue(mockDocument);
+      mockPrisma.processingJob.update.mockResolvedValue(mockJob);
+      mockPrisma.document.update.mockResolvedValue(mockDocument);
+    });
+
+    it('should handle immediate completion from MoRAG backend', async () => {
+      // Mock MoRAG service to return immediate completion
+      mockMoragService.processStage.mockResolvedValue({
+        success: true,
+        taskId: 'IMMEDIATE_COMPLETION',
+        executionId: 'exec-1',
+        stage: 'markdown-conversion',
+        estimatedTimeSeconds: 0,
+        statusUrl: '',
+        message: 'Stage completed immediately',
+        immediateResult: immediateCompletionResult
+      });
+
+      // Call the private method through reflection for testing
+      const callMoragBackend = (backgroundJobService as any).callMoragBackend.bind(backgroundJobService);
+
+      await callMoragBackend(mockJob, 'exec-1');
+
+      // Verify job was marked as completed
+      expect(mockPrisma.processingJob.update).toHaveBeenCalledWith({
+        where: { id: 'job-1' },
+        data: {
+          status: JobStatus.COMPLETED,
+          percentage: 100,
+          summary: 'markdown-conversion completed immediately',
+          endDate: expect.any(Date),
+          metadata: expect.stringContaining('immediateCompletion')
+        }
+      });
+
+      // Verify document state was updated
+      expect(mockPrisma.document.update).toHaveBeenCalledWith({
+        where: { id: 'doc-1' },
+        data: {
+          state: DocumentState.INGESTED
+        }
+      });
+    });
+
+    it('should handle immediate completion with no output files', async () => {
+      const resultWithoutFiles = {
+        ...immediateCompletionResult,
+        output_files: []
+      };
+
+      mockMoragService.processStage.mockResolvedValue({
+        success: true,
+        taskId: 'IMMEDIATE_COMPLETION',
+        executionId: 'exec-1',
+        stage: 'markdown-conversion',
+        estimatedTimeSeconds: 0,
+        statusUrl: '',
+        message: 'Stage completed immediately',
+        immediateResult: resultWithoutFiles
+      });
+
+      const callMoragBackend = (backgroundJobService as any).callMoragBackend.bind(backgroundJobService);
+
+      await callMoragBackend(mockJob, 'exec-1');
+
+      // Should still mark job as completed
+      expect(mockPrisma.processingJob.update).toHaveBeenCalledWith({
+        where: { id: 'job-1' },
+        data: {
+          status: JobStatus.COMPLETED,
+          percentage: 100,
+          summary: 'markdown-conversion completed immediately',
+          endDate: expect.any(Date),
+          metadata: expect.stringContaining('immediateCompletion')
+        }
+      });
+    });
+
+    it('should handle errors during immediate completion processing', async () => {
+      mockMoragService.processStage.mockResolvedValue({
+        success: true,
+        taskId: 'IMMEDIATE_COMPLETION',
+        executionId: 'exec-1',
+        stage: 'markdown-conversion',
+        estimatedTimeSeconds: 0,
+        statusUrl: '',
+        message: 'Stage completed immediately',
+        immediateResult: immediateCompletionResult
+      });
+
+      // Mock database error during job update
+      mockPrisma.processingJob.update.mockRejectedValue(new Error('Database error'));
+
+      const callMoragBackend = (backgroundJobService as any).callMoragBackend.bind(backgroundJobService);
+      const failJob = jest.spyOn(backgroundJobService as any, 'failJob').mockResolvedValue(undefined);
+
+      await callMoragBackend(mockJob, 'exec-1');
+
+      // Should call failJob when immediate completion processing fails
+      expect(failJob).toHaveBeenCalledWith('job-1', expect.stringContaining('Failed to process immediate completion'));
+
+      failJob.mockRestore();
     });
   });
 });

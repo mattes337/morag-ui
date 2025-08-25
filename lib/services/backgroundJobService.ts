@@ -1,4 +1,4 @@
-import { ProcessingStage, JobStatus, ProcessingMode, StageStatus } from '@prisma/client';
+import { ProcessingStage, JobStatus, ProcessingMode, StageStatus, DocumentState } from '@prisma/client';
 import { prisma } from '../database';
 import { stageExecutionService } from './stageExecutionService';
 import { moragService } from './moragService';
@@ -767,7 +767,16 @@ class BackgroundJobService {
         statusUrl: response.statusUrl
       });
 
-      // Store the task ID for tracking
+      // Check if this is an immediate completion
+      if (response.taskId === 'IMMEDIATE_COMPLETION' && response.immediateResult) {
+        console.log(`✅ [MoRAG] Job ${job.id} completed immediately, processing result`);
+
+        // Process the immediate result
+        await this.handleImmediateCompletion(job, response.immediateResult);
+        return;
+      }
+
+      // Store the task ID for tracking (async processing)
       await prisma.processingJob.update({
         where: { id: job.id },
         data: {
@@ -784,6 +793,113 @@ class BackgroundJobService {
     } catch (error) {
       console.error(`MoRAG backend call failed for job ${job.id}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Handle immediate completion of a MoRAG stage
+   */
+  private async handleImmediateCompletion(job: any, result: any): Promise<void> {
+    try {
+      console.log(`Processing immediate completion for job ${job.id}:`, {
+        stage: result.stage_type,
+        status: result.status,
+        outputFiles: result.output_files?.length || 0
+      });
+
+      // Update job to completed status
+      await prisma.processingJob.update({
+        where: { id: job.id },
+        data: {
+          status: JobStatus.FINISHED,
+          completedAt: new Date(),
+          metadata: JSON.stringify({
+            ...JSON.parse(job.metadata || '{}'),
+            immediateCompletion: true,
+            result: result,
+            executionTime: result.metadata?.execution_time || 0,
+            summary: `${result.stage_type} completed immediately`,
+            percentage: 100
+          })
+        }
+      });
+
+      // Process output files if available
+      if (result.output_files && result.output_files.length > 0) {
+        console.log(`Processing ${result.output_files.length} output files for job ${job.id}`);
+
+        // TODO: Download and store output files
+        // For now, just log the file paths
+        for (const outputFile of result.output_files) {
+          console.log(`  Output file: ${outputFile.file_path || outputFile}`);
+        }
+      }
+
+      // Update document state based on stage completion
+      await this.updateDocumentForStageCompletion(job, result);
+
+      console.log(`✅ [MoRAG] Job ${job.id} immediate completion processed successfully`);
+
+    } catch (error) {
+      console.error(`Failed to handle immediate completion for job ${job.id}:`, error);
+      await this.failJob(job.id, `Failed to process immediate completion: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Update document state based on stage completion
+   */
+  private async updateDocumentForStageCompletion(job: any, result: any): Promise<void> {
+    try {
+      const document = await prisma.document.findUnique({
+        where: { id: job.documentId }
+      });
+
+      if (!document) {
+        console.warn(`Document ${job.documentId} not found for job ${job.id}`);
+        return;
+      }
+
+      const updateData: any = {};
+
+      // Handle different stage types
+      switch (result.stage_type) {
+        case 'markdown-conversion':
+          // Update document with markdown content if available
+          if (result.output_files && result.output_files.length > 0) {
+            // For now, just mark as processed - file content handling would need to be implemented
+            updateData.state = DocumentState.INGESTED;
+            console.log(`Document ${job.documentId} marked as ingested after markdown conversion`);
+          }
+          break;
+
+        case 'chunking':
+          // Update document state after chunking
+          updateData.state = DocumentState.INGESTED;
+          console.log(`Document ${job.documentId} marked as ingested after chunking`);
+          break;
+
+        case 'embedding':
+          // Update document state after embedding
+          updateData.state = DocumentState.INGESTED;
+          console.log(`Document ${job.documentId} marked as ingested after embedding`);
+          break;
+
+        default:
+          console.log(`No specific document update for stage type: ${result.stage_type}`);
+      }
+
+      // Apply updates if any
+      if (Object.keys(updateData).length > 0) {
+        await prisma.document.update({
+          where: { id: job.documentId },
+          data: updateData
+        });
+      }
+
+    } catch (error) {
+      console.error(`Failed to update document for stage completion:`, error);
+      // Don't throw - this is not critical for job completion
     }
   }
 
