@@ -70,11 +70,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
 
-# Copy bcryptjs dependency for seeding scripts
+# Copy additional dependencies for seeding scripts and image optimization
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
-
-# Copy sharp dependency for image optimization in production
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img ./node_modules/@img
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/color ./node_modules/color
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/color-string ./node_modules/color-string
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/detect-libc ./node_modules/detect-libc
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/semver ./node_modules/semver
 
 # Ensure proper permissions for Prisma engines directory
 RUN mkdir -p /app/node_modules/@prisma/engines && \
