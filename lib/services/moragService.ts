@@ -285,9 +285,28 @@ export class MoragService {
     }
 
     const result = await response.json();
+
+    console.log(`✅ [MoRAG] Backend response for ${canonicalStage}:`, {
+      success: result.success,
+      task_id: result.task_id,
+      taskId: result.taskId, // Check both formats
+      estimated_time_seconds: result.estimated_time_seconds,
+      status_url: result.status_url,
+      message: result.message,
+      fullResponse: result
+    });
+
+    // Handle both task_id and taskId formats from backend
+    const taskId = result.task_id || result.taskId;
+
+    if (!taskId) {
+      console.error(`❌ [MoRAG] No task ID in response:`, result);
+      throw new Error('MoRAG backend did not return a task ID');
+    }
+
     return {
       success: result.success,
-      taskId: result.task_id,
+      taskId: taskId,
       executionId: request.executionId,
       stage: request.stage,
       estimatedTimeSeconds: result.estimated_time_seconds || 60,

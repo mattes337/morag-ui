@@ -53,23 +53,31 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
 
                 // If not found in context and context is still loading, wait for it
                 if (isDataLoading) {
+                    console.log('⏳ [DocumentDetailPage] Context still loading, waiting...');
                     setIsLoading(false);
                     return;
                 }
 
                 // If context is loaded but document not found, try to fetch from API
-                console.log('📡 [DocumentDetailPage] Fetching document from API');
+                console.log('📡 [DocumentDetailPage] Document not in context, fetching from API');
                 const response = await fetch(`/api/documents/${params.id}`);
 
                 if (!response.ok) {
                     if (response.status === 404) {
                         console.log('❌ [DocumentDetailPage] Document not found (404)');
                         setError('Document not found');
-                        setTimeout(() => router.push('/documents'), 2000);
+                        // Only redirect after a longer delay and show error message
+                        setTimeout(() => {
+                            console.log('🔄 [DocumentDetailPage] Redirecting to documents list after 404');
+                            router.push('/documents');
+                        }, 3000);
                         return;
                     }
-                    console.log('❌ [DocumentDetailPage] API fetch failed:', response.status);
-                    throw new Error('Failed to fetch document');
+                    console.log('❌ [DocumentDetailPage] API fetch failed:', response.status, response.statusText);
+                    // Don't redirect on API errors, just show error
+                    setError(`Failed to load document: ${response.status} ${response.statusText}`);
+                    setIsLoading(false);
+                    return;
                 }
 
                 const docData = await response.json();
@@ -94,8 +102,16 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                 setDocument(formattedDoc);
             } catch (err) {
                 console.error('❌ [DocumentDetailPage] Failed to load document:', err);
-                setError('Failed to load document');
-                setTimeout(() => router.push('/documents'), 2000);
+                const errorMessage = err instanceof Error ? err.message : 'Failed to load document';
+                setError(errorMessage);
+
+                // Only redirect on specific errors, not all errors
+                if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+                    console.log('🔄 [DocumentDetailPage] Redirecting due to document not found');
+                    setTimeout(() => router.push('/documents'), 3000);
+                } else {
+                    console.log('⚠️ [DocumentDetailPage] Staying on page despite error:', errorMessage);
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -161,21 +177,38 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
 
     // Error state
     if (error) {
+        const isNotFoundError = error.includes('404') || error.includes('not found');
         return (
             <div className="flex items-center justify-center min-h-96" data-oid="l_hm87s">
                 <div className="text-center" data-oid="9_oy9g:">
                     <div className="text-red-500 text-6xl mb-4" data-oid="aqr.t75">
-                        ⚠️
+                        {isNotFoundError ? '📄' : '⚠️'}
                     </div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-2" data-oid="rt1tv6.">
-                        Error
+                        {isNotFoundError ? 'Document Not Found' : 'Error Loading Document'}
                     </h2>
                     <p className="text-gray-600 mb-4" data-oid="23wudt-">
                         {error}
                     </p>
-                    <p className="text-sm text-gray-500" data-oid="nqfo80g">
-                        Redirecting to documents...
-                    </p>
+                    <div className="space-y-2">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2"
+                        >
+                            Retry
+                        </button>
+                        <button
+                            onClick={() => router.push('/documents')}
+                            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                        >
+                            Back to Documents
+                        </button>
+                    </div>
+                    {isNotFoundError && (
+                        <p className="text-sm text-gray-500 mt-4" data-oid="nqfo80g">
+                            Redirecting automatically in a few seconds...
+                        </p>
+                    )}
                 </div>
             </div>
         );

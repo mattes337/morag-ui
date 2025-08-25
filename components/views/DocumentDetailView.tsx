@@ -6,7 +6,7 @@ import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing-status-display';
 import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
-
+import { StageControlPanel } from '../ui/stage-control-panel';
 import { ProcessingHistory } from '../ui/processing-history';
 import { DocumentStatistics } from '../ui/document-statistics';
 import { ToastService } from '../../lib/services/toastService';
@@ -22,10 +22,12 @@ import {
   FileText,
   Download,
   Eye,
-
-
   RotateCcw,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Play,
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -69,6 +71,11 @@ export function DocumentDetailView({
     const [isExecutingStage, setIsExecutingStage] = useState(false);
     const [viewingFile, setViewingFile] = useState<DocumentFile | null>(null);
 
+    // Processing state
+    const [processingMode, setProcessingMode] = useState<'MANUAL' | 'AUTOMATIC'>('MANUAL');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [stageInfos, setStageInfos] = useState<any[]>([]);
+
     const loadDocumentFiles = useCallback(async () => {
         try {
           setIsLoadingFiles(true);
@@ -85,9 +92,60 @@ export function DocumentDetailView({
         }
     }, [document.id]);
 
+    const loadStageInfo = useCallback(async () => {
+        try {
+            const response = await fetch(`/api/documents/${document.id}/stages`);
+            if (response.ok) {
+                const data = await response.json();
+                setStageInfos(data.stages || []);
+            }
+        } catch (error) {
+            console.error('Failed to load stage info:', error);
+        }
+    }, [document.id]);
+
+    const loadProcessingStatus = useCallback(async () => {
+        try {
+            const response = await fetch(`/api/documents/${document.id}/processing`);
+            if (response.ok) {
+                const data = await response.json();
+
+                // Check if there are any active processing jobs
+                const activeJobs = data.jobs?.filter((job: any) =>
+                    job.status === 'PENDING' || job.status === 'PROCESSING'
+                ) || [];
+
+                setIsProcessing(activeJobs.length > 0);
+
+                // Update processing mode from document
+                if (data.processingMode) {
+                    setProcessingMode(data.processingMode);
+                }
+
+                console.log(`📊 [DocumentDetailView] Processing status: ${activeJobs.length} active jobs`);
+            }
+        } catch (error) {
+            console.error('Failed to load processing status:', error);
+        }
+    }, [document.id]);
+
     useEffect(() => {
         loadDocumentFiles();
-    }, [loadDocumentFiles]);
+        loadStageInfo();
+        loadProcessingStatus();
+    }, [loadDocumentFiles, loadStageInfo, loadProcessingStatus]);
+
+    // Poll processing status every 5 seconds when processing is active
+    useEffect(() => {
+        if (!isProcessing) return;
+
+        const interval = setInterval(() => {
+            loadProcessingStatus();
+            loadStageInfo(); // Also refresh stage info to show progress
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [isProcessing, loadProcessingStatus, loadStageInfo]);
 
     const handleReingestClick = () => {
         setDocumentToReingest(document);
@@ -134,7 +192,7 @@ export function DocumentDetailView({
                 throw new Error(errorData.error || 'Failed to execute stage');
             }
 
-            const result = await response.json();
+            await response.json();
             ToastService.success(`Stage ${stage} execution started successfully`);
 
             // Refresh the page to show updated status
@@ -150,6 +208,61 @@ export function DocumentDetailView({
         } finally {
             setIsExecutingStage(false);
         }
+    };
+
+    // Processing workflow handlers
+    const handleProcessingModeChange = async (mode: 'MANUAL' | 'AUTOMATIC') => {
+        setProcessingMode(mode);
+        // TODO: Save mode preference to backend
+    };
+
+    const handleContinueProcessing = async () => {
+        // Find the next stage that needs to be executed
+        const nextStage = getNextStage();
+        if (nextStage) {
+            await handleExecuteStage(nextStage);
+        }
+    };
+
+    const handleExecuteChain = async (fromStage: string) => {
+        setIsProcessing(true);
+        try {
+            // Execute remaining stages starting from the specified stage
+            const response = await fetch('/api/stages/chain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    documentId: document.id,
+                    fromStage
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start stage chain execution');
+            }
+
+            ToastService.success('Stage chain execution started');
+            // Refresh to show updated status
+            setTimeout(() => window.location.reload(), 1000);
+        } catch (error) {
+            console.error('Failed to execute stage chain:', error);
+            ToastService.error('Failed to execute stage chain');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const hasNextStage = (): boolean => {
+        return getNextStage() !== null;
+    };
+
+    const getNextStage = (): string | null => {
+        const stageOrder = ['MARKDOWN_CONVERSION', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+        const completedStages = stageInfos
+            .filter(stage => stage.status === 'COMPLETED')
+            .map(stage => stage.stage);
+
+        return stageOrder.find(stage => !completedStages.includes(stage)) || null;
     };
 
     const handleViewFile = async (fileId: string) => {
@@ -420,11 +533,14 @@ Please check back later or refresh the page to see the processed content.`;
                 <div className="flex-1 min-w-0">
                     <button
                         onClick={onBack}
-                        className="text-blue-600 hover:text-blue-800 text-sm mb-2"
+                        className="text-blue-600 hover:text-blue-800 text-sm mb-2 flex items-center space-x-1"
                     >
-                        ← Back to Documents
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back to Documents</span>
                     </button>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words" title={document.name}>{document.name}</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words" title={document.name}>
+                        {document.name}
+                    </h1>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                         <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${getStateColor(document.state)}`}
@@ -441,9 +557,54 @@ Please check back later or refresh the page to see the processed content.`;
                         </span>
                     </div>
                 </div>
+            </div>
 
-                {/* Action Buttons */}
-                <div className="flex space-x-3"></div>
+            {/* Processing Workflow Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-1">Processing Workflow</h2>
+                        <p className="text-sm text-gray-600">
+                            Execute stages in order to process your document. Optional stages can be skipped.
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <ProcessingModeToggle
+                            mode={processingMode}
+                            onModeChange={handleProcessingModeChange}
+                            disabled={isProcessing}
+                        />
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={handleContinueProcessing}
+                            disabled={isProcessing || !hasNextStage()}
+                            className="flex items-center space-x-2"
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Processing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-4 h-4" />
+                                    <span>Continue Processing</span>
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Stage Control Panel */}
+                <StageControlPanel
+                    documentId={document.id}
+                    stages={stageInfos}
+                    processingMode={processingMode}
+                    onExecuteStage={handleExecuteStage}
+                    onExecuteChain={handleExecuteChain}
+                    isLoading={isProcessing}
+                />
             </div>
 
             {/* Main Content Tabs */}
