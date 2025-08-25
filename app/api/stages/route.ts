@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { stageExecutionService } from '@/lib/services/stageExecutionService';
-import { ProcessingStage } from '@prisma/client';
+import { backgroundJobService } from '@/lib/services/backgroundJobService';
+import { ProcessingStage, JobStatus } from '@prisma/client';
 
 /**
  * GET /api/stages
- * Get all running stage executions
+ * Get all running background jobs
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,16 +14,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const runningExecutions = await stageExecutionService.getRunningExecutions();
+    const runningJobs = await backgroundJobService.getJobsByStatus(JobStatus.PROCESSING);
 
     return NextResponse.json({
-      executions: runningExecutions,
-      count: runningExecutions.length,
+      jobs: runningJobs,
+      count: runningJobs.length,
     });
   } catch (error) {
-    console.error('Error fetching running executions:', error);
+    console.error('Error fetching running jobs:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch running executions' },
+      { error: 'Failed to fetch running jobs' },
       { status: 500 }
     );
   }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/stages
- * Start a new stage execution
+ * Create a new background job for stage execution
  */
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { documentId, stage, inputFiles, metadata } = body;
+    const { documentId, stage, priority = 5, metadata = {} } = body;
 
     if (!documentId || !stage) {
       return NextResponse.json(
@@ -66,18 +66,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const execution = await stageExecutionService.startExecution({
+    console.log(`🚀 [API] Creating background job for stage: ${stage}, document: ${documentId}`);
+
+    // Create a background job for the stage
+    const job = await backgroundJobService.createJob({
       documentId,
       stage,
-      inputFiles,
-      metadata,
+      priority,
+      metadata: {
+        ...metadata,
+        userId: user.userId,
+        triggeredBy: 'api'
+      }
     });
 
-    return NextResponse.json(execution, { status: 201 });
+    console.log(`✅ [API] Background job created: ${job.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `${stage} job created successfully`,
+      job: {
+        id: job.id,
+        documentId: job.documentId,
+        stage: job.stage,
+        status: job.status,
+        priority: job.priority,
+        scheduledAt: job.scheduledAt,
+        createdAt: job.createdAt
+      }
+    }, { status: 201 });
   } catch (error) {
-    console.error('Error starting stage execution:', error);
+    console.error('❌ [API] Error creating background job:', error);
     return NextResponse.json(
-      { error: 'Failed to start stage execution' },
+      { error: 'Failed to create background job' },
       { status: 500 }
     );
   }

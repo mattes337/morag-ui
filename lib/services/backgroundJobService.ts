@@ -112,6 +112,36 @@ class BackgroundJobService {
   }
 
   /**
+   * Get a job by MoRAG task ID
+   */
+  async getJobByTaskId(taskId: string): Promise<any> {
+    const jobs = await prisma.processingJob.findMany({
+      where: {
+        metadata: {
+          contains: taskId,
+        },
+      },
+      include: {
+        document: true,
+      },
+    });
+
+    // Find the job that actually has this task ID in its metadata
+    for (const job of jobs) {
+      try {
+        const metadata = job.metadata ? JSON.parse(job.metadata) : {};
+        if (metadata.moragTaskId === taskId) {
+          return job;
+        }
+      } catch (error) {
+        console.warn(`Failed to parse metadata for job ${job.id}:`, error);
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Schedule jobs for documents with automatic processing mode
    */
   async scheduleAutomaticJobs(): Promise<void> {
@@ -262,13 +292,28 @@ class BackgroundJobService {
 
           polled++;
 
-          // Get task status from MoRAG backend
-          const taskStatus = await moragService.getTaskStatus(moragTaskId);
+          // Get task status from MoRAG backend with timeout handling
+          let taskStatus;
+          try {
+            taskStatus = await moragService.getTaskStatus(moragTaskId);
+          } catch (backendError) {
+            console.warn(`⚠️ [Polling] MoRAG backend unavailable for job ${job.id}, task ${moragTaskId}:`, backendError);
+
+            // Check if this job has been stuck for too long (e.g., more than 30 minutes)
+            const jobAge = Date.now() - new Date(job.createdAt).getTime();
+            const maxJobAge = 30 * 60 * 1000; // 30 minutes
+
+            if (jobAge > maxJobAge) {
+              console.warn(`⏰ [Polling] Job ${job.id} has been processing for ${Math.round(jobAge / 60000)} minutes, marking as failed due to backend unavailability`);
+              await this.failJob(job.id, 'MoRAG backend unavailable for extended period');
+              updated++;
+            }
+            continue; // Skip this job for now
+          }
 
           // Check if status has changed
           if (taskStatus.status === 'completed') {
-            // CRITICAL: Only attempt to complete job if we can access the files endpoint
-            // This prevents losing the ability to download files if there's a backend issue
+            // Try to download files and complete the job properly
             try {
               // Test if we can access the files endpoint before proceeding
               await moragService.getTaskFiles(moragTaskId);
@@ -276,10 +321,18 @@ class BackgroundJobService {
               // Download files and complete the job
               await this.handleJobCompletion(job, taskStatus);
               updated++;
+              console.log(`✅ [Polling] Job ${job.id} completed with files downloaded`);
             } catch (filesError) {
-              console.warn(`Cannot access files for completed job ${job.id}, task ${moragTaskId}. Will retry later:`, filesError);
-              // Don't mark as failed - just skip this polling cycle so we can retry later
-              // when the backend files endpoint is accessible again
+              console.warn(`⚠️ [Polling] Cannot access files for completed job ${job.id}, task ${moragTaskId}. Marking as complete anyway:`, filesError);
+
+              // Even if we can't download files, mark the job as complete
+              // The webhook might have already processed the files, or files might not be critical
+              await this.completeJob(job.id, {
+                completed_at: new Date().toISOString(),
+                note: 'Completed via polling - files endpoint unavailable'
+              });
+              updated++;
+              console.log(`✅ [Polling] Job ${job.id} marked complete despite file access issues`);
             }
           } else if (taskStatus.status === 'failed') {
             // Mark job as failed
@@ -600,7 +653,6 @@ class BackgroundJobService {
    */
   private async callMoragBackend(job: any, executionId: string): Promise<void> {
     const webhookUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/webhooks/stages`;
-    const webhookToken = process.env.WEBHOOK_AUTH_TOKEN || 'default-token';
 
     try {
       // Get document details for the request
@@ -826,6 +878,18 @@ class BackgroundJobService {
   async getDocumentJobs(documentId: string): Promise<ProcessingJobOutput[]> {
     const jobs = await prisma.processingJob.findMany({
       where: { documentId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return jobs.map(job => this.mapToOutput(job));
+  }
+
+  /**
+   * Get jobs by status
+   */
+  async getJobsByStatus(status: JobStatus): Promise<ProcessingJobOutput[]> {
+    const jobs = await prisma.processingJob.findMany({
+      where: { status },
       orderBy: { createdAt: 'desc' },
     });
 

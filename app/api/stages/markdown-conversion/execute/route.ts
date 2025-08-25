@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { stageExecutionService } from '@/lib/services/stageExecutionService';
-import { unifiedFileService } from '@/lib/services/unifiedFileService';
+import { backgroundJobService } from '@/lib/services/backgroundJobService';
+import { ProcessingStage } from '@prisma/client';
 
 /**
  * POST /api/stages/markdown-conversion/execute
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { documentId, inputFile, options } = body;
+    const { documentId, options } = body;
 
     if (!documentId) {
       return NextResponse.json(
@@ -24,95 +24,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Start execution
-    const execution = await stageExecutionService.startExecution({
+    console.log(`🚀 [API] Creating background job for markdown conversion, document: ${documentId}`);
+
+    // Create a background job for markdown conversion
+    const job = await backgroundJobService.createJob({
       documentId,
-      stage: 'MARKDOWN_CONVERSION',
-      inputFiles: inputFile ? [inputFile] : undefined,
-      metadata: { options, userId: user.userId },
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
+      priority: options?.priority || 5,
+      metadata: {
+        options,
+        userId: user.userId,
+        triggeredBy: 'manual_ui'
+      }
     });
 
-    // Integrate with actual markdown conversion service
-    try {
-      const { MarkdownConversionService } = await import('@/lib/services/markdownConversionService');
+    console.log(`✅ [API] Background job created: ${job.id}`);
 
-      let markdownContent: string;
-      let conversionMetadata: any = {};
-
-      if (inputFile) {
-        // Convert the input file to markdown
-        const conversionResult = await MarkdownConversionService.convertToMarkdown(inputFile, {
-          preserveFormatting: options?.preserveFormatting ?? true,
-          extractImages: options?.extractImages ?? false,
-          includeMetadata: options?.includeMetadata ?? true,
-          optimizeForReadability: options?.optimizeForReadability ?? true,
-        });
-
-        markdownContent = conversionResult.markdown;
-        conversionMetadata = conversionResult.metadata;
-      } else {
-        // No input file - create a basic markdown document
-        markdownContent = `# Document: ${documentId}\n\nThis document was created without an input file.\n\n## Information\n- Created at: ${new Date().toISOString()}\n- Document ID: ${documentId}\n`;
-        conversionMetadata = {
-          originalFilename: 'none',
-          fileType: 'generated',
-          conversionDate: new Date().toISOString(),
-          wordCount: markdownContent.split(/\s+/).length,
-          characterCount: markdownContent.length,
-        };
+    return NextResponse.json({
+      success: true,
+      message: 'Markdown conversion job created successfully',
+      job: {
+        id: job.id,
+        documentId: job.documentId,
+        stage: job.stage,
+        status: job.status,
+        priority: job.priority,
+        scheduledAt: job.scheduledAt,
+        createdAt: job.createdAt
       }
+    }, { status: 201 });
 
-      // Create output file
-      const outputFilename = `${documentId}.md`;
-
-      // Store the output file
-      const stageFile = await unifiedFileService.storeFile({
-        documentId,
-        fileType: 'STAGE_OUTPUT',
-        stage: 'MARKDOWN_CONVERSION',
-        filename: outputFilename,
-        originalName: outputFilename,
-        content: Buffer.from(markdownContent),
-        contentType: 'text/markdown',
-        isPublic: false,
-        accessLevel: 'REALM_MEMBERS',
-        metadata: {
-          originalFilename: conversionMetadata.originalFilename,
-          conversionOptions: options,
-          conversionMetadata,
-        },
-      });
-
-      // Complete execution
-      const completedExecution = await stageExecutionService.completeExecution(
-        execution.id,
-        [stageFile.id],
-        {
-          outputFile: outputFilename,
-          fileSize: stageFile.filesize,
-          conversionMetadata,
-          wordCount: conversionMetadata.wordCount,
-          characterCount: conversionMetadata.characterCount,
-        }
-      );
-
-      return NextResponse.json({
-        execution: completedExecution,
-        outputFile: stageFile,
-      });
-    } catch (processingError) {
-      // Fail execution
-      await stageExecutionService.failExecution(
-        execution.id,
-        `Markdown conversion failed: ${processingError}`
-      );
-
-      throw processingError;
-    }
   } catch (error) {
-    console.error('Error executing markdown conversion:', error);
+    console.error('❌ [API] Error creating markdown conversion job:', error);
     return NextResponse.json(
-      { error: 'Failed to execute markdown conversion' },
+      { error: 'Failed to create markdown conversion job' },
       { status: 500 }
     );
   }

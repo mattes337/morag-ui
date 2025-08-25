@@ -68,14 +68,18 @@ export function useStageExecution(): UseStageExecutionReturn {
     setExecutionError(null);
     
     try {
-      const response = await fetch(`/api/stages/${stage.toLowerCase().replace('_', '-')}/execute`, {
+      console.log(`🚀 [UI] Executing stage: ${stage} for document: ${documentId}`);
+
+      const response = await fetch('/api/stages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           documentId,
-          options,
+          stage,
+          priority: options?.priority || 5,
+          metadata: options || {},
         }),
       });
 
@@ -84,9 +88,31 @@ export function useStageExecution(): UseStageExecutionReturn {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      const execution = await response.json();
-      setCurrentExecution(execution);
-      return execution;
+      const result = await response.json();
+
+      // Handle new background job response format
+      if (result.job) {
+        console.log(`✅ [UI] Background job created for stage execution:`, result.job);
+
+        // Create a mock execution object for compatibility
+        const mockExecution: StageExecutionResult = {
+          id: result.job.id,
+          documentId: result.job.documentId,
+          stage: result.job.stage,
+          status: 'PENDING' as StageStatus,
+          startedAt: new Date(result.job.createdAt),
+          metadata: { jobId: result.job.id },
+          createdAt: new Date(result.job.createdAt),
+          updatedAt: new Date(result.job.createdAt)
+        };
+
+        setCurrentExecution(mockExecution);
+        return mockExecution;
+      }
+
+      // Handle legacy execution response format
+      setCurrentExecution(result);
+      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setExecutionError(errorMessage);

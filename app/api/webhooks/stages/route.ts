@@ -3,6 +3,9 @@ import { stageExecutionService } from '../../../../lib/services/stageExecutionSe
 import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
 import { unifiedFileService } from '../../../../lib/services/unifiedFileService';
 import { StageStatus, ProcessingStage } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface StageWebhookPayload {
   task_id: string;
@@ -40,19 +43,8 @@ export interface StageWebhookPayload {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify webhook authentication
-    const authToken = request.headers.get('authorization')?.replace('Bearer ', '');
-    const expectedToken = process.env.WEBHOOK_AUTH_TOKEN || 'default-token';
-    
-    if (authToken !== expectedToken) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const payload: StageWebhookPayload = await request.json();
-    
+
     // Validate webhook payload
     if (!payload.task_id || !payload.document_id || !payload.stage) {
       return NextResponse.json(
@@ -60,6 +52,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Verify the task_id corresponds to a valid job instead of using auth token
+    // This allows the backend to call this endpoint without authentication
+    const job = await backgroundJobService.getJobByTaskId(payload.task_id);
+    if (!job) {
+      console.warn(`Invalid webhook: Job not found for task_id: ${payload.task_id}`);
+      return NextResponse.json(
+        { error: 'Invalid task_id: job not found' },
+        { status: 404 }
+      );
+    }
+
+    // Additional validation: ensure the document_id matches the job's document
+    if (job.documentId !== payload.document_id) {
+      console.warn(`Invalid webhook: Document ID mismatch. Expected: ${job.documentId}, Got: ${payload.document_id}`);
+      return NextResponse.json(
+        { error: 'Document ID mismatch' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`✅ [Webhook] Valid webhook received for job ${job.id}, task ${payload.task_id}, status: ${payload.status}`);
 
     console.log(`Received stage webhook for document ${payload.document_id}, stage ${payload.stage}, status ${payload.status}`);
 
