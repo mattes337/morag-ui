@@ -11,34 +11,10 @@
  */
 
 // Import dependencies - handle both development and production environments
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+
 let DatabaseSeeder;
-let PrismaClient, bcrypt;
-
-try {
-  // Try to import the TypeScript seeder first (development)
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      require('ts-node/register');
-      DatabaseSeeder = require('../lib/database/seeder.ts').DatabaseSeeder;
-    } catch (tsError) {
-      // Fall back to direct implementation
-      console.log('📦 Using direct implementation for seeding...');
-    }
-  }
-
-  // If we don't have the TypeScript seeder, use direct implementation
-  if (!DatabaseSeeder) {
-    // Import Prisma and bcrypt directly
-    PrismaClient = require('@prisma/client').PrismaClient;
-    bcrypt = require('bcryptjs');
-
-    // Use the embedded seeder class below
-    DatabaseSeeder = EmbeddedDatabaseSeeder;
-  }
-} catch (error) {
-  console.error('❌ Could not load dependencies:', error.message);
-  process.exit(1);
-}
 
 // Embedded DatabaseSeeder class for production environments
 class EmbeddedDatabaseSeeder {
@@ -266,6 +242,29 @@ class EmbeddedDatabaseSeeder {
       await prisma.$disconnect();
     }
   }
+}
+
+// Initialize DatabaseSeeder - try TypeScript version first, fallback to embedded
+try {
+  // Try to import the TypeScript seeder first (development)
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      require('ts-node/register');
+      DatabaseSeeder = require('../lib/database/seeder.ts').DatabaseSeeder;
+      console.log('📦 Using TypeScript seeder for development...');
+    } catch (tsError) {
+      // Fall back to embedded implementation
+      DatabaseSeeder = EmbeddedDatabaseSeeder;
+      console.log('📦 Using embedded seeder implementation...');
+    }
+  } else {
+    // Production - use embedded implementation
+    DatabaseSeeder = EmbeddedDatabaseSeeder;
+    console.log('📦 Using embedded seeder for production...');
+  }
+} catch (error) {
+  console.error('❌ Could not initialize DatabaseSeeder:', error.message);
+  process.exit(1);
 }
 
 async function main() {
