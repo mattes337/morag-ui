@@ -2,97 +2,96 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stageExecutionService } from '../../../../lib/services/stageExecutionService';
 import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
 import { unifiedFileService } from '../../../../lib/services/unifiedFileService';
-import { StageStatus, ProcessingStage } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../lib/database';
 
-const prisma = new PrismaClient();
-
-export interface StageWebhookPayload {
-  task_id: string;
-  document_id: string;
-  execution_id?: string;
-  job_id?: string;
-  stage: ProcessingStage;
+// Stage-based webhook payload as defined in WEBHOOK_GUIDE.md
+export interface StageCompletedWebhookPayload {
+  event: "stage_completed";
   timestamp: string;
-  status: 'started' | 'in_progress' | 'completed' | 'failed';
-  progress: {
-    percentage: number;
-    current_step: string;
-    total_steps: number;
-    step_details?: Record<string, any>;
+  stage: {
+    type: number;
+    status: string;
+    execution_time: number;
+    start_time: string;
+    end_time: string;
+    error_message?: string;
   };
-  result?: {
-    files?: Array<{
-      filename: string;
-      content?: string;
-      filepath?: string;
-      contentType: string;
-      filesize: number;
-      metadata?: Record<string, any>;
-    }>;
-    metadata?: Record<string, any>;
-    processing_time_ms?: number;
+  files: {
+    input_files: string[];
+    output_files: string[];
   };
-  error?: {
-    code: string;
-    message: string;
-    step: string;
-    details?: Record<string, any>;
+  context: {
+    source_path: string;
+    output_dir: string;
+    total_stages_completed: number;
+    total_stages_failed: number;
+  };
+  metadata: {
+    config_used: Record<string, any>;
+    metrics: Record<string, any>;
+    warnings: string[];
   };
 }
+
+export interface PipelineCompletedWebhookPayload {
+  event: "pipeline_completed";
+  timestamp: string;
+  pipeline: {
+    success: boolean;
+    error_message?: string;
+    total_execution_time: number;
+    stages_completed: number;
+    stages_failed: number;
+    stages_skipped: number;
+  };
+  context: {
+    source_path: string;
+    output_dir: string;
+    intermediate_files: string[];
+  };
+  stages: Array<{
+    type: number;
+    status: string;
+    execution_time: number;
+    output_files: string[];
+    error_message?: string;
+  }>;
+}
+
+export type StageWebhookPayload = StageCompletedWebhookPayload | PipelineCompletedWebhookPayload;
 
 export async function POST(request: NextRequest) {
   try {
     const payload: StageWebhookPayload = await request.json();
 
-    // Validate webhook payload
-    if (!payload.task_id || !payload.document_id || !payload.stage) {
+    // Validate webhook payload based on event type
+    if (!payload.event || !payload.timestamp) {
       return NextResponse.json(
-        { error: 'Invalid webhook payload: missing required fields' },
+        { error: 'Invalid webhook payload: missing required fields (event, timestamp)' },
         { status: 400 }
       );
     }
 
-    // Verify the task_id corresponds to a valid job instead of using auth token
-    // This allows the backend to call this endpoint without authentication
-    const job = await backgroundJobService.getJobByTaskId(payload.task_id);
-    if (!job) {
-      console.warn(`Invalid webhook: Job not found for task_id: ${payload.task_id}`);
+    // Validate event type
+    if (!['stage_completed', 'pipeline_completed'].includes(payload.event)) {
       return NextResponse.json(
-        { error: 'Invalid task_id: job not found' },
-        { status: 404 }
-      );
-    }
-
-    // Additional validation: ensure the document_id matches the job's document
-    if (job.documentId !== payload.document_id) {
-      console.warn(`Invalid webhook: Document ID mismatch. Expected: ${job.documentId}, Got: ${payload.document_id}`);
-      return NextResponse.json(
-        { error: 'Document ID mismatch' },
+        { error: 'Invalid event type: must be stage_completed or pipeline_completed' },
         { status: 400 }
       );
     }
 
-    console.log(`✅ [Webhook] Valid webhook received for job ${job.id}, task ${payload.task_id}, status: ${payload.status}`);
+    console.log(`✅ [Stage Webhook] Received ${payload.event} event at ${payload.timestamp}`);
 
-    console.log(`Received stage webhook for document ${payload.document_id}, stage ${payload.stage}, status ${payload.status}`);
-
-    // Handle different webhook statuses
-    switch (payload.status) {
-      case 'started':
-        await handleStageStarted(payload);
+    // Handle different webhook events
+    switch (payload.event) {
+      case 'stage_completed':
+        await handleStageCompleted(payload as StageCompletedWebhookPayload);
         break;
-      case 'in_progress':
-        await handleStageProgress(payload);
-        break;
-      case 'completed':
-        await handleStageCompleted(payload);
-        break;
-      case 'failed':
-        await handleStageFailed(payload);
+      case 'pipeline_completed':
+        await handlePipelineCompleted(payload as PipelineCompletedWebhookPayload);
         break;
       default:
-        console.warn(`Unknown webhook status: ${payload.status}`);
+        console.warn(`Unknown webhook event: ${(payload as any).event}`);
     }
 
     return NextResponse.json({ status: 'success' });
@@ -105,111 +104,92 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleStageStarted(payload: StageWebhookPayload): Promise<void> {
-  // Update stage execution status to running
-  if (payload.execution_id) {
-    await stageExecutionService.updateExecution(payload.execution_id, {
-      status: StageStatus.RUNNING,
-    });
-  }
-
-  console.log(`Stage ${payload.stage} started for document ${payload.document_id}`);
-}
-
-async function handleStageProgress(payload: StageWebhookPayload): Promise<void> {
-  // Update stage execution with progress information
-  if (payload.execution_id) {
-    await stageExecutionService.updateExecution(payload.execution_id, {
-      status: StageStatus.RUNNING,
-      metadata: {
-        progress: payload.progress,
-        lastUpdate: new Date().toISOString(),
-      },
-    });
-  }
-
-  console.log(`Stage ${payload.stage} progress for document ${payload.document_id}: ${payload.progress.percentage}%`);
-}
-
-async function handleStageCompleted(payload: StageWebhookPayload): Promise<void> {
+async function handleStageCompleted(payload: StageCompletedWebhookPayload): Promise<void> {
   try {
-    // Store result files if provided
-    const outputFiles: string[] = [];
-    
-    if (payload.result?.files) {
-      for (const file of payload.result.files) {
-        const stageFile = await unifiedFileService.storeFile({
-          documentId: payload.document_id,
-          fileType: 'STAGE_OUTPUT',
-          stage: payload.stage,
-          filename: file.filename,
-          originalName: file.filename,
-          content: Buffer.from(file.content || ''),
-          contentType: file.contentType,
-          isPublic: false,
-          accessLevel: 'REALM_MEMBERS',
-          metadata: file.metadata,
-        });
+    const stageType = payload.stage.type;
+    const stageStatus = payload.stage.status;
+    const executionTime = payload.stage.execution_time;
 
-        outputFiles.push(stageFile.filename);
+    console.log(`Stage ${stageType} ${stageStatus} in ${executionTime}s`);
+
+    // Process output files if available
+    if (payload.files.output_files && payload.files.output_files.length > 0) {
+      console.log(`Stage ${stageType} produced ${payload.files.output_files.length} output files:`);
+      for (const filePath of payload.files.output_files) {
+        console.log(`  - ${filePath}`);
+        // TODO: Download and store files if needed
       }
     }
 
-    // Update stage execution as completed
-    if (payload.execution_id) {
-      await stageExecutionService.completeExecution(
-        payload.execution_id,
-        outputFiles,
-        {
-          ...payload.result?.metadata,
-          processing_time_ms: payload.result?.processing_time_ms,
-          completed_at: new Date().toISOString(),
-        }
-      );
+    // Log metrics if available
+    if (payload.metadata.metrics) {
+      console.log(`Stage ${stageType} metrics:`, payload.metadata.metrics);
     }
 
-    // Mark the background job as completed
-    if (payload.job_id) {
-      await backgroundJobService.completeJob(payload.job_id, {
-        files: outputFiles,
-        processing_time_ms: payload.result?.processing_time_ms,
-        completed_at: new Date().toISOString(),
-      });
+    // Log warnings if any
+    if (payload.metadata.warnings && payload.metadata.warnings.length > 0) {
+      console.warn(`Stage ${stageType} warnings:`, payload.metadata.warnings);
     }
 
-    console.log(`Stage ${payload.stage} completed for document ${payload.document_id}`);
+    // Handle stage failure
+    if (stageStatus === 'failed' && payload.stage.error_message) {
+      console.error(`Stage ${stageType} failed: ${payload.stage.error_message}`);
+      // TODO: Update document/job status to failed
+      return;
+    }
+
+    // TODO: Update document processing status based on stage completion
+    // This would involve finding the document by source_path or other identifier
+    // and updating its processing stage status
+
   } catch (error) {
     console.error(`Error handling stage completion:`, error);
     throw error;
   }
 }
 
-async function handleStageFailed(payload: StageWebhookPayload): Promise<void> {
-  const errorMessage = payload.error?.message || 'Stage processing failed';
-  
+async function handlePipelineCompleted(payload: PipelineCompletedWebhookPayload): Promise<void> {
   try {
-    // Update stage execution as failed
-    if (payload.execution_id) {
-      await stageExecutionService.failExecution(
-        payload.execution_id,
-        errorMessage,
-        {
-          error_code: payload.error?.code,
-          error_step: payload.error?.step,
-          error_details: payload.error?.details,
-          failed_at: new Date().toISOString(),
+    const success = payload.pipeline.success;
+    const totalTime = payload.pipeline.total_execution_time;
+    const stagesCompleted = payload.pipeline.stages_completed;
+    const stagesFailed = payload.pipeline.stages_failed;
+
+    console.log(`Pipeline completed: ${success ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`Total execution time: ${totalTime}s`);
+    console.log(`Stages completed: ${stagesCompleted}, failed: ${stagesFailed}`);
+
+    if (success) {
+      // Process all stage results
+      console.log('Processing stage results:');
+      for (const stage of payload.stages) {
+        console.log(`  Stage ${stage.type}: ${stage.status} (${stage.execution_time}s)`);
+        if (stage.output_files && stage.output_files.length > 0) {
+          console.log(`    Output files: ${stage.output_files.join(', ')}`);
         }
-      );
+        if (stage.error_message) {
+          console.log(`    Error: ${stage.error_message}`);
+        }
+      }
+
+      // TODO: Update document status to completed/ingested
+      // This would involve finding the document by source_path and updating its state
+
+    } else {
+      const errorMessage = payload.pipeline.error_message || 'Pipeline processing failed';
+      console.error(`Pipeline failed: ${errorMessage}`);
+
+      // TODO: Update document status to failed
+      // This would involve finding the document by source_path and updating its state
     }
 
-    // Mark the background job as failed (will handle retries)
-    if (payload.job_id) {
-      await backgroundJobService.failJob(payload.job_id, errorMessage);
+    // Log intermediate files
+    if (payload.context.intermediate_files && payload.context.intermediate_files.length > 0) {
+      console.log('Intermediate files:', payload.context.intermediate_files);
     }
 
-    console.error(`Stage ${payload.stage} failed for document ${payload.document_id}: ${errorMessage}`);
   } catch (error) {
-    console.error(`Error handling stage failure:`, error);
+    console.error(`Error handling pipeline completion:`, error);
     throw error;
   }
 }

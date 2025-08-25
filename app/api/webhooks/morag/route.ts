@@ -1,17 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DocumentService } from '../../../../lib/services/documentService';
 import { JobService } from '../../../../lib/services/jobService';
-import { WebhookPayload } from '../../../../lib/services/moragService';
 import { DocumentState, JobStatus } from '@prisma/client';
+
+// Step-based webhook payload as defined in WEBHOOK_GUIDE.md
+export interface StepWebhookPayload {
+  task_id: string;              // Background task ID
+  document_id?: string;         // Document ID if provided
+  step: string;                 // Processing step name
+  status: "started" | "completed" | "failed";
+  progress_percent: number;     // Overall progress (0-100)
+  timestamp: string;            // ISO8601 timestamp
+  data?: {                     // Step-specific data
+    metadata_file_url?: string;
+    metadata?: {
+      title?: string;
+      author?: string;
+      creation_date?: string;
+      format?: string;
+      language?: string;
+      page_count?: number;
+      file_size_bytes?: number;
+    };
+    summary?: string;
+    content_length?: number;
+    language?: string;
+    detected_topics?: string[];
+    processing_time_seconds?: number;
+    chunks_processed?: number;
+    total_text_length?: number;
+    database_collection?: string;
+    markdown?: string;
+    chunks?: number;
+    entities?: any[];
+    facts?: any[];
+  };
+  error_message?: string;      // Error message if failed
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const payload: WebhookPayload = await request.json();
+    const payload: StepWebhookPayload = await request.json();
     
     // Validate webhook payload
-    if (!payload.task_id) {
+    if (!payload.task_id || !payload.step || !payload.status || typeof payload.progress_percent !== 'number') {
       return NextResponse.json(
-        { error: 'Invalid webhook payload: missing task_id' },
+        { error: 'Invalid webhook payload: missing required fields (task_id, step, status, progress_percent)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate progress_percent range
+    if (payload.progress_percent < 0 || payload.progress_percent > 100) {
+      return NextResponse.json(
+        { error: 'Invalid progress_percent: must be between 0 and 100' },
         { status: 400 }
       );
     }
@@ -23,28 +65,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'job_not_found' }, { status: 200 });
     }
 
+    console.log(`✅ [Step Webhook] Received for job ${job.id}, task ${payload.task_id}, step: ${payload.step}, status: ${payload.status}, progress: ${payload.progress_percent}%`);
+
     // Update job progress
     await JobService.updateJob(job.id, {
-      percentage: payload.progress.percentage,
-      summary: `${payload.progress.current_step}: ${payload.progress.percentage}%`,
+      percentage: payload.progress_percent,
+      summary: `${payload.step}: ${payload.progress_percent}%`,
       status: mapWebhookStatusToJobStatus(payload.status),
       ...(payload.status === 'completed' && { endDate: new Date() }),
     });
 
     // Update document based on webhook status
-    if (payload.status === 'completed' && payload.result) {
+    if (payload.status === 'completed' && payload.data) {
       // Store markdown content if available
       const updateData: any = {
         state: DocumentState.INGESTED,
       };
 
       // Store markdown content
-      if (payload.result.markdown) {
-        updateData.markdown = payload.result.markdown;
+      if (payload.data.markdown) {
+        updateData.markdown = payload.data.markdown;
       }
 
-      if (payload.result.chunks) {
-        updateData.chunks = payload.result.chunks;
+      if (payload.data.chunks) {
+        updateData.chunks = payload.data.chunks;
       }
 
       // Update document with the document_id from payload or job
@@ -59,7 +103,7 @@ export async function POST(request: NextRequest) {
           state: DocumentState.PENDING, // Reset to pending for retry
         });
       }
-    } else if (payload.status === 'in_progress') {
+    } else if (payload.status === 'started') {
       const documentId = payload.document_id || job.documentId;
       if (documentId) {
         await DocumentService.updateDocument(documentId, {
@@ -68,11 +112,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle batch job updates if batch_job_id is present
-    if (payload.batch_job_id) {
-      // For batch operations, we might need to update multiple documents
-      // This would be handled based on the specific batch job logic
-      console.log(`Batch job update received for batch_job_id: ${payload.batch_job_id}`);
+    // Handle error messages if step failed
+    if (payload.status === 'failed' && payload.error_message) {
+      console.error(`Step ${payload.step} failed for task ${payload.task_id}: ${payload.error_message}`);
     }
 
     return NextResponse.json({ status: 'success' });

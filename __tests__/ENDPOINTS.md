@@ -237,13 +237,24 @@ This document lists all API endpoints used in the application. The error `Foreig
 ## Webhook Endpoints
 
 ### POST /api/webhooks/morag
-- Description: Receive progress updates from MoRAG backend
-- Request body: `{ task_id: string, document_id?: string, batch_job_id?: string, timestamp: string, status: 'started' | 'in_progress' | 'completed' | 'failed', progress: { percentage: number, current_step: string }, result?: { content?: string, markdown?: string, chunks?: number }, error?: { message: string, step: string, details?: any } }`
+- Description: Receive step-based progress updates from MoRAG backend (as defined in WEBHOOK_GUIDE.md)
+- Request body: `{ task_id: string, document_id?: string, step: string, status: 'started' | 'completed' | 'failed', progress_percent: number, timestamp: string, data?: object, error_message?: string }`
 - Response: `{ status: 'success' | 'job_not_found' }`
 - Error cases:
-  - 400: Invalid payload (missing task_id)
+  - 400: Invalid payload (missing required fields: task_id, step, status, progress_percent)
+  - 400: Invalid progress_percent (must be 0-100)
   - 500: Failed to process webhook
-- Notes: Updates job progress and document state; stores markdown content when processing completes
+- Notes: Updates job progress and document state based on step completion; handles step-specific data
+
+### POST /api/webhooks/stages
+- Description: Receive stage-based and pipeline completion updates from MoRAG backend (as defined in WEBHOOK_GUIDE.md)
+- Request body: Stage completed: `{ event: 'stage_completed', timestamp: string, stage: { type: number, status: string, execution_time: number, start_time: string, end_time: string, error_message?: string }, files: { input_files: string[], output_files: string[] }, context: object, metadata: object }` or Pipeline completed: `{ event: 'pipeline_completed', timestamp: string, pipeline: { success: boolean, total_execution_time: number, stages_completed: number, stages_failed: number, stages_skipped: number, error_message?: string }, context: object, stages: array }`
+- Response: `{ status: 'success' }`
+- Error cases:
+  - 400: Invalid payload (missing required fields: event, timestamp)
+  - 400: Invalid event type (must be 'stage_completed' or 'pipeline_completed')
+  - 500: Failed to process webhook
+- Notes: Handles both individual stage completion and full pipeline completion events
 
 ## API Key Endpoints
 
