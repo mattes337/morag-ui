@@ -75,7 +75,13 @@ export default function DocumentStagesPage() {
           if (!response.ok) {
             throw new Error(`Failed to load document: ${response.status}`);
           }
-          const docData = await response.json();
+          const responseData = await response.json();
+          const docData = responseData.document; // Extract document from the response
+
+          if (!docData || !docData.id) {
+            throw new Error('Invalid document data received from server');
+          }
+
           setDocument(docData);
         }
       } catch (err) {

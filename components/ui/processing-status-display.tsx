@@ -36,6 +36,7 @@ interface ProcessingStatusDisplayProps {
   overallProgress?: number;
   className?: string;
   compact?: boolean;
+  hideProcessingMode?: boolean; // Hide processing mode badge when already shown elsewhere
 }
 
 const STAGE_CONFIG = {
@@ -81,7 +82,8 @@ export function ProcessingStatusDisplay({
   stages = [],
   overallProgress = 0,
   className = '',
-  compact = false
+  compact = false,
+  hideProcessingMode = false
 }: ProcessingStatusDisplayProps) {
   const completedStages = stages.filter(s => s.status === 'COMPLETED').length;
   const totalStages = stages.length || 5; // Default to 5 stages if not provided
@@ -90,24 +92,26 @@ export function ProcessingStatusDisplay({
   if (compact) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <Badge variant={processingMode === 'AUTOMATIC' ? 'default' : 'secondary'} className="text-xs">
-          {processingMode}
-        </Badge>
-        
+        {!hideProcessingMode && (
+          <Badge variant={processingMode === 'AUTOMATIC' ? 'default' : 'secondary'} className="text-xs">
+            {processingMode}
+          </Badge>
+        )}
+
         {currentStage && (
           <div className="flex items-center space-x-1">
-            {React.createElement(STAGE_CONFIG[currentStage].icon, { 
-              className: "w-3 h-3 text-gray-500" 
+            {React.createElement(STAGE_CONFIG[currentStage].icon, {
+              className: "w-3 h-3 text-gray-500"
             })}
             <span className="text-xs text-gray-600">
               {STAGE_CONFIG[currentStage].name}
             </span>
           </div>
         )}
-        
+
         <div className="flex items-center space-x-1">
           <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-blue-500 transition-all duration-300"
               style={{ width: `${calculatedProgress}%` }}
             />

@@ -54,6 +54,11 @@ export function DocumentStatistics({ documentId, className }: DocumentStatistics
   const [isLoading, setIsLoading] = useState(true);
 
   const loadStatistics = useCallback(async () => {
+    if (!documentId || documentId === 'undefined') {
+      console.warn('DocumentStatistics: Invalid documentId provided:', documentId);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await fetch(`/api/documents/${documentId}/statistics`);

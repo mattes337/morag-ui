@@ -80,24 +80,38 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     return;
                 }
 
-                const docData = await response.json();
+                const responseData = await response.json();
+                const docData = responseData.document; // Extract document from the response
+
+                if (!docData || !docData.id) {
+                    console.error('❌ [DocumentDetailPage] Invalid document data received:', responseData);
+                    setError('Invalid document data received from server');
+                    setIsLoading(false);
+                    return;
+                }
+
                 const formattedDoc: Document = {
                     id: docData.id,
                     name: docData.name,
                     type: docData.type,
+                    subType: docData.subType,
                     state: (docData.state || 'pending').toLowerCase() as Document['state'],
                     version: docData.version || 1,
                     chunks: docData.chunks || 0,
                     quality: docData.quality || 0,
                     uploadDate: docData.uploadDate
                         ? new Date(docData.uploadDate).toISOString().split('T')[0]
-                        : '',
+                        : new Date().toISOString().split('T')[0],
+                    processingMode: docData.processingMode || 'AUTOMATIC',
                     markdown: docData.markdown,
+                    metadata: docData.metadata,
                 };
 
                 console.log(
                     '✅ [DocumentDetailPage] Successfully loaded document from API:',
                     formattedDoc.name,
+                    'ID:',
+                    formattedDoc.id,
                 );
                 setDocument(formattedDoc);
             } catch (err) {
@@ -232,6 +246,26 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                         onClick={() => router.push('/documents')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         data-oid="0of7ekw"
+                    >
+                        Back to Documents
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Additional validation before rendering
+    if (!document.id) {
+        console.error('❌ [DocumentDetailPage] Document loaded but ID is missing:', document);
+        return (
+            <div className="flex items-center justify-center min-h-96">
+                <div className="text-center">
+                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Document Data</h2>
+                    <p className="text-gray-600 mb-4">Document loaded but missing required ID</p>
+                    <button
+                        onClick={() => router.push('/documents')}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                         Back to Documents
                     </button>

@@ -51,6 +51,11 @@ export function ProcessingHistory({
   const [isExecuting, setIsExecuting] = useState<string | null>(null);
 
   const loadProcessingHistory = useCallback(async () => {
+    if (!documentId || documentId === 'undefined') {
+      console.warn('ProcessingHistory: Invalid documentId provided:', documentId);
+      return;
+    }
+
     try {
       setIsLoading(true);
 

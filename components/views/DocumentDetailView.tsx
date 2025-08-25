@@ -58,6 +58,26 @@ export function DocumentDetailView({
     onSupersede,
     onDelete,
 }: DocumentDetailViewProps) {
+    // Early validation to prevent undefined document ID issues
+    if (!document || !document.id) {
+        console.error('❌ [DocumentDetailView] Invalid document provided:', document);
+        return (
+            <div className="flex items-center justify-center min-h-96">
+                <div className="text-center">
+                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Document</h2>
+                    <p className="text-gray-600 mb-4">Document data is missing or invalid</p>
+                    <button
+                        onClick={onBack}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                        Back to Documents
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const {
         setShowReingestConfirmDialog,
         setDocumentToReingest,
@@ -132,6 +152,11 @@ export function DocumentDetailView({
     }, [document.id]);
 
     const loadProcessingStatus = useCallback(async () => {
+        if (!document?.id || document.id === 'undefined') {
+            console.warn('DocumentDetailView: Invalid document ID provided:', document?.id);
+            return;
+        }
+
         try {
             const response = await fetch(`/api/documents/${document.id}/processing`);
             if (response.ok) {

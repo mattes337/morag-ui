@@ -21,8 +21,8 @@ export async function GET(
     }
 
     const documentId = params.id;
-    if (!documentId) {
-      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    if (!documentId || documentId === 'undefined' || documentId === 'null') {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
     }
 
     // Get comprehensive processing status including executions
@@ -59,8 +59,8 @@ export async function PUT(
     }
 
     const documentId = params.id;
-    if (!documentId) {
-      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    if (!documentId || documentId === 'undefined' || documentId === 'null') {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
     }
 
     const body = await request.json();
@@ -183,8 +183,8 @@ export async function POST(
     }
 
     const documentId = params.id;
-    if (!documentId) {
-      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    if (!documentId || documentId === 'undefined' || documentId === 'null') {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
     }
 
     const body = await request.json();

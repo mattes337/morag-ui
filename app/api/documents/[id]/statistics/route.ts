@@ -45,6 +45,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const { id: documentId } = params;
 
+    if (!documentId || documentId === 'undefined' || documentId === 'null') {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
+    }
+
     // Get document with related data
     const document = await prisma.document.findUnique({
       where: { id: documentId },

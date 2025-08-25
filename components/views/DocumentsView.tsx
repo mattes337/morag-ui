@@ -159,11 +159,12 @@ export function DocumentsView({
                                         >
                                             {doc.processingMode || 'AUTOMATIC'}
                                         </Badge>
-                                        {doc.state === 'ingesting' && (
+                                        {doc.state === 'ingesting' && doc.id && (
                                             <ProcessingStatusDisplay
                                                 documentId={doc.id}
                                                 processingMode={doc.processingMode || 'AUTOMATIC'}
                                                 compact={true}
+                                                hideProcessingMode={true}
                                             />
                                         )}
                                     </div>
