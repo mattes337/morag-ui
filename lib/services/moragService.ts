@@ -213,9 +213,22 @@ export class MoragService {
     // Create form data for the new API according to BACKEND.json specification
     const formData = new FormData();
 
-    // According to the API spec, the request should include stage execution parameters
+    // Check if we have document content to upload as a file
+    const hasFileContent = request.document.content && request.document.content.trim().length > 0;
+
+    // According to the API spec, we need either file upload OR input_files
+    // If we have file content, upload it; otherwise, use input_files with the original file path
+    let inputFiles: string[] = [];
+    if (!hasFileContent && request.document.filePath) {
+      // Use the original file path if available
+      inputFiles = [request.document.filePath];
+    } else if (!hasFileContent) {
+      // Fallback to a standard path pattern
+      inputFiles = [`./uploads/documents/${request.documentId}/original/${request.document.title}`];
+    }
+
     const stageRequest = {
-      input_files: [], // Will be populated if there are input files
+      input_files: inputFiles,
       config: request.metadata || {},
       output_dir: `./output/${request.documentId}`,
       webhook_config: {
@@ -230,16 +243,25 @@ export class MoragService {
     // Add the request data
     formData.append('request', JSON.stringify(stageRequest));
 
-    // Add the document content as a file
-    if (request.document.content) {
+    // Add the document content as a file if we have content
+    if (hasFileContent) {
       const blob = new Blob([request.document.content], { type: 'text/markdown' });
       formData.append('file', blob, `${request.document.title}.md`);
+      console.log(`📄 [MoRAG] Uploading file: ${request.document.title}.md (${request.document.content.length} chars)`);
+    } else if (inputFiles.length > 0) {
+      // If no content, we rely on input_files array
+      console.log(`📁 [MoRAG] Using input_files: ${inputFiles.join(', ')}`);
+    } else {
+      console.warn(`⚠️ [MoRAG] No file content or input_files provided for ${request.document.title}`);
     }
 
     // Add additional form fields as per API spec
     formData.append('output_dir', `./output/${request.documentId}`);
     formData.append('webhook_url', request.webhookUrl);
     formData.append('return_content', 'false'); // Don't return file content in response
+
+    console.log(`🚀 [MoRAG] Calling ${canonicalStage} stage for document ${request.documentId}`);
+    console.log(`🔗 [MoRAG] Endpoint: ${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`);
 
     const response = await fetch(`${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`, {
       method: 'POST',
@@ -252,7 +274,13 @@ export class MoragService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`MoRAG API error details:`, errorText);
+      console.error(`❌ [MoRAG] API error details:`, errorText);
+      console.error(`❌ [MoRAG] Request details:`, {
+        stage: canonicalStage,
+        documentId: request.documentId,
+        hasFileContent,
+        stageRequest
+      });
       throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 

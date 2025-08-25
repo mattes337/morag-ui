@@ -638,6 +638,33 @@ class BackgroundJobService {
         throw new Error(`No original file found for document ${job.documentId}`);
       }
 
+      // Determine what content to use based on the stage
+      let documentContent = '';
+      let contentSource = 'none';
+
+      if (job.stage === 'MARKDOWN_CONVERSION') {
+        // For markdown conversion, we need the original file content
+        if (originalFile?.filepath) {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+            const filePath = path.resolve(originalFile.filepath);
+            if (fs.existsSync(filePath)) {
+              documentContent = fs.readFileSync(filePath, 'utf8');
+              contentSource = 'original_file';
+            }
+          } catch (error) {
+            console.warn(`Failed to read original file ${originalFile.filepath}:`, error);
+          }
+        }
+      } else {
+        // For other stages, use the markdown content from previous stages
+        documentContent = document.markdown || '';
+        contentSource = 'markdown_field';
+      }
+
+      console.log(`📄 [BackgroundJob] Content for ${job.stage}: ${contentSource} (${documentContent.length} chars)`);
+
       // Prepare the stage processing request
       const stageRequest = {
         documentId: job.documentId,
@@ -646,7 +673,7 @@ class BackgroundJobService {
         document: {
           id: document.id,
           title: document.name,
-          content: document.markdown || '',
+          content: documentContent,
           filePath: originalFile?.filepath || '',
           realmId: document.realmId
         },
