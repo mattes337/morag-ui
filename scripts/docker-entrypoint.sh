@@ -65,16 +65,21 @@ run_db_operations() {
 
 # Function to run database seeding (optional)
 run_db_seed() {
-    if [ "$RUN_DB_SEED" = "true" ]; then
+    # Check if auto-seeding is enabled (default: true)
+    AUTO_SEED=${AUTO_SEED_DATABASE:-true}
+
+    if [ "$AUTO_SEED" = "true" ]; then
         echo "🌱 Running database seed..."
-        if [ -f "lib/migrations/seed.ts" ]; then
-            npm run db:seed
-            echo "✅ Database seeding completed!"
+        if [ -f "scripts/seed-database.js" ]; then
+            echo "🔧 Using unified seeding script..."
+            timeout 60 node scripts/seed-database.js || {
+                echo "⚠️ Database seeding failed, but continuing anyway..."
+            }
         else
-            echo "⚠️ Seed file not found, skipping seeding"
+            echo "⚠️ Seed script not found, auto-seeding will happen on first API call"
         fi
     else
-        echo "⏭️ Skipping database seeding (RUN_DB_SEED not set to true)"
+        echo "⏭️ Skipping database seeding (AUTO_SEED_DATABASE is false)"
     fi
 }
 

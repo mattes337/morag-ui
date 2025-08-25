@@ -66,6 +66,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
 
+# Copy seeding scripts and lib directory for database operations
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
+
 # Ensure proper permissions for Prisma engines directory
 RUN mkdir -p /app/node_modules/@prisma/engines && \
     chown -R nextjs:nodejs /app/node_modules/@prisma && \

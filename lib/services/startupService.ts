@@ -25,28 +25,18 @@ export class StartupService {
 
       // Check if auto-seeding is enabled
       const autoSeed = process.env.AUTO_SEED_DATABASE !== 'false'; // Default to true
-      
+
       if (autoSeed) {
         console.log('🌱 Auto-seeding is enabled');
-        
-        // Check current database state
-        const status = await DatabaseSeeder.checkSeeding();
-        
-        if (status.isEmpty) {
-          console.log('📦 Database is empty, performing initial seeding...');
+
+        try {
+          // Attempt to seed the database (will only seed if empty)
+          console.log('📦 Checking database and seeding if needed...');
           await DatabaseSeeder.seedDefaultUser();
-        } else {
-          console.log('✅ Database already contains data, skipping seeding');
-          
-          // Still check if default API key exists
-          const defaultApiKey = process.env.DEFAULT_API_KEY;
-          if (defaultApiKey) {
-            try {
-              await this.ensureDefaultApiKey(defaultApiKey);
-            } catch (error) {
-              console.warn('⚠️ Could not ensure default API key:', error);
-            }
-          }
+        } catch (seedError) {
+          const errorMessage = seedError instanceof Error ? seedError.message : 'Unknown error';
+          console.warn('⚠️ Auto-seeding failed, but application will continue:', errorMessage);
+          // Continue without seeding - the app should still work
         }
       } else {
         console.log('⏭️ Auto-seeding is disabled');
@@ -58,24 +48,11 @@ export class StartupService {
     } catch (error) {
       console.error('❌ Application initialization failed:', error);
       // Don't throw - let the app start even if seeding fails
+      this.initialized = true; // Mark as initialized anyway
     }
   }
 
-  private static async ensureDefaultApiKey(apiKey: string) {
-    const { prisma } = await import('../database');
-    
-    const existingKey = await prisma.apiKey.findUnique({
-      where: { key: apiKey }
-    });
 
-    if (!existingKey) {
-      console.log('🔑 Creating missing default API key...');
-      await DatabaseSeeder.seedDefaultUser({ 
-        defaultApiKey: apiKey,
-        force: false 
-      });
-    }
-  }
 
   static async ensureGenericApiKey() {
     const genericKey = process.env.GENERIC_API_KEY;

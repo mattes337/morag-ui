@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
                 swagger: '/swagger',
                 openapi: '/api/openapi',
                 documentation: '/docs',
+                initialize: '/api/admin/initialize',
             },
             features: {
                 unifiedAuth: true,
@@ -45,8 +46,8 @@ export async function GET(request: NextRequest) {
         // Only show credentials if explicitly requested or database is empty
         if (showCredentials || dbStatus.isEmpty) {
             response.defaultCredentials = {
-                note: dbStatus.isEmpty 
-                    ? "Database is empty. These credentials will be created on first API call."
+                note: dbStatus.isEmpty
+                    ? "Database is empty. Use /api/admin/initialize to create default credentials, or they will be created on first API call."
                     : "Default credentials (if they exist in the database).",
                 ui: {
                     email: credentials.email,
@@ -59,9 +60,12 @@ export async function GET(request: NextRequest) {
                 usage: {
                     swagger: `Visit /swagger to test the API with these credentials`,
                     curl: `curl -H "Authorization: Bearer ${credentials.apiKey}" ${getBaseUrl(request)}/api/realms`,
-                    automation: credentials.genericApiKey 
+                    automation: credentials.genericApiKey
                         ? `Use "${credentials.genericApiKey}" for automation across all realms`
-                        : 'Set GENERIC_API_KEY environment variable for automation'
+                        : 'Set GENERIC_API_KEY environment variable for automation',
+                    initialize: dbStatus.isEmpty
+                        ? `POST ${getBaseUrl(request)}/api/admin/initialize to create credentials now`
+                        : 'Database already initialized'
                 }
             };
         }

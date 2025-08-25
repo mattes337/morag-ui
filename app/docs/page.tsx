@@ -6,6 +6,7 @@ import Link from 'next/link';
 export default function DocsPage() {
   const [apiStatus, setApiStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(false);
 
   useEffect(() => {
     fetch('/api/status?credentials=true')
@@ -19,6 +20,31 @@ export default function DocsPage() {
         setLoading(false);
       });
   }, []);
+
+  const initializeDatabase = async () => {
+    setInitializing(true);
+    try {
+      const response = await fetch('/api/admin/initialize', {
+        method: 'POST'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh the API status
+        const statusResponse = await fetch('/api/status?credentials=true');
+        const statusData = await statusResponse.json();
+        setApiStatus(statusData);
+        alert('✅ Database initialized successfully! Default credentials are now available.');
+      } else {
+        alert(`❌ Initialization failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+      alert('❌ Failed to initialize database. Please try again.');
+    } finally {
+      setInitializing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -73,9 +99,19 @@ export default function DocsPage() {
                   
                   {apiStatus.database.isEmpty && (
                     <div className="bg-yellow-100 border border-yellow-300 rounded p-3 mt-4">
-                      <p className="text-yellow-800 text-sm">
-                        <strong>Note:</strong> Database is empty. These credentials will be created automatically on first API call.
+                      <p className="text-yellow-800 text-sm mb-2">
+                        <strong>Note:</strong> Database is empty. You can:
                       </p>
+                      <ul className="text-yellow-800 text-sm space-y-1 ml-4">
+                        <li>• Wait for automatic creation on first API call</li>
+                        <li>• <button
+                            onClick={() => initializeDatabase()}
+                            disabled={initializing}
+                            className="text-yellow-900 underline hover:no-underline font-medium disabled:opacity-50"
+                          >
+                            {initializing ? 'Initializing...' : 'Click here to initialize now'}
+                          </button></li>
+                      </ul>
                     </div>
                   )}
                 </div>

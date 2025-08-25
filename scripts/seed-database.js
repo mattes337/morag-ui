@@ -10,7 +10,263 @@
  *   npm run seed -- --generic-only  # Only create generic API key
  */
 
-const { DatabaseSeeder } = require('../lib/database/seeder');
+// Import dependencies - handle both development and production environments
+let DatabaseSeeder;
+let PrismaClient, bcrypt;
+
+try {
+  // Try to import the TypeScript seeder first (development)
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      require('ts-node/register');
+      DatabaseSeeder = require('../lib/database/seeder.ts').DatabaseSeeder;
+    } catch (tsError) {
+      // Fall back to direct implementation
+      console.log('📦 Using direct implementation for seeding...');
+    }
+  }
+
+  // If we don't have the TypeScript seeder, use direct implementation
+  if (!DatabaseSeeder) {
+    // Import Prisma and bcrypt directly
+    PrismaClient = require('@prisma/client').PrismaClient;
+    bcrypt = require('bcryptjs');
+
+    // Use the embedded seeder class below
+    DatabaseSeeder = EmbeddedDatabaseSeeder;
+  }
+} catch (error) {
+  console.error('❌ Could not load dependencies:', error.message);
+  process.exit(1);
+}
+
+// Embedded DatabaseSeeder class for production environments
+class EmbeddedDatabaseSeeder {
+  static async seedDefaultUser(options = {}) {
+    const prisma = new PrismaClient();
+
+    const {
+      defaultApiKey = process.env.DEFAULT_API_KEY || 'default-api-key',
+      defaultUserEmail = process.env.DEFAULT_USER_EMAIL || 'admin@morag.local',
+      defaultUserPassword = process.env.DEFAULT_USER_PASSWORD || 'admin123',
+      defaultUserName = process.env.DEFAULT_USER_NAME || 'Default Admin',
+      force = false
+    } = options;
+
+    // Only seed if database is empty (unless force is true)
+    if (!force) {
+      const status = await this.checkSeeding();
+      if (!status.isEmpty) {
+        console.log('✅ Database already contains data, skipping seeding');
+        await prisma.$disconnect();
+        return {
+          user: null,
+          apiKey: null,
+          genericApiKey: null,
+          realm: null,
+          created: false
+        };
+      }
+    }
+
+    console.log('🌱 Starting database seeding...');
+
+    try {
+      // Check if default user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email: defaultUserEmail },
+        include: {
+          apiKeys: true,
+          realms: true,
+        }
+      });
+
+      if (existingUser && !force) {
+        console.log(`✅ Default user already exists: ${existingUser.email}`);
+
+        // Check if API key exists
+        const existingApiKey = await prisma.apiKey.findUnique({
+          where: { key: defaultApiKey }
+        });
+
+        if (existingApiKey) {
+          console.log(`✅ Default API key already exists`);
+          return {
+            user: existingUser,
+            apiKey: existingApiKey,
+            realm: existingUser.realms[0] || null,
+            created: false
+          };
+        }
+      }
+
+      // Create or update user
+      let user;
+      if (existingUser && force) {
+        console.log(`🔄 Updating existing user: ${defaultUserEmail}`);
+        user = await prisma.user.update({
+          where: { email: defaultUserEmail },
+          data: {
+            name: defaultUserName,
+            role: 'ADMIN',
+          },
+          include: {
+            apiKeys: true,
+            realms: true,
+          }
+        });
+      } else if (!existingUser) {
+        console.log(`👤 Creating default user: ${defaultUserEmail}`);
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(defaultUserPassword, 12);
+
+        user = await prisma.user.create({
+          data: {
+            email: defaultUserEmail,
+            name: defaultUserName,
+            role: 'ADMIN',
+            password: hashedPassword,
+          },
+          include: {
+            apiKeys: true,
+            realms: true,
+          }
+        });
+      } else {
+        user = existingUser;
+      }
+
+      // Create default realm if it doesn't exist
+      let defaultRealm = user.realms.find(r => r.isDefault);
+      if (!defaultRealm) {
+        console.log(`🏰 Creating default realm for user: ${user.email}`);
+        defaultRealm = await prisma.realm.create({
+          data: {
+            name: 'Default Realm',
+            description: 'Default realm for initial setup',
+            ownerId: user.id,
+            isDefault: true,
+            documentCount: 0,
+            lastUpdated: new Date(),
+          }
+        });
+
+        // Create user-realm relationship
+        await prisma.userRealm.create({
+          data: {
+            userId: user.id,
+            realmId: defaultRealm.id,
+            role: 'OWNER',
+          }
+        });
+      }
+
+      // Create or update default API key
+      let apiKey;
+      const existingApiKey = await prisma.apiKey.findUnique({
+        where: { key: defaultApiKey }
+      });
+
+      if (existingApiKey && force) {
+        console.log(`🔄 Updating default API key`);
+        apiKey = await prisma.apiKey.update({
+          where: { key: defaultApiKey },
+          data: {
+            name: 'Default API Key',
+            userId: user.id,
+            realmId: defaultRealm.id,
+            isGeneric: false,
+            lastUsed: null,
+          }
+        });
+      } else if (!existingApiKey) {
+        console.log(`🔑 Creating default API key: ${defaultApiKey}`);
+        apiKey = await prisma.apiKey.create({
+          data: {
+            name: 'Default API Key',
+            key: defaultApiKey,
+            userId: user.id,
+            realmId: defaultRealm.id,
+            isGeneric: false,
+          }
+        });
+      } else {
+        apiKey = existingApiKey;
+      }
+
+      // Create generic API key if specified in environment
+      let genericApiKey = null;
+      const genericKey = process.env.GENERIC_API_KEY;
+      if (genericKey) {
+        const existingGenericKey = await prisma.apiKey.findUnique({
+          where: { key: genericKey }
+        });
+
+        if (!existingGenericKey) {
+          console.log(`🌐 Creating generic API key: ${genericKey}`);
+          genericApiKey = await prisma.apiKey.create({
+            data: {
+              name: 'Generic API Key',
+              key: genericKey,
+              userId: user.id,
+              realmId: null,
+              isGeneric: true,
+            }
+          });
+        } else {
+          genericApiKey = existingGenericKey;
+        }
+      }
+
+      console.log('✅ Database seeding completed successfully!');
+      console.log(`📧 Default user: ${user.email}`);
+      console.log(`🔑 Default API key: ${defaultApiKey}`);
+      if (genericApiKey) {
+        console.log(`🌐 Generic API key: ${genericKey}`);
+      }
+      console.log(`🏰 Default realm: ${defaultRealm.name} (${defaultRealm.id})`);
+
+      return {
+        user,
+        apiKey,
+        genericApiKey,
+        realm: defaultRealm,
+        created: true
+      };
+
+    } catch (error) {
+      console.error('❌ Database seeding failed:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+  static async checkSeeding() {
+    const prisma = new PrismaClient();
+
+    try {
+      const userCount = await prisma.user.count();
+      const realmCount = await prisma.realm.count();
+      const apiKeyCount = await prisma.apiKey.count();
+
+      console.log('📊 Database status:');
+      console.log(`   Users: ${userCount}`);
+      console.log(`   Realms: ${realmCount}`);
+      console.log(`   API Keys: ${apiKeyCount}`);
+
+      return {
+        users: userCount,
+        realms: realmCount,
+        apiKeys: apiKeyCount,
+        isEmpty: userCount === 0 && realmCount === 0 && apiKeyCount === 0
+      };
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -64,12 +320,12 @@ Examples:
     if (options.check) {
       console.log('📊 Checking database status...\n');
       const status = await DatabaseSeeder.checkSeeding();
-      
+
       if (status.isEmpty) {
         console.log('📦 Database is empty - ready for seeding');
         console.log('\nRun: npm run seed');
       } else {
-        console.log('✅ Database contains data');
+        console.log('✅ Database contains data - seeding will be skipped');
         console.log('\nTo force recreate: npm run seed -- --force');
       }
       return;
@@ -89,28 +345,34 @@ Examples:
     }
 
     console.log('🚀 Starting database seeding...\n');
-    
+
     const result = await DatabaseSeeder.seedDefaultUser({
       force: options.force
     });
 
-    console.log('\n🎉 Database seeding completed successfully!');
-    console.log('\n📋 Summary:');
-    console.log(`   👤 User: ${result.user.email}`);
-    console.log(`   🔑 API Key: ${result.apiKey.key}`);
-    if (result.genericApiKey) {
-      console.log(`   🌐 Generic Key: ${result.genericApiKey.key}`);
-    }
-    console.log(`   🏰 Realm: ${result.realm.name}`);
-    console.log(`   📊 Status: ${result.created ? 'Created' : 'Already existed'}`);
+    if (!result.created && !options.force) {
+      console.log('\n✅ Database already contains data - no seeding needed');
+      console.log('\nTo force recreate: npm run seed -- --force');
+      console.log('To check status: npm run seed:check');
+    } else {
+      console.log('\n🎉 Database seeding completed successfully!');
+      console.log('\n📋 Summary:');
+      console.log(`   👤 User: ${result.user.email}`);
+      console.log(`   🔑 API Key: ${result.apiKey.key}`);
+      if (result.genericApiKey) {
+        console.log(`   🌐 Generic Key: ${result.genericApiKey.key}`);
+      }
+      console.log(`   🏰 Realm: ${result.realm.name}`);
+      console.log(`   📊 Status: ${result.created ? 'Created' : 'Already existed'}`);
 
-    console.log('\n🚀 You can now:');
-    console.log('   • Access the API with the default API key');
-    console.log('   • View API docs at: http://localhost:3000/swagger');
-    console.log('   • Login to the UI with the default credentials');
-    
-    if (result.genericApiKey) {
-      console.log('   • Use the generic API key for automation');
+      console.log('\n🚀 You can now:');
+      console.log('   • Access the API with the default API key');
+      console.log('   • View API docs at: http://localhost:3000/swagger');
+      console.log('   • Login to the UI with the default credentials');
+
+      if (result.genericApiKey) {
+        console.log('   • Use the generic API key for automation');
+      }
     }
 
   } catch (error) {

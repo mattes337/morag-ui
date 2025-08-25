@@ -13,6 +13,20 @@ export interface SeedOptions {
 
 export class DatabaseSeeder {
   static async seedDefaultUser(options: SeedOptions = {}) {
+    // Only seed if database is empty (unless force is true)
+    if (!options.force) {
+      const status = await this.checkSeeding();
+      if (!status.isEmpty) {
+        console.log('✅ Database already contains data, skipping seeding');
+        return {
+          user: null,
+          apiKey: null,
+          genericApiKey: null,
+          realm: null,
+          created: false
+        };
+      }
+    }
     const {
       defaultApiKey = process.env.DEFAULT_API_KEY || 'default-api-key',
       defaultUserEmail = process.env.DEFAULT_USER_EMAIL || 'admin@morag.local',
