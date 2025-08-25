@@ -84,12 +84,15 @@ RUN mkdir -p /app/node_modules/@prisma/engines && \
     chown -R nextjs:nodejs /app/node_modules/@prisma && \
     chmod -R 755 /app/node_modules/@prisma
 
-# Create uploads directory with proper permissions
-RUN mkdir -p uploads/documents uploads/temp && \
-    chown -R nextjs:nodejs uploads && \
-    chmod -R 755 uploads
+# Create uploads directory with proper permissions in the app directory
+RUN mkdir -p /app/uploads/documents /app/uploads/temp && \
+    chown -R nextjs:nodejs /app/uploads && \
+    chmod -R 755 /app/uploads
 
 USER nextjs
+
+# Set the uploads directory path for production
+ENV FILES_BASE_DIR=/app/uploads
 
 EXPOSE 3000
 

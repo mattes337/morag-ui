@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
-const FILES_BASE_DIR = process.env.FILES_BASE_DIR || './uploads';
+const FILES_BASE_DIR = process.env.FILES_BASE_DIR || (process.env.NODE_ENV === 'production' ? '/app/uploads' : './uploads');
 
 export interface FileInput {
   documentId: string;
