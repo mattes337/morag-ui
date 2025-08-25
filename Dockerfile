@@ -73,10 +73,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
 # Copy bcryptjs dependency for seeding scripts
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
+# Copy sharp dependency for image optimization in production
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+
 # Ensure proper permissions for Prisma engines directory
 RUN mkdir -p /app/node_modules/@prisma/engines && \
     chown -R nextjs:nodejs /app/node_modules/@prisma && \
     chmod -R 755 /app/node_modules/@prisma
+
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads/documents uploads/temp && \
+    chown -R nextjs:nodejs uploads && \
+    chmod -R 755 uploads
 
 USER nextjs
 

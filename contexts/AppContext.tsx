@@ -264,7 +264,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     version: doc.version,
                     chunks: doc.chunks,
                     quality: doc.quality,
-                    uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
+                    uploadDate: doc.uploadDate
+                        ? new Date(doc.uploadDate).toISOString().split('T')[0]
+                        : '',
                     processingMode: doc.processingMode || 'AUTOMATIC',
                 }));
                 console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents. First doc processingMode:', formattedDocuments[0]?.processingMode);
@@ -282,7 +284,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     id: key.id,
                     name: key.name,
                     key: key.key,
-                    created: new Date(key.created).toISOString().split('T')[0],
+                    created: key.created
+                        ? new Date(key.created).toISOString().split('T')[0]
+                        : '',
                     lastUsed: key.lastUsed
                         ? new Date(key.lastUsed).toISOString().split('T')[0]
                         : '',
@@ -421,7 +425,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 version: newDoc.version,
                 chunks: newDoc.chunks,
                 quality: newDoc.quality,
-                uploadDate: new Date(newDoc.uploadDate).toISOString().split('T')[0],
+                uploadDate: newDoc.uploadDate
+                    ? new Date(newDoc.uploadDate).toISOString().split('T')[0]
+                    : '',
             };
             setDocuments((prev) => [...prev, formattedDoc]);
 
@@ -454,7 +460,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 version: updatedDoc.version,
                 chunks: updatedDoc.chunks,
                 quality: updatedDoc.quality,
-                uploadDate: new Date(updatedDoc.uploadDate).toISOString().split('T')[0],
+                uploadDate: updatedDoc.uploadDate
+                    ? new Date(updatedDoc.uploadDate).toISOString().split('T')[0]
+                    : '',
             };
             setDocuments((prev) => prev.map((doc) => (doc.id === id ? formattedDoc : doc)));
         } catch (error) {
@@ -501,7 +509,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 id: newKey.id,
                 name: newKey.name,
                 key: newKey.key,
-                created: new Date(newKey.created).toISOString().split('T')[0],
+                created: newKey.created
+                    ? new Date(newKey.created).toISOString().split('T')[0]
+                    : '',
                 lastUsed: newKey.lastUsed
                     ? new Date(newKey.lastUsed).toISOString().split('T')[0]
                     : '',
@@ -659,7 +669,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     version: doc.version,
                     chunks: doc.chunks,
                     quality: doc.quality,
-                    uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
+                    uploadDate: doc.uploadDate
+                        ? new Date(doc.uploadDate).toISOString().split('T')[0]
+                        : '',
                 }));
                 setDocuments(formattedDocuments);
             }
@@ -692,7 +704,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                         id: key.id,
                         name: key.name,
                         key: key.key,
-                        created: new Date(key.created).toISOString().split('T')[0],
+                        created: key.created
+                            ? new Date(key.created).toISOString().split('T')[0]
+                            : '',
                         lastUsed: key.lastUsed
                             ? new Date(key.lastUsed).toISOString().split('T')[0]
                             : '',
