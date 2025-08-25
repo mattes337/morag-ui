@@ -4,6 +4,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { Document, ApiKey, Server, UserSettings, User, Job, Realm } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
 
+// Utility function to safely handle API responses that should be arrays
+function ensureArray<T>(data: any, errorContext: string): T[] {
+    if (Array.isArray(data)) {
+        return data;
+    }
+    console.error(`❌ [AppContext] ${errorContext} data is not an array:`, data);
+    return [];
+}
+
 interface AppContextType {
     // API Health
     apiHealthy: boolean | null;
@@ -227,7 +236,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (serversResponse.ok) {
                 const serversData = await serversResponse.json();
-                const formattedServers = serversData.map((server: any) => ({
+                const safeServersData = ensureArray(serversData, 'Servers');
+                const formattedServers = safeServersData.map((server: any) => ({
                     id: server.id,
                     name: server.name,
                     type: server.type.toLowerCase(),
@@ -255,8 +265,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
-                console.log('📄 [AppContext] Raw documents data from API:', documentsData.slice(0, 2).map((d: any) => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
-                const formattedDocuments = documentsData.map((doc: any) => ({
+                const safeDocumentsData = ensureArray(documentsData, 'Documents');
+                console.log('📄 [AppContext] Raw documents data from API:', safeDocumentsData.slice(0, 2).map((d: any) => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
+                const formattedDocuments = safeDocumentsData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.name,
                     type: doc.type,
@@ -280,7 +291,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (apiKeysResponse.ok) {
                 const apiKeysData = await apiKeysResponse.json();
-                const formattedApiKeys = apiKeysData.map((key: any) => ({
+                const safeApiKeysData = ensureArray(apiKeysData, 'API Keys');
+                const formattedApiKeys = safeApiKeysData.map((key: any) => ({
                     id: key.id,
                     name: key.name,
                     key: key.key,
@@ -301,7 +313,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (jobsResponse.ok) {
                 const jobsData = await jobsResponse.json();
-                const formattedJobs = jobsData.map((job: any) => ({
+                const safeJobsData = ensureArray(jobsData, 'Jobs');
+                const formattedJobs = safeJobsData.map((job: any) => ({
                     id: job.id,
                     documentId: job.documentId,
                     documentName: job.documentName,
@@ -639,7 +652,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             if (serversResponse.ok) {
                 const serversData = await serversResponse.json();
-                const formattedServers = serversData.map((server: any) => ({
+                const safeServersData = ensureArray(serversData, 'Servers');
+                const formattedServers = safeServersData.map((server: any) => ({
                     id: server.id,
                     name: server.name,
                     type: server.type.toLowerCase(),
@@ -661,7 +675,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
-                const formattedDocuments = documentsData.map((doc: any) => ({
+                const safeDocumentsData = ensureArray(documentsData, 'Documents');
+                const formattedDocuments = safeDocumentsData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.name,
                     type: doc.type,
@@ -678,7 +693,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
             if (jobsResponse.ok) {
                 const jobsData = await jobsResponse.json();
-                const formattedJobs = jobsData.map((job: any) => ({
+                const safeJobsData = ensureArray(jobsData, 'Jobs');
+                const formattedJobs = safeJobsData.map((job: any) => ({
                     id: job.id,
                     documentId: job.documentId,
                     documentName: job.documentName,
@@ -686,12 +702,18 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     startDate: new Date(job.startDate).toISOString(),
                     endDate: job.endDate ? new Date(job.endDate).toISOString() : undefined,
                     status: job.status.toLowerCase().replace('_', '-') as Job['status'],
+                    percentage: job.percentage || 0,
+                    summary: job.summary || '',
                     progress: {
-                        percentage: job.percentage,
-                        summary: job.summary,
+                        percentage: job.percentage || 0,
+                        summary: job.summary || '',
                     },
+                    processingDetails: job.processingDetails,
+                    metadata: job.metadata,
                     createdAt: new Date(job.createdAt).toISOString(),
                     updatedAt: new Date(job.updatedAt).toISOString(),
+                    userId: job.userId,
+                    realmId: job.realmId,
                 }));
                 setJobs(formattedJobs);
             }
@@ -700,7 +722,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 const apiKeysResponse = await fetch(`/api/api-keys?userId=${user.id}`);
                 if (apiKeysResponse.ok) {
                     const apiKeysData = await apiKeysResponse.json();
-                    const formattedApiKeys = apiKeysData.map((key: any) => ({
+                    const safeApiKeysData = ensureArray(apiKeysData, 'API Keys');
+                    const formattedApiKeys = safeApiKeysData.map((key: any) => ({
                         id: key.id,
                         name: key.name,
                         key: key.key,

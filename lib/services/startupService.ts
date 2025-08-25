@@ -30,9 +30,15 @@ export class StartupService {
         console.log('🌱 Auto-seeding is enabled');
 
         try {
-          // Attempt to seed the database (will only seed if empty)
-          console.log('📦 Checking database and seeding if needed...');
-          await DatabaseSeeder.seedDefaultUser();
+          // Check database status first to avoid unnecessary seeding attempts
+          const status = await DatabaseSeeder.checkSeeding();
+
+          if (status.isEmpty) {
+            console.log('📦 Database is empty, attempting to seed...');
+            await DatabaseSeeder.seedDefaultUser();
+          } else {
+            console.log('✅ Database already contains data, skipping seeding');
+          }
         } catch (seedError) {
           const errorMessage = seedError instanceof Error ? seedError.message : 'Unknown error';
           console.warn('⚠️ Auto-seeding failed, but application will continue:', errorMessage);
