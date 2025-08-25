@@ -288,8 +288,8 @@ export function DocumentDetailView({
     };
 
     const renderDocumentEmbed = () => {
-        const docType = document.type.toLowerCase();
-        const docName = document.name.toLowerCase();
+        const docType = document.type?.toLowerCase() || '';
+        const docName = document.name?.toLowerCase() || '';
 
         // Handle markdown files
         if (docType === 'markdown' || docName.includes('.md') || docName.includes('.markdown')) {

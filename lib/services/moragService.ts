@@ -210,26 +210,36 @@ export class MoragService {
   async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
     const canonicalStage = this.getCanonicalStageName(request.stage);
 
-    // Create form data for the new API
+    // Create form data for the new API according to BACKEND.json specification
     const formData = new FormData();
 
-    // Add the request as JSON string (the API accepts both JSON objects and strings)
-    const requestData = {
-      document_id: request.documentId,
-      execution_id: request.executionId,
-      document: request.document,
-      webhook_url: request.webhookUrl,
-      metadata: request.metadata || {},
+    // According to the API spec, the request should include stage execution parameters
+    const stageRequest = {
+      input_files: [], // Will be populated if there are input files
+      config: request.metadata || {},
+      output_dir: `./output/${request.documentId}`,
+      webhook_config: {
+        url: request.webhookUrl,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      },
+      skip_if_exists: false // Always process, don't skip
     };
 
-    formData.append('request', JSON.stringify(requestData));
+    // Add the request data
+    formData.append('request', JSON.stringify(stageRequest));
 
-    // If there's a file to process, we would add it here
-    // For now, we'll use the document content
+    // Add the document content as a file
     if (request.document.content) {
       const blob = new Blob([request.document.content], { type: 'text/markdown' });
       formData.append('file', blob, `${request.document.title}.md`);
     }
+
+    // Add additional form fields as per API spec
+    formData.append('output_dir', `./output/${request.documentId}`);
+    formData.append('webhook_url', request.webhookUrl);
+    formData.append('return_content', 'false'); // Don't return file content in response
 
     const response = await fetch(`${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`, {
       method: 'POST',
@@ -241,7 +251,9 @@ export class MoragService {
     });
 
     if (!response.ok) {
-      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`MoRAG API error details:`, errorText);
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const result = await response.json();

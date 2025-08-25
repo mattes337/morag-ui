@@ -67,7 +67,7 @@ export function ProcessingHistory({
       const historyEntries: ProcessingHistoryEntry[] = [];
 
       // Add job history
-      if (processingData.jobs) {
+      if (processingData && processingData.jobs) {
         for (const job of processingData.jobs) {
           historyEntries.push({
             id: job.id,
