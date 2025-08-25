@@ -13,9 +13,10 @@ export async function initializeBackgroundServices(): Promise<void> {
     
     if (result.success) {
       console.log('Background job processor started successfully');
-    } else {
+    } else if (result.error !== 'Scheduler is already running') {
       console.error('Failed to start background job processor:', result.error);
     }
+    // Don't log error if scheduler is already running - this is normal
   } catch (error) {
     console.error('Error initializing background services:', error);
   }
@@ -40,13 +41,8 @@ export async function cleanupBackgroundServices(): Promise<void> {
   }
 }
 
-// Auto-start in production, development, or when explicitly enabled
-if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development' || process.env.AUTO_START_BACKGROUND_JOBS === 'true') {
-  // Use a small delay to ensure the application is fully initialized
-  setTimeout(() => {
-    initializeBackgroundServices();
-  }, 1000);
-}
+// Background services are now initialized on-demand via API calls
+// This prevents multiple initializations during build and static generation
 
 // Handle graceful shutdown
 process.on('SIGTERM', cleanupBackgroundServices);

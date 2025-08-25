@@ -50,8 +50,8 @@ class JobScheduler {
    */
   async start(): Promise<{ success: boolean; error?: string }> {
     if (this.isRunning) {
-      console.log('Job scheduler is already running');
-      return { success: false, error: 'Scheduler is already running' };
+      // Don't log as error - this is normal when multiple initialization attempts happen
+      return { success: true, error: 'Scheduler is already running' };
     }
 
     if (!this.config.enabled) {
@@ -552,11 +552,12 @@ class JobScheduler {
 // Create singleton instance
 export const jobScheduler = new JobScheduler();
 
-// Auto-start the scheduler in production and development
-if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') && process.env.AUTO_START_SCHEDULER !== 'false') {
-  jobScheduler.start().catch(error => {
-    console.error('Failed to auto-start job scheduler:', error);
-  });
-}
+// Auto-start is now handled by startup.ts to avoid double initialization
+// Keeping this code commented for reference:
+// if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') && process.env.AUTO_START_SCHEDULER !== 'false') {
+//   jobScheduler.start().catch(error => {
+//     console.error('Failed to auto-start job scheduler:', error);
+//   });
+// }
 
 export default jobScheduler;

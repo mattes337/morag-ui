@@ -70,6 +70,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
 
+# Copy bcryptjs dependency for seeding scripts
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
+
 # Ensure proper permissions for Prisma engines directory
 RUN mkdir -p /app/node_modules/@prisma/engines && \
     chown -R nextjs:nodejs /app/node_modules/@prisma && \

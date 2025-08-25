@@ -3,8 +3,6 @@ import './globals.css';
 import { AppProvider } from '../contexts/AppContext';
 import { AuthWrapper } from '../components/layout/AuthWrapper';
 import { Toaster } from 'sonner';
-// Initialize background services on app startup
-import '../lib/startup';
 
 export const metadata: Metadata = {
     title: 'Vector Database Manager',
