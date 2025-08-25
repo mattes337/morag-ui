@@ -3,6 +3,7 @@ import { getAuthUser, AuthUser } from '../auth';
 import { authenticateApiKey, ApiKeyAuthResult } from './apiKeyAuth';
 import { UserService } from '../services/userService';
 import { RealmService } from '../services/realmService';
+import { StartupService } from '../services/startupService';
 
 export interface UnifiedAuthResult {
   success: boolean;
@@ -22,6 +23,9 @@ export interface UnifiedAuthResult {
  */
 export async function authenticateUnified(request: NextRequest): Promise<UnifiedAuthResult> {
   try {
+    // Ensure database is initialized
+    await StartupService.initialize();
+
     // First try API key authentication (for automation)
     const authHeader = request.headers.get('Authorization');
     if (authHeader) {
