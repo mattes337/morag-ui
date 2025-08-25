@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jobScheduler } from '../../../../../lib/services/jobScheduler';
 import { getAuthUser } from '../../../../../lib/auth';
 import { PrismaClient, ProcessingMode } from '@prisma/client';
+import { DocumentProcessingService } from '../../../../../lib/services/documentProcessingService';
 
 const prisma = new PrismaClient();
 
@@ -24,32 +25,15 @@ export async function GET(
       return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
     }
 
-    // Get document with processing information
-    const document = await prisma.document.findUnique({
-      where: { id: documentId },
-      include: {
-        processingJobs: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      }
-    });
-
-    if (!document) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
-    }
+    // Get comprehensive processing status including executions
+    const processingStatus = await DocumentProcessingService.getProcessingStatus(documentId);
 
     // Get jobs from job scheduler
     const jobs = await jobScheduler.getDocumentJobs(documentId);
 
     return NextResponse.json({
-      documentId,
-      processingMode: document.processingMode,
-      currentStage: document.currentStage,
-      stageStatus: document.stageStatus,
-      isProcessingPaused: document.isProcessingPaused,
-      jobs,
-      recentJobs: document.processingJobs
+      processing: processingStatus,
+      jobs
     });
   } catch (error) {
     console.error('Error getting document processing status:', error);

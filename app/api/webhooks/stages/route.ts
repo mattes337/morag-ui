@@ -62,10 +62,17 @@ export type StageWebhookPayload = StageCompletedWebhookPayload | PipelineComplet
 
 export async function POST(request: NextRequest) {
   try {
-    const payload: StageWebhookPayload = await request.json();
+    const payload: any = await request.json();
+
+    console.log('🔍 [Stage Webhook] Received payload:', JSON.stringify(payload, null, 2));
 
     // Validate webhook payload based on event type
     if (!payload.event || !payload.timestamp) {
+      console.error('❌ [Stage Webhook] Invalid payload structure:', {
+        hasEvent: !!payload.event,
+        hasTimestamp: !!payload.timestamp,
+        payload: payload
+      });
       return NextResponse.json(
         { error: 'Invalid webhook payload: missing required fields (event, timestamp)' },
         { status: 400 }
@@ -74,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Validate event type
     if (!['stage_completed', 'pipeline_completed'].includes(payload.event)) {
+      console.error('❌ [Stage Webhook] Invalid event type:', payload.event);
       return NextResponse.json(
         { error: 'Invalid event type: must be stage_completed or pipeline_completed' },
         { status: 400 }
@@ -85,13 +93,13 @@ export async function POST(request: NextRequest) {
     // Handle different webhook events
     switch (payload.event) {
       case 'stage_completed':
-        await handleStageCompleted(payload as StageCompletedWebhookPayload);
+        await handleStageCompleted(payload);
         break;
       case 'pipeline_completed':
-        await handlePipelineCompleted(payload as PipelineCompletedWebhookPayload);
+        await handlePipelineCompleted(payload);
         break;
       default:
-        console.warn(`Unknown webhook event: ${(payload as any).event}`);
+        console.warn(`Unknown webhook event: ${payload.event}`);
     }
 
     return NextResponse.json({ status: 'success' });
@@ -104,16 +112,16 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleStageCompleted(payload: StageCompletedWebhookPayload): Promise<void> {
+async function handleStageCompleted(payload: any): Promise<void> {
   try {
-    const stageType = payload.stage.type;
-    const stageStatus = payload.stage.status;
-    const executionTime = payload.stage.execution_time;
+    const stageType = payload.stage?.type || 'unknown';
+    const stageStatus = payload.stage?.status || 'unknown';
+    const executionTime = payload.stage?.execution_time || 0;
 
     console.log(`Stage ${stageType} ${stageStatus} in ${executionTime}s`);
 
     // Process output files if available
-    if (payload.files.output_files && payload.files.output_files.length > 0) {
+    if (payload.files?.output_files && payload.files.output_files.length > 0) {
       console.log(`Stage ${stageType} produced ${payload.files.output_files.length} output files:`);
       for (const filePath of payload.files.output_files) {
         console.log(`  - ${filePath}`);
@@ -122,17 +130,17 @@ async function handleStageCompleted(payload: StageCompletedWebhookPayload): Prom
     }
 
     // Log metrics if available
-    if (payload.metadata.metrics) {
+    if (payload.metadata?.metrics) {
       console.log(`Stage ${stageType} metrics:`, payload.metadata.metrics);
     }
 
     // Log warnings if any
-    if (payload.metadata.warnings && payload.metadata.warnings.length > 0) {
+    if (payload.metadata?.warnings && payload.metadata.warnings.length > 0) {
       console.warn(`Stage ${stageType} warnings:`, payload.metadata.warnings);
     }
 
     // Handle stage failure
-    if (stageStatus === 'failed' && payload.stage.error_message) {
+    if (stageStatus === 'failed' && payload.stage?.error_message) {
       console.error(`Stage ${stageType} failed: ${payload.stage.error_message}`);
       // TODO: Update document/job status to failed
       return;
@@ -148,12 +156,12 @@ async function handleStageCompleted(payload: StageCompletedWebhookPayload): Prom
   }
 }
 
-async function handlePipelineCompleted(payload: PipelineCompletedWebhookPayload): Promise<void> {
+async function handlePipelineCompleted(payload: any): Promise<void> {
   try {
-    const success = payload.pipeline.success;
-    const totalTime = payload.pipeline.total_execution_time;
-    const stagesCompleted = payload.pipeline.stages_completed;
-    const stagesFailed = payload.pipeline.stages_failed;
+    const success = payload.pipeline?.success || false;
+    const totalTime = payload.pipeline?.total_execution_time || 0;
+    const stagesCompleted = payload.pipeline?.stages_completed || 0;
+    const stagesFailed = payload.pipeline?.stages_failed || 0;
 
     console.log(`Pipeline completed: ${success ? 'SUCCESS' : 'FAILED'}`);
     console.log(`Total execution time: ${totalTime}s`);
@@ -176,7 +184,7 @@ async function handlePipelineCompleted(payload: PipelineCompletedWebhookPayload)
       // This would involve finding the document by source_path and updating its state
 
     } else {
-      const errorMessage = payload.pipeline.error_message || 'Pipeline processing failed';
+      const errorMessage = payload.pipeline?.error_message || 'Pipeline processing failed';
       console.error(`Pipeline failed: ${errorMessage}`);
 
       // TODO: Update document status to failed
@@ -184,7 +192,7 @@ async function handlePipelineCompleted(payload: PipelineCompletedWebhookPayload)
     }
 
     // Log intermediate files
-    if (payload.context.intermediate_files && payload.context.intermediate_files.length > 0) {
+    if (payload.context?.intermediate_files && payload.context.intermediate_files.length > 0) {
       console.log('Intermediate files:', payload.context.intermediate_files);
     }
 

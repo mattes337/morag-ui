@@ -66,30 +66,29 @@ export function ProcessingHistory({
       // Convert API response to ProcessingHistoryEntry format
       const historyEntries: ProcessingHistoryEntry[] = [];
 
-      // Add job history
-      if (processingData && processingData.jobs) {
-        for (const job of processingData.jobs) {
-          historyEntries.push({
-            id: job.id,
-            stage: job.stage,
-            status: job.status === 'FINISHED' ? 'COMPLETED' :
-                   job.status === 'PROCESSING' ? 'RUNNING' :
-                   job.status === 'FAILED' ? 'FAILED' : 'PENDING',
-            startTime: job.startedAt,
-            endTime: job.completedAt,
-            duration: job.startedAt && job.completedAt ?
-              Math.floor((new Date(job.completedAt).getTime() - new Date(job.startedAt).getTime()) / 1000) :
-              undefined,
-            message: job.status === 'FINISHED' ? `Stage ${job.stage} completed successfully` :
-                    job.status === 'FAILED' ? job.errorMessage :
-                    `Stage ${job.stage} is ${job.status.toLowerCase()}`,
-            error: job.status === 'FAILED' ? job.errorMessage : undefined,
-          });
-        }
+      // Add job history from both sources
+      const jobsToProcess = data.jobs || (processingData && processingData.jobs) || [];
+      for (const job of jobsToProcess) {
+        historyEntries.push({
+          id: job.id,
+          stage: job.stage,
+          status: job.status === 'FINISHED' ? 'COMPLETED' :
+                 job.status === 'PROCESSING' ? 'RUNNING' :
+                 job.status === 'FAILED' ? 'FAILED' : 'PENDING',
+          startTime: job.startedAt || job.startDate,
+          endTime: job.completedAt || job.endDate,
+          duration: (job.startedAt || job.startDate) && (job.completedAt || job.endDate) ?
+            Math.floor((new Date(job.completedAt || job.endDate).getTime() - new Date(job.startedAt || job.startDate).getTime()) / 1000) :
+            undefined,
+          message: job.status === 'FINISHED' ? `Stage ${job.stage} completed successfully` :
+                  job.status === 'FAILED' ? (job.errorMessage || job.summary) :
+                  `Stage ${job.stage} is ${job.status.toLowerCase()}`,
+          error: job.status === 'FAILED' ? (job.errorMessage || job.summary) : undefined,
+        });
       }
 
       // Add execution history
-      if (processingData.executions) {
+      if (processingData && processingData.executions) {
         for (const execution of processingData.executions) {
           // Get output files for this execution
           const outputFiles = execution.outputFiles ? execution.outputFiles.map((filename: string) => ({

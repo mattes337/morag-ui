@@ -2,6 +2,7 @@ import { ProcessingStage, JobStatus, ProcessingMode, StageStatus } from '@prisma
 import { prisma } from '../database';
 import { stageExecutionService } from './stageExecutionService';
 import { moragService } from './moragService';
+import { unifiedFileService } from './unifiedFileService';
 
 export interface ProcessingJobInput {
   documentId: string;
@@ -696,18 +697,17 @@ class BackgroundJobService {
 
       if (job.stage === 'MARKDOWN_CONVERSION') {
         // For markdown conversion, we need the original file content
-        if (originalFile?.filepath) {
-          try {
-            const fs = require('fs');
-            const path = require('path');
-            const filePath = path.resolve(originalFile.filepath);
-            if (fs.existsSync(filePath)) {
-              documentContent = fs.readFileSync(filePath, 'utf8');
-              contentSource = 'original_file';
-            }
-          } catch (error) {
-            console.warn(`Failed to read original file ${originalFile.filepath}:`, error);
+        try {
+          const fileWithContent = await unifiedFileService.getFile(originalFile.id, true);
+          if (fileWithContent && fileWithContent.content) {
+            documentContent = fileWithContent.content;
+            contentSource = 'original_file';
+          } else {
+            throw new Error(`Failed to retrieve content for original file ${originalFile.id}`);
           }
+        } catch (error) {
+          console.error(`Failed to read original file ${originalFile.id}:`, error);
+          throw new Error(`Failed to read original file for document ${job.documentId}`);
         }
       } else {
         // For other stages, use the markdown content from previous stages
