@@ -32,7 +32,10 @@ export const ALLOWED_FILE_TYPES = [
   'video/webm',
   'audio/mpeg',
   'audio/wav',
-  'audio/ogg'
+  'audio/ogg',
+  // Additional MIME types that browsers might send for markdown files
+  'application/octet-stream', // Generic binary, often used for .md files
+  '', // Empty MIME type, sometimes sent by browsers
 ];
 
 export const DANGEROUS_FILE_EXTENSIONS = [

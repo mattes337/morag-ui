@@ -70,11 +70,16 @@ export async function validateFileUploadSecurity(
     }
   }
 
-  // Verify MIME type matches file extension
+  // Verify MIME type matches file extension (but be lenient with markdown files)
   const extension = fileName.substring(fileName.lastIndexOf('.'));
   const mimeTypeValidation = validateMimeTypeExtensionMatch(file.type, extension);
   if (!mimeTypeValidation.isValid) {
-    errors.push(mimeTypeValidation.error!);
+    // Be more lenient with markdown files as browsers send different MIME types
+    if (extension.toLowerCase() === '.md' && (file.type === 'application/octet-stream' || file.type === '' || file.type === 'text/plain')) {
+      warnings.push('Markdown file detected with generic MIME type - this is normal');
+    } else {
+      errors.push(mimeTypeValidation.error!);
+    }
   }
 
   // Check magic bytes if enabled
@@ -107,8 +112,9 @@ export async function validateFileUploadSecurity(
 function validateMimeTypeExtensionMatch(mimeType: string, extension: string): { isValid: boolean; error?: string } {
   const mimeToExtension: Record<string, string[]> = {
     'application/pdf': ['.pdf'],
-    'text/plain': ['.txt', '.text'],
+    'text/plain': ['.txt', '.text', '.md'], // Allow .md files with text/plain MIME type
     'text/markdown': ['.md', '.markdown'],
+    'application/octet-stream': ['.md', '.markdown'], // Allow .md files with generic MIME type
     'application/msword': ['.doc'],
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     'application/vnd.ms-excel': ['.xls'],
@@ -122,10 +128,15 @@ function validateMimeTypeExtensionMatch(mimeType: string, extension: string): { 
     'audio/mpeg': ['.mp3'],
     'audio/wav': ['.wav'],
     'audio/ogg': ['.ogg'],
+    '': ['.md', '.markdown'], // Allow .md files with empty MIME type
   };
 
   const expectedExtensions = mimeToExtension[mimeType];
   if (!expectedExtensions) {
+    // Special case for markdown files with empty or unknown MIME types
+    if (extension.toLowerCase() === '.md' || extension.toLowerCase() === '.markdown') {
+      return { isValid: true };
+    }
     return { isValid: true }; // Unknown MIME type, let other validation handle it
   }
 

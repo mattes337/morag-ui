@@ -45,7 +45,9 @@ export function convertPrismaDatabaseToApp(prismaDatabase: any) {
         name: prismaDatabase.name,
         description: prismaDatabase.description,
         documentCount: prismaDatabase.documentCount,
-        lastUpdated: prismaDatabase.lastUpdated.toISOString().split('T')[0],
+        lastUpdated: prismaDatabase.lastUpdated
+            ? prismaDatabase.lastUpdated.toISOString().split('T')[0]
+            : '',
     };
 }
 
@@ -58,7 +60,9 @@ export function convertPrismaDocumentToApp(prismaDocument: any) {
         version: prismaDocument.version,
         chunks: prismaDocument.chunks,
         quality: prismaDocument.quality,
-        uploadDate: prismaDocument.uploadDate.toISOString().split('T')[0],
+        uploadDate: prismaDocument.uploadDate
+            ? prismaDocument.uploadDate.toISOString().split('T')[0]
+            : '',
     };
 }
 
@@ -96,15 +100,23 @@ export function convertPrismaJobToApp(prismaJob: any) {
         documentId: prismaJob.documentId,
         documentName: prismaJob.documentName,
         documentType: prismaJob.documentType,
-        startDate: prismaJob.startDate.toISOString(),
-        endDate: prismaJob.endDate?.toISOString(),
+        startDate: prismaJob.startDate
+            ? prismaJob.startDate.toISOString()
+            : '',
+        endDate: prismaJob.endDate
+            ? prismaJob.endDate.toISOString()
+            : '',
         status: prismaJob.status.toLowerCase().replace('_', '-'),
         progress: {
             percentage: prismaJob.percentage,
             summary: prismaJob.summary,
         },
-        createdAt: prismaJob.createdAt.toISOString(),
-        updatedAt: prismaJob.updatedAt.toISOString(),
+        createdAt: prismaJob.createdAt
+            ? prismaJob.createdAt.toISOString()
+            : '',
+        updatedAt: prismaJob.updatedAt
+            ? prismaJob.updatedAt.toISOString()
+            : '',
     };
 }
 
