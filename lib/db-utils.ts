@@ -21,6 +21,24 @@ export function convertPrismaUserSettingsToApp(prismaSettings: any) {
     };
 }
 
+export function convertPrismaRealmToApp(prismaRealm: any) {
+    return {
+        id: prismaRealm.id,
+        name: prismaRealm.name,
+        description: prismaRealm.description,
+        domain: prismaRealm.domain,
+        ingestionPrompt: prismaRealm.ingestionPrompt,
+        systemPrompt: prismaRealm.systemPrompt,
+        extractionPrompt: prismaRealm.extractionPrompt,
+        domainPrompt: prismaRealm.domainPrompt,
+        documentCount: prismaRealm.documentCount,
+        isDefault: prismaRealm.isDefault,
+        lastUpdated: prismaRealm.lastUpdated.toISOString().split('T')[0],
+        createdAt: prismaRealm.createdAt,
+        updatedAt: prismaRealm.updatedAt,
+    };
+}
+
 export function convertPrismaDatabaseToApp(prismaDatabase: any) {
     return {
         id: prismaDatabase.id,
@@ -54,7 +72,7 @@ export function convertPrismaApiKeyToApp(prismaApiKey: any) {
     };
 }
 
-export function convertPrismaDatabaseServerToApp(prismaServer: any) {
+export function convertPrismaServerToApp(prismaServer: any) {
     return {
         id: prismaServer.id,
         name: prismaServer.name,
@@ -92,12 +110,12 @@ export function convertPrismaJobToApp(prismaJob: any) {
 
 // Batch operations
 export async function getAllAppData() {
-    const [databases, documents, apiKeys, jobs, servers] = await Promise.all([
-        prisma.database.findMany({
+    const [realms, documents, apiKeys, jobs, servers] = await Promise.all([
+        prisma.realm.findMany({
             include: { documents: true },
         }),
         prisma.document.findMany({
-            include: { database: true, jobs: true },
+            include: { realm: true, jobs: true },
         }),
         prisma.apiKey.findMany({
             include: { user: true },
@@ -105,14 +123,14 @@ export async function getAllAppData() {
         prisma.job.findMany({
             include: { document: true, user: true },
         }),
-        prisma.databaseServer.findMany(),
+        prisma.server.findMany(),
     ]);
 
     return {
-        databases: databases.map(convertPrismaDatabaseToApp),
+        realms: realms.map(convertPrismaRealmToApp),
         documents: documents.map(convertPrismaDocumentToApp),
         apiKeys: apiKeys.map(convertPrismaApiKeyToApp),
         jobs: jobs.map(convertPrismaJobToApp),
-        servers: servers.map(convertPrismaDatabaseServerToApp),
+        servers: servers.map(convertPrismaServerToApp),
     };
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseServerService } from '../../../../../lib/services/databaseServerService';
+import { ServerService } from '../../../../../lib/services/serverService';
 import { requireAuth } from '../../../../../lib/auth';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -7,7 +7,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         const user = await requireAuth(request);
         
         // Get the server to test
-        const server = await DatabaseServerService.getDatabaseServerById(params.id);
+        const server = await ServerService.getServerById(params.id);
         
         if (!server) {
             return NextResponse.json({ error: 'Server not found' }, { status: 404 });

@@ -82,6 +82,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     chunks: docData.chunks,
                     quality: docData.quality,
                     uploadDate: new Date(docData.uploadDate).toISOString().split('T')[0],
+                    markdown: docData.markdown,
                 };
 
                 console.log(

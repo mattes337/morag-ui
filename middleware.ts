@@ -2,19 +2,52 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { authConfig } from './lib/auth-config';
 import { getAuthUser } from './lib/auth';
+import { handlePreflight, addCORSHeaders, addSecurityHeaders } from './lib/middleware/security';
+import { rateLimit, RATE_LIMIT_CONFIGS } from './lib/middleware/rateLimiting';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Skip middleware for static files and API routes (except auth)
+    // Handle preflight requests
+    const preflightResponse = handlePreflight(request);
+    if (preflightResponse) {
+        return preflightResponse;
+    }
+
+    // Apply rate limiting to API routes
+    if (pathname.startsWith('/api/')) {
+        let rateLimitConfig;
+
+        if (pathname.includes('/auth/login')) {
+            rateLimitConfig = RATE_LIMIT_CONFIGS.login;
+        } else if (pathname.includes('/upload')) {
+            rateLimitConfig = RATE_LIMIT_CONFIGS.upload;
+        } else if (pathname.includes('/search')) {
+            rateLimitConfig = RATE_LIMIT_CONFIGS.search;
+        } else if (pathname.includes('/processing')) {
+            rateLimitConfig = RATE_LIMIT_CONFIGS.processing;
+        } else {
+            rateLimitConfig = RATE_LIMIT_CONFIGS.api;
+        }
+
+        const rateLimitMiddleware = rateLimit(rateLimitConfig);
+        const rateLimitResponse = rateLimitMiddleware(request);
+        if (rateLimitResponse) {
+            return rateLimitResponse;
+        }
+    }
+
+    // Skip auth middleware for static files and certain API routes
     if (
         pathname.startsWith('/_next') ||
-        pathname.startsWith('/api') ||
         pathname.startsWith('/static') ||
         pathname.includes('.') ||
         pathname === '/favicon.ico'
     ) {
-        return NextResponse.next();
+        const response = NextResponse.next();
+        addCORSHeaders(request, response);
+        addSecurityHeaders(response);
+        return response;
     }
 
     // Only run middleware logic if header authentication is explicitly enabled
@@ -35,7 +68,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    addCORSHeaders(request, response);
+    addSecurityHeaders(response);
+    return response;
 }
 
 export const config = {

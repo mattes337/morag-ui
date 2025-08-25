@@ -9,6 +9,7 @@ export function Navigation() {
     const tabs = [
         { id: 'realms', label: 'Realms', href: '/' },
         { id: 'documents', label: 'Documents', href: '/documents' },
+        { id: 'users', label: 'Users', href: '/users' },
         { id: 'jobs', label: 'Jobs', href: '/jobs' },
         { id: 'prompt', label: 'Prompt', href: '/prompt' },
         { id: 'apikeys', label: 'API Keys', href: '/api-keys' },

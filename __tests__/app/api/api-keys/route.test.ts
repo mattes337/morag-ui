@@ -30,12 +30,12 @@ const mockRequireAuth = jest.mocked(requireAuth);
 const mockGetAuthUser = jest.mocked(getAuthUser);
 
 describe('/api/api-keys', () => {
-    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN' };
+    const mockUser = { userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const };
     
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockReturnValue(mockUser);
-        mockGetAuthUser.mockResolvedValue({ userId: 'user1', email: 'test@example.com' });
+        mockRequireAuth.mockResolvedValue(mockUser);
+        mockGetAuthUser.mockResolvedValue({ userId: 'user1', email: 'test@example.com', role: 'ADMIN', name: 'Test User', authMethod: 'jwt' as const });
     });
 
     describe('GET', () => {
@@ -100,7 +100,8 @@ describe('/api/api-keys', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New API Key',
-                    key: 'api-key-1'
+                    key: 'api-key-1',
+                    realmId: 'realm1'
                 })
             });
 
@@ -112,16 +113,17 @@ describe('/api/api-keys', () => {
             expect(mockApiKeyService.createApiKey).toHaveBeenCalledWith({
                 name: 'New API Key',
                 key: 'api-key-1',
-                userId: 'user1'
+                userId: 'user1',
+                realmId: 'realm1'
             });
         });
 
-        it('should return 400 if name or key is missing', async () => {
+        it('should return 400 if name, key, or realmId is missing', async () => {
             const mockRequest = new NextRequest('http://localhost:3000/api/api-keys', {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New API Key'
-                    // key missing
+                    // key and realmId missing
                 })
             });
 
@@ -129,7 +131,7 @@ describe('/api/api-keys', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name and key are required' });
+            expect(data).toEqual({ error: 'Name, key, and realmId are required' });
             expect(mockApiKeyService.createApiKey).not.toHaveBeenCalled();
         });
 
@@ -160,7 +162,8 @@ describe('/api/api-keys', () => {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New API Key',
-                    key: 'api-key-1'
+                    key: 'api-key-1',
+                    realmId: 'realm1'
                 })
             });
 

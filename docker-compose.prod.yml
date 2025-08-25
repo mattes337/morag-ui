@@ -1,0 +1,253 @@
+version: '3.8'
+
+services:
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: morag-ui-prod
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - STRUCTURED_LOGGING=true
+      - AUDIT_LOGGING=true
+      - PERFORMANCE_TRACKING=true
+      - METRICS_ENABLED=true
+      - RATE_LIMITING_ENABLED=true
+      - DB_SSL=true
+    volumes:
+      - ./uploads:/app/uploads:rw
+      - app_logs:/app/logs:rw
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - morag_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /app/.next/cache:noexec,nosuid,size=200m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.morag.rule=Host(`morag.drydev.de`)"
+      - "traefik.http.routers.morag.entrypoints=websecure"
+      - "traefik.http.routers.morag.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.morag.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.morag.loadbalancer.server.port=3000"
+      - "traefik.http.services.morag.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.morag.loadbalancer.healthcheck.interval=30s"
+
+  # MariaDB Database
+  mariadb:
+    image: mariadb:11.4
+    container_name: morag-mariadb-prod
+    restart: unless-stopped
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-morag_root_password}
+      - MYSQL_DATABASE=${DB_NAME:-morag}
+      - MYSQL_USER=${DB_USER:-morag_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-morag_password}
+      - MARIADB_CHARACTER_SET_SERVER=utf8mb4
+      - MARIADB_COLLATE_SERVER=utf8mb4_unicode_ci
+      - MARIADB_AUTO_UPGRADE=1
+    volumes:
+      - mariadb_data:/var/lib/mysql:rw
+      - ./mariadb/init:/docker-entrypoint-initdb.d:ro
+      - ./mariadb/conf.d:/etc/mysql/conf.d:ro
+      - mariadb_logs:/var/log/mysql:rw
+    networks:
+      - morag_network
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=512M
+      --max-connections=200
+      --innodb-log-file-size=256M
+      --innodb-flush-log-at-trx-commit=2
+      --innodb-flush-method=O_DIRECT
+      --query-cache-type=1
+      --query-cache-size=64M
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long-query-time=2
+      --log-error=/var/log/mysql/error.log
+      --general-log=0
+      --binlog-expire-logs-seconds=604800
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    security_opt:
+      - no-new-privileges:true
+
+  # Redis for caching and session storage (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: morag-redis-prod
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data:rw
+    networks:
+      - morag_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    security_opt:
+      - no-new-privileges:true
+
+  # Nginx reverse proxy (optional, if not using Traefik)
+  nginx:
+    image: nginx:alpine
+    container_name: morag-nginx-prod
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx:rw
+    depends_on:
+      - app
+    networks:
+      - morag_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - nginx
+
+  # Log aggregator (optional)
+  fluentd:
+    image: fluent/fluentd:v1.16-debian-1
+    container_name: morag-fluentd-prod
+    restart: unless-stopped
+    volumes:
+      - ./fluentd/conf:/fluentd/etc:ro
+      - app_logs:/var/log/app:ro
+      - mariadb_logs:/var/log/mysql:ro
+      - nginx_logs:/var/log/nginx:ro
+    networks:
+      - morag_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - logging
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/mariadb
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+  app_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/app
+  mariadb_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/mariadb
+  nginx_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/nginx
+
+networks:
+  morag_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

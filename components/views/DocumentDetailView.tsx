@@ -1,7 +1,45 @@
 'use client';
 
+import React, { useState, useEffect, useCallback } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
+import { ProcessingStatusDisplay } from '../ui/processing-status-display';
+import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
+
+import { ProcessingHistory } from '../ui/processing-history';
+import { DocumentStatistics } from '../ui/document-statistics';
+import { ToastService } from '../../lib/services/toastService';
+
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Activity,
+  Settings,
+  FileText,
+  Download,
+  Eye,
+
+
+  RotateCcw,
+  Trash2
+} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+interface DocumentFile {
+  id: string;
+  fileType: string;
+  stage?: string;
+  filename: string;
+  originalName?: string;
+  filesize: number;
+  contentType: string;
+  content?: string;
+  createdAt: string;
+}
 
 interface DocumentDetailViewProps {
     document: Document;
@@ -25,6 +63,32 @@ export function DocumentDetailView({
         setDocumentToDelete,
     } = useApp();
 
+    const [activeTab, setActiveTab] = useState('overview');
+    const [files, setFiles] = useState<DocumentFile[]>([]);
+    const [isLoadingFiles, setIsLoadingFiles] = useState(true);
+    const [isExecutingStage, setIsExecutingStage] = useState(false);
+    const [viewingFile, setViewingFile] = useState<DocumentFile | null>(null);
+
+    const loadDocumentFiles = useCallback(async () => {
+        try {
+          setIsLoadingFiles(true);
+          const response = await fetch(`/api/files?documentId=${document.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setFiles(data.files || []);
+          }
+        } catch (error) {
+          console.error('Failed to load document files:', error);
+          ToastService.error('Failed to load document files');
+        } finally {
+          setIsLoadingFiles(false);
+        }
+    }, [document.id]);
+
+    useEffect(() => {
+        loadDocumentFiles();
+    }, [loadDocumentFiles]);
+
     const handleReingestClick = () => {
         setDocumentToReingest(document);
         setShowReingestConfirmDialog(true);
@@ -35,6 +99,179 @@ export function DocumentDetailView({
         setShowDeleteConfirmDialog(true);
     };
 
+    const handleExecuteStage = async (stage: string) => {
+        try {
+            setIsExecutingStage(true);
+
+            const response = await fetch('/api/stages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    documentId: document.id,
+                    stage: stage,
+                }),
+                credentials: 'include', // Include cookies for authentication
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+
+                // Handle authentication errors specifically
+                if (response.status === 401) {
+                    ToastService.error(
+                        'Authentication required',
+                        {
+                            description: 'Please log in to execute processing stages'
+                        }
+                    );
+                    // Redirect to login page
+                    window.location.href = '/login';
+                    return;
+                }
+
+                throw new Error(errorData.error || 'Failed to execute stage');
+            }
+
+            const result = await response.json();
+            ToastService.success(`Stage ${stage} execution started successfully`);
+
+            // Refresh the page to show updated status
+            window.location.reload();
+        } catch (error) {
+            console.error('Failed to execute stage:', error);
+            ToastService.error(
+                'Failed to execute stage',
+                {
+                    description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                }
+            );
+        } finally {
+            setIsExecutingStage(false);
+        }
+    };
+
+    const handleViewFile = async (fileId: string) => {
+        try {
+            const response = await fetch(`/api/files/${fileId}?includeContent=true`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch file details');
+            }
+
+            const fileData = await response.json();
+            setViewingFile(fileData);
+        } catch (error) {
+            console.error('Failed to view file:', error);
+            ToastService.error('Failed to view file');
+        }
+    };
+
+    const handleDownloadFile = async (fileId: string) => {
+        const file = files.find(f => f.id === fileId);
+        const fileName = file?.originalName || file?.filename || 'download';
+
+        try {
+            ToastService.info('Starting download...', { description: `Downloading ${fileName}` });
+
+            const response = await fetch(`/api/files/${fileId}/download`);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            // Check if the response has content-length for progress tracking
+            const contentLength = response.headers.get('content-length');
+            const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+            if (total > 0) {
+                // Use ReadableStream for progress tracking
+                const reader = response.body?.getReader();
+                if (!reader) {
+                    throw new Error('Failed to get response reader');
+                }
+
+                const chunks: Uint8Array[] = [];
+                let received = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) break;
+
+                    chunks.push(value);
+                    received += value.length;
+
+                    // Update progress (throttled to avoid too many updates)
+                    const progress = Math.round((received / total) * 100);
+                    if (progress % 10 === 0 || progress === 100) {
+                        ToastService.info(`Downloading ${fileName}...`, {
+                            description: `${progress}% complete (${(received / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB)`
+                        });
+                    }
+                }
+
+                // Combine chunks into blob
+                const blob = new Blob(chunks as BlobPart[]);
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = window.document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                window.document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                window.document.body.removeChild(a);
+
+                ToastService.success('Download completed', { description: `${fileName} has been downloaded successfully` });
+            } else {
+                // Fallback for responses without content-length
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = window.document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                window.document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                window.document.body.removeChild(a);
+
+                ToastService.success('Download completed', { description: `${fileName} has been downloaded successfully` });
+            }
+        } catch (error) {
+            console.error('Failed to download file:', error);
+
+            let errorMessage = 'Failed to download file';
+            let errorDescription = 'An unexpected error occurred';
+
+            if (error instanceof Error) {
+                errorDescription = error.message;
+
+                // Provide specific error messages
+                if (error.message.includes('404')) {
+                    errorMessage = 'File Not Found';
+                    errorDescription = 'The requested file could not be found. It may have been deleted or moved.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Access Denied';
+                    errorDescription = 'You do not have permission to download this file.';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = 'Network Error';
+                    errorDescription = 'Unable to connect to the server. Please check your internet connection and try again.';
+                } else if (error.message.includes('quota') || error.message.includes('storage')) {
+                    errorMessage = 'Storage Error';
+                    errorDescription = 'Insufficient storage space to download the file.';
+                }
+            }
+
+            ToastService.error(errorMessage, { description: errorDescription });
+        }
+    };
+
     const getStateColor = (state: string) => {
         switch (state) {
             case 'pending':
@@ -43,8 +280,6 @@ export function DocumentDetailView({
                 return 'bg-blue-100 text-blue-800';
             case 'ingested':
                 return 'bg-green-100 text-green-800';
-            case 'deprecated':
-                return 'bg-gray-100 text-gray-800';
             case 'deleted':
                 return 'bg-red-100 text-red-800';
             default:
@@ -56,20 +291,83 @@ export function DocumentDetailView({
         const docType = document.type.toLowerCase();
         const docName = document.name.toLowerCase();
 
-        // For testing purposes, using publicly available files
-        if (docType === 'pdf' || docName.includes('.pdf')) {
-            // Using a sample PDF from Mozilla
-            const pdfUrl =
-                'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+        // Handle markdown files
+        if (docType === 'markdown' || docName.includes('.md') || docName.includes('.markdown')) {
+            // Use actual document markdown content or fallback message
+            const markdownContent = document.markdown || `# ${document.name}
+
+## Document Preview
+
+This document is still being processed. The markdown content will appear here once processing is complete.
+
+### Processing Information
+- **Status**: ${document.state}
+- **Chunks**: ${document.chunks || 0}
+- **Quality**: ${document.quality ? (document.quality * 100).toFixed(1) : '0'}%
+
+Please check back later or refresh the page to see the processed content.`;
+
             return (
-                <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
-                    <iframe
-                        src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`}
-                        className="w-full h-full"
-                        title={`PDF Viewer - ${document.name}`}
-                    />
+                <div className="w-full border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                        <span className="text-sm font-medium text-gray-700">Markdown Preview</span>
+                    </div>
+                    <div className="p-6 bg-white max-h-96 overflow-y-auto">
+                        <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                                components={{
+                                h1: ({children}) => <h1 className="text-2xl font-bold mb-4 text-gray-900">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-xl font-semibold mb-3 text-gray-800">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-lg font-medium mb-2 text-gray-700">{children}</h3>,
+                                p: ({children}) => <p className="mb-3 text-gray-600 leading-relaxed">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-3 text-gray-600">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-3 text-gray-600">{children}</ol>,
+                                li: ({children}) => <li className="mb-1">{children}</li>,
+                                blockquote: ({children}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-3">{children}</blockquote>,
+                                code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">{children}</code>,
+                                pre: ({children}) => <pre className="bg-gray-100 p-3 rounded overflow-x-auto mb-3">{children}</pre>,
+                                a: ({children, href}) => <a href={href} className="text-blue-600 hover:text-blue-800 underline">{children}</a>,
+                                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>
+                            }}
+                            >
+                            {markdownContent}
+                            </ReactMarkdown>
+                        </div>
+                    </div>
                 </div>
             );
+        }
+
+        // Handle PDF files
+        if (docType === 'pdf' || docName.includes('.pdf')) {
+            // Find the original PDF file
+            const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT' && f.contentType === 'application/pdf');
+
+            if (originalFile) {
+                // Use the actual uploaded PDF file with the view endpoint
+                const pdfUrl = `/api/files/${originalFile.id}/view`;
+                return (
+                    <div className="w-full h-96 sm:h-[500px] lg:h-[600px] border border-gray-300 rounded-lg overflow-hidden">
+                        <iframe
+                            src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`}
+                            className="w-full h-full"
+                            title={`PDF Viewer - ${document.name}`}
+                        />
+                    </div>
+                );
+            } else {
+                // Fallback if no original file found
+                return (
+                    <div className="w-full h-96 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                        <div className="text-center">
+                            <div className="text-4xl mb-4">📄</div>
+                            <p className="text-gray-600">PDF file is being processed</p>
+                            <p className="text-sm text-gray-500 mt-2">Please check back later</p>
+                        </div>
+                    </div>
+                );
+            }
         }
 
         if (docType === 'youtube' || docName.includes('youtube')) {
@@ -116,24 +414,27 @@ export function DocumentDetailView({
     };
 
     return (
-        <div className="space-y-6">
+        <div className="w-full space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+                <div className="flex-1 min-w-0">
                     <button
                         onClick={onBack}
                         className="text-blue-600 hover:text-blue-800 text-sm mb-2"
                     >
                         ← Back to Documents
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900">{document.name}</h1>
-                    <div className="flex items-center space-x-4 mt-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words" title={document.name}>{document.name}</h1>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
                         <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${getStateColor(document.state)}`}
                         >
                             {document.state}
                         </span>
-                        <span className="text-sm text-gray-500">Type: {document.type}</span>
+                        <span className="text-sm text-gray-500">
+                            Type: {getDocumentTypeDescription(document.type, document.subType)}
+                            {document.subType && ` (${document.subType})`}
+                        </span>
                         <span className="text-sm text-gray-500">Version: v{document.version}</span>
                         <span className="text-sm text-gray-500">
                             Uploaded: {document.uploadDate}
@@ -145,85 +446,328 @@ export function DocumentDetailView({
                 <div className="flex space-x-3"></div>
             </div>
 
-            {/* Document Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Stats</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Chunks:</span>
-                            <span className="font-medium">{document.chunks}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Quality:</span>
-                            <span className="font-medium">
-                                {(document.quality * 100).toFixed(1)}%
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Version:</span>
-                            <span className="font-medium">v{document.version}</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Main Content Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="processing">Processing</TabsTrigger>
+                    <TabsTrigger value="files">Files</TabsTrigger>
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Document Info</h3>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Type:</span>
-                            <span className="font-medium">{document.type}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">State:</span>
-                            <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(document.state)}`}
-                            >
-                                {document.state}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Uploaded:</span>
-                            <span className="font-medium">{document.uploadDate}</span>
-                        </div>
-                    </div>
-                </div>
+                <TabsContent value="overview" className="space-y-6">
+                    {/* Original File Display */}
+                    {files.find(f => f.fileType === 'ORIGINAL_DOCUMENT') && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center space-x-2">
+                                    <FileText className="w-5 h-5" />
+                                    <span>Original File</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {(() => {
+                                    const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT');
+                                    return originalFile ? (
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-3">
+                                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                                <FileText className="w-8 h-8 text-blue-600 flex-shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium break-words">{originalFile.originalName || originalFile.filename}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {(originalFile.filesize / 1024 / 1024).toFixed(2)} MB • {originalFile.contentType}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDownloadFile(originalFile.id)}
+                                                className="flex-shrink-0"
+                                            >
+                                                <Download className="w-4 h-4 mr-1" />
+                                                Download
+                                            </Button>
+                                        </div>
+                                    ) : null;
+                                })()}
+                            </CardContent>
+                        </Card>
+                    )}
 
-                <div className="bg-white p-6 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Actions</h3>
-                    <div className="space-y-2">
-                        <button
-                            onClick={handleReingestClick}
-                            className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
-                            disabled={document.state === 'ingesting'}
-                        >
-                            🔄 Reingest Document
-                        </button>
-                        <button
-                            onClick={() => onSupersede(document)}
-                            className="w-full text-left px-3 py-2 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
-                            disabled={
-                                document.state === 'deprecated' || document.state === 'deleted'
-                            }
-                        >
-                            📝 Supersede Version
-                        </button>
-                        <button
-                            onClick={handleDeleteClick}
-                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                            disabled={document.state === 'deleted'}
-                        >
-                            🗑️ Delete Document
-                        </button>
-                    </div>
-                </div>
-            </div>
+                    {/* Document Statistics */}
+                    <DocumentStatistics documentId={document.id} />
 
-            {/* Document Preview */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Preview</h3>
-                {renderDocumentEmbed()}
-            </div>
+                    {/* Quick Actions */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Settings className="w-5 h-5" />
+                                <span>Actions</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleReingestClick}
+                                    disabled={document.state === 'ingesting'}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Reingest Document</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => onSupersede(document)}
+                                    disabled={document.state === 'deleted'}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Supersede Version</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleDeleteClick}
+                                    disabled={document.state === 'deleted'}
+                                    className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Delete Document</span>
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="processing" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <Activity className="w-5 h-5" />
+                                    <span>Processing Status</span>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Badge variant={(document.processingMode || 'AUTOMATIC') === 'AUTOMATIC' ? 'default' : 'secondary'}>
+                                        {document.processingMode || 'AUTOMATIC'} Mode
+                                    </Badge>
+                                    <ProcessingModeToggle
+                                        mode={document.processingMode || 'AUTOMATIC'}
+                                        onModeChange={async (mode) => {
+                                            try {
+                                                const response = await fetch(`/api/documents/${document.id}/processing`, {
+                                                    method: 'PUT',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                    },
+                                                    body: JSON.stringify({
+                                                        processingMode: mode
+                                                    })
+                                                });
+
+                                                if (!response.ok) {
+                                                    throw new Error('Failed to update processing mode');
+                                                }
+
+                                                const result = await response.json();
+                                                console.log('Processing mode updated:', result.message);
+
+                                                // Refresh the document data to show updated mode
+                                                window.location.reload();
+                                            } catch (error) {
+                                                console.error('Failed to update processing mode:', error);
+                                                ToastService.error(
+                                                    'Failed to update processing mode',
+                                                    {
+                                                        description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                                                    }
+                                                );
+                                            }
+                                        }}
+                                        disabled={document.state === 'ingesting'}
+                                        size="sm"
+                                    />
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {/* Processing Status Display */}
+                                <ProcessingStatusDisplay
+                                    documentId={document.id}
+                                    processingMode={document.processingMode || 'AUTOMATIC'}
+                                    stages={[
+                                        {
+                                            stage: 'MARKDOWN_CONVERSION',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'RUNNING' : 'PENDING'
+                                        },
+                                        {
+                                            stage: 'CHUNKER',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
+                                        },
+                                        {
+                                            stage: 'INGESTOR',
+                                            status: document.state === 'ingested' ? 'COMPLETED' :
+                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
+                                        }
+                                    ]}
+                                    currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
+                                    compact={false}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Processing History */}
+                    <ProcessingHistory
+                        documentId={document.id}
+                        onExecuteStage={handleExecuteStage}
+                        onViewOutput={handleViewFile}
+                        onDownloadOutput={handleDownloadFile}
+                    />
+
+                    {/* Quick Stage Execution */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Activity className="w-5 h-5" />
+                                <span>Quick Stage Execution</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {['MARKDOWN_CONVERSION', 'CHUNKER', 'INGESTOR'].map((stage) => (
+                                    <Button
+                                        key={stage}
+                                        variant="outline"
+                                        onClick={() => handleExecuteStage(stage)}
+                                        disabled={isExecutingStage}
+                                        className="flex items-center space-x-2 h-auto py-3"
+                                    >
+                                        <Activity className="w-4 h-4" />
+                                        <span className="text-sm">{stage.replace('_', ' ')}</span>
+                                    </Button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3">
+                                Click any stage to execute it for this document. Make sure you&apos;re logged in.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="files" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <FileText className="w-5 h-5" />
+                                <span>All Files</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingFiles ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                        <p className="text-sm text-gray-600">Loading files...</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {files.map((file) => (
+                                        <div key={file.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-3">
+                                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                                <FileText className="w-6 h-6 text-gray-600 flex-shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium break-words">{file.originalName || file.filename}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {file.fileType} {file.stage && `• ${file.stage}`} •
+                                                        {(file.filesize / 1024).toFixed(1)} KB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2 flex-shrink-0">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleDownloadFile(file.id)}
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {files.length === 0 && (
+                                        <p className="text-center text-gray-500 py-8">No files found</p>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="preview" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Eye className="w-5 h-5" />
+                                <span>Document Preview</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {renderDocumentEmbed()}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* File Viewing Modal */}
+            <Dialog open={!!viewingFile} onOpenChange={() => setViewingFile(null)}>
+                <DialogContent className="w-[95vw] max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="break-words">
+                            {viewingFile?.originalName || viewingFile?.filename}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        {viewingFile && (
+                            <div className="space-y-4">
+                                <div className="text-sm text-gray-600">
+                                    <p><strong>Type:</strong> {viewingFile.contentType}</p>
+                                    <p><strong>Size:</strong> {(viewingFile.filesize / 1024).toFixed(2)} KB</p>
+                                    <p><strong>Stage:</strong> {viewingFile.stage || 'N/A'}</p>
+                                    <p><strong>Created:</strong> {new Date(viewingFile.createdAt).toLocaleString()}</p>
+                                </div>
+
+                                {viewingFile.content && (
+                                    <div className="border rounded-lg p-4 bg-gray-50">
+                                        <h4 className="font-medium mb-2">Content Preview:</h4>
+                                        <pre className="text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                                            {viewingFile.content}
+                                        </pre>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end space-x-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => handleDownloadFile(viewingFile.id)}
+                                    >
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Download
+                                    </Button>
+                                    <Button onClick={() => setViewingFile(null)}>
+                                        Close
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

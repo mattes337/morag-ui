@@ -64,11 +64,12 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockDocumentService.createDocument.mockResolvedValue(mockDocument);
+            mockDocumentService.createDocument.mockResolvedValue(mockDocument as any);
 
             const result = await DocumentService.createDocument({
                 name: 'Test Document',
                 type: 'pdf',
+                subType: 'pdf',
                 userId: 'user1',
                 realmId: 'realm1',
                 state: DocumentState.PENDING,
@@ -78,6 +79,7 @@ describe('DocumentService', () => {
             expect(mockDocumentService.createDocument).toHaveBeenCalledWith({
                 name: 'Test Document',
                 type: 'pdf',
+                subType: 'pdf',
                 userId: 'user1',
                 realmId: 'realm1',
                 state: DocumentState.PENDING,
@@ -129,7 +131,7 @@ describe('DocumentService', () => {
                 },
             ];
 
-            mockDocumentService.getAllDocuments.mockResolvedValue(mockDocuments);
+            mockDocumentService.getAllDocuments.mockResolvedValue(mockDocuments as any);
 
             const result = await DocumentService.getAllDocuments();
 
@@ -177,7 +179,7 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockDocumentService.getDocumentById.mockResolvedValue(mockDocument);
+            mockDocumentService.getDocumentById.mockResolvedValue(mockDocument as any);
 
             const result = await DocumentService.getDocumentById('1');
 
@@ -225,7 +227,7 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockDocumentService.updateDocument.mockResolvedValue(mockUpdatedDocument);
+            mockDocumentService.updateDocument.mockResolvedValue(mockUpdatedDocument as any);
 
             const result = await DocumentService.updateDocument('1', {
                 name: 'Updated Document',
@@ -257,7 +259,7 @@ describe('DocumentService', () => {
                 updatedAt: new Date(),
             };
 
-            mockDocumentService.deleteDocument.mockResolvedValue(mockDeletedDocument);
+            mockDocumentService.deleteDocument.mockResolvedValue(mockDeletedDocument as any);
 
             const result = await DocumentService.deleteDocument('1');
 
@@ -307,7 +309,7 @@ describe('DocumentService', () => {
                 },
             ];
 
-            mockDocumentService.getDocumentsByUser.mockResolvedValue(mockDocuments);
+            mockDocumentService.getDocumentsByUser.mockResolvedValue(mockDocuments as any);
 
             const result = await DocumentService.getDocumentsByUser('user1');
 
@@ -357,7 +359,7 @@ describe('DocumentService', () => {
                 },
             ];
 
-            mockDocumentService.getDocumentsByRealm.mockResolvedValue(mockDocuments);
+            mockDocumentService.getDocumentsByRealm.mockResolvedValue(mockDocuments as any);
 
             const result = await DocumentService.getDocumentsByRealm('realm1');
 
@@ -395,7 +397,7 @@ describe('DocumentService', () => {
                 jobs: [],
             };
 
-            mockDocumentService.updateDocumentQuality.mockResolvedValue(mockUpdatedDocument);
+            mockDocumentService.updateDocumentQuality.mockResolvedValue(mockUpdatedDocument as any);
 
             const result = await DocumentService.updateDocumentQuality('1', 0.95, 10);
 

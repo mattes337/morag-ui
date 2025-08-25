@@ -24,7 +24,7 @@ describe('DocumentsView', () => {
 
         expect(screen.getByText('Documents - Test Realm')).toBeInTheDocument();
         expect(screen.getByText('Test Document.pdf')).toBeInTheDocument();
-        expect(screen.getByText('PDF')).toBeInTheDocument();
+        expect(screen.getByText('PDF Document')).toBeInTheDocument();
         expect(screen.getByText('ingested')).toBeInTheDocument();
         expect(screen.getByText('v1')).toBeInTheDocument();
     });
@@ -86,7 +86,6 @@ describe('DocumentsView', () => {
             { ...mockDocument, state: 'pending' as const },
             { ...mockDocument, id: '2', state: 'ingesting' as const },
             { ...mockDocument, id: '3', state: 'ingested' as const },
-            { ...mockDocument, id: '4', state: 'deprecated' as const },
             { ...mockDocument, id: '5', state: 'deleted' as const },
         ];
 
@@ -95,7 +94,6 @@ describe('DocumentsView', () => {
         expect(screen.getByText('pending')).toHaveClass('bg-yellow-100', 'text-yellow-800');
         expect(screen.getByText('ingesting')).toHaveClass('bg-blue-100', 'text-blue-800');
         expect(screen.getByText('ingested')).toHaveClass('bg-green-100', 'text-green-800');
-        expect(screen.getByText('deprecated')).toHaveClass('bg-gray-100', 'text-gray-800');
         expect(screen.getByText('deleted')).toHaveClass('bg-red-100', 'text-red-800');
     });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Document, ApiKey, DatabaseServer, UserSettings, User, Job, Realm } from '../types';
+import { Document, ApiKey, Server, UserSettings, User, Job, Realm } from '../types';
 import { checkApiHealth, type SearchResult } from '../lib/vectorSearch';
 
 interface AppContextType {
@@ -13,8 +13,8 @@ interface AppContextType {
     setUser: (user: User | null) => void;
     userSettings: UserSettings;
     setUserSettings: (settings: UserSettings) => void;
-    servers: DatabaseServer[];
-    setServers: (servers: DatabaseServer[]) => void;
+    servers: Server[];
+    setServers: (servers: Server[]) => void;
 
     // Realm Management
     currentRealm: Realm | null;
@@ -33,7 +33,7 @@ interface AppContextType {
 
     // Realm operations
     updateRealm: (id: string, data: Partial<Realm>) => Promise<void>;
-    createDocument: (data: { name: string; type: string; realmId: string }) => Promise<void>;
+    createDocument: (data: { name: string; type: string; realmId: string; processingMode?: string }) => Promise<void>;
     updateDocument: (id: string, data: Partial<Document>) => Promise<void>;
     deleteDocument: (id: string) => Promise<void>;
     createApiKey: (data: { name: string; key: string }) => Promise<void>;
@@ -109,13 +109,17 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [user, setUser] = useState<User | null>(null);
 
     const [userSettings, setUserSettings] = useState<UserSettings>({
-        theme: 'light',
+        id: '',
+        userId: '',
+        theme: 'LIGHT',
         language: 'en',
         notifications: true,
         autoSave: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
     });
 
-    const [servers, setServers] = useState<DatabaseServer[]>([]);
+    const [servers, setServers] = useState<Server[]>([]);
 
     // Realm state
     const [currentRealm, setCurrentRealm] = useState<Realm | null>(null);
@@ -251,6 +255,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             });
             if (documentsResponse.ok) {
                 const documentsData = await documentsResponse.json();
+                console.log('📄 [AppContext] Raw documents data from API:', documentsData.slice(0, 2).map((d: any) => ({ id: d.id, name: d.name, processingMode: d.processingMode })));
                 const formattedDocuments = documentsData.map((doc: any) => ({
                     id: doc.id,
                     name: doc.name,
@@ -260,8 +265,9 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     chunks: doc.chunks,
                     quality: doc.quality,
                     uploadDate: new Date(doc.uploadDate).toISOString().split('T')[0],
+                    processingMode: doc.processingMode || 'AUTOMATIC',
                 }));
-                console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents');
+                console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents. First doc processingMode:', formattedDocuments[0]?.processingMode);
                 setDocuments(formattedDocuments);
             }
 
@@ -299,12 +305,18 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     startDate: new Date(job.startDate).toISOString(),
                     endDate: job.endDate ? new Date(job.endDate).toISOString() : undefined,
                     status: job.status.toLowerCase().replace('_', '-') as Job['status'],
+                    percentage: job.percentage || 0,
+                    summary: job.summary || '',
                     progress: {
-                        percentage: job.percentage,
-                        summary: job.summary,
+                        percentage: job.percentage || 0,
+                        summary: job.summary || '',
                     },
+                    processingDetails: job.processingDetails,
+                    metadata: job.metadata,
                     createdAt: new Date(job.createdAt).toISOString(),
                     updatedAt: new Date(job.updatedAt).toISOString(),
+                    userId: job.userId,
+                    realmId: job.realmId,
                 }));
                 setJobs(formattedJobs);
             }
@@ -382,14 +394,17 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         }
     };
 
-    const createDocument = async (data: { name: string; type: string; realmId: string }) => {
+    const createDocument = async (data: { name: string; type: string; realmId: string; processingMode?: string }) => {
         try {
             if (!user) throw new Error('No user logged in');
 
             const response = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data), // userId is now handled by authentication
+                body: JSON.stringify({
+                    ...data,
+                    processingMode: data.processingMode || 'AUTOMATIC'
+                }), // userId is now handled by authentication
             });
 
             if (!response.ok) {
@@ -530,20 +545,27 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
             if (!response.ok) throw new Error('Failed to create job');
 
             const newJob = await response.json();
-            const formattedJob = {
+            const formattedJob: Job = {
                 id: newJob.id,
                 documentId: newJob.documentId,
                 documentName: newJob.documentName,
                 documentType: newJob.documentType,
+                taskId: newJob.taskId,
                 startDate: new Date(newJob.startDate).toISOString(),
                 endDate: newJob.endDate ? new Date(newJob.endDate).toISOString() : undefined,
-                status: newJob.status.toLowerCase().replace('_', '-') as Job['status'],
+                status: newJob.status as Job['status'],
+                percentage: newJob.percentage || 0,
+                summary: newJob.summary || '',
                 progress: {
-                    percentage: newJob.percentage,
-                    summary: newJob.summary,
+                    percentage: newJob.percentage || 0,
+                    summary: newJob.summary || '',
                 },
+                processingDetails: newJob.processingDetails,
+                metadata: newJob.metadata,
                 createdAt: new Date(newJob.createdAt).toISOString(),
                 updatedAt: new Date(newJob.updatedAt).toISOString(),
+                userId: newJob.userId || user.id,
+                realmId: newJob.realmId || '',
             };
             setJobs((prev) => [...prev, formattedJob]);
         } catch (error) {
@@ -573,12 +595,18 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     ? new Date(updatedJob.endDate).toISOString()
                     : undefined,
                 status: updatedJob.status.toLowerCase().replace('_', '-') as Job['status'],
+                percentage: updatedJob.percentage || 0,
+                summary: updatedJob.summary || '',
                 progress: {
-                    percentage: updatedJob.percentage,
-                    summary: updatedJob.summary,
+                    percentage: updatedJob.percentage || 0,
+                    summary: updatedJob.summary || '',
                 },
+                processingDetails: updatedJob.processingDetails,
+                metadata: updatedJob.metadata,
                 createdAt: new Date(updatedJob.createdAt).toISOString(),
                 updatedAt: new Date(updatedJob.updatedAt).toISOString(),
+                userId: updatedJob.userId,
+                realmId: updatedJob.realmId,
             };
             setJobs((prev) => prev.map((job) => (job.id === id ? formattedJob : job)));
         } catch (error) {

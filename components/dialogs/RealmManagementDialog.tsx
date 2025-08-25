@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { XMarkIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { RealmPromptEditor } from '@/components/forms/RealmPromptEditor';
+import { RealmPromptConfig } from '@/lib/types/domain';
 
 interface RealmManagementDialogProps {
     isOpen: boolean;
@@ -17,27 +19,17 @@ type DialogMode = 'manage' | 'create' | 'edit';
 interface FormData {
     name: string;
     description: string;
+    prompts: RealmPromptConfig;
 }
 
 export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialogProps) {
     const { currentRealm, setCurrentRealm, realms, setRealms } = useApp();
     const [mode, setMode] = useState<DialogMode>('manage');
     const [editingRealm, setEditingRealm] = useState<any>(null);
-    const [formData, setFormData] = useState<FormData>({ name: '', description: '' });
+    const [formData, setFormData] = useState<FormData>({ name: '', description: '', prompts: {} });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        if (isOpen) {
-            setMode('manage');
-            setEditingRealm(null);
-            setFormData({ name: '', description: '' });
-            setError('');
-            fetchRealms();
-        }
-    }, [isOpen]);
-
-    const fetchRealms = async () => {
+    const fetchRealms = useCallback(async () => {
         try {
             const response = await fetch('/api/realms');
             if (response.ok) {
@@ -48,7 +40,19 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
             console.error('Error fetching realms:', error);
             toast.error('Failed to fetch realms');
         }
-    };
+    }, [setRealms]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setMode('manage');
+            setEditingRealm(null);
+            setFormData({ name: '', description: '', prompts: {} });
+            setError('');
+            fetchRealms();
+        }
+    }, [isOpen, fetchRealms]);
+
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,6 +67,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                     body: JSON.stringify({
                         name: formData.name.trim(),
                         description: formData.description.trim() || undefined,
+                        ...formData.prompts,
                     }),
                 });
 
@@ -79,6 +84,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                     body: JSON.stringify({
                         name: formData.name.trim(),
                         description: formData.description.trim() || undefined,
+                        ...formData.prompts,
                     }),
                 });
 
@@ -92,7 +98,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
             await fetchRealms();
             setMode('manage');
-            setFormData({ name: '', description: '' });
+            setFormData({ name: '', description: '', prompts: {} });
             setEditingRealm(null);
         } catch (error: any) {
             setError(error.message);
@@ -103,7 +109,17 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
     const handleEdit = (realm: any) => {
         setEditingRealm(realm);
-        setFormData({ name: realm.name, description: realm.description || '' });
+        setFormData({
+            name: realm.name,
+            description: realm.description || '',
+            prompts: {
+                domain: realm.domain,
+                ingestionPrompt: realm.ingestionPrompt,
+                systemPrompt: realm.systemPrompt,
+                extractionPrompt: realm.extractionPrompt,
+                domainPrompt: realm.domainPrompt
+            }
+        });
         setMode('edit');
         setError('');
     };
@@ -177,7 +193,7 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
 
     const handleCancel = () => {
         setMode('manage');
-        setFormData({ name: '', description: '' });
+        setFormData({ name: '', description: '', prompts: {} });
         setEditingRealm(null);
         setError('');
     };
@@ -246,6 +262,17 @@ export function RealmManagementDialog({ isOpen, onClose }: RealmManagementDialog
                                         rows={3}
                                         maxLength={500}
                                         disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                {/* Domain and Prompt Configuration */}
+                                <div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                        Domain Configuration
+                                    </h3>
+                                    <RealmPromptEditor
+                                        initialPrompts={formData.prompts}
+                                        onPromptsChange={(prompts) => setFormData({ ...formData, prompts })}
                                     />
                                 </div>
 

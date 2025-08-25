@@ -2,11 +2,12 @@ import { ApiKey } from '@prisma/client';
 import { prisma } from '../database';
 
 export class ApiKeyService {
-    static async createApiKey(data: { name: string; key: string; userId: string }) {
+    static async createApiKey(data: { name: string; key: string; userId: string; realmId: string }) {
         return await prisma.apiKey.create({
             data,
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
@@ -15,6 +16,7 @@ export class ApiKeyService {
         return await prisma.apiKey.findMany({
             include: {
                 user: true,
+                realm: true,
             },
             orderBy: {
                 created: 'desc',
@@ -27,6 +29,7 @@ export class ApiKeyService {
             where: { userId },
             include: {
                 user: true,
+                realm: true,
             },
             orderBy: {
                 created: 'desc',
@@ -44,6 +47,7 @@ export class ApiKeyService {
             where: whereClause,
             include: {
                 user: true,
+                realm: true,
             },
             orderBy: {
                 created: 'desc',
@@ -56,6 +60,7 @@ export class ApiKeyService {
             where: { id },
             include: {
                 user: true,
+                realm: true,
             },
         });
     }
@@ -65,6 +70,7 @@ export class ApiKeyService {
             where: { key },
             include: {
                 user: true,
+                realm: true,
             },
         });
     }

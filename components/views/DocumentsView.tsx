@@ -2,6 +2,9 @@
 
 import { Realm, Document } from '../../types';
 import { FileText, Plus } from 'lucide-react';
+import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
+import { ProcessingStatusDisplay } from '../ui/processing-status-display';
+import { Badge } from '../ui/badge';
 
 interface DocumentsViewProps {
     documents: Document[];
@@ -31,8 +34,6 @@ export function DocumentsView({
                 return 'bg-blue-100 text-blue-800';
             case 'ingested':
                 return 'bg-green-100 text-green-800';
-            case 'deprecated':
-                return 'bg-gray-100 text-gray-800';
             case 'deleted':
                 return 'bg-red-100 text-red-800';
             default:
@@ -105,6 +106,9 @@ export function DocumentsView({
                                 State
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Processing
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Version
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -133,7 +137,12 @@ export function DocumentsView({
                                     <div className="text-sm text-gray-500">{doc.uploadDate}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {doc.type}
+                                    <div>
+                                        <div className="font-medium">{getDocumentTypeDescription(doc.type, doc.subType)}</div>
+                                        {doc.subType && (
+                                            <div className="text-xs text-gray-500">{doc.subType}</div>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span
@@ -141,6 +150,23 @@ export function DocumentsView({
                                     >
                                         {doc.state}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center space-x-2">
+                                        <Badge 
+                                            variant={doc.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'}
+                                            className="text-xs"
+                                        >
+                                            {doc.processingMode || 'AUTOMATIC'}
+                                        </Badge>
+                                        {doc.state === 'ingesting' && (
+                                            <ProcessingStatusDisplay
+                                                documentId={doc.id}
+                                                processingMode={doc.processingMode || 'AUTOMATIC'}
+                                                compact={true}
+                                            />
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     v{doc.version}

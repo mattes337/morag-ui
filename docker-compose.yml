@@ -1,52 +1,74 @@
-version: '3.8'
-
 services:
-    # MySQL Database
-    mysql:
-        image: mysql:8.0
-        container_name: onlook-mysql
-        restart: unless-stopped
-        environment:
-            MYSQL_ROOT_PASSWORD: rootpassword
-            MYSQL_DATABASE: onlook_db
-            MYSQL_USER: onlook_user
-            MYSQL_PASSWORD: onlook_password
-        ports:
-            - '3306:3306'
-        volumes:
-            #- mysql_data:/var/lib/mysql
-            - ./mysql-init:/docker-entrypoint-initdb.d
-        networks:
-            - onlook-network
-        healthcheck:
-            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
-            timeout: 20s
-            retries: 10
-
     # Next.js Application
     app:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: onlook-app
+        container_name: morag-ui
         restart: unless-stopped
         ports:
             - '3000:3000'
+        env_file:
+            - .env
         environment:
             - NODE_ENV=production
-            - DATABASE_URL=mysql://onlook_user:onlook_password@mysql:3306/onlook_db
-        depends_on:
-            mysql:
-                condition: service_healthy
-        networks:
-            - onlook-network
         volumes:
             - ./uploads:/app/uploads # For file uploads if needed
+        depends_on:
+            - mariadb
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.morag.rule=Host(`morag.drydev.de`)"
+          - "traefik.http.routers.morag.entrypoints=websecure"
+          - "traefik.http.routers.morag.tls.certresolver=letsencrypt"
+          - "traefik.http.routers.morag.middlewares=secure-headers@file"
+          - "traefik.http.services.morag.loadbalancer.server.port=3000"
+
+    # MariaDB Database
+    mariadb:
+        image: mariadb:11.4
+        container_name: morag-mariadb
+        restart: unless-stopped
+        ports:
+            - '3306:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-morag_root_password}
+            - MYSQL_DATABASE=${DB_NAME:-morag}
+            - MYSQL_USER=${DB_USER:-morag_user}
+            - MYSQL_PASSWORD=${DB_PASSWORD:-morag_password}
+            - MARIADB_CHARACTER_SET_SERVER=utf8mb4
+            - MARIADB_COLLATE_SERVER=utf8mb4_unicode_ci
+        volumes:
+            - mariadb_data:/var/lib/mysql
+            - ./mariadb/init:/docker-entrypoint-initdb.d # For initialization scripts
+        command: >
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_unicode_ci
+            --innodb-buffer-pool-size=256M
+            --max-connections=200
+
+    # phpMyAdmin
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
+        container_name: morag-phpmyadmin
+        restart: unless-stopped
+        environment:
+            - PMA_HOST=mariadb
+            - PMA_PORT=3306
+            - PMA_USER=${DB_USER:-morag_user}
+            - PMA_PASSWORD=${DB_PASSWORD:-morag_password}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-morag_root_password}
+        depends_on:
+            - mariadb
+        ports:
+            - '81:80'
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.morag-phpmyadmin.entrypoints=websecure"
+            - "traefik.http.routers.morag-phpmyadmin.rule=Host(`db.morag.drydev.de`)"
+            - "traefik.http.routers.morag-phpmyadmin.tls.certresolver=letsencrypt"
+            - "traefik.http.services.morag-phpmyadmin.loadbalancer.server.port=81"
 
 volumes:
-    mysql_data:
+    mariadb_data:
         driver: local
-
-networks:
-    onlook-network:
-        driver: bridge

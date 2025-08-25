@@ -11,14 +11,8 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const realmId = searchParams.get('realmId');
-        const databaseId = searchParams.get('databaseId');
 
-        let jobs;
-        if (databaseId) {
-            jobs = await JobService.getJobsByDatabase(databaseId);
-        } else {
-            jobs = await JobService.getJobsByUserId(user.userId, realmId);
-        }
+        const jobs = await JobService.getJobsByUserId(user.userId, realmId);
         
         return NextResponse.json(jobs);
     } catch (error) {
@@ -33,13 +27,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { documentId, documentName, documentType, userId } = body;
+        const { documentId, documentName, documentType, userId, realmId } = body;
 
-        if (!documentId || !documentName || !documentType || !userId) {
+        if (!documentId || !documentName || !documentType || !userId || !realmId) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
         }
 
-        const job = await JobService.createJob({ documentId, documentName, documentType, userId });
+        const job = await JobService.createJob({ documentId, documentName, documentType, userId, realmId });
         return NextResponse.json(job, { status: 201 });
     } catch (error) {
         console.error('Failed to create job:', error);

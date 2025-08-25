@@ -1,7 +1,8 @@
 'use client';
 
-import { Realm } from '../../contexts/AppContext';
-import { Database as RealmIcon, Plus, FileText, Server, Clock, Activity } from 'lucide-react';
+import { useState } from 'react';
+import { Realm } from '../../types';
+import { Database as RealmIcon, Plus, FileText, Server, Clock, Activity, ChevronDown, ChevronUp, Users, Settings, Trash2, Edit } from 'lucide-react';
 
 interface RealmsViewProps {
     realms: Realm[];
@@ -9,6 +10,9 @@ interface RealmsViewProps {
     onSelectRealm: (realm: Realm) => void;
     onPromptRealm: (realm: Realm) => void;
     onViewRealm?: (realm: Realm) => void;
+    onEditRealm?: (realm: Realm) => void;
+    onDeleteRealm?: (realm: Realm) => void;
+    onManageUsers?: (realm: Realm) => void;
 }
 
 export function RealmsView({
@@ -17,7 +21,30 @@ export function RealmsView({
     onSelectRealm,
     onPromptRealm,
     onViewRealm,
+    onEditRealm,
+    onDeleteRealm,
+    onManageUsers,
 }: RealmsViewProps) {
+    const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
+
+    const toggleExpanded = (realmId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setExpandedRealm(expandedRealm === realmId ? null : realmId);
+    };
+
+    const handleRealmClick = (realm: Realm) => {
+        onSelectRealm(realm);
+        // Immediately switch to the realm without needing to view details
+    };
+
+    const formatDate = (date: string | Date) => {
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+        return dateObj.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
     // Show empty state when no realms exist
     if (realms.length === 0) {
         return (
@@ -54,17 +81,18 @@ export function RealmsView({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {realms.map((realm) => (
+                {realms.map((realm) => {
+                    const isExpanded = expandedRealm === realm.id;
+                    return (
                     <div
                         key={realm.id}
-                        onClick={() => {
-                            onSelectRealm(realm);
-                            onViewRealm && onViewRealm(realm);
-                        }}
-                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-blue-300 transition-all duration-200 cursor-pointer group"
+                        className="bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all duration-200 group"
                     >
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-4">
+                        {/* Header - Clickable to switch realm */}
+                        <div 
+                            onClick={() => handleRealmClick(realm)}
+                            className="flex items-start justify-between mb-4 p-6 cursor-pointer"
+                        >
                             <div className="flex items-center space-x-3">
                                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
                                     <RealmIcon className="w-5 h-5 text-white" />
@@ -74,63 +102,132 @@ export function RealmsView({
                                     <p className="text-gray-600 text-sm">{realm.description || 'No description'}</p>
                                 </div>
                             </div>
-                            {realm.isDefault && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-green-50 text-green-700 border border-green-200">
-                                    Default
-                                </span>
+                            <div className="flex items-center space-x-2">
+                                {realm.isDefault && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-green-50 text-green-700 border border-green-200">
+                                        Default
+                                    </span>
+                                )}
+                                <button
+                                    onClick={(e) => toggleExpanded(realm.id, e)}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                >
+                                    {isExpanded ? (
+                                        <ChevronUp className="w-4 h-4 text-gray-500" />
+                                    ) : (
+                                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Compact Statistics - Always visible */}
+                        <div className="px-6 pb-4">
+                            <div className="grid grid-cols-3 gap-4 mb-4">
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center space-x-1 mb-1">
+                                        <FileText className="w-3 h-3 text-blue-500" />
+                                        <span className="text-xs font-medium text-gray-700">Docs</span>
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-900">{realm.documentCount || 0}</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center space-x-1 mb-1">
+                                        <Users className="w-3 h-3 text-green-500" />
+                                        <span className="text-xs font-medium text-gray-700">Users</span>
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-900">{realm.userCount || 1}</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center space-x-1 mb-1">
+                                        <Server className="w-3 h-3 text-purple-500" />
+                                        <span className="text-xs font-medium text-gray-700">Servers</span>
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-900">{realm.servers?.length || 0}</div>
+                                </div>
+                            </div>
+                            
+                            {/* Role Badge */}
+                            {realm.userRole && (
+                                <div className="flex justify-center mb-2">
+                                    <span
+                                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs border ${
+                                            realm.userRole === 'OWNER'
+                                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                                : realm.userRole === 'ADMIN'
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                : realm.userRole === 'MEMBER'
+                                                ? 'bg-green-50 text-green-700 border-green-200'
+                                                : 'bg-gray-50 text-gray-700 border-gray-200'
+                                        }`}
+                                    >
+                                        {realm.userRole}
+                                    </span>
+                                </div>
                             )}
                         </div>
 
-                        {/* Statistics Grid */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="flex items-center space-x-2 mb-1">
-                                    <FileText className="w-4 h-4 text-blue-500" />
-                                    <span className="text-xs font-medium text-gray-700">Documents</span>
+                        {/* Expanded Details */}
+                        {isExpanded && (
+                            <div className="border-t border-gray-100 px-6 py-4 space-y-4">
+                                {/* Detailed Information */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Created</label>
+                                        <p className="text-sm text-gray-900 mt-1">{formatDate(realm.createdAt)}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Updated</label>
+                                        <p className="text-sm text-gray-900 mt-1">{formatDate(realm.updatedAt)}</p>
+                                    </div>
                                 </div>
-                                <div className="text-lg font-semibold text-gray-900">0</div>
-                            </div>
-                            <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="flex items-center space-x-2 mb-1">
-                                    <Server className="w-4 h-4 text-green-500" />
-                                    <span className="text-xs font-medium text-gray-700">Members</span>
+
+
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {onManageUsers && (realm.userRole === 'OWNER' || realm.userRole === 'ADMIN') && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onManageUsers(realm);
+                                            }}
+                                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                                        >
+                                            <Users className="w-3 h-3 mr-1" />
+                                            Manage Users
+                                        </button>
+                                    )}
+                                    {onEditRealm && (realm.userRole === 'OWNER' || realm.userRole === 'ADMIN') && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditRealm(realm);
+                                            }}
+                                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
+                                        >
+                                            <Edit className="w-3 h-3 mr-1" />
+                                            Edit
+                                        </button>
+                                    )}
+                                    {onDeleteRealm && realm.userRole === 'OWNER' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteRealm(realm);
+                                            }}
+                                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                                        >
+                                            <Trash2 className="w-3 h-3 mr-1" />
+                                            Delete
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="text-lg font-semibold text-gray-900">{realm.userCount || 1}</div>
-                            </div>
-                        </div>
-                        
-                        {/* Role Badge */}
-                        {realm.userRole && (
-                            <div className="mb-4">
-                                <span
-                                    className={`inline-flex items-center px-2 py-1 rounded-md text-xs border ${
-                                        realm.userRole === 'OWNER'
-                                            ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                            : realm.userRole === 'ADMIN'
-                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                            : realm.userRole === 'MEMBER'
-                                            ? 'bg-green-50 text-green-700 border-green-200'
-                                            : 'bg-gray-50 text-gray-700 border-gray-200'
-                                    }`}
-                                >
-                                    {realm.userRole}
-                                </span>
                             </div>
                         )}
-                        
-                        {/* Status */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                <Clock className="w-3 h-3" />
-                                <span>Recently accessed</span>
-                            </div>
-                            <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                <Activity className="w-3 h-3" />
-                                <span>Active</span>
-                            </div>
-                        </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

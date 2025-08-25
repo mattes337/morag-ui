@@ -1,141 +1,119 @@
 # TASKS
 
-## Completed Tasks
-- ✅ Fixed DocumentsView.test.tsx import errors and test failures
-  - Corrected Jest configuration (moduleNameMapping → moduleNameMapper)
-  - Fixed import path for test-utils
-  - Simplified failing metadata test to check for basic table structure
-- ✅ Fixed authentication issue in /api/servers endpoint
-  - Added missing NextRequest and NextResponse imports
-  - Fixed missing await keyword for requireAuth() calls
-  - Resolved "User ID is missing from authentication" error
-- ✅ Fixed realm switching layout issue
-  - Removed window.location.reload() from RealmSelector component
-  - Now uses AppContext's automatic data reloading when realm changes
-  - Preserves header and navigation layout during realm switching
-- ✅ Fixed authentication redirect issue
-  - Updated AuthWrapper component to properly redirect unauthenticated users to login
-  - Prevents pages from rendering without header/frame when not authenticated
-  - Added loading spinner during redirect for better UX
-  - Ensures all protected routes require authentication
-  - Fixed SSR compatibility issue by moving router.push() into useEffect
-  - Resolved 'location is not defined' error during server-side rendering
-- ✅ Fixed session persistence across browser refreshes
-  - Updated AppContext to include credentials in /api/auth/me calls
-  - Enhanced AuthWrapper to check both header auth and JWT auth on mount
-  - Ensured authentication state persists when user refreshes browser
-  - Updated test expectations to match new authentication call format
-  - All tests passing with improved session management
-- ✅ Fixed session persistence on page reload (F5)
-  - Modified AuthWrapper to always run auth check on mount, not just when user is null
-  - Added proper loading state to prevent premature redirects to login
-  - Enhanced auth check logic to prevent redirect loops
-  - Users now stay logged in across browser refreshes and direct page access
-- ✅ Verified navigation URL changes work correctly
-  - Navigation component uses Next.js Link components properly
-  - Browser URL updates correctly when clicking menu items
-  - Direct page access via URLs works as expected
-  - All routing functionality working as intended
-- ✅ Fixed database creation Prisma validation error
-  - Added missing realmId field to Database model requirements
-  - Updated createDatabase API endpoint to require and handle realmId
-  - Modified AppContext to automatically include current realm ID in database creation
-  - Updated all related tests to include realmId parameter
-  - Resolved "Argument `user` is missing" Prisma validation error
-- ✅ Fixed Prisma client sync issue causing "server" field validation error
-  - Terminated running Node.js processes that were locking Prisma client files
-  - Successfully regenerated Prisma client to match current schema
-  - Resolved "Argument `server` is missing" validation error
-  - Verified database creation functionality works correctly
-  - All database-related tests passing
-- ✅ Fixed missing realm connection in database creation
-  - Added explicit realm connection in createDatabase function
-  - Properly destructured realmId from data and connected to realm relation
-  - Resolved "Argument `realm` is missing" Prisma validation error
-  - All database service and API tests passing (15/15 tests)
-- ✅ Fixed serverId constraint violation in database creation
-  - Synchronized database schema with Prisma schema using `prisma db push`
-  - Regenerated Prisma client after terminating conflicting Node.js processes
-  - Resolved "Null constraint violation on the fields: (`serverId`)" error
-  - Database schema now properly uses many-to-many relationship through DatabaseServerLink (Note: DatabaseServer and Database are synonymous)
-  - All database tests passing, development server running successfully
+## 🎯 Open Tasks
 
-## Pending Tasks
+### High Priority
 
-### Vision Implementation
-- 📋 **Vision Analysis Complete**: Comprehensive analysis of VISION.md requirements completed
-  - Created detailed task breakdown in `tasks/vision/` folder
-  - Identified 4 major phases with 12+ specific implementation tasks
-  - **Corrected Understanding**: Realm-level prompts are correctly implemented, focus on domain configuration
-  - **Corrected Architecture**: MoRAG backend handles database operations, UI backend handles metadata
-  - **Priority**: Document deletion moved to high priority, blog authoring to medium priority
-  - **Next Action**: Begin with Task 1.1 (Realm Domain Configuration) and Task 1.2 (MoRAG API)
-  - **See**: [Vision Implementation Overview](./tasks/vision/README.md)
+#### 1. Vector Search Implementation
+**File:** `lib/vectorSearch.ts`
+**Lines:** 46, 100, 109
+**Context:** Vector database integration not yet implemented
+**Action Required:**
+- Implement actual vector database query (Qdrant, Pinecone, etc.)
+- Implement actual LLM API call (OpenAI, Anthropic, etc.)
+- Configure vector database based on server configuration
 
-## Implementation Plan
-### 1. API Endpoints Implementation
-- Document required endpoints in ENDPOINTS.md
-- Create /app/api/servers directory
-- Implement server API endpoints:
-  - GET /api/servers - List all servers for authenticated user
-  - POST /api/servers - Create new server
-  - GET /api/servers/[id] - Get specific server
-  - PUT /api/servers/[id] - Update server
-  - DELETE /api/servers/[id] - Delete server
-### 2. Service Layer Implementation
-- Enhance databaseServerService.ts with CRUD operations
-- Add proper validation for server creation/updates
-- Implement authentication checks
-- Add error handling for all operations
-### 3. Frontend Integration
-- Update ServersDialog.tsx to use API endpoints instead of local state
-- Update app/servers/page.tsx to use API endpoints
-- Modify AppContext.tsx to fetch servers from API
-- Update server management functions to use API calls
-### 4. Testing
-- Create unit tests for server API endpoints
-- Test database creation with valid serverId
-- Test error handling for invalid serverIds
-- Verify UI components correctly display server data
-## Technical Specifications
-### Database Server Model (synonym: Database)
-```
-interface DatabaseServer {
-  id: string;
-  name: string;
-  type: 'qdrant' | 'neo4j' | 'pinecone' | 
-  'weaviate' | 'chroma';
-  host: string;
-  port: number;
-  username?: string;
-  password?: string;
-  apiKey?: string;
-  database?: string;
-  collection?: string;
-  isActive: boolean;
-  createdAt: string;
-  lastConnected?: string;
-}
-```
-### API Endpoint Specifications GET /api/servers
-- Authentication: Required
-- Response: Array of server objects
-- Error cases: 401 (Unauthorized) POST /api/servers
-- Authentication: Required
-- Request body: Server creation data
-- Response: Created server object
-- Error cases: 400 (Bad Request), 401 (Unauthorized) GET /api/servers/[id]
-- Authentication: Required
-- Response: Server object
-- Error cases: 404 (Not Found), 401 (Unauthorized) PUT /api/servers/[id]
-- Authentication: Required
-- Request body: Server update data
-- Response: Updated server object
-- Error cases: 404 (Not Found), 401 (Unauthorized) DELETE /api/servers/[id]
-- Authentication: Required
-- Response: Success message
-- Error cases: 404 (Not Found), 401 (Unauthorized)
-## Next Steps
-To resolve the foreign key constraint error, we need to implement the server API endpoints first, then update the frontend components to use these endpoints instead of local state management.
+#### 2. Database Connection Testing
+**File:** `lib/services/serverConnectionService.ts`
+**Lines:** 193, 290, 317
+**Context:** Database connection tests are simulated, not real
+**Action Required:**
+- Implement actual PostgreSQL connection test using pg package
+- Implement actual MongoDB connection test using mongodb package
+- Implement actual Redis connection test using redis package
 
-Once implemented, users will be able to create and manage database servers through the API, which will then be available for selection when creating databases.
+#### 3. Document Processing Services
+**File:** `lib/services/markdownConversionService.ts`
+**Lines:** 145, 182
+**Context:** PDF and Word document conversion not implemented
+**Action Required:**
+- Integrate with PDF parsing library (pdf-parse or pdf2pic)
+- Integrate with Word parsing library (mammoth.js)
+
+#### 4. Authentication System
+**File:** `tasks/auth-realms/01-enhanced-authentication.md`
+**Lines:** 309
+**Context:** Password verification not yet implemented
+**Action Required:**
+- Implement proper password hashing and verification
+- Add secure authentication flow
+
+#### 5. Remaining Test Failures
+**Context:** 11 test suites still failing, 26 passing (237 tests passing, 89 failing)
+**Action Required:**
+- Fix service mock implementations (backgroundJobService, errorHandlingService mocks)
+- Fix API authentication issues (processing-jobs routes returning 401)
+- Fix AppContext test document structure (subType property missing)
+- Fix migration API route parameter validation and error handling
+- Fix scheduler API error response expectations
+
+#### 6. Document Upload Issues - COMPLETED ✅
+**Context:** Manual processing mode not working, document width issues, background job processor
+**Status:** ✅ FULLY COMPLETED
+- ✅ Fixed manual processing mode selection - documents with MANUAL mode no longer create processing jobs
+- ✅ Fixed document detail view width to be responsive and not expand based on filename length
+- ✅ Fixed background job processor to start automatically in development environment
+- ✅ Added comprehensive debugging logs for upload process validation
+- ✅ Verified conditional logic works correctly (MANUAL vs AUTOMATIC mode)
+
+### Medium Priority
+
+#### 7. Realm Server Associations
+**File:** `app/api/realms/route.ts`
+**Lines:** 79, 81
+**Context:** Server associations not yet implemented
+**Action Required:**
+- Implement relationships between realms and servers
+- Add server association management in realm creation
+
+#### 8. User Permission System
+**File:** `lib/services/unifiedFileService.ts`
+**Lines:** 323, 326
+**Context:** Realm membership and admin checks not implemented
+**Action Required:**
+- Implement realm membership checking
+- Implement admin role verification
+
+#### 9. Prompt Management
+**File:** `components/layout/GlobalDialogs.tsx`
+**Lines:** 119
+**Context:** API call to save prompt not implemented
+**Action Required:**
+- Implement API endpoint for saving prompts
+- Add prompt management functionality
+
+#### 10. File Access Control
+**File:** `app/api/files/[id]/download/route.ts`
+**Lines:** 28
+**Context:** User's current realm not being retrieved for access check
+**Action Required:**
+- Implement proper realm context retrieval for file access control
+- Add realm-based file access permissions
+
+#### 11. PDF Preview Authentication
+**File:** `app/api/files/[id]/view/route.ts`
+**Lines:** 20-26
+**Context:** PDF preview iframe cannot access files due to authentication issues
+**Action Required:**
+- Implement token-based authentication for file viewing in iframes
+- Create secure temporary access tokens for PDF preview
+- Fix iframe cookie authentication issues
+
+### Low Priority
+
+#### 12. Blog Content Management System
+- **Blog Models**: Implement BlogIdea, BlogArticle, and related models in Prisma schema
+- **Idea Management**: Create idea creation, approval workflow, and management interface
+- **Content Generation**: Implement automated idea generation from document analysis
+- **Article Authoring**: Build article creation and editing interface
+
+#### 13. Advanced Document Processing
+- **Enhanced Entity Management**: Improve entity extraction and relationship mapping
+- **Advanced Search**: Implement semantic search with entity and fact integration
+
+#### 14. Workflow Automation
+- **n8n Integration**: Complete workflow automation capabilities
+- **Webhook System**: Implement comprehensive webhook system for external integrations
+- **Batch Operations**: Add bulk document processing and management
+
+

@@ -4,19 +4,19 @@ services:
     # MySQL Database for development
     mysql-dev:
         image: mysql:8.0
-        container_name: onlook-mysql-dev
+        container_name: morag-mysql-dev
         restart: unless-stopped
         environment:
             MYSQL_ROOT_PASSWORD: rootpassword
-            MYSQL_DATABASE: onlook_dev_db
-            MYSQL_USER: onlook_user
-            MYSQL_PASSWORD: onlook_password
+            MYSQL_DATABASE: morag_dev_db
+            MYSQL_USER: morag_user
+            MYSQL_PASSWORD: morag_password
         ports:
             - '3307:3306' # Different port to avoid conflicts
         volumes:
             - mysql_dev_data:/var/lib/mysql
         networks:
-            - onlook-dev-network
+            - morag-dev-network
         healthcheck:
             test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
             timeout: 20s
@@ -28,18 +28,18 @@ services:
             context: .
             dockerfile: Dockerfile
             target: deps # Only build up to deps stage for development
-        container_name: onlook-app-dev
+        container_name: morag-app-dev
         restart: unless-stopped
         ports:
             - '3001:3000'
         environment:
             - NODE_ENV=development
-            - DATABASE_URL=mysql://onlook_user:onlook_password@mysql-dev:3306/onlook_dev_db
+            - DATABASE_URL=mysql://morag_user:morag_password@mysql-dev:3306/morag_dev_db
         depends_on:
             mysql-dev:
                 condition: service_healthy
         networks:
-            - onlook-dev-network
+            - morag-dev-network
         volumes:
             - .:/app
             - /app/node_modules
@@ -51,5 +51,5 @@ volumes:
         driver: local
 
 networks:
-    onlook-dev-network:
+    morag-dev-network:
         driver: bridge

@@ -12,7 +12,7 @@ Implement the database schema changes to support user realms. This includes crea
 - **Document**: User-owned documents
 - **Job**: Processing jobs for documents
 - **ApiKey**: User API keys
-- **DatabaseServer**: User database server configurations
+- **Server**: User database server configurations
 - **UserSettings**: User preferences
 
 ### Current Relationships
@@ -61,7 +61,7 @@ model Realm {
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
-  databaseServers DatabaseServer[]
+  servers Server[]
   
   // Constraints
   @@unique([name, userId]) // Unique realm name per user
@@ -88,7 +88,7 @@ model User {
   documents       Document[]
   apiKeys         ApiKey[]
   jobs            Job[]
-  databaseServers DatabaseServer[]
+  servers Server[]
   userSettings    UserSettings?
 
   @@map("users")
@@ -116,7 +116,7 @@ model Database {
   // Relations
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   realm     Realm          @relation(fields: [realmId], references: [id], onDelete: Cascade) // Add this line
-  server    DatabaseServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  server    Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
   documents Document[]
 
   @@unique([name, realmId]) // Change from [name, userId] to [name, realmId]
@@ -176,9 +176,9 @@ model ApiKey {
 }
 ```
 
-#### 2.4 Update DatabaseServer Model
+#### 2.4 Update Server Model
 ```prisma
-model DatabaseServer {
+model Server {
   id            String           @id @default(uuid())
   name          String
   type          DatabaseType
@@ -302,7 +302,7 @@ async function migrateUserData(userId: string, realmId: string) {
   console.log(`  Updated ${apiKeys.count} API keys`);
   
   // Update database servers
-  const servers = await prisma.databaseServer.updateMany({
+  const servers = await prisma.server.updateMany({
     where: { userId },
     data: { realmId },
   });
@@ -438,7 +438,7 @@ export interface ApiKey {
   updatedAt: Date;
 }
 
-export interface DatabaseServer {
+export interface Server {
   id: string;
   name: string;
   type: DatabaseType;
@@ -622,7 +622,7 @@ export class RealmService {
       prisma.database.count({ where: { realmId } }),
       prisma.document.count({ where: { realmId } }),
       prisma.apiKey.count({ where: { realmId } }),
-      prisma.databaseServer.count({ where: { realmId } }),
+      prisma.server.count({ where: { realmId } }),
       prisma.job.count({ where: { realmId } }),
     ]);
 
@@ -641,7 +641,7 @@ export class RealmService {
       prisma.database.count({ where: { realmId } }),
       prisma.document.count({ where: { realmId } }),
       prisma.apiKey.count({ where: { realmId } }),
-      prisma.databaseServer.count({ where: { realmId } }),
+      prisma.server.count({ where: { realmId } }),
       prisma.job.count({ where: { realmId } }),
     ]);
 

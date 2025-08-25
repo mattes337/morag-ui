@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DocumentType, Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { ToastService } from '../../lib/services/toastService';
 
 interface AddDocumentDialogProps {
     isOpen: boolean;
@@ -20,28 +21,26 @@ export function AddDocumentDialog({
     documentToSupersede,
     ...props
 }: AddDocumentDialogProps) {
-    const { servers, createDocument } = useApp();
+    const { createDocument, currentRealm, refreshData } = useApp();
     const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType | null>(null);
-    const [selectedDatabaseId, setSelectedDatabaseId] = useState<string>('');
     const [documentName, setDocumentName] = useState('');
     const [documentUrl, setDocumentUrl] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [chunkSize, setChunkSize] = useState('1000');
+    const [chunkSize, setChunkSize] = useState('4000');
     const [chunkingMethod, setChunkingMethod] = useState('Semantic');
-    const [gpuProcessing, setGpuProcessing] = useState(false);
-    const [contextualEmbedding, setContextualEmbedding] = useState(false);
+
+
+    const [processingMode, setProcessingMode] = useState<'MANUAL' | 'AUTOMATIC'>('AUTOMATIC');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const documentTypes: DocumentType[] = useMemo(
         () => [
-            { type: 'pdf', label: 'PDF Document', icon: '📄' },
-            { type: 'word', label: 'Word Document', icon: '📝' },
+            { type: 'document', label: 'Document', icon: '📄' },
             { type: 'youtube', label: 'YouTube Video', icon: '📺' },
             { type: 'video', label: 'Video File', icon: '🎬' },
             { type: 'audio', label: 'Audio File', icon: '🎵' },
             { type: 'website', label: 'Website', icon: '🌐' },
         ],
-
         [],
     );
 
@@ -58,7 +57,8 @@ export function AddDocumentDialog({
                     type.type === docType ||
                     type.label.toLowerCase().includes(docType) ||
                     (docType === 'youtube' && type.type === 'youtube') ||
-                    (docType === 'website' && type.type === 'website'),
+                    (docType === 'website' && type.type === 'website') ||
+                    (['pdf', 'word', 'text', 'document'].includes(docType) && type.type === 'document'),
             );
 
             if (matchingType) {
@@ -66,17 +66,17 @@ export function AddDocumentDialog({
             } else {
                 // Default fallback for unknown types
                 setSelectedDocumentType({
-                    type: docType,
-                    label: documentToSupersede.type,
+                    type: 'document',
+                    label: 'Document',
                     icon: '📄',
                 });
             }
 
             // Set default values based on current document (these would typically come from the document's metadata)
-            setChunkSize('1000'); // Default, could be extracted from document metadata
+            setChunkSize('4000'); // Default, could be extracted from document metadata
             setChunkingMethod('Semantic'); // Default, could be extracted from document metadata
-            setGpuProcessing(false); // Default
-            setContextualEmbedding(true); // Default for supersede
+     // Default
+            // Default for supersede
         }
     }, [mode, documentToSupersede, documentTypes]);
 
@@ -84,33 +84,31 @@ export function AddDocumentDialog({
     useEffect(() => {
         if (isOpen && mode === 'add') {
             setSelectedDocumentType(null);
-            setSelectedDatabaseId('');
             setDocumentName('');
             setDocumentUrl('');
             setSelectedFile(null);
-            setChunkSize('1000');
+            setChunkSize('4000');
             setChunkingMethod('Semantic');
-            setGpuProcessing(false);
-            setContextualEmbedding(false);
+    
+    
+            setProcessingMode('AUTOMATIC');
         }
     }, [isOpen, mode]);
 
     const handleClose = () => {
         setSelectedDocumentType(null);
-        setSelectedDatabaseId('');
         setDocumentName('');
         setDocumentUrl('');
         setSelectedFile(null);
-        setChunkSize('1000');
+        setChunkSize('4000');
         setChunkingMethod('Semantic');
-        setGpuProcessing(false);
-        setContextualEmbedding(false);
+        setProcessingMode('AUTOMATIC');
         setIsSubmitting(false);
         onClose();
     };
 
     const handleSubmit = async () => {
-        if (!selectedDocumentType || !selectedDatabaseId) return;
+        if (!selectedDocumentType || !currentRealm) return;
         
         let name = documentName;
         if (!name) {
@@ -125,21 +123,89 @@ export function AddDocumentDialog({
 
         try {
             setIsSubmitting(true);
-            await createDocument({
-                name,
-                type: selectedDocumentType.type,
-                databaseId: selectedDatabaseId,
-            });
+
+            if (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') {
+                // Handle URL-based documents
+                const documentData: any = {
+                    name,
+                    type: selectedDocumentType.type,
+                    realmId: currentRealm.id,
+                    processingMode,
+                    url: documentUrl,
+                };
+
+                await createDocument(documentData);
+            } else if (selectedFile) {
+                // Handle file uploads
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('name', name || selectedFile.name);
+                formData.append('realmId', currentRealm.id);
+                formData.append('processingMode', processingMode);
+                formData.append('type', selectedDocumentType.type);
+
+                const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to upload document');
+                }
+
+                // Refresh documents list using AppContext
+                await refreshData();
+            } else {
+                // Handle documents without files (manual entry)
+                const documentData: any = {
+                    name,
+                    type: selectedDocumentType.type,
+                    realmId: currentRealm.id,
+                    processingMode,
+                };
+
+                await createDocument(documentData);
+            }
+
+            ToastService.success('Document created successfully');
             handleClose();
         } catch (error) {
             console.error('Failed to create document:', error);
-            // TODO: Show error message to user
+
+            // Provide specific error messages based on error type
+            let errorTitle = 'Failed to create document';
+            let errorDescription = 'An unexpected error occurred';
+
+            if (error instanceof Error) {
+                errorDescription = error.message;
+
+                // Provide more specific error titles based on common failure scenarios
+                if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorTitle = 'Network Error';
+                    errorDescription = 'Unable to connect to the server. Please check your internet connection and try again.';
+                } else if (error.message.includes('file size') || error.message.includes('too large')) {
+                    errorTitle = 'File Too Large';
+                    errorDescription = 'The selected file is too large. Please choose a smaller file or compress it before uploading.';
+                } else if (error.message.includes('file type') || error.message.includes('not supported')) {
+                    errorTitle = 'Unsupported File Type';
+                    errorDescription = 'The selected file type is not supported. Please choose a different file format.';
+                } else if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+                    errorTitle = 'Permission Denied';
+                    errorDescription = 'You do not have permission to upload documents to this realm.';
+                } else if (error.message.includes('quota') || error.message.includes('limit')) {
+                    errorTitle = 'Storage Limit Reached';
+                    errorDescription = 'Your storage quota has been reached. Please delete some documents or contact your administrator.';
+                }
+            }
+
+            ToastService.error(errorTitle, { description: errorDescription });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const isFormValid = selectedDocumentType && selectedDatabaseId && (
+    const isFormValid = selectedDocumentType && currentRealm && (
         (selectedDocumentType.type === 'youtube' || selectedDocumentType.type === 'website') ? documentUrl :
         selectedFile || documentName
     );
@@ -226,26 +292,21 @@ export function AddDocumentDialog({
                             )}
                         </div>
 
-                        <div data-oid="database-selection">
-                            <label
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                                data-oid="database-label"
-                            >
-                                Database *
-                            </label>
-                            <select
-                                value={selectedDatabaseId}
-                                onChange={(e) => setSelectedDatabaseId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                data-oid="database-select"
-                            >
-                                <option value="">Select a database...</option>
-                                {servers.map((server) => (
-                                     <option key={server.id} value={server.id}>
-                                         {server.name}
-                                     </option>
-                                 ))}
-                             </select>
+                        {/* Show current realm info */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div className="flex items-center space-x-2">
+                                <div className="text-blue-600 text-sm font-medium">
+                                    Adding to Realm:
+                                </div>
+                                <div className="text-blue-800 font-semibold">
+                                    {currentRealm?.name || 'No realm selected'}
+                                </div>
+                            </div>
+                            {currentRealm?.domain && (
+                                <div className="text-blue-600 text-xs mt-1">
+                                    Domain: {currentRealm.domain}
+                                </div>
+                            )}
                         </div>
 
                         <div data-oid="document-name">
@@ -295,45 +356,49 @@ export function AddDocumentDialog({
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4" data-oid=":2cpxom">
-                            <div data-oid="z0nrybd">
-                                <label
-                                    htmlFor="gpu-processing"
-                                    className="flex items-center space-x-2"
-                                    data-oid="9ev49o3"
-                                >
-                                    <input
-                                        id="gpu-processing"
-                                        type="checkbox"
-                                        className="rounded"
-                                        checked={gpuProcessing}
-                                        onChange={(e) => setGpuProcessing(e.target.checked)}
-                                        data-oid=".1anw1v"
-                                    />
 
-                                    <span className="text-sm" data-oid="x5r-g.3">
-                                        GPU Processing
-                                    </span>
+
+                        {/* Processing Mode Selection */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4" data-oid="processing-mode">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Processing Mode
+                            </label>
+                            <div className="space-y-3">
+                                <label className="flex items-start space-x-3 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="processingMode"
+                                        value="AUTOMATIC"
+                                        checked={processingMode === 'AUTOMATIC'}
+                                        onChange={(e) => setProcessingMode(e.target.value as 'AUTOMATIC')}
+                                        className="mt-1 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                            Automatic Processing (Recommended)
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            Document will be processed through all stages automatically via background jobs
+                                        </div>
+                                    </div>
                                 </label>
-                            </div>
-                            <div data-oid="b8wf56q">
-                                <label
-                                    htmlFor="contextual-embedding"
-                                    className="flex items-center space-x-2"
-                                    data-oid="hng9.xe"
-                                >
+                                <label className="flex items-start space-x-3 cursor-pointer">
                                     <input
-                                        id="contextual-embedding"
-                                        type="checkbox"
-                                        className="rounded"
-                                        checked={contextualEmbedding}
-                                        onChange={(e) => setContextualEmbedding(e.target.checked)}
-                                        data-oid="ftzs_wu"
+                                        type="radio"
+                                        name="processingMode"
+                                        value="MANUAL"
+                                        checked={processingMode === 'MANUAL'}
+                                        onChange={(e) => setProcessingMode(e.target.value as 'MANUAL')}
+                                        className="mt-1 text-blue-600 focus:ring-blue-500"
                                     />
-
-                                    <span className="text-sm" data-oid="i0_pmze">
-                                        Contextual Embedding
-                                    </span>
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                            Manual Processing
+                                        </div>
+                                        <div className="text-xs text-gray-600">
+                                            You will manually trigger each processing stage
+                                        </div>
+                                    </div>
                                 </label>
                             </div>
                         </div>

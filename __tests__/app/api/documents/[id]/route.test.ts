@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { NextRequest } from 'next/server';
+import { ProcessingStage, StageStatus, ProcessingMode } from '@prisma/client';
 
 // Mock the DocumentService
 jest.mock('../../../../../lib/services/documentService', () => ({
@@ -32,7 +33,7 @@ describe('/api/documents/[id]', () => {
                 name: 'Test Document',
                 content: 'Test content',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'db1',
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -78,7 +79,7 @@ describe('/api/documents/[id]', () => {
                 name: 'Updated Document',
                 content: 'Updated content',
                 userId: 'user1',
-                databaseId: 'db1',
+                realmId: 'db1',
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -128,16 +129,25 @@ describe('/api/documents/[id]', () => {
             const mockDocument = {
                 id: 'doc1',
                 name: 'Test Document',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                userId: 'user1',
                 type: 'PDF',
                 state: 'ingested' as any,
                 version: 1,
                 chunks: 10,
                 quality: 0.9,
+                markdown: null,
                 uploadDate: new Date(),
-                databaseId: 'db1'
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                userId: 'user1',
+                realmId: 'db1',
+                subType: null,
+                currentStage: ProcessingStage.MARKDOWN_CONVERSION,
+                stageStatus: StageStatus.COMPLETED,
+                lastStageError: null,
+                processingMode: ProcessingMode.AUTOMATIC,
+                isProcessingPaused: false,
+                nextScheduledStage: null,
+                scheduledAt: null
             };
             mockDocumentService.deleteDocument.mockResolvedValue(mockDocument);
 

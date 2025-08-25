@@ -26,12 +26,13 @@ describe('/api/api-keys/[id]', () => {
             const mockApiKey = {
                 id: 'apikey1',
                 name: 'Test API Key',
-                key: 'test-key-123',
+                key: 'test-key',
                 created: new Date(),
                 lastUsed: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                userId: 'user1'
+                userId: 'user1',
+                realmId: 'realm1'
             };
             mockApiKeyService.deleteApiKey.mockResolvedValue(mockApiKey);
 

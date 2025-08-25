@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '../contexts/AppContext';
 import { AuthWrapper } from '../components/layout/AuthWrapper';
+import { Toaster } from 'sonner';
+// Initialize background services on app startup
+import '../lib/startup';
 
 export const metadata: Metadata = {
     title: 'Vector Database Manager',
@@ -14,6 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <body className="" data-oid="jts.1:m">
                 <AppProvider data-oid="x2u1n34">
                     <AuthWrapper data-oid="u_jbzpc">{children}</AuthWrapper>
+                    <Toaster position="top-right" richColors />
                 </AppProvider>
             </body>
         </html>

@@ -45,19 +45,19 @@ export default function SettingsPage() {
                             onChange={(e) =>
                                 setLocalSettings({
                                     ...localSettings,
-                                    theme: e.target.value as 'light' | 'dark' | 'system',
+                                    theme: e.target.value as 'LIGHT' | 'DARK' | 'SYSTEM',
                                 })
                             }
                             className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             data-oid="faf5:kf"
                         >
-                            <option value="light" data-oid="0ld:t82">
+                            <option value="LIGHT" data-oid="0ld:t82">
                                 Light
                             </option>
-                            <option value="dark" data-oid="bo7ry80">
+                            <option value="DARK" data-oid="bo7ry80">
                                 Dark
                             </option>
-                            <option value="system" data-oid=".026lan">
+                            <option value="SYSTEM" data-oid=".026lan">
                                 System
                             </option>
                         </select>

@@ -7,8 +7,8 @@ async function main() {
     await prisma.job.deleteMany();
     await prisma.apiKey.deleteMany();
     await prisma.document.deleteMany();
-    await prisma.database.deleteMany();
-    await prisma.databaseServer.deleteMany();
+    await prisma.realm.deleteMany();
+    await prisma.server.deleteMany();
     await prisma.userSettings.deleteMany();
     await prisma.user.deleteMany();
 
@@ -36,8 +36,8 @@ async function main() {
         },
     });
 
-    // Create sample database servers first
-    const server1 = await prisma.databaseServer.create({
+    // Create sample servers first
+    const server1 = await prisma.server.create({
         data: {
             name: 'Primary Qdrant',
             type: 'QDRANT',
@@ -49,7 +49,7 @@ async function main() {
         },
     });
 
-    const server2 = await prisma.databaseServer.create({
+    const server2 = await prisma.server.create({
         data: {
             name: 'Neo4j Knowledge Graph',
             type: 'NEO4J',
@@ -62,30 +62,50 @@ async function main() {
         },
     });
 
-    console.log('Created database servers:', { server1, server2 });
+    console.log('Created servers:', { server1, server2 });
 
-    // Create sample databases
-    const db1 = await prisma.database.create({
+    // Create sample realms
+    const realm1 = await prisma.realm.create({
         data: {
             name: 'Research Papers',
             description: 'Academic papers and research documents',
+            domain: 'academic',
             documentCount: 0,
-            userId: user.id,
-            serverId: server1.id,
+            ownerId: user.id,
+            ingestionPrompt: 'Process this academic document with focus on research methodologies, findings, and citations.',
+            systemPrompt: 'You are an academic research assistant. Provide scholarly information with appropriate citations.',
+            extractionPrompt: 'Extract academic entities including authors, institutions, research methodologies, and citations.',
+            domainPrompt: 'This knowledge base contains academic research and should maintain scholarly standards.',
+            userRealms: {
+                create: {
+                    userId: user.id,
+                    role: 'OWNER'
+                }
+            }
         },
     });
 
-    const db2 = await prisma.database.create({
+    const realm2 = await prisma.realm.create({
         data: {
             name: 'Company Knowledge Base',
             description: 'Internal documentation and procedures',
+            domain: 'business',
             documentCount: 0,
-            userId: user.id,
-            serverId: server2.id,
+            ownerId: user.id,
+            ingestionPrompt: 'Process this business document with focus on procedures, policies, and organizational information.',
+            systemPrompt: 'You are a business intelligence assistant. Provide insights based on business data.',
+            extractionPrompt: 'Extract business entities including companies, processes, policies, and stakeholders.',
+            domainPrompt: 'This knowledge base contains business information that should be analyzed with appropriate business context.',
+            userRealms: {
+                create: {
+                    userId: user.id,
+                    role: 'OWNER'
+                }
+            }
         },
     });
 
-    console.log('Created databases:', { db1, db2 });
+    console.log('Created realms:', { realm1, realm2 });
 
     // Create sample documents
     const doc1 = await prisma.document.create({
@@ -97,7 +117,7 @@ async function main() {
             chunks: 45,
             quality: 0.92,
             userId: user.id,
-            databaseId: db1.id,
+            realmId: realm1.id,
         },
     });
 
@@ -110,7 +130,7 @@ async function main() {
             chunks: 0,
             quality: 0,
             userId: user.id,
-            databaseId: db1.id,
+            realmId: realm1.id,
         },
     });
 
@@ -123,20 +143,20 @@ async function main() {
             chunks: 23,
             quality: 0.87,
             userId: user.id,
-            databaseId: db2.id,
+            realmId: realm2.id,
         },
     });
 
     console.log('Created documents:', { doc1, doc2, doc3 });
 
-    // Update database document counts
-    await prisma.database.update({
-        where: { id: db1.id },
+    // Update realm document counts
+    await prisma.realm.update({
+        where: { id: realm1.id },
         data: { documentCount: 2 },
     });
 
-    await prisma.database.update({
-        where: { id: db2.id },
+    await prisma.realm.update({
+        where: { id: realm2.id },
         data: { documentCount: 1 },
     });
 
@@ -146,6 +166,7 @@ async function main() {
             name: 'Production Workflow',
             key: 'mk_prod_****************************',
             userId: user.id,
+            realmId: realm1.id,
         },
     });
 
@@ -154,6 +175,7 @@ async function main() {
             name: 'Development Environment',
             key: 'mk_dev_****************************',
             userId: user.id,
+            realmId: realm2.id,
         },
     });
 
@@ -166,6 +188,7 @@ async function main() {
             documentName: doc1.name,
             documentType: doc1.type,
             userId: user.id,
+            realmId: realm1.id,
             status: 'FINISHED',
             percentage: 100,
             summary: 'Document successfully ingested with 45 chunks',
@@ -179,6 +202,7 @@ async function main() {
             documentName: doc2.name,
             documentType: doc2.type,
             userId: user.id,
+            realmId: realm1.id,
             status: 'PROCESSING',
             percentage: 65,
             summary: 'Extracting audio and generating transcripts',

@@ -12,16 +12,32 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 404: User not found
 
 ### POST /api/auth/login
-- Description: Authenticate user
-- Request body: `{ email: string, password: string }`
-- Response: Authentication token
-- Error cases:
-  - 400: Email and password required
-  - 401: Invalid credentials
+- **Description**: Authenticate user and create session
+- **Body**: `{ email: string, password: string }`
+- **Response**: `{ user: User, token: string }`
 
 ### POST /api/auth/logout
-- Description: Log out user
-- Response: Success message
+- **Description**: Logout user and destroy session
+- **Response**: `{ success: boolean }`
+
+### POST /api/auth/register
+- **Description**: Register new user account
+- **Body**: `{ email: string, password: string, name: string }`
+- **Response**: `{ user: User, token: string }`
+
+## Job Management Endpoints
+
+### GET /api/jobs/[id]
+- **Description**: Get job by ID with freshness check (updates status from backend if older than 1 hour)
+- **Parameters**: `id` (string) - Job ID
+- **Response**: `Job` object with potentially updated status
+- **Authentication**: Required
+
+### PUT /api/jobs/[id]
+- **Description**: Update job progress and status
+- **Parameters**: `id` (string) - Job ID
+- **Body**: `{ progress?: { percentage: number, summary: string }, status?: JobStatus, processingDetails?: ProcessingDetails }`
+- **Response**: `{ success: boolean, job: Job }`
 
 ## Realm Endpoints
 
@@ -61,6 +77,52 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 403: Not authorized to delete this realm
   - 404: Realm not found
   - 500: Failed to delete realm
+
+## Realm User Management Endpoints
+
+### GET /api/realms/[id]/users
+- Description: Get all users in a specific realm
+- Parameters: `id` (string) - Realm ID
+- Response: `{ users: Array<{ id: string, name: string, email: string, avatar?: string, role: RealmRole, createdAt: string, updatedAt: string }> }`
+- Error cases:
+  - 401: Authentication required
+  - 403: Access denied to this realm
+  - 500: Failed to fetch realm users
+
+### POST /api/realms/[id]/users
+- Description: Add user to realm
+- Parameters: `id` (string) - Realm ID
+- Request body: `{ email: string, role: RealmRole }`
+- Response: `{ user: RealmUser }`
+- Error cases:
+  - 400: Email and role are required / User already in realm
+  - 401: Authentication required
+  - 403: Insufficient permissions to add users / Only owners can assign OWNER/ADMIN roles
+  - 404: User not found
+  - 500: Failed to add user to realm
+
+### PUT /api/realms/[id]/users/[userId]
+- Description: Update user role in realm
+- Parameters: `id` (string) - Realm ID, `userId` (string) - User ID
+- Request body: `{ role: RealmRole }`
+- Response: `{ user: RealmUser }`
+- Error cases:
+  - 400: Role is required / Cannot modify your own role
+  - 401: Authentication required
+  - 403: Insufficient permissions / Only owners can modify OWNER roles
+  - 404: User not found in this realm
+  - 500: Failed to update user role
+
+### DELETE /api/realms/[id]/users/[userId]
+- Description: Remove user from realm
+- Parameters: `id` (string) - Realm ID, `userId` (string) - User ID
+- Response: `{ success: boolean }`
+- Error cases:
+  - 400: Cannot remove yourself / Cannot remove the last owner
+  - 401: Authentication required
+  - 403: Insufficient permissions / Only owners can remove other owners
+  - 404: User not found in this realm
+  - 500: Failed to remove user from realm
 
 ## Database Endpoints
 
@@ -110,11 +172,17 @@ This document lists all API endpoints used in the application. The error `Foreig
   - 500: Failed to fetch documents
 
 ### POST /api/documents
-- Description: Create new document
-- Request body: `{ name: string, type: string, databaseId: string }`
-- Response: Created document object
+- Description: Create a new document
+- Request body: `{ name: string, type?: string, subType?: string, realmId: string, filename?: string, url?: string }`
+  - `name`: Document name (required)
+  - `type`: Document type (optional, auto-detected if not provided)
+  - `subType`: Document subtype (optional, auto-detected if not provided)
+  - `realmId`: Realm ID (required)
+  - `filename`: Original filename for type detection (optional)
+  - `url`: Source URL for type detection (optional)
+- Response: Created document object with auto-detected type/subType
 - Error cases:
-  - 400: Missing required fields
+  - 400: Missing required fields (name, realmId)
   - 401: Authentication required
   - 500: Failed to create document
 
@@ -124,6 +192,58 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Error cases:
   - 404: Document not found
   - 500: Failed to fetch document
+
+
+
+## Search Endpoints
+
+### POST /api/search/morag
+- Description: Search across realms using MoRAG backend
+- Request body: `{ query: string, realmIds: string[], limit?: number, threshold?: number, includeMetadata?: boolean }`
+- Response: `{ query: string, results: Array, totalResults: number, searchTime: number, realms: string[] }`
+- Error cases:
+  - 400: Query and realmIds required, or no database servers configured
+  - 401: Authentication required
+  - 500: Search failed
+
+### GET /api/search/morag
+- Description: Search across realms using MoRAG backend (GET version)
+- Query params: `query`, `realmIds` (comma-separated), `limit`, `threshold`, `includeMetadata`
+- Response: Same as POST version
+- Error cases: Same as POST version
+
+## Task Management Endpoints
+
+### GET /api/tasks/[taskId]
+- Description: Get status of a MoRAG backend task
+- Response: `{ taskId: string, jobId: string, documentId: string, status: string, progress: number, message: string, result?: any }`
+- Error cases:
+  - 400: Task ID required
+  - 401: Authentication required
+  - 403: Access denied
+  - 404: Task not found
+  - 500: Internal server error
+
+### DELETE /api/tasks/[taskId]
+- Description: Cancel a MoRAG backend task
+- Response: `{ taskId: string, jobId: string, status: string, message: string }`
+- Error cases:
+  - 400: Task ID required
+  - 401: Authentication required
+  - 403: Access denied
+  - 404: Task not found
+  - 500: Failed to cancel task
+
+## Webhook Endpoints
+
+### POST /api/webhooks/morag
+- Description: Receive progress updates from MoRAG backend
+- Request body: `{ task_id: string, document_id?: string, batch_job_id?: string, timestamp: string, status: 'started' | 'in_progress' | 'completed' | 'failed', progress: { percentage: number, current_step: string }, result?: { content?: string, markdown?: string, chunks?: number }, error?: { message: string, step: string, details?: any } }`
+- Response: `{ status: 'success' | 'job_not_found' }`
+- Error cases:
+  - 400: Invalid payload (missing task_id)
+  - 500: Failed to process webhook
+- Notes: Updates job progress and document state; stores markdown content when processing completes
 
 ## API Key Endpoints
 
@@ -149,6 +269,144 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Error cases:
   - 500: Failed to delete API key
 
+## Job Scheduler Endpoints
+
+### GET /api/scheduler
+- **Description**: Get job scheduler status and statistics
+- **Response**: `{ stats: SchedulerStats, config: SchedulerConfig, timestamp: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 401: Authentication required
+  - 500: Failed to get scheduler status
+
+### POST /api/scheduler
+- **Description**: Control job scheduler (start/stop/restart/trigger)
+- **Body**: `{ action: 'start' | 'stop' | 'restart' | 'trigger' }`
+- **Response**: `{ success: boolean, message: string, stats: SchedulerStats }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid action
+  - 401: Authentication required
+  - 500: Failed to control scheduler
+
+### PUT /api/scheduler
+- **Description**: Update job scheduler configuration
+- **Body**: `{ config: Partial<SchedulerConfig> }`
+- **Response**: `{ success: boolean, message: string, config: SchedulerConfig }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid configuration
+  - 401: Authentication required
+  - 500: Failed to update configuration
+
+## Document Processing Endpoints
+
+### GET /api/documents/[id]/processing
+- **Description**: Get document processing status and jobs
+- **Parameters**: `id` (string) - Document ID
+- **Response**: `{ documentId: string, processingMode: string, currentStage: string, stageStatus: string, isProcessingPaused: boolean, jobs: Job[], recentJobs: Job[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Document ID required
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to get processing status
+
+### PUT /api/documents/[id]/processing
+- **Description**: Update document processing mode or control processing
+- **Parameters**: `id` (string) - Document ID
+- **Body**: `{ processingMode?: 'MANUAL' | 'AUTOMATIC', action?: 'pause' | 'resume' | 'cancel' | 'schedule', stage?: string, priority?: number }`
+- **Response**: `{ success: boolean, message: string, document: Document, recentJobs: Job[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid parameters
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to update processing
+
+### POST /api/documents/[id]/processing
+- **Description**: Execute a specific stage for the document
+- **Parameters**: `id` (string) - Document ID
+- **Body**: `{ stage: string, priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, jobId: string, documentId: string, stage: string, priority: number, scheduledAt: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Stage required
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to schedule processing
+
+## Processing Jobs Endpoints
+
+### GET /api/processing-jobs
+- **Description**: Get processing jobs with optional filtering
+- **Query Parameters**: 
+  - `documentId` (optional): Filter by document ID
+  - `status` (optional): Filter by job status
+  - `stage` (optional): Filter by processing stage
+  - `limit` (optional): Number of jobs to return (max 100, default 50)
+  - `offset` (optional): Pagination offset (default 0)
+- **Response**: `{ jobs: Job[], stats: JobStats, pagination: PaginationInfo }`
+- **Authentication**: Required
+- **Error cases**:
+  - 401: Authentication required
+  - 500: Failed to get jobs
+
+### POST /api/processing-jobs
+- **Description**: Create a new processing job
+- **Body**: `{ documentId: string, stage: string, priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, job: Job }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid parameters or stage
+  - 401: Authentication required
+  - 404: Document not found
+  - 500: Failed to create job
+
+### DELETE /api/processing-jobs
+- **Description**: Cancel multiple processing jobs
+- **Body**: `{ jobIds?: string[], documentId?: string }`
+- **Response**: `{ success: boolean, message: string, cancelledCount: number }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Either jobIds or documentId required
+  - 401: Authentication required
+  - 500: Failed to cancel jobs
+
+### GET /api/processing-jobs/[id]
+- **Description**: Get a specific processing job by ID
+- **Parameters**: `id` (string) - Job ID
+- **Response**: `{ job: Job }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Job ID required
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to get job
+
+### PUT /api/processing-jobs/[id]
+- **Description**: Update a processing job (retry, cancel, reschedule, update priority)
+- **Parameters**: `id` (string) - Job ID
+- **Body**: `{ action: 'cancel' | 'retry' | 'reschedule' | 'update_priority', priority?: number, scheduledAt?: string }`
+- **Response**: `{ success: boolean, message: string, job: Job, [additional fields based on action] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid action or missing required fields
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to update job
+
+### DELETE /api/processing-jobs/[id]
+- **Description**: Cancel a specific processing job
+- **Parameters**: `id` (string) - Job ID
+- **Response**: `{ success: boolean, message: string, jobId: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Job ID required
+  - 401: Authentication required
+  - 404: Job not found
+  - 500: Failed to cancel job
+
 ## User Endpoints
 
 ### GET /api/users/[email]
@@ -156,6 +414,65 @@ This document lists all API endpoints used in the application. The error `Foreig
 - Response: User object
 - Error cases:
   - 404: User not found
+
+## Document Migration Endpoints
+
+### POST /api/migrations
+- **Description**: Create new document migration between realms
+- **Request body**: `{ documentIds: string[], sourceRealmId: string, targetRealmId: string, migrationOptions: MigrationOptions }`
+- **Response**: `{ success: boolean, migration: Migration }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Validation failed / Source and target realms must be different
+  - 401: Authentication required
+  - 500: Failed to create migration
+
+### GET /api/migrations
+- **Description**: Get user's migrations with optional filtering
+- **Query parameters**: 
+  - `realmId` (optional): Filter by realm ID
+  - `status` (optional): Filter by migration status (PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED)
+  - `limit` (optional): Maximum number of results (1-100, default varies)
+  - `offset` (optional): Number of results to skip (default 0)
+- **Response**: `{ success: boolean, migrations: Migration[] }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid query parameters
+  - 401: Authentication required
+  - 500: Failed to fetch migrations
+
+### GET /api/migrations/[id]
+- **Description**: Get specific migration details
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, migration: Migration }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found
+  - 500: Failed to fetch migration
+
+### DELETE /api/migrations/[id]
+- **Description**: Cancel ongoing migration
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, message: string }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found or cannot be cancelled
+  - 500: Failed to cancel migration
+
+### GET /api/migrations/[id]/progress
+- **Description**: Get real-time migration progress
+- **Parameters**: `id` (string) - Migration ID (UUID format)
+- **Response**: `{ success: boolean, progress: MigrationProgress }`
+- **Authentication**: Required
+- **Error cases**:
+  - 400: Invalid migration ID format
+  - 401: Authentication required
+  - 404: Migration not found
+  - 500: Failed to fetch migration progress
 
 ## Missing Endpoints
 

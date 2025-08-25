@@ -18,7 +18,7 @@ The central entity representing system users.
 - One-to-many with Document
 - One-to-many with ApiKey
 - One-to-many with Job
-- One-to-many with DatabaseServer
+- One-to-many with Server
 - One-to-one with UserSettings
 
 ### UserSettings
@@ -86,8 +86,8 @@ Manages API keys for external access to the system.
 | `updatedAt` | DateTime | AUTO UPDATE | Timestamp when record was last updated |
 | `userId` | String | FOREIGN KEY | Owner of the API key |
 
-### DatabaseServer (synonym: Database)
-Configuration for external database servers (vector databases). Note: DatabaseServer and Database refer to the same concept in this system.
+### Server (synonym: Database)
+Configuration for external database servers (vector databases). Note: Server and Database refer to the same concept in this system.
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
@@ -133,11 +133,11 @@ Tracks document processing jobs and their status.
 - **User → Document**: One-to-many relationship. Users can upload multiple documents.
 - **User → ApiKey**: One-to-many relationship. Users can create multiple API keys.
 - **User → Job**: One-to-many relationship. Users can have multiple processing jobs.
-- **User → DatabaseServer**: One-to-many relationship. Users can configure multiple database servers.
+- **User → Server**: One-to-many relationship. Users can configure multiple database servers.
 
 ### Database Relationships
 - **Database → User**: Many-to-one relationship. Each database belongs to one user.
-- **Database → DatabaseServer**: Many-to-one relationship. Each database is hosted on one server.
+- **Database → Server**: Many-to-one relationship. Each database is hosted on one server.
 - **Database → Document**: One-to-many relationship. Databases can contain multiple documents.
 
 ### Document Relationships

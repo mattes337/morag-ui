@@ -2,7 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { AddDocumentDialog } from '../dialogs/AddDocumentDialog';
-// CreateDatabaseDialog removed - replaced by RealmManagementDialog
+
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
 import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
@@ -32,12 +32,11 @@ export function GlobalDialogs() {
         setShowDeleteConfirmDialog,
         documentToDelete,
         setDocumentToDelete,
-        showRealmManagementDialog,
-        setShowRealmManagementDialog,
         showEditPromptDialog,
         setShowEditPromptDialog,
         editPromptData,
         setEditPromptData,
+        deleteDocument,
     } = useApp();
 
     return (
@@ -92,20 +91,22 @@ export function GlobalDialogs() {
                     setShowDeleteConfirmDialog(false);
                     setDocumentToDelete(null);
                 }}
-                onConfirm={() => {
+                onConfirm={async () => {
                     if (documentToDelete) {
-                        // Here you would call the actual delete function
-                        console.log('Deleting document:', documentToDelete);
+                        try {
+                            await deleteDocument(documentToDelete.id);
+                            setShowDeleteConfirmDialog(false);
+                            setDocumentToDelete(null);
+                        } catch (error) {
+                            console.error('Failed to delete document:', error);
+                        }
                     }
                 }}
                 document={documentToDelete}
                 data-oid=".f9lboi"
             />
 
-            <RealmManagementDialog
-                isOpen={showRealmManagementDialog}
-                onClose={() => setShowRealmManagementDialog(false)}
-            />
+
 
             {editPromptData && (
                 <EditPromptDialog
@@ -116,11 +117,11 @@ export function GlobalDialogs() {
                     }}
                     onSave={async (prompt: string) => {
                         // TODO: Implement API call to save prompt
-                        console.log('Saving prompt:', prompt, 'for database:', editPromptData.database?.id, 'type:', editPromptData.promptType);
+                        console.log('Saving prompt:', prompt, 'for realm:', editPromptData.realm?.id, 'type:', editPromptData.promptType);
                         setShowEditPromptDialog(false);
                         setEditPromptData(null);
                     }}
-                    database={editPromptData.database!}
+                    realm={editPromptData.realm!}
                     promptType={editPromptData.promptType}
                     currentPrompt={editPromptData.currentPrompt}
                 />

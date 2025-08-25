@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseServerService } from '../../../lib/services/databaseServerService';
+import { ServerService } from '../../../lib/services/serverService';
 import { requireAuth } from '../../../lib/auth';
 import { UserService } from '../../../lib/services/userService';
 import { RealmService } from '../../../lib/services/realmService';
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
             });
         }
         
-        const servers = await DatabaseServerService.getDatabaseServersByUser(user.userId, currentRealm.id);
+        const servers = await ServerService.getServersByUser(user.userId, currentRealm.id);
         return NextResponse.json(servers);
     } catch (error) {
         if (error instanceof Error && error.message === 'Authentication required') {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
             });
         }
         
-        const server = await DatabaseServerService.createDatabaseServer({
+        const server = await ServerService.createServer({
             name,
             type,
             host,

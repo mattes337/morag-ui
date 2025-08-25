@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { DatabaseServer } from '../../types';
+import React, { useState, useCallback } from 'react';
+import { Server } from '../../types';
 
 interface TestConnectionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    server: DatabaseServer | null;
+    server: Server | null;
 }
 
 interface TestResult {
@@ -17,7 +17,13 @@ export function TestConnectionModal({ isOpen, onClose, server }: TestConnectionM
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<TestResult | null>(null);
 
-    const testConnection = async () => {
+    const handleClose = () => {
+        setResult(null);
+        setIsLoading(false);
+        onClose();
+    };
+
+    const testConnection = useCallback(async () => {
         if (!server) return;
         
         setIsLoading(true);
@@ -46,19 +52,13 @@ export function TestConnectionModal({ isOpen, onClose, server }: TestConnectionM
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleClose = () => {
-        setResult(null);
-        setIsLoading(false);
-        onClose();
-    };
+    }, [server]);
 
     React.useEffect(() => {
         if (isOpen && server) {
             testConnection();
         }
-    }, [isOpen, server]);
+    }, [isOpen, server, testConnection]);
 
     if (!isOpen) return null;
 

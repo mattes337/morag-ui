@@ -1,15 +1,3 @@
-// Database functionality is now part of Realm - this interface is kept for backward compatibility
-export interface Database {
-    id: string;
-    name: string;
-    description: string;
-    ingestionPrompt?: string;
-    systemPrompt?: string;
-    documentCount: number;
-    lastUpdated: string;
-    servers?: DatabaseServer[];
-}
-
 export interface DocumentMetadata {
     // Common fields for all document types
     filename?: string;
@@ -120,13 +108,121 @@ export interface DocumentMetadata {
 export interface Document {
     id: string;
     name: string;
-    type: string;
-    state: 'pending' | 'ingesting' | 'ingested' | 'deprecated' | 'deleted';
+    type: string; // Main type: document, video, audio, website, youtube
+    subType?: string; // Optional subtype: pdf, word, excel, markdown, text, etc.
+    state: 'pending' | 'ingesting' | 'ingested' | 'deleted';
     version: number;
     chunks: number;
     quality: number;
     uploadDate: string;
+    processingMode?: 'MANUAL' | 'AUTOMATIC';
+    markdown?: string; // Processed markdown content
     metadata?: DocumentMetadata;
+    jobs?: Job[];
+}
+
+export interface Entity {
+    id: string;
+    name: string;
+    type: string;
+    description?: string;
+    metadata?: any;
+    isOrphaned: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Fact {
+    id: string;
+    subject: string;
+    predicate: string;
+    object: string;
+    confidence: number;
+    source: string;
+    metadata?: any;
+    entityId?: string;
+    documentId: string;
+    chunkId?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface DocumentEntity {
+    id: string;
+    documentId: string;
+    entityId: string;
+    relevance: number;
+    mentions: number;
+    createdAt: Date;
+}
+
+export interface DocumentChunk {
+    id: string;
+    documentId: string;
+    content: string;
+    chunkIndex: number;
+    embedding?: any;
+    metadata?: any;
+    createdAt: Date;
+}
+
+// Enhanced deletion types
+export interface DeletionPlan {
+    documentId: string;
+    documentName: string;
+    chunksToDelete: number;
+    factsToDelete: number;
+    relationshipsToDelete: number;
+    entitiesToPreserve: number;
+    orphanedEntities: number;
+    estimatedTime: number;
+    warnings: string[];
+}
+
+export interface DeletionOptions {
+    dryRun?: boolean;
+    preserveEntities?: boolean;
+    createAuditLog?: boolean;
+    userId?: string;
+}
+
+export interface DeletionResult {
+    plan: DeletionPlan;
+    executed: boolean;
+    success: boolean;
+    progress?: DeletionProgressResult;
+}
+
+export interface DeletionProgressResult {
+    status: string;
+    completed: {
+        facts: number;
+        chunks: number;
+        relationships: number;
+        orphanedEntities: number;
+    };
+}
+
+export interface DeletionImpact {
+    documents: number;
+    chunks: number;
+    facts: number;
+    affectedEntities: number;
+    orphanedEntities: number;
+    warnings: string[];
+    estimatedTime: number;
+}
+
+export interface BatchDeletionOptions extends DeletionOptions {
+    onProgress?: (completed: number, total: number) => void;
+}
+
+export interface BatchDeletionResult {
+    totalRequested: number;
+    successful: number;
+    failed: number;
+    results: DeletionResult[];
+    errors: { documentId: string; error: string }[];
 }
 
 export interface ApiKey {
@@ -152,7 +248,7 @@ export interface SearchResult {
     content: string;
 }
 
-export interface DatabaseServer {
+export interface Server {
     id: string;
     name: string;
     type: 'qdrant' | 'neo4j' | 'pinecone' | 'weaviate' | 'chroma';
@@ -197,42 +293,44 @@ export interface Job {
     documentId: string;
     documentName: string;
     documentType: string;
+    taskId?: string;
     startDate: string;
     endDate?: string;
-    status:
-        | 'pending'
-        | 'waiting-for-remote-worker'
-        | 'processing'
-        | 'finished'
-        | 'failed'
-        | 'cancelled';
+    status: 'PENDING' | 'WAITING_FOR_REMOTE_WORKER' | 'PROCESSING' | 'FINISHED' | 'FAILED' | 'CANCELLED';
+    percentage: number;
+    summary: string;
     progress: {
         percentage: number;
         summary: string;
     };
-    createdAt: string;
-    updatedAt: string;
-    metadata?: DocumentMetadata;
     processingDetails?: {
         estimatedTimeRemaining?: number;
         currentStep?: string;
-        totalSteps?: number;
         completedSteps?: number;
+        totalSteps?: number;
         errorMessage?: string;
         warnings?: string[];
     };
+    metadata?: Record<string, any>;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+    realmId: string;
 }
 
 export interface Realm {
     id: string;
     name: string;
     description?: string;
+    domain?: string;          // Domain classification for specialized processing
     isDefault: boolean;
     ingestionPrompt?: string; // Optional prompt for document ingestion
     systemPrompt?: string;    // Optional prompt for user queries
+    extractionPrompt?: string; // Optional prompt for entity extraction
+    domainPrompt?: string;    // Optional domain context prompt
     documentCount?: number;
     lastUpdated?: string;
-    servers?: DatabaseServer[]; // Associated servers for this realm
+    servers?: Server[]; // Associated servers for this realm
     userRole?: RealmRole; // User's role in this realm
     userCount?: number; // Number of users in this realm
     createdAt: Date;
@@ -245,10 +343,20 @@ export interface CreateRealmData {
     name: string;
     description?: string;
     ownerId: string;
+    domain?: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
+    extractionPrompt?: string;
+    domainPrompt?: string;
 }
 
 export interface UpdateRealmData {
     name?: string;
     description?: string;
     isActive?: boolean;
+    domain?: string;
+    ingestionPrompt?: string;
+    systemPrompt?: string;
+    extractionPrompt?: string;
+    domainPrompt?: string;
 }
