@@ -78,9 +78,7 @@ export async function POST(request: NextRequest) {
     // Update document based on webhook status
     if (payload.status === 'completed' && payload.data) {
       // Store markdown content if available
-      const updateData: any = {
-        state: DocumentState.INGESTED,
-      };
+      const updateData: any = {};
 
       // Store markdown content
       if (payload.data.markdown) {
@@ -89,6 +87,14 @@ export async function POST(request: NextRequest) {
 
       if (payload.data.chunks) {
         updateData.chunks = payload.data.chunks;
+      }
+
+      // Only mark as INGESTED if this is the final stage (ingestor)
+      // For other stages, keep in INGESTING state
+      if (payload.step === 'ingestor' || payload.step === 'database_ingestion') {
+        updateData.state = DocumentState.INGESTED;
+      } else {
+        updateData.state = DocumentState.INGESTING;
       }
 
       // Update document with the document_id from payload or job

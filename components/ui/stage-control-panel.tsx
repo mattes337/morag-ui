@@ -123,6 +123,46 @@ export function StageControlPanel({
   // Create a map of stages for quick lookup
   const stageMap = new Map(stages.map(stage => [stage.stage, stage]));
 
+  // Get the effective status of a stage (handles logic for marking previous stages as completed)
+  const getEffectiveStageStatus = (stage: ProcessingStage): StageStatus => {
+    const stageInfo = stageMap.get(stage);
+    const currentStatus = stageInfo?.status || 'PENDING';
+
+    // If stage is explicitly completed, failed, or running, return as-is
+    if (currentStatus === 'COMPLETED' || currentStatus === 'FAILED' || currentStatus === 'RUNNING') {
+      return currentStatus;
+    }
+
+    // Handle MARKDOWN_OPTIMIZER special case - mark as SKIPPED if a later stage is running/completed
+    if (stage === 'MARKDOWN_OPTIMIZER') {
+      const laterStages: ProcessingStage[] = ['CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+      const hasLaterStageProgress = laterStages.some(laterStage => {
+        const laterStageInfo = stageMap.get(laterStage);
+        return laterStageInfo && (laterStageInfo.status === 'RUNNING' || laterStageInfo.status === 'COMPLETED');
+      });
+
+      if (hasLaterStageProgress && currentStatus === 'PENDING') {
+        return 'SKIPPED';
+      }
+    }
+
+    // If any later stage is running or completed, mark previous required stages as completed
+    const stageIndex = WORKFLOW_ORDER.indexOf(stage);
+    for (let i = stageIndex + 1; i < WORKFLOW_ORDER.length; i++) {
+      const laterStage = WORKFLOW_ORDER[i];
+      const laterStageInfo = stageMap.get(laterStage);
+
+      if (laterStageInfo && (laterStageInfo.status === 'RUNNING' || laterStageInfo.status === 'COMPLETED')) {
+        // Mark this stage as completed if it's required and currently pending
+        if (stage !== 'MARKDOWN_OPTIMIZER' && currentStatus === 'PENDING') {
+          return 'COMPLETED';
+        }
+      }
+    }
+
+    return currentStatus;
+  };
+
   // Determine if a stage can be executed based on dependencies and processing state
   const canExecuteStage = (stage: ProcessingStage): boolean => {
     const stageIndex = WORKFLOW_ORDER.indexOf(stage);
@@ -134,24 +174,44 @@ export function StageControlPanel({
     // Can't execute in automatic mode
     if (processingMode === 'AUTOMATIC') return false;
 
+    // Can't execute if any stage is currently running
+    const hasRunningStage = stages.some(s => s.status === 'RUNNING');
+    if (hasRunningStage) return false;
+
     // First stage can always be executed (if not processing)
     if (stageIndex === 0) return true;
 
     // Check if all previous required stages are completed
     for (let i = 0; i < stageIndex; i++) {
       const prevStage = WORKFLOW_ORDER[i];
-      const prevStageInfo = stageMap.get(prevStage);
+      const prevStageStatus = getEffectiveStageStatus(prevStage);
 
       // Skip optional stages (MARKDOWN_OPTIMIZER)
       if (prevStage === 'MARKDOWN_OPTIMIZER') continue;
 
       // Previous required stage must be completed
-      if (!prevStageInfo || prevStageInfo.status !== 'COMPLETED') {
+      if (prevStageStatus !== 'COMPLETED') {
         return false;
       }
     }
 
     return true;
+  };
+
+  // Calculate stage duration
+  const getStageDuration = (stageInfo: StageInfo): string => {
+    if (!stageInfo.startedAt) return '';
+
+    const endTime = stageInfo.completedAt || new Date();
+    const duration = endTime.getTime() - stageInfo.startedAt.getTime();
+
+    if (duration < 1000) return `${duration}ms`;
+    if (duration < 60000) return `${Math.round(duration / 1000)}s`;
+    if (duration < 3600000) return `${Math.round(duration / 60000)}m ${Math.round((duration % 60000) / 1000)}s`;
+
+    const hours = Math.floor(duration / 3600000);
+    const minutes = Math.floor((duration % 3600000) / 60000);
+    return `${hours}h ${minutes}m`;
   };
 
   const handleExecuteStage = async (stage: ProcessingStage) => {
@@ -253,25 +313,29 @@ export function StageControlPanel({
           {WORKFLOW_ORDER.map((stageName, index) => {
             const stageInfo = stageMap.get(stageName);
             const stageConfig = STAGE_CONFIG[stageName];
-            const statusConfig = STATUS_CONFIG[stageInfo?.status || 'PENDING'];
+            const effectiveStatus = getEffectiveStageStatus(stageName);
+            const statusConfig = STATUS_CONFIG[effectiveStatus];
             const StageIcon = stageConfig.icon;
             const StatusIcon = statusConfig.icon;
 
             const isExecuting = executingStage === stageName;
             const canExecute = canExecuteStage(stageName) && !isExecuting && !isLoading && processingMode === 'MANUAL';
-            const isRunning = stageInfo?.status === 'RUNNING' || isExecuting;
-            const isCompleted = stageInfo?.status === 'COMPLETED';
-            const isFailed = stageInfo?.status === 'FAILED';
+            const isRunning = effectiveStatus === 'RUNNING' || isExecuting;
+            const isCompleted = effectiveStatus === 'COMPLETED';
+            const isFailed = effectiveStatus === 'FAILED';
+            const isSkipped = effectiveStatus === 'SKIPPED';
             const isOptional = stageConfig.isOptional;
+            const duration = stageInfo ? getStageDuration(stageInfo) : '';
 
             return (
               <div key={stageName} className="flex items-center">
                 {/* Stage Card */}
                 <div className={`
-                  relative flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 min-w-[160px]
+                  relative flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 min-w-[180px]
                   ${isCompleted ? 'border-green-500 bg-green-50' :
                     isFailed ? 'border-red-500 bg-red-50' :
                     isRunning ? 'border-blue-500 bg-blue-50' :
+                    effectiveStatus === 'SKIPPED' ? 'border-gray-400 bg-gray-100' :
                     canExecute ? 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-25' :
                     'border-gray-200 bg-gray-50'}
                   ${isOptional ? 'border-dashed' : ''}
@@ -302,12 +366,30 @@ export function StageControlPanel({
                       isCompleted ? 'text-green-800' :
                       isFailed ? 'text-red-800' :
                       isRunning ? 'text-blue-800' :
+                      effectiveStatus === 'SKIPPED' ? 'text-gray-600' :
                       canExecute ? 'text-gray-900' : 'text-gray-500'
                     }`}>
                       {stageConfig.name}
                     </h4>
                     <p className="text-xs text-gray-600 leading-tight mb-1">{stageConfig.description}</p>
-                    <p className="text-xs text-gray-500">Est: {stageConfig.estimatedTime}</p>
+
+                    {/* Timing Information */}
+                    {stageInfo?.startedAt && (
+                      <div className="text-xs text-gray-500 space-y-0.5">
+                        <div>Started: {new Date(stageInfo.startedAt).toLocaleTimeString()}</div>
+                        {stageInfo.completedAt && (
+                          <div>Ended: {new Date(stageInfo.completedAt).toLocaleTimeString()}</div>
+                        )}
+                        {duration && (
+                          <div className="font-medium">Duration: {duration}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Estimated time for pending stages */}
+                    {!stageInfo?.startedAt && (
+                      <p className="text-xs text-gray-500">Est: {stageConfig.estimatedTime}</p>
+                    )}
                   </div>
 
                   {/* Progress Bar */}
@@ -324,8 +406,11 @@ export function StageControlPanel({
                   <Badge
                     variant={isCompleted ? 'default' :
                             isFailed ? 'destructive' :
-                            isRunning ? 'secondary' : 'outline'}
-                    className="text-xs mb-3"
+                            isRunning ? 'secondary' :
+                            effectiveStatus === 'SKIPPED' ? 'outline' : 'outline'}
+                    className={`text-xs mb-3 ${
+                      effectiveStatus === 'SKIPPED' ? 'bg-gray-100 text-gray-600' : ''
+                    }`}
                   >
                     {statusConfig.label}
                   </Badge>
@@ -338,14 +423,14 @@ export function StageControlPanel({
                   )}
 
                   {/* Action Button */}
-                  {processingMode === 'MANUAL' && (
+                  {processingMode === 'MANUAL' && effectiveStatus !== 'SKIPPED' && (
                     <Button
                       size="sm"
                       variant={isCompleted ? 'outline' : canExecute ? 'default' : 'ghost'}
                       onClick={() => handleExecuteStage(stageName)}
-                      disabled={!canExecute}
+                      disabled={!canExecute || isRunning}
                       className={`w-full text-xs ${
-                        !canExecute ? 'cursor-not-allowed opacity-50' : ''
+                        (!canExecute || isRunning) ? 'cursor-not-allowed opacity-50' : ''
                       }`}
                     >
                       {isRunning ? (
@@ -360,6 +445,13 @@ export function StageControlPanel({
                         </>
                       )}
                     </Button>
+                  )}
+
+                  {/* Skipped stage message */}
+                  {effectiveStatus === 'SKIPPED' && (
+                    <div className="w-full text-xs text-gray-500 text-center py-1">
+                      Optional stage skipped
+                    </div>
                   )}
                 </div>
 

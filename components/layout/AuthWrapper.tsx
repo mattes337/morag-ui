@@ -8,79 +8,37 @@ import { Navigation } from './Navigation';
 import { GlobalDialogs } from './GlobalDialogs';
 
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
-    const { user, setUser } = useApp();
+    const { user, isAuthChecking } = useApp();
     const pathname = usePathname();
     const router = useRouter();
-    const [isAuthChecking, setIsAuthChecking] = useState(true);
 
     const isLoginPage = pathname === '/login';
 
+    // Handle redirects based on auth state
     useEffect(() => {
-        // Check for authentication on mount and page refresh
-        const checkAuth = async () => {
-            setIsAuthChecking(true);
-            try {
-                // First try header auth (for SSO)
-                const headerResponse = await fetch('/api/auth/login', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (headerResponse.ok) {
-                    const data = await headerResponse.json();
-                    setUser(data.user);
-                    
-                    // If on login page and authenticated, redirect to home
-                    if (isLoginPage) {
-                        router.push('/');
-                    }
-                    return;
-                }
-                
-                // If header auth fails, try JWT auth
-                const jwtResponse = await fetch('/api/auth/me', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (jwtResponse.ok) {
-                    const data = await jwtResponse.json();
-                    setUser(data.user);
-                    
-                    // If on login page and authenticated, redirect to home
-                    if (isLoginPage) {
-                        router.push('/');
-                    }
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error);
-            } finally {
-                setIsAuthChecking(false);
-            }
-        };
-        
-        // Always check auth on mount to ensure session persistence
-        // This runs on every page load/refresh
-        checkAuth();
-    }, [setUser, isLoginPage, router]); // Removed user dependency to always run auth check
+        // Only handle redirects after auth check is complete
+        if (isAuthChecking) return;
 
-    // If user is not logged in and not on login page, redirect to login
-    // Only redirect after auth check is complete to prevent premature redirects
-    useEffect(() => {
-        if (!isAuthChecking && !user && !isLoginPage) {
+        // If user is authenticated and on login page, redirect to home
+        if (user && isLoginPage) {
+            console.log('🔄 [AuthWrapper] Authenticated user on login page, redirecting to home');
+            router.push('/');
+        }
+
+        // If user is not authenticated and not on login page, redirect to login
+        if (!user && !isLoginPage) {
+            console.log('🔄 [AuthWrapper] Unauthenticated user, redirecting to login');
             router.push('/login');
         }
-    }, [isAuthChecking, user, isLoginPage, router]);
+    }, [user, isAuthChecking, isLoginPage, router]);
 
-    // Show loading while checking auth or if redirecting to login
-    if (isAuthChecking || (!user && !isLoginPage)) {
+    // Show loading while checking auth
+    if (isAuthChecking) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center" data-oid="5yrqv.3">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">
-                        {isAuthChecking ? 'Checking authentication...' : 'Redirecting to login...'}
-                    </p>
+                    <p className="mt-2 text-gray-600">Initializing application...</p>
                 </div>
             </div>
         );

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { backgroundJobService } from '../../../lib/services/backgroundJobService';
 import { requireUnifiedAuth } from '../../../lib/middleware/unifiedAuth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/database';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
 
 const createJobSchema = z.object({
   documentId: z.string().uuid('Invalid document ID'),

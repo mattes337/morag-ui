@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobScheduler } from '../../../lib/services/jobScheduler';
-
 import { requireAuth } from '../../../lib/auth';
 
 /**

@@ -29,6 +29,7 @@ function ensureArray<T>(data: any, errorContext: string): T[] {
 interface AppContextType {
     // API Health
     apiHealthy: boolean | null;
+    isAuthChecking: boolean;
 
     // User & Settings
     user: User | null;
@@ -126,6 +127,7 @@ interface AppProviderProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
 
     // User & Settings state
     const [user, setUser] = useState<User | null>(null);
@@ -183,17 +185,69 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
     const [promptResponse, setPromptResponse] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Check API health on mount
+    // Combined auth check and API health check on mount
     useEffect(() => {
-        const checkHealth = async () => {
-            console.log('🏥 [AppContext] Checking API health');
-            const healthy = await checkApiHealth();
-            setApiHealthy(healthy);
-            console.log('✅ [AppContext] API health check completed:', healthy);
+        const initializeApp = async () => {
+            console.log('🚀 [AppContext] Initializing app...');
+            setIsAuthChecking(true);
+
+            try {
+                // Check API health first
+                console.log('🏥 [AppContext] Checking API health');
+                const healthy = await checkApiHealth();
+                setApiHealthy(healthy);
+                console.log('✅ [AppContext] API health check completed:', healthy);
+
+
+
+                // Check authentication
+                console.log('🔐 [AppContext] Checking authentication');
+                await checkAuthentication();
+
+            } catch (error) {
+                console.error('❌ [AppContext] App initialization failed:', error);
+            } finally {
+                setIsAuthChecking(false);
+                console.log('✅ [AppContext] App initialization completed');
+            }
         };
-        
-        checkHealth();
+
+        initializeApp();
     }, []);
+
+    // Authentication check function
+    const checkAuthentication = async () => {
+        try {
+            // First try header auth (for SSO)
+            const headerResponse = await fetch('/api/auth/login', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (headerResponse.ok) {
+                const data = await headerResponse.json();
+                setUser(data.user);
+                console.log('✅ [AppContext] Header auth successful for:', data.user.email);
+                return;
+            }
+
+            // If header auth fails, try JWT auth
+            const jwtResponse = await fetch('/api/auth/me', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (jwtResponse.ok) {
+                const data = await jwtResponse.json();
+                setUser(data.user);
+                console.log('✅ [AppContext] JWT auth successful for:', data.user.email);
+            } else {
+                console.log('ℹ️ [AppContext] No valid authentication found');
+            }
+        } catch (error) {
+            console.error('❌ [AppContext] Authentication check failed:', error);
+        }
+    };
 
     // Load data when user becomes authenticated
     useEffect(() => {
@@ -759,6 +813,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
     const value: AppContextType = {
         apiHealthy,
+        isAuthChecking,
         user,
         setUser,
         userSettings,

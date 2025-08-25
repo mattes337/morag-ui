@@ -94,10 +94,37 @@ export function DocumentDetailView({
 
     const loadStageInfo = useCallback(async () => {
         try {
-            const response = await fetch(`/api/documents/${document.id}/stages`);
+            const response = await fetch(`/api/documents/${document.id}/stages?includeExecutions=true`);
             if (response.ok) {
                 const data = await response.json();
-                setStageInfos(data.stages || []);
+                // Convert pipelineStatus to stage info format with execution data
+                const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                const stageInfos = stages.map(stage => {
+                    const isCompleted = data.pipelineStatus?.completedStages?.includes(stage);
+                    const isFailed = data.pipelineStatus?.failedStages?.includes(stage);
+                    const isCurrent = data.pipelineStatus?.currentStage === stage;
+
+                    let status = 'PENDING';
+                    if (isCompleted) status = 'COMPLETED';
+                    else if (isFailed) status = 'FAILED';
+                    else if (isCurrent && data.pipelineStatus?.stageStatus === 'RUNNING') status = 'RUNNING';
+
+                    // Find the latest execution for this stage
+                    const stageExecutions = data.executions?.filter((exec: any) => exec.stage === stage) || [];
+                    const latestExecution = stageExecutions.sort((a: any, b: any) =>
+                        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+                    )[0];
+
+                    return {
+                        stage,
+                        status,
+                        progress: isCurrent ? data.pipelineStatus?.progress : (isCompleted ? 100 : 0),
+                        startedAt: latestExecution?.startedAt ? new Date(latestExecution.startedAt) : undefined,
+                        completedAt: latestExecution?.completedAt ? new Date(latestExecution.completedAt) : undefined,
+                        errorMessage: latestExecution?.errorMessage
+                    };
+                });
+                setStageInfos(stageInfos);
             }
         } catch (error) {
             console.error('Failed to load stage info:', error);
@@ -757,25 +784,9 @@ Please check back later or refresh the page to see the processed content.`;
                                 {/* Processing Status Display */}
                                 <ProcessingStatusDisplay
                                     documentId={document.id}
-                                    processingMode={document.processingMode || 'AUTOMATIC'}
-                                    stages={[
-                                        {
-                                            stage: 'MARKDOWN_CONVERSION',
-                                            status: document.state === 'ingested' ? 'COMPLETED' :
-                                                   document.state === 'ingesting' ? 'RUNNING' : 'PENDING'
-                                        },
-                                        {
-                                            stage: 'CHUNKER',
-                                            status: document.state === 'ingested' ? 'COMPLETED' :
-                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
-                                        },
-                                        {
-                                            stage: 'INGESTOR',
-                                            status: document.state === 'ingested' ? 'COMPLETED' :
-                                                   document.state === 'ingesting' ? 'PENDING' : 'PENDING'
-                                        }
-                                    ]}
-                                    currentStage={document.state === 'ingesting' ? 'MARKDOWN_CONVERSION' : undefined}
+                                    processingMode={processingMode}
+                                    stages={stageInfos}
+                                    currentStage={stageInfos.find(s => s.status === 'RUNNING')?.stage}
                                     compact={false}
                                 />
                             </div>

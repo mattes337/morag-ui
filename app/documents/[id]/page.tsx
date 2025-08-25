@@ -85,10 +85,10 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     id: docData.id,
                     name: docData.name,
                     type: docData.type,
-                    state: docData.state.toLowerCase() as Document['state'],
-                    version: docData.version,
-                    chunks: docData.chunks,
-                    quality: docData.quality,
+                    state: (docData.state || 'pending').toLowerCase() as Document['state'],
+                    version: docData.version || 1,
+                    chunks: docData.chunks || 0,
+                    quality: docData.quality || 0,
                     uploadDate: docData.uploadDate
                         ? new Date(docData.uploadDate).toISOString().split('T')[0]
                         : '',

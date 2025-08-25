@@ -867,22 +867,28 @@ class BackgroundJobService {
         case 'markdown-conversion':
           // Update document with markdown content if available
           if (result.output_files && result.output_files.length > 0) {
-            // For now, just mark as processed - file content handling would need to be implemented
-            updateData.state = DocumentState.INGESTED;
-            console.log(`Document ${job.documentId} marked as ingested after markdown conversion`);
+            // Keep document in INGESTING state - only mark as INGESTED when all stages complete
+            updateData.state = DocumentState.INGESTING;
+            console.log(`Document ${job.documentId} markdown conversion completed, keeping in INGESTING state`);
           }
           break;
 
         case 'chunking':
-          // Update document state after chunking
-          updateData.state = DocumentState.INGESTED;
-          console.log(`Document ${job.documentId} marked as ingested after chunking`);
+          // Keep document in INGESTING state - only mark as INGESTED when all stages complete
+          updateData.state = DocumentState.INGESTING;
+          console.log(`Document ${job.documentId} chunking completed, keeping in INGESTING state`);
           break;
 
         case 'embedding':
-          // Update document state after embedding
+          // Keep document in INGESTING state - only mark as INGESTED when all stages complete
+          updateData.state = DocumentState.INGESTING;
+          console.log(`Document ${job.documentId} embedding completed, keeping in INGESTING state`);
+          break;
+
+        case 'ingestor':
+          // Only mark as INGESTED when the final ingestor stage completes
           updateData.state = DocumentState.INGESTED;
-          console.log(`Document ${job.documentId} marked as ingested after embedding`);
+          console.log(`Document ${job.documentId} marked as ingested after final ingestor stage`);
           break;
 
         default:

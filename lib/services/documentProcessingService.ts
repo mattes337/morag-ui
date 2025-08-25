@@ -1,9 +1,8 @@
-import { PrismaClient, ProcessingStage, ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
+import { ProcessingStage, ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
 import { backgroundJobService } from './backgroundJobService';
 import { stageExecutionService } from './stageExecutionService';
 import { unifiedFileService } from './unifiedFileService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../database';
 
 export interface ProcessingRequest {
   documentId: string;

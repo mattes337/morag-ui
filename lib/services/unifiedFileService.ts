@@ -1,9 +1,8 @@
-import { PrismaClient, ProcessingStage, FileType, FileAccessLevel, DocumentFile } from '@prisma/client';
+import { ProcessingStage, FileType, FileAccessLevel, DocumentFile } from '@prisma/client';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from '../database';
 
 const FILES_BASE_DIR = process.env.FILES_BASE_DIR || (process.env.NODE_ENV === 'production' ? '/app/uploads' : './uploads');
 

@@ -438,12 +438,24 @@ class StageExecutionService {
       const document = await prisma.document.findUnique({
         where: { id: execution.documentId }
       });
-      
+
       if (document?.processingMode === 'AUTOMATIC' && !document.isProcessingPaused) {
         const nextStage = await this.advanceToNextStage(execution.documentId);
         if (nextStage) {
           // Schedule the next stage
           await backgroundJobService.scheduleAutomaticJobs();
+        } else {
+          // No next stage - check if all stages are complete and mark document as INGESTED
+          const pipelineStatus = await this.getDocumentPipelineStatus(execution.documentId);
+          const allStagesComplete = pipelineStatus.completedStages.length === 5; // All 5 stages
+
+          if (allStagesComplete) {
+            await prisma.document.update({
+              where: { id: execution.documentId },
+              data: { state: 'INGESTED' }
+            });
+            console.log(`Document ${execution.documentId} marked as INGESTED - all stages complete`);
+          }
         }
       }
     } else {

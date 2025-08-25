@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUnifiedAuth } from '../../../lib/middleware/unifiedAuth';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/database';
 
 interface SearchOptions {
   query: string;
