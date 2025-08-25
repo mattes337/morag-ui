@@ -119,6 +119,48 @@ export class DocumentService {
         });
     }
 
+    static async getDocumentByIdWithAccess(id: string, realmId?: string) {
+        const whereClause: any = { id };
+
+        // If realmId is provided, filter by realm
+        if (realmId) {
+            whereClause.realmId = realmId;
+        }
+
+        return await prisma.document.findUnique({
+            where: whereClause,
+            include: {
+                realm: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                jobs: {
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    take: 5, // Latest 5 jobs
+                },
+                processingJobs: {
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    take: 10, // Latest 10 processing jobs
+                },
+                _count: {
+                    select: {
+                        documentChunks: true,
+                        facts: true,
+                        files: true,
+                    },
+                },
+            },
+        });
+    }
+
     static async getDocumentsByRealm(realmId: string) {
         const documents = await prisma.document.findMany({
             where: { realmId },

@@ -9,10 +9,16 @@ export interface ApiKeyAuthResult {
     id: string;
     email: string;
     name: string;
+    role: string;
   };
   realm?: {
     id: string;
     name: string;
+  };
+  apiKey?: {
+    id: string;
+    name: string;
+    isGeneric: boolean;
   };
   error?: string;
 }
@@ -52,6 +58,7 @@ export async function authenticateApiKey(request: NextRequest): Promise<ApiKeyAu
             id: true,
             email: true,
             name: true,
+            role: true,
           }
         },
         realm: {
@@ -78,8 +85,21 @@ export async function authenticateApiKey(request: NextRequest): Promise<ApiKeyAu
 
     return {
       success: true,
-      user: apiKeyRecord.user,
-      realm: apiKeyRecord.realm
+      user: {
+        id: apiKeyRecord.user.id,
+        email: apiKeyRecord.user.email,
+        name: apiKeyRecord.user.name,
+        role: apiKeyRecord.user.role,
+      },
+      realm: apiKeyRecord.realm ? {
+        id: apiKeyRecord.realm.id,
+        name: apiKeyRecord.realm.name,
+      } : undefined,
+      apiKey: {
+        id: apiKeyRecord.id,
+        name: apiKeyRecord.name,
+        isGeneric: apiKeyRecord.isGeneric,
+      }
     };
   } catch (error) {
     console.error('API key authentication error:', error);

@@ -4,8 +4,9 @@
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-jest.mock('../../../../lib/auth', () => ({
-    getAuthUser: jest.fn(),
+jest.mock('../../../../lib/middleware/unifiedAuth', () => ({
+    requireUnifiedAuth: jest.fn(),
+    getUnifiedAuth: jest.fn(),
 }));
 jest.mock('../../../../lib/services/realmService');
 jest.mock('../../../../lib/database', () => ({
@@ -30,11 +31,11 @@ jest.mock('../../../../lib/database', () => ({
 }));
 
 // Import after mocking
-import { getAuthUser } from '../../../../lib/auth';
+import { requireUnifiedAuth } from '../../../../lib/middleware/unifiedAuth';
 import { RealmService } from '../../../../lib/services/realmService';
 import { GET, POST } from '../../../../app/api/realms/route';
 
-const mockGetAuthUser = jest.mocked(getAuthUser);
+const mockRequireUnifiedAuth = jest.mocked(requireUnifiedAuth);
 const mockRealmService = RealmService as jest.Mocked<typeof RealmService>;
 
 describe('/api/realms', () => {
@@ -67,7 +68,13 @@ describe('/api/realms', () => {
                 },
             ];
 
-            mockGetAuthUser.mockResolvedValue(mockAuthUser);
+            const mockUnifiedAuth = {
+                success: true,
+                user: mockAuthUser,
+                authMethod: 'session' as const
+            };
+
+            mockRequireUnifiedAuth.mockResolvedValue(mockUnifiedAuth);
             mockRealmService.getUserRealms.mockResolvedValue(mockRealms as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/realms');
@@ -75,20 +82,20 @@ describe('/api/realms', () => {
             const data = await response.json();
 
             expect(response.status).toBe(200);
-            expect(data).toEqual({ realms: mockRealms });
+            expect(data).toEqual({ realms: mockRealms, authMethod: 'session' });
             expect(mockRealmService.getUserRealms).toHaveBeenCalledWith('user1');
             expect(mockRealmService.getUserRealms).toHaveBeenCalledTimes(1);
         });
 
         it('should return 401 when not authenticated', async () => {
-            mockGetAuthUser.mockResolvedValue(null);
+            mockRequireUnifiedAuth.mockRejectedValue(new Error('Authentication required'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/realms');
             const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(401);
-            expect(data).toEqual({ error: 'Unauthorized' });
+            expect(data).toEqual({ error: 'Authentication required' });
             expect(mockRealmService.getUserRealms).not.toHaveBeenCalled();
         });
     });
@@ -113,7 +120,13 @@ describe('/api/realms', () => {
                 updatedAt: new Date(),
             };
 
-            mockGetAuthUser.mockResolvedValue(mockAuthUser);
+            const mockUnifiedAuth = {
+                success: true,
+                user: mockAuthUser,
+                authMethod: 'session' as const
+            };
+
+            mockRequireUnifiedAuth.mockResolvedValue(mockUnifiedAuth);
             mockRealmService.createRealm.mockResolvedValue(mockCreatedRealm as any);
 
             const mockRequest = new NextRequest('http://localhost:3000/api/realms', {
@@ -133,11 +146,12 @@ describe('/api/realms', () => {
                 name: 'New Realm',
                 description: 'A new realm',
                 ownerId: 'user1',
+                domain: undefined,
             });
         });
 
         it('should return 401 when not authenticated', async () => {
-            mockGetAuthUser.mockResolvedValue(null);
+            mockRequireUnifiedAuth.mockRejectedValue(new Error('Authentication required'));
 
             const mockRequest = new NextRequest('http://localhost:3000/api/realms', {
                 method: 'POST',

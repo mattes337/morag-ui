@@ -254,12 +254,14 @@ model ApiKey {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   userId    String
-  realmId   String
-  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  realmId   String?   // Made optional for generic API keys
+  isGeneric Boolean   @default(false) // Flag for generic API keys
+  realm     Realm?    @relation(fields: [realmId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([realmId], map: "api_keys_realmId_fkey")
   @@index([userId], map: "api_keys_userId_fkey")
+  @@index([isGeneric], map: "api_keys_isGeneric_idx")
   @@map("api_keys")
 }
 

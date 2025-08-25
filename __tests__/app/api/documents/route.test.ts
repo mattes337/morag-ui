@@ -1,44 +1,58 @@
 import { NextRequest } from 'next/server';
 
-// Mock the DocumentService and auth
+// Mock the DocumentService and unified auth
 jest.mock("../../../../lib/services/documentService", () => ({
     DocumentService: {
         getDocumentsByUser: jest.fn(),
         getDocumentsByUserId: jest.fn(),
+        getDocumentsWithFilters: jest.fn(),
         createDocument: jest.fn(),
     },
 }));
-jest.mock('../../../../lib/auth', () => ({
-    requireAuth: jest.fn(),
-    getAuthUser: jest.fn(),
+jest.mock("../../../../lib/services/unifiedFileService", () => ({
+    unifiedFileService: {
+        storeFile: jest.fn(),
+    },
+}));
+jest.mock('../../../../lib/middleware/unifiedAuth', () => ({
+    requireUnifiedAuth: jest.fn(),
+    getUnifiedAuth: jest.fn(),
 }));
 
 // Import AFTER mocking
 import { GET, POST } from "../../../../app/api/documents/route";
 import { DocumentService } from "../../../../lib/services/documentService";
-import { requireAuth, getAuthUser } from "../../../../lib/auth";
+import { requireUnifiedAuth } from "../../../../lib/middleware/unifiedAuth";
 
 const mockDocumentService = jest.mocked(DocumentService);
-const mockRequireAuth = jest.mocked(requireAuth);
-const mockGetAuthUser = jest.mocked(getAuthUser);
+const mockRequireUnifiedAuth = jest.mocked(requireUnifiedAuth);
 
 describe('/api/documents', () => {
-    const mockUser = { 
-        userId: 'user1', 
-        email: 'test@example.com', 
+    const mockUser = {
+        userId: 'user1',
+        email: 'test@example.com',
         role: 'ADMIN',
         name: 'Test User',
         authMethod: 'jwt' as const
     };
-    
+
+    const mockUnifiedAuth = {
+        success: true,
+        user: mockUser,
+        realm: {
+            id: 'realm1',
+            name: 'Test Realm'
+        },
+        authMethod: 'session' as const
+    };
+
     beforeEach(() => {
         jest.clearAllMocks();
-        mockRequireAuth.mockResolvedValue(mockUser);
-        mockGetAuthUser.mockResolvedValue(mockUser);
+        mockRequireUnifiedAuth.mockResolvedValue(mockUnifiedAuth);
     });
 
     describe('GET', () => {
-        it('should return all documents', async () => {
+        it('should return documents with pagination', async () => {
             const mockDocuments = [
                 {
                     id: '1',
@@ -52,26 +66,47 @@ describe('/api/documents', () => {
                 },
             ];
 
-            mockDocumentService.getDocumentsByUserId.mockResolvedValue(mockDocuments as any);
+            mockDocumentService.getDocumentsWithFilters.mockResolvedValue({
+                documents: mockDocuments,
+                total: mockDocuments.length
+            } as any);
 
             const request = new NextRequest('http://localhost/api/documents');
             const response = await GET(request as any);
             const data = await response.json();
 
             expect(response.status).toBe(200);
-            expect(data).toEqual(mockDocuments);
-            expect(mockDocumentService.getDocumentsByUserId).toHaveBeenCalledWith('user1', null);
+            expect(data.documents).toEqual(mockDocuments);
+            expect(data.pagination).toEqual({
+                page: 1,
+                limit: 20,
+                total: 1,
+                totalPages: 1
+            });
+            expect(data.realm).toEqual({
+                id: 'realm1',
+                name: 'Test Realm'
+            });
+            expect(data.authMethod).toBe('session');
+            expect(mockDocumentService.getDocumentsWithFilters).toHaveBeenCalledWith({
+                realmId: 'realm1',
+                state: undefined,
+                type: undefined,
+                search: undefined,
+                page: 1,
+                limit: 20,
+            });
         });
 
         it('should handle service errors', async () => {
-            mockDocumentService.getDocumentsByUserId.mockRejectedValue(new Error('Database error'));
+            mockDocumentService.getDocumentsWithFilters.mockRejectedValue(new Error('Database error'));
 
             const request = new NextRequest('http://localhost/api/documents');
             const response = await GET(request as any);
             const data = await response.json();
 
             expect(response.status).toBe(500);
-            expect(data).toEqual({ error: 'Failed to fetch documents' });
+            expect(data).toEqual({ error: 'Database error' });
         });
     });
 
@@ -106,7 +141,8 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(201);
-            expect(data).toEqual(mockDocument);
+            expect(data.document).toEqual(mockDocument);
+            expect(data.message).toBe('Document created successfully');
             expect(mockDocumentService.createDocument).toHaveBeenCalledWith({
                 name: 'New Document.pdf',
                 type: 'document',
@@ -121,8 +157,7 @@ describe('/api/documents', () => {
             const request = new NextRequest('http://localhost:3000/api/documents', {
                 method: 'POST',
                 body: JSON.stringify({
-                    name: 'New Document.pdf',
-                    // Missing realmId (userId comes from auth, type/subType can be auto-detected)
+                    // Missing name - the only required field
                 }),
             });
 
@@ -130,7 +165,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Name and realmId are required' });
+            expect(data).toEqual({ error: 'name is required' });
             expect(mockDocumentService.createDocument).not.toHaveBeenCalled();
         });
 
@@ -151,7 +186,7 @@ describe('/api/documents', () => {
             const data = await response.json();
 
             expect(response.status).toBe(500);
-            expect(data).toEqual({ error: 'Failed to create document' });
+            expect(data).toEqual({ error: 'Database error' });
         });
     });
 });

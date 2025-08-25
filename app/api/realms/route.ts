@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { requireUnifiedAuth, getUnifiedAuth } from '@/lib/middleware/unifiedAuth';
 import { RealmService } from '@/lib/services/realmService';
 import { z } from 'zod';
 
@@ -21,29 +21,82 @@ const createRealmSchema = z.object({
     domainPrompt: z.string().optional()
 });
 
+/**
+ * GET /api/realms
+ * Get realm information
+ * API key auth: returns associated realm with statistics
+ * Session auth: returns user's realms
+ */
 export async function GET(request: NextRequest) {
     try {
-        const user = await getAuthUser(request);
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const auth = await requireUnifiedAuth(request);
 
-        const realms = await RealmService.getUserRealms(user.userId);
-        return NextResponse.json({ realms });
+        if (auth.authMethod === 'apikey' && auth.realm) {
+            // For API key authentication, return the associated realm with statistics
+            const realm = await RealmService.getRealmById(auth.realm.id, auth.user!.userId);
+
+            if (!realm) {
+                return NextResponse.json(
+                    { error: 'Realm not found' },
+                    { status: 404 }
+                );
+            }
+
+            // Get realm statistics (simplified version)
+            const statistics = {
+                documentCount: 0, // Would be calculated from database
+                userCount: 0,     // Would be calculated from database
+                lastActivity: new Date().toISOString(),
+            };
+
+            return NextResponse.json({
+                realm: {
+                    id: realm.id,
+                    name: realm.name,
+                    description: realm.description,
+                    createdAt: realm.createdAt,
+                    updatedAt: realm.updatedAt,
+                },
+                statistics,
+                user: {
+                    id: auth.user!.userId,
+                    email: auth.user!.email,
+                    name: auth.user!.name,
+                },
+                authMethod: auth.authMethod
+            });
+        } else {
+            // For session authentication, return user's realms
+            const realms = await RealmService.getUserRealms(auth.user!.userId);
+            return NextResponse.json({
+                realms,
+                authMethod: auth.authMethod
+            });
+        }
     } catch (error) {
         console.error('Error fetching realms:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch realms' },
-            { status: 500 }
+            { error: error instanceof Error ? error.message : 'Failed to fetch realms' },
+            { status: error instanceof Error && error.message.includes('Authentication') ? 401 : 500 }
         );
     }
 }
 
+/**
+ * POST /api/realms
+ * Create a new realm
+ * Only available for session authentication (UI users)
+ */
 export async function POST(request: NextRequest) {
     try {
-        const user = await getAuthUser(request);
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await requireUnifiedAuth(request);
+
+        // Only allow realm creation for session users (not API keys)
+        if (auth.authMethod === 'apikey') {
+            return NextResponse.json(
+                { error: 'Realm creation not available for API key authentication' },
+                { status: 403 }
+            );
         }
 
         const body = await request.json();
@@ -66,7 +119,7 @@ export async function POST(request: NextRequest) {
             name: validatedData.name,
             description: validatedData.description,
             domain: validatedData.domain,
-            ownerId: user.userId,
+            ownerId: auth.user!.userId,
             // Add prompts if any are provided
             ...(Object.keys(filteredPrompts).length > 0 && {
                 ingestionPrompt: filteredPrompts.ingestion,

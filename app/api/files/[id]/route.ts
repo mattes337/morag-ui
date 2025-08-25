@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
-import { unifiedFileService } from '@/lib/services/unifiedFileService';
+import { requireUnifiedAuth } from '../../../../lib/middleware/unifiedAuth';
+import { unifiedFileService } from '../../../../lib/services/unifiedFileService';
+import { DocumentService } from '../../../../lib/services/documentService';
 
 /**
  * GET /api/files/[id]
@@ -11,52 +12,59 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireAuth(request);
+    const auth = await requireUnifiedAuth(request);
     const fileId = params.id;
-    
+
     if (!fileId) {
       return NextResponse.json(
         { error: 'File ID is required' },
         { status: 400 }
       );
     }
-    
-    // Get user's current realm
-    const { getCurrentRealmId } = await import('@/lib/auth');
-    const currentRealmId = await getCurrentRealmId(request, user.userId);
 
-    // Check access permissions
-    const hasAccess = await unifiedFileService.checkFileAccess(
-      fileId,
-      user.userId,
-      currentRealmId || undefined
-    );
-    
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    // Get file metadata
+    const file = await unifiedFileService.getFile(fileId, false);
+
+    if (!file) {
+      return NextResponse.json({
+        error: 'File not found'
+      }, { status: 404 });
     }
-    
+
+    // Check access to the document
+    const document = await DocumentService.getDocumentByIdWithAccess(
+      file.documentId,
+      auth.isGenericApiKey ? undefined : (auth.realm?.id || undefined)
+    );
+
+    if (!document) {
+      return NextResponse.json({
+        error: 'Access denied'
+      }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const includeContent = searchParams.get('includeContent') === 'true';
-    
-    const file = await unifiedFileService.getFile(fileId, includeContent);
-    
-    if (!file) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(file);
+
+    // Get file with content if requested
+    const fileWithContent = includeContent ?
+      await unifiedFileService.getFile(fileId, true) : file;
+
+    return NextResponse.json({
+      file: fileWithContent,
+      document: {
+        id: document.id,
+        name: document.name,
+        type: document.type,
+      },
+      authMethod: auth.authMethod,
+      realm: auth.realm
+    });
   } catch (error) {
-    console.error('Error fetching file:', error);
+    console.error('Failed to fetch file:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch file' },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : 'Failed to fetch file' },
+      { status: error instanceof Error && error.message.includes('Authentication') ? 401 : 500 }
     );
   }
 }
@@ -70,49 +78,72 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireAuth(request);
+    const auth = await requireUnifiedAuth(request);
     const fileId = params.id;
-    
+
     if (!fileId) {
       return NextResponse.json(
         { error: 'File ID is required' },
         { status: 400 }
       );
     }
-    
-    // Get user's current realm
-    const { getCurrentRealmId } = await import('@/lib/auth');
-    const currentRealmId = await getCurrentRealmId(request, user.userId);
 
-    // Check access permissions
-    const hasAccess = await unifiedFileService.checkFileAccess(
-      fileId,
-      user.userId,
-      currentRealmId || undefined
+    // Get file metadata
+    const file = await unifiedFileService.getFile(fileId, false);
+
+    if (!file) {
+      return NextResponse.json({
+        error: 'File not found'
+      }, { status: 404 });
+    }
+
+    // Check access to the document
+    const document = await DocumentService.getDocumentByIdWithAccess(
+      file.documentId,
+      auth.isGenericApiKey ? undefined : (auth.realm?.id || undefined)
     );
-    
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+
+    if (!document) {
+      return NextResponse.json({
+        error: 'Access denied'
+      }, { status: 403 });
     }
-    
+
+    // Check permissions - only admins, document owners, or generic API keys can delete
+    const canDelete = auth.user!.role === 'ADMIN' ||
+                     document.userId === auth.user!.userId ||
+                     auth.isGenericApiKey;
+
+    if (!canDelete) {
+      return NextResponse.json({
+        error: 'Insufficient permissions to delete file'
+      }, { status: 403 });
+    }
+
+    // Delete the file
     const deleted = await unifiedFileService.deleteFile(fileId);
-    
+
     if (!deleted) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({
+        error: 'Failed to delete file'
+      }, { status: 500 });
     }
-    
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json({
+      message: 'File deleted successfully',
+      deletedFile: {
+        id: file.id,
+        filename: file.filename,
+        fileType: file.fileType,
+      },
+      authMethod: auth.authMethod,
+      realm: auth.realm
+    });
   } catch (error) {
-    console.error('Error deleting file:', error);
+    console.error('Failed to delete file:', error);
     return NextResponse.json(
-      { error: 'Failed to delete file' },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : 'Failed to delete file' },
+      { status: error instanceof Error && error.message.includes('Authentication') ? 401 : 500 }
     );
   }
 }
