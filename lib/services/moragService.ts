@@ -191,20 +191,53 @@ export class MoragService {
   }
 
   /**
-   * Process a specific stage for a document
+   * Convert internal stage names to canonical stage names
+   */
+  private getCanonicalStageName(stage: string): string {
+    const stageMapping: Record<string, string> = {
+      'MARKDOWN_CONVERSION': 'markdown-conversion',
+      'MARKDOWN_OPTIMIZER': 'markdown-optimizer',
+      'CHUNKER': 'chunker',
+      'FACT_GENERATOR': 'fact-generator',
+      'INGESTOR': 'ingestor',
+    };
+    return stageMapping[stage] || stage.toLowerCase().replace('_', '-');
+  }
+
+  /**
+   * Process a specific stage for a document using the new API
    */
   async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
-    const response = await fetch(`${this.baseUrl}/api/v1/stages/process`, {
+    const canonicalStage = this.getCanonicalStageName(request.stage);
+
+    // Create form data for the new API
+    const formData = new FormData();
+
+    // Add the request as JSON string (the API accepts both JSON objects and strings)
+    const requestData = {
+      document_id: request.documentId,
+      execution_id: request.executionId,
+      document: request.document,
+      webhook_url: request.webhookUrl,
+      metadata: request.metadata || {},
+    };
+
+    formData.append('request', JSON.stringify(requestData));
+
+    // If there's a file to process, we would add it here
+    // For now, we'll use the document content
+    if (request.document.content) {
+      const blob = new Blob([request.document.content], { type: 'text/markdown' });
+      formData.append('file', blob, `${request.document.title}.md`);
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({
-        document_id: request.documentId,
-        stage: request.stage,
-        execution_id: request.executionId,
-        document: request.document,
-        webhook_url: request.webhookUrl,
-        metadata: request.metadata || {},
-      }),
+      headers: {
+        // Don't set Content-Type for FormData - let the browser set it with boundary
+        'Authorization': this.getHeaders().Authorization,
+      },
+      body: formData,
     });
 
     if (!response.ok) {
@@ -225,6 +258,8 @@ export class MoragService {
 
   /**
    * Search for similar content using the new search endpoint
+   * Note: Search functionality may not be available in the new stage-based API
+   * This method is kept for backward compatibility but may need updating
    */
   async search(query: string, databases: Server[], options?: {
     limit?: number;
@@ -242,23 +277,29 @@ export class MoragService {
       collection: db.collection,
     }));
 
-    const response = await fetch(`${this.baseUrl}/api/v1/search`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({
-        query,
-        database_servers: databaseConfigs,
-        limit: options?.limit || 10,
-        threshold: options?.threshold || 0.7,
-        filters: options?.filters || {},
-      }),
-    });
+    // Try the new API first, fall back to old if needed
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/search`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          query,
+          database_servers: databaseConfigs,
+          limit: options?.limit || 10,
+          threshold: options?.threshold || 0.7,
+          filters: options?.filters || {},
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn('New search API failed, this may not be implemented in the stage-based API:', error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   /**
@@ -316,10 +357,10 @@ export class MoragService {
   }
 
   /**
-   * Health check endpoint
+   * Health check endpoint using the new API
    */
   async healthCheck(): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/health`, {
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/health`, {
       method: 'GET',
       headers: this.getHeaders(),
     });

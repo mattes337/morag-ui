@@ -9,6 +9,19 @@ function ensureArray<T>(data: any, errorContext: string): T[] {
     if (Array.isArray(data)) {
         return data;
     }
+    // Handle paginated responses with documents property
+    if (data && typeof data === 'object' && Array.isArray(data.documents)) {
+        return data.documents;
+    }
+    // Handle other nested array properties
+    if (data && typeof data === 'object') {
+        const arrayKeys = ['documents', 'servers', 'apiKeys', 'jobs', 'data'];
+        for (const key of arrayKeys) {
+            if (Array.isArray(data[key])) {
+                return data[key];
+            }
+        }
+    }
     console.error(`❌ [AppContext] ${errorContext} data is not an array:`, data);
     return [];
 }
