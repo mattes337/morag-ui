@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ProcessingStatusDisplay } from './processing-status-display';
 
 const meta: Meta<typeof ProcessingStatusDisplay> = {

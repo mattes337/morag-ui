@@ -27,7 +27,7 @@ export interface StageInfo {
 
 export const STAGE_CONFIG = {
   MARKDOWN_CONVERSION: {
-    name: 'Markdown Conversion',
+    name: 'Converter',
     description: 'Convert input files to unified markdown format',
     icon: FileText,
     color: 'bg-blue-500',
@@ -35,7 +35,7 @@ export const STAGE_CONFIG = {
     isOptional: false
   },
   MARKDOWN_OPTIMIZER: {
-    name: 'Markdown Optimizer',
+    name: 'Optimizer',
     description: 'LLM-based text improvement and error correction',
     icon: Zap,
     color: 'bg-yellow-500',

@@ -28,8 +28,8 @@ export async function authenticateUnified(request: NextRequest): Promise<Unified
     await StartupService.initialize();
 
     // Initialize background services on first API call (singleton pattern)
-    // Use the job scheduler's isRunning check to prevent multiple initializations
-    if (!jobScheduler.isRunning()) {
+    // Use the job scheduler's stats to check if it's running
+    if (!jobScheduler.getStats().isRunning) {
       // Don't await this - let it initialize in the background
       jobScheduler.start().catch(error => {
         console.warn('Background services initialization failed:', error);

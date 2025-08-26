@@ -40,14 +40,14 @@ interface StageProgressIndicatorProps {
 
 const STAGE_CONFIG = {
   MARKDOWN_CONVERSION: {
-    name: 'Markdown Conversion',
+    name: 'Converter',
     shortName: 'Convert',
     icon: FileText,
     color: 'bg-blue-500',
     order: 1
   },
   MARKDOWN_OPTIMIZER: {
-    name: 'Markdown Optimizer',
+    name: 'Optimizer',
     shortName: 'Optimize',
     icon: Zap,
     color: 'bg-yellow-500',

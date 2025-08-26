@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { StageCard } from './stage-card';
 import { ProcessingStage, StageInfo } from './stage-config';
 

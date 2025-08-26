@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { StageWorkflowView } from './stage-workflow-view';
 import { ProcessingStage, StageInfo } from './stage-config';
 
@@ -158,6 +158,27 @@ export const Interactive: Story = {
     onResetToStage: async (stage: ProcessingStage) => {
       console.log('Resetting to stage:', stage);
       await new Promise(resolve => setTimeout(resolve, 500));
+    },
+  },
+};
+
+export const HorizontalWorkflowDemo: Story = {
+  args: {
+    stages: [
+      createStageInfo('MARKDOWN_CONVERSION', 'COMPLETED'),
+      createStageInfo('MARKDOWN_OPTIMIZER', 'SKIPPED'),
+      createStageInfo('CHUNKER', 'RUNNING', 65),
+      createStageInfo('FACT_GENERATOR', 'PENDING'),
+      createStageInfo('INGESTOR', 'PENDING'),
+    ],
+    executingStage: 'CHUNKER',
+    isLoading: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the new horizontal workflow layout with past stages shown as compact vertical columns with rotated text, current stage as full card, and future stages as compact columns.',
+      },
     },
   },
 };

@@ -41,12 +41,12 @@ interface ProcessingStatusDisplayProps {
 
 const STAGE_CONFIG = {
   MARKDOWN_CONVERSION: {
-    name: 'Markdown Conversion',
+    name: 'Converter',
     icon: FileText,
     color: 'bg-blue-500'
   },
   MARKDOWN_OPTIMIZER: {
-    name: 'Markdown Optimizer',
+    name: 'Optimizer',
     icon: Zap,
     color: 'bg-yellow-500'
   },

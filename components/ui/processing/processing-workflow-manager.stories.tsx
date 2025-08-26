@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ProcessingWorkflowManager } from './processing-workflow-manager';
 
 const meta: Meta<typeof ProcessingWorkflowManager> = {

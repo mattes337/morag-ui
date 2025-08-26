@@ -32,8 +32,8 @@ interface StageProgressProps {
 
 const STAGE_CONFIG = {
   MARKDOWN_CONVERSION: {
-    name: 'Markdown',
-    shortName: 'MD',
+    name: 'Converter',
+    shortName: 'CVT',
     icon: FileText,
     color: 'text-blue-600',
   },
