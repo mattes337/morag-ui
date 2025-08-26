@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { Users, Plus, Trash2, Edit, Crown, Shield, User as UserIcon, Eye } from 'lucide-react';
 import { RealmRole } from '../../types';
 import Image from 'next/image';

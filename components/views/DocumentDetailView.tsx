@@ -4,12 +4,12 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
-import { ProcessingStatusDisplay } from '../ui/processing-status-display';
-import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
-import { StageControlPanel } from '../ui/stage-control-panel';
+import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
+import { ProcessingModeToggle } from '../ui/processing/processing-mode-toggle';
+import { StageControlPanel } from '../ui/processing/stage-control-panel';
 import { MarkdownPreview } from '../ui/MarkdownPreview';
-import { ProcessingHistory } from '../ui/processing-history';
-import { DocumentStatistics } from '../ui/document-statistics';
+import { ProcessingHistory } from '../ui/processing/processing-history';
+import { DocumentStatistics } from '../ui/documents/document-statistics';
 import { ToastService } from '../../lib/services/toastService';
 
 

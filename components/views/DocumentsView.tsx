@@ -3,7 +3,7 @@
 import { Realm, Document } from '../../types';
 import { FileText, Plus } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
-import { ProcessingStatusDisplay } from '../ui/processing-status-display';
+import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
 import { Badge } from '../ui/badge';
 
 interface DocumentsViewProps {

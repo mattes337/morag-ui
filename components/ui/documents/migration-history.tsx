@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
-import { Button } from './button';
-import { Badge } from './badge';
-import { Progress } from './progress';
-import { Alert, AlertDescription } from './alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../card';
+import { Button } from '../button';
+import { Badge } from '../badge';
+import { Progress } from '../progress';
+import { Alert, AlertDescription } from '../alert';
 import { 
   CheckCircle, 
   XCircle, 
@@ -18,7 +18,7 @@ import {
   Database,
   RefreshCw
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Migration {

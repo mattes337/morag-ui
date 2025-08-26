@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
-import { Button } from './button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
-import { Checkbox } from './checkbox';
-import { Label } from './label';
-import { Badge } from './badge';
-import { Progress } from './progress';
-import { Alert, AlertDescription } from './alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../dialog';
+import { Button } from '../button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
+import { Checkbox } from '../checkbox';
+import { Label } from '../label';
+import { Badge } from '../badge';
+import { Progress } from '../progress';
+import { Alert, AlertDescription } from '../alert';
 import { Loader2, FileText, ArrowRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 
 interface Realm {
   id: string;

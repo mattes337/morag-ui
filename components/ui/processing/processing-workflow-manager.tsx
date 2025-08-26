@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
-import { Button } from './button';
-import { Badge } from './badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
-import { Alert, AlertDescription } from './alert';
+import { Card, CardContent, CardHeader, CardTitle } from '../card';
+import { Button } from '../button';
+import { Badge } from '../badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../tabs';
+import { Alert, AlertDescription } from '../alert';
 import { StageControlPanel } from './stage-control-panel';
 import { StageProgressIndicator } from './stage-progress-indicator';
 import { ProcessingModeToggle } from './processing-mode-toggle';

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Badge } from './badge';
-import { Progress } from './progress';
+import { Badge } from '../badge';
+import { Progress } from '../progress';
 import { 
   Clock, 
   Loader, 

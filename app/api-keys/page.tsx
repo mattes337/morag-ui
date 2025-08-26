@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 import { ApiKeysView } from '../../components/views/ApiKeysView';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { LoadingSpinner } from '../../components/ui/loading-spinner';
 import { useEffect } from 'react';
 
 export default function ApiKeysPage() {
