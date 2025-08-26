@@ -236,6 +236,9 @@ async function handleStageCompleted(payload: any, documentId: string | null, exe
           console.log(`  - ${filePath}`);
           outputFiles.push(filePath);
         }
+
+        // Download and store all output files for this stage
+        await downloadAndStoreStageOutputFiles(documentId, stage, payload.files.output_files);
       }
 
       // Complete the stage execution
@@ -250,70 +253,14 @@ async function handleStageCompleted(payload: any, documentId: string | null, exe
         }
       );
 
-      // For markdown conversion stage, try to download and store the markdown content
-      if (stage === 'MARKDOWN_CONVERSION' && outputFiles.length > 0) {
-        try {
-          // Find the markdown output file
-          const markdownFile = outputFiles.find(file => file.endsWith('.md'));
-          if (markdownFile) {
-            console.log(`📝 [Stage Webhook] Attempting to download markdown file: ${markdownFile}`);
-
-            // Try to download the file content from MoRAG backend
-            const markdownContent = await downloadFileFromMorag(markdownFile);
-            if (markdownContent) {
-              // Update document with markdown content
-              await prisma.document.update({
-                where: { id: documentId },
-                data: {
-                  markdown: markdownContent,
-                  stageStatus: 'COMPLETED',
-                  lastStageError: null,
-                },
-              });
-              console.log(`✅ [Stage Webhook] Updated document ${documentId} with markdown content (${markdownContent.length} chars)`);
-            } else {
-              console.warn(`⚠️ [Stage Webhook] Could not download markdown file, updating status only`);
-              // Still mark as completed even if file download failed
-              await prisma.document.update({
-                where: { id: documentId },
-                data: {
-                  stageStatus: 'COMPLETED',
-                  lastStageError: null,
-                },
-              });
-            }
-          } else {
-            console.warn(`⚠️ [Stage Webhook] No markdown file found in output files for conversion stage`);
-            // Still mark as completed
-            await prisma.document.update({
-              where: { id: documentId },
-              data: {
-                stageStatus: 'COMPLETED',
-                lastStageError: null,
-              },
-            });
-          }
-        } catch (error) {
-          console.error(`❌ [Stage Webhook] Failed to download markdown file:`, error);
-          // Still mark as completed, don't fail the whole process
-          await prisma.document.update({
-            where: { id: documentId },
-            data: {
-              stageStatus: 'COMPLETED',
-              lastStageError: null,
-            },
-          });
-        }
-      } else {
-        // For other stages, just update the status
-        await prisma.document.update({
-          where: { id: documentId },
-          data: {
-            stageStatus: 'COMPLETED',
-            lastStageError: null,
-          },
-        });
-      }
+      // Update document status to completed
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          stageStatus: 'COMPLETED',
+          lastStageError: null,
+        },
+      });
 
       console.log(`✅ [Stage Webhook] Stage ${stage} completed successfully for document ${documentId}`);
     }
@@ -381,53 +328,168 @@ async function handlePipelineCompleted(payload: any): Promise<void> {
 }
 
 /**
+ * Download and store all output files for a completed stage
+ */
+async function downloadAndStoreStageOutputFiles(documentId: string, stage: string, outputFilePaths: string[]): Promise<void> {
+  try {
+    console.log(`📥 [Stage Webhook] Downloading and storing ${outputFilePaths.length} output files for stage ${stage}`);
+
+    for (const filePath of outputFilePaths) {
+      try {
+        console.log(`🔽 [Stage Webhook] Downloading file: ${filePath}`);
+
+        // Download file content from MoRAG backend
+        const fileContent = await downloadFileFromMorag(filePath);
+
+        if (fileContent) {
+          // Extract filename from path
+          const filename = filePath.split('/').pop() || filePath.split('\\').pop() || 'output_file';
+
+          // Determine file type and processing stage
+          const fileType = getFileTypeForStage();
+          const processingStage = getProcessingStage(stage);
+
+          // Store file in database and on disk
+          const storedFile = await unifiedFileService.storeFile({
+            documentId,
+            fileType,
+            stage: processingStage,
+            filename,
+            originalName: filename,
+            content: Buffer.from(fileContent, 'utf-8'),
+            contentType: getContentTypeFromFilename(filename),
+            isPublic: false,
+            accessLevel: 'REALM_MEMBERS',
+            metadata: {
+              sourceStage: stage,
+              originalPath: filePath,
+              downloadedAt: new Date().toISOString(),
+              stageWebhookDownload: true,
+            },
+          });
+
+          console.log(`✅ [Stage Webhook] Stored file ${filename} for stage ${stage} (ID: ${storedFile.id})`);
+
+          // For markdown conversion stage, also update document markdown field
+          if (stage === 'MARKDOWN_CONVERSION' && filename.endsWith('.md')) {
+            await prisma.document.update({
+              where: { id: documentId },
+              data: {
+                markdown: fileContent,
+              },
+            });
+            console.log(`✅ [Stage Webhook] Updated document ${documentId} with markdown content (${fileContent.length} chars)`);
+          }
+        } else {
+          console.warn(`⚠️ [Stage Webhook] Could not download file: ${filePath}`);
+        }
+      } catch (fileError) {
+        console.error(`❌ [Stage Webhook] Error processing file ${filePath}:`, fileError);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ [Stage Webhook] Error downloading and storing stage output files:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Determine the appropriate file type for stage outputs
+ */
+function getFileTypeForStage(): 'STAGE_OUTPUT' {
+  // All stage outputs use STAGE_OUTPUT type
+  return 'STAGE_OUTPUT';
+}
+
+/**
+ * Convert stage string to ProcessingStage enum
+ */
+function getProcessingStage(stage: string): 'MARKDOWN_CONVERSION' | 'MARKDOWN_OPTIMIZER' | 'CHUNKER' | 'FACT_GENERATOR' | 'INGESTOR' | undefined {
+  switch (stage) {
+    case 'MARKDOWN_CONVERSION':
+      return 'MARKDOWN_CONVERSION';
+    case 'MARKDOWN_OPTIMIZER':
+      return 'MARKDOWN_OPTIMIZER';
+    case 'CHUNKER':
+      return 'CHUNKER';
+    case 'FACT_GENERATOR':
+      return 'FACT_GENERATOR';
+    case 'INGESTOR':
+      return 'INGESTOR';
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Determine content type from filename
+ */
+function getContentTypeFromFilename(filename: string): string {
+  const extension = filename.split('.').pop()?.toLowerCase() || '';
+
+  switch (extension) {
+    case 'md':
+    case 'markdown':
+      return 'text/markdown';
+    case 'json':
+      return 'application/json';
+    case 'txt':
+      return 'text/plain';
+    case 'csv':
+      return 'text/csv';
+    case 'xml':
+      return 'application/xml';
+    case 'html':
+      return 'text/html';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+/**
  * Download a file from MoRAG backend
- * Note: This assumes MoRAG provides a file download endpoint. If not available,
- * the conversion stage should include the content in the webhook payload.
  */
 async function downloadFileFromMorag(filePath: string): Promise<string | null> {
   try {
     const moragBaseUrl = process.env.MORAG_API_URL || 'http://localhost:8000';
     const moragApiKey = process.env.MORAG_API_KEY;
 
-    // Try multiple possible download endpoints
-    const possibleEndpoints = [
-      `${moragBaseUrl}/api/v1/files/download?path=${encodeURIComponent(filePath)}`,
-      `${moragBaseUrl}/api/v1/download?file=${encodeURIComponent(filePath)}`,
-      `${moragBaseUrl}/download?path=${encodeURIComponent(filePath)}`,
-    ];
+    // Use the correct URL format: /api/v1/files/download/{encoded_path}?inline=true
+    const encodedPath = encodeURIComponent(filePath);
+    const downloadUrl = `${moragBaseUrl}/api/v1/files/download/${encodedPath}?inline=true`;
 
-    for (const downloadUrl of possibleEndpoints) {
-      try {
-        console.log(`🔽 [Stage Webhook] Trying download from: ${downloadUrl}`);
+    console.log(`🔽 [Stage Webhook] Downloading from: ${downloadUrl}`);
 
-        const headers: Record<string, string> = {
-          'Accept': 'text/plain, text/markdown, application/octet-stream',
-        };
+    const headers: Record<string, string> = {
+      'Accept': 'text/plain, text/markdown, application/octet-stream',
+    };
 
-        if (moragApiKey) {
-          headers['Authorization'] = `Bearer ${moragApiKey}`;
-        }
-
-        const response = await fetch(downloadUrl, {
-          method: 'GET',
-          headers,
-        });
-
-        if (response.ok) {
-          const content = await response.text();
-          console.log(`✅ [Stage Webhook] Downloaded file content (${content.length} chars) from ${downloadUrl}`);
-          return content;
-        } else {
-          console.warn(`⚠️ [Stage Webhook] Download failed from ${downloadUrl}: ${response.status} ${response.statusText}`);
-        }
-      } catch (endpointError) {
-        console.warn(`⚠️ [Stage Webhook] Error trying endpoint ${downloadUrl}:`, endpointError);
-      }
+    if (moragApiKey) {
+      headers['Authorization'] = `Bearer ${moragApiKey}`;
     }
 
-    console.error(`❌ [Stage Webhook] All download endpoints failed for file: ${filePath}`);
-    return null;
+    const response = await fetch(downloadUrl, {
+      method: 'GET',
+      headers,
+    });
+
+    if (response.ok) {
+      const content = await response.text();
+      console.log(`✅ [Stage Webhook] Downloaded file content (${content.length} chars)`);
+      return content;
+    } else {
+      console.error(`❌ [Stage Webhook] Download failed: ${response.status} ${response.statusText}`);
+
+      // Try to get error details
+      try {
+        const errorText = await response.text();
+        console.error(`❌ [Stage Webhook] Error response: ${errorText}`);
+      } catch (e) {
+        // Ignore error reading response
+      }
+
+      return null;
+    }
 
   } catch (error) {
     console.error(`❌ [Stage Webhook] Error downloading file from MoRAG:`, error);

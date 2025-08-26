@@ -239,6 +239,27 @@ class BackgroundJobService {
       // Process each job
       for (const job of jobs) {
         try {
+          // Atomically claim the job by updating its status to PROCESSING
+          // This prevents race conditions with immediate completions
+          const updatedJob = await prisma.processingJob.updateMany({
+            where: {
+              id: job.id,
+              status: JobStatus.PENDING  // Only update if still pending
+            },
+            data: {
+              status: JobStatus.PROCESSING,
+              startedAt: new Date()
+            }
+          });
+
+          // If no rows were updated, the job was already claimed or completed
+          if (updatedJob.count === 0) {
+            console.log(`⏭️ [BackgroundJobService] Job ${job.id} was already claimed or completed, skipping`);
+            skipped++;
+            continue;
+          }
+
+          console.log(`Started processing job ${job.id} for document ${job.documentId}, stage ${job.stage}`);
           await this.processJob(job.id);
           processed++;
         } catch (error) {
@@ -629,18 +650,28 @@ class BackgroundJobService {
       include: { document: true },
     });
 
-    if (!job || job.status !== JobStatus.PENDING) {
+    if (!job) {
+      console.log(`⚠️ [BackgroundJobService] Job ${jobId} not found`);
       return;
     }
 
-    // Mark job as processing
-    await prisma.processingJob.update({
-      where: { id: jobId },
-      data: {
-        status: JobStatus.PROCESSING,
-        startedAt: new Date(),
-      },
-    });
+    // Check if job is in a processable state
+    // Note: The job should already be claimed as PROCESSING by the caller
+    if (job.status !== JobStatus.PROCESSING && job.status !== JobStatus.PENDING) {
+      console.log(`⚠️ [BackgroundJobService] Job ${jobId} is not in a processable state (status: ${job.status})`);
+      return;
+    }
+
+    // Ensure job is marked as processing (in case it was still PENDING)
+    if (job.status === JobStatus.PENDING) {
+      await prisma.processingJob.update({
+        where: { id: jobId },
+        data: {
+          status: JobStatus.PROCESSING,
+          startedAt: new Date(),
+        },
+      });
+    }
 
     try {
       // Start the stage execution
@@ -785,6 +816,8 @@ class BackgroundJobService {
 
         // Process the immediate result
         await this.handleImmediateCompletion(job, response.immediateResult);
+
+        console.log(`✅ [MoRAG] Job ${job.id} immediate completion processed successfully`);
         return;
       }
 
@@ -819,9 +852,15 @@ class BackgroundJobService {
         outputFiles: result.output_files?.length || 0
       });
 
-      // Update job to completed status
-      await prisma.processingJob.update({
-        where: { id: job.id },
+      // Atomically update job to completed status
+      // This handles race conditions with background job processor
+      const updatedJob = await prisma.processingJob.updateMany({
+        where: {
+          id: job.id,
+          status: {
+            in: [JobStatus.PENDING, JobStatus.PROCESSING]  // Only update if not already finished
+          }
+        },
         data: {
           status: JobStatus.FINISHED,
           completedAt: new Date(),
@@ -836,15 +875,18 @@ class BackgroundJobService {
         }
       });
 
+      // If no rows were updated, the job was already completed by another process
+      if (updatedJob.count === 0) {
+        console.log(`⚠️ [BackgroundJobService] Job ${job.id} was already completed by another process`);
+        return;
+      }
+
       // Process output files if available
       if (result.output_files && result.output_files.length > 0) {
         console.log(`Processing ${result.output_files.length} output files for job ${job.id}`);
 
-        // TODO: Download and store output files
-        // For now, just log the file paths
-        for (const outputFile of result.output_files) {
-          console.log(`  Output file: ${outputFile.file_path || outputFile}`);
-        }
+        // Download and store output files for immediate completions
+        await this.downloadAndStoreOutputFiles(job.documentId, job.stage, result.output_files);
       }
 
       // Complete the stage execution record
@@ -1192,6 +1234,145 @@ class BackgroundJobService {
           data: { state: DocumentState.INGESTING }
         });
       }
+    }
+  }
+
+  /**
+   * Download and store output files from MoRAG backend for immediate completions
+   */
+  private async downloadAndStoreOutputFiles(documentId: string, stage: ProcessingStage, outputFiles: any[]): Promise<void> {
+    try {
+      console.log(`📥 [BackgroundJobService] Downloading and storing ${outputFiles.length} output files for stage ${stage}`);
+
+      for (const outputFile of outputFiles) {
+        try {
+          const filePath = outputFile.file_path || outputFile;
+          console.log(`🔽 [BackgroundJobService] Downloading file: ${filePath}`);
+
+          // Download file content from MoRAG backend
+          const fileContent = await this.downloadFileFromMorag(filePath);
+
+          if (fileContent) {
+            // Extract filename from path
+            const filename = filePath.split('/').pop() || filePath.split('\\').pop() || 'output_file';
+
+            // Store file in database and on disk
+            const storedFile = await unifiedFileService.storeFile({
+              documentId,
+              fileType: 'STAGE_OUTPUT',
+              stage,
+              filename,
+              originalName: filename,
+              content: Buffer.from(fileContent, 'utf-8'),
+              contentType: this.getContentTypeFromFilename(filename),
+              isPublic: false,
+              accessLevel: 'REALM_MEMBERS',
+              metadata: {
+                sourceStage: stage,
+                originalPath: filePath,
+                downloadedAt: new Date().toISOString(),
+                immediateCompletion: true,
+              },
+            });
+
+            console.log(`✅ [BackgroundJobService] Stored file ${filename} for stage ${stage} (ID: ${storedFile.id})`);
+
+            // For markdown conversion stage, also update document markdown field
+            if (stage === ProcessingStage.MARKDOWN_CONVERSION && filename.endsWith('.md')) {
+              await prisma.document.update({
+                where: { id: documentId },
+                data: {
+                  markdown: fileContent,
+                },
+              });
+              console.log(`✅ [BackgroundJobService] Updated document ${documentId} with markdown content (${fileContent.length} chars)`);
+            }
+          } else {
+            console.warn(`⚠️ [BackgroundJobService] Could not download file: ${filePath}`);
+          }
+        } catch (fileError) {
+          console.error(`❌ [BackgroundJobService] Error processing file ${outputFile}:`, fileError);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ [BackgroundJobService] Error downloading and storing output files:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download a file from MoRAG backend
+   */
+  private async downloadFileFromMorag(filePath: string): Promise<string | null> {
+    try {
+      const moragBaseUrl = process.env.MORAG_API_URL || 'http://localhost:8000';
+      const moragApiKey = process.env.MORAG_API_KEY;
+
+      // Use the correct URL format: /api/v1/files/download/{encoded_path}?inline=true
+      const encodedPath = encodeURIComponent(filePath);
+      const downloadUrl = `${moragBaseUrl}/api/v1/files/download/${encodedPath}?inline=true`;
+
+      console.log(`🔽 [BackgroundJobService] Downloading from (FIXED URL): ${downloadUrl}`);
+
+      const headers: Record<string, string> = {
+        'Accept': 'text/plain, text/markdown, application/octet-stream',
+      };
+
+      if (moragApiKey) {
+        headers['Authorization'] = `Bearer ${moragApiKey}`;
+      }
+
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers,
+      });
+
+      if (response.ok) {
+        const content = await response.text();
+        console.log(`✅ [BackgroundJobService] Downloaded file content (${content.length} chars)`);
+        return content;
+      } else {
+        console.error(`❌ [BackgroundJobService] Download failed: ${response.status} ${response.statusText}`);
+
+        // Try to get error details
+        try {
+          const errorText = await response.text();
+          console.error(`❌ [BackgroundJobService] Error response: ${errorText}`);
+        } catch (e) {
+          // Ignore error reading response
+        }
+
+        return null;
+      }
+
+    } catch (error) {
+      console.error(`❌ [BackgroundJobService] Error downloading file from MoRAG:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Determine content type from filename
+   */
+  private getContentTypeFromFilename(filename: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
+
+    switch (extension) {
+      case 'md':
+      case 'markdown':
+        return 'text/markdown';
+      case 'json':
+        return 'application/json';
+      case 'txt':
+        return 'text/plain';
+      case 'csv':
+        return 'text/csv';
+      case 'xml':
+        return 'application/xml';
+      case 'html':
+        return 'text/html';
+      default:
+        return 'application/octet-stream';
     }
   }
 
