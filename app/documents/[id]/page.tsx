@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '../../../contexts/AppContext';
 import { DocumentDetailView } from '../../../components/views/DocumentDetailView';
 import { Document } from '../../../types';
@@ -204,6 +204,47 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
         }
     };
 
+    const handleDocumentUpdate = useCallback(async () => {
+        console.log('🔄 [DocumentDetailPage] Refreshing document due to stage completion');
+        try {
+            const response = await fetch(`/api/documents/${params.id}/complete`);
+            if (response.ok) {
+                const responseData = await response.json();
+                const docData = responseData.document;
+
+                if (docData && docData.id) {
+                    const formattedDoc: Document = {
+                        id: docData.id,
+                        name: docData.name,
+                        type: docData.type,
+                        subType: docData.subType,
+                        state: (docData.state || 'pending').toLowerCase() as Document['state'],
+                        version: docData.version || 1,
+                        chunks: docData.chunks || 0,
+                        quality: docData.quality || 0,
+                        uploadDate: docData.uploadDate
+                            ? new Date(docData.uploadDate).toISOString().split('T')[0]
+                            : new Date().toISOString().split('T')[0],
+                        processingMode: docData.processingMode || 'AUTOMATIC',
+                        markdown: docData.markdown,
+                        metadata: docData.metadata,
+                        currentStage: docData.currentStage,
+                        stageStatus: docData.stageStatus,
+                        lastStageError: docData.lastStageError,
+                        isProcessingPaused: docData.isProcessingPaused,
+                        nextScheduledStage: docData.nextScheduledStage,
+                        scheduledAt: docData.scheduledAt,
+                    };
+
+                    setDocument(formattedDoc);
+                    console.log('✅ [DocumentDetailPage] Document refreshed successfully');
+                }
+            }
+        } catch (error) {
+            console.error('❌ [DocumentDetailPage] Failed to refresh document:', error);
+        }
+    }, [params.id]);
+
     // Loading state
     if (isLoading) {
         return (
@@ -313,6 +354,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
             onReingest={handleReingestDocument}
             onSupersede={handleSupersedeDocument}
             onDelete={handleDeleteDocument}
+            onDocumentUpdate={handleDocumentUpdate}
             data-oid="1e07g3x"
         />
     );

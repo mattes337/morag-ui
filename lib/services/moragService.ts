@@ -206,6 +206,96 @@ export class MoragService {
   }
 
   /**
+   * Determine if a stage should use output files from the previous stage
+   */
+  private async shouldUsePreviousStageOutput(documentId: string, stage: string): Promise<boolean> {
+    console.log(`🔍 [MoRAG] Checking dependencies for stage ${stage} on document ${documentId}`);
+
+    // Define stage dependencies
+    const stageDependencies: Record<string, string[]> = {
+      'MARKDOWN_OPTIMIZER': ['MARKDOWN_CONVERSION'],
+      'CHUNKER': ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER'],
+      'FACT_GENERATOR': ['CHUNKER'],
+      'INGESTOR': ['FACT_GENERATOR'],
+    };
+
+    const dependencies = stageDependencies[stage];
+    if (!dependencies || dependencies.length === 0) {
+      console.log(`📝 [MoRAG] No dependencies for stage ${stage}, using original file`);
+      return false; // No dependencies, use original file
+    }
+
+    console.log(`📋 [MoRAG] Dependencies for ${stage}: ${dependencies.join(', ')}`);
+
+    // Import here to avoid circular dependency
+    const { stageExecutionService } = await import('./stageExecutionService');
+
+    // Check if any of the dependency stages have completed successfully
+    for (const depStage of dependencies) {
+      console.log(`🔎 [MoRAG] Checking execution status for dependency stage: ${depStage}`);
+      const execution = await stageExecutionService.getLatestExecution(documentId, depStage as any);
+
+      if (execution) {
+        console.log(`📊 [MoRAG] Found execution for ${depStage}: status=${execution.status}, outputFiles=${execution.outputFiles?.length || 0}`);
+        if (execution.status === 'COMPLETED' && execution.outputFiles && execution.outputFiles.length > 0) {
+          console.log(`✅ [MoRAG] Dependency ${depStage} completed with output files, will use previous stage output`);
+          return true;
+        }
+      } else {
+        console.log(`❌ [MoRAG] No execution found for dependency stage: ${depStage}`);
+      }
+    }
+
+    console.log(`⚠️ [MoRAG] No completed dependencies found for ${stage}, using original file`);
+    return false;
+  }
+
+  /**
+   * Get output files from the most recent completed dependency stage
+   */
+  private async getPreviousStageOutputFiles(documentId: string, stage: string): Promise<string[]> {
+    console.log(`🔍 [MoRAG] Getting previous stage output files for ${stage} on document ${documentId}`);
+
+    // Define stage dependencies in order of preference
+    const stageDependencies: Record<string, string[]> = {
+      'MARKDOWN_OPTIMIZER': ['MARKDOWN_CONVERSION'],
+      'CHUNKER': ['MARKDOWN_OPTIMIZER', 'MARKDOWN_CONVERSION'], // Prefer optimizer output, fallback to conversion
+      'FACT_GENERATOR': ['CHUNKER'],
+      'INGESTOR': ['FACT_GENERATOR'],
+    };
+
+    const dependencies = stageDependencies[stage];
+    if (!dependencies || dependencies.length === 0) {
+      console.log(`📝 [MoRAG] No dependencies defined for stage ${stage}`);
+      return [];
+    }
+
+    console.log(`📋 [MoRAG] Checking dependencies in order: ${dependencies.join(', ')}`);
+
+    // Import here to avoid circular dependency
+    const { stageExecutionService } = await import('./stageExecutionService');
+
+    // Check dependencies in order of preference
+    for (const depStage of dependencies) {
+      console.log(`🔎 [MoRAG] Checking ${depStage} for output files...`);
+      const execution = await stageExecutionService.getLatestExecution(documentId, depStage as any);
+
+      if (execution) {
+        console.log(`📊 [MoRAG] Execution found for ${depStage}: status=${execution.status}, outputFiles=${execution.outputFiles?.length || 0}`);
+        if (execution.status === 'COMPLETED' && execution.outputFiles && execution.outputFiles.length > 0) {
+          console.log(`✅ [MoRAG] Found output files from ${depStage}: ${execution.outputFiles.join(', ')}`);
+          return execution.outputFiles;
+        }
+      } else {
+        console.log(`❌ [MoRAG] No execution found for ${depStage}`);
+      }
+    }
+
+    console.warn(`⚠️ [MoRAG] No output files found from dependency stages for ${stage}`);
+    return [];
+  }
+
+  /**
    * Process a specific stage for a document using the new API
    */
   async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
@@ -221,15 +311,26 @@ export class MoragService {
     // Check if we have document content to upload as a file
     const hasFileContent = request.document.content && request.document.content.trim().length > 0;
 
-    // According to the API spec, we need either file upload OR input_files
-    // If we have file content, upload it; otherwise, use input_files with the original file path
+    // Determine input files based on stage dependencies
     let inputFiles: string[] = [];
-    if (!hasFileContent && request.document.filePath) {
+
+    console.log(`🔍 [MoRAG] Determining input files for stage ${request.stage}, hasFileContent: ${hasFileContent}`);
+
+    // For stages that depend on previous stages, get output files from previous stage
+    const shouldUsePrevious = await this.shouldUsePreviousStageOutput(request.documentId, request.stage);
+    console.log(`🔍 [MoRAG] Should use previous stage output: ${shouldUsePrevious}`);
+
+    if (shouldUsePrevious) {
+      inputFiles = await this.getPreviousStageOutputFiles(request.documentId, request.stage);
+      console.log(`📁 [MoRAG] Using previous stage output files: ${inputFiles.join(', ')}`);
+    } else if (!hasFileContent && request.document.filePath) {
       // Use the original file path if available
       inputFiles = [request.document.filePath];
+      console.log(`📁 [MoRAG] Using document file path: ${request.document.filePath}`);
     } else if (!hasFileContent) {
       // Fallback to a standard path pattern
       inputFiles = [`./uploads/documents/${request.documentId}/original/${request.document.title}`];
+      console.log(`📁 [MoRAG] Using fallback path: ${inputFiles[0]}`);
     }
 
     const stageRequest = {
@@ -454,4 +555,7 @@ export class MoragService {
   }
 }
 
-export const moragService = new MoragService();
+export const moragService = new MoragService(
+  process.env.MORAG_API_URL || 'http://localhost:8000',
+  process.env.MORAG_API_KEY
+);

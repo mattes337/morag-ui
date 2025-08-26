@@ -100,8 +100,8 @@ export function ProcessingJobsView({ jobs, onCancelJob, onViewJobDetail, ...prop
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No processing jobs yet</h3>
                 <p className="text-gray-600 text-center mb-8 max-w-md">
-                    Processing jobs are automatically created when you upload documents or trigger processing stages. 
-                    They'll appear here so you can monitor their progress and status.
+                    Processing jobs are automatically created when you upload documents or trigger processing stages.
+                    They&apos;ll appear here so you can monitor their progress and status.
                 </p>
             </div>
         );

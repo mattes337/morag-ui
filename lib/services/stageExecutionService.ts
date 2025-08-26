@@ -451,7 +451,7 @@ class StageExecutionService {
           filePath: '', // Not available in current schema
           realmId: document.realmId
         },
-        webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/stages`
+        webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/stages?documentId=${documentId}&executionId=${execution.id}&stage=${stage}`
       });
 
       // The webhook will handle completion/failure updates

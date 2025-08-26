@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
@@ -50,6 +50,7 @@ interface DocumentDetailViewProps {
     onReingest: (document: Document) => void;
     onSupersede: (document: Document) => void;
     onDelete: (document: Document) => void;
+    onDocumentUpdate?: () => void; // Callback to refresh document from parent
 }
 
 export function DocumentDetailView({
@@ -58,6 +59,7 @@ export function DocumentDetailView({
     onReingest,
     onSupersede,
     onDelete,
+    onDocumentUpdate,
 }: DocumentDetailViewProps) {
     // All hooks must be called before any early returns
     const {
@@ -77,6 +79,7 @@ export function DocumentDetailView({
     const [processingMode, setProcessingMode] = useState<'MANUAL' | 'AUTOMATIC'>('MANUAL');
     const [isProcessing, setIsProcessing] = useState(false);
     const [stageInfos, setStageInfos] = useState<any[]>([]);
+    const previousStageInfosRef = useRef<any[]>([]);
 
     // Add logging when stage infos change
     useEffect(() => {
@@ -122,8 +125,8 @@ export function DocumentDetailView({
         try {
             // Load files and stages in parallel - but handle stages API errors gracefully
             const [filesResponse, stagesResponse] = await Promise.allSettled([
-                fetch(`/api/files?documentId=${document.id}`),
-                fetch(`/api/documents/${document.id}/stages?includeExecutions=true`)
+                fetch(`/api/files?documentId=${document.id}&_t=${Date.now()}`), // Add cache busting
+                fetch(`/api/documents/${document.id}/stages?includeExecutions=true&_t=${Date.now()}`) // Add cache busting
             ]);
 
             // Handle files response
@@ -185,13 +188,15 @@ export function DocumentDetailView({
                     processingMode: document.processingMode
                 });
 
-                // If processing state changed from true to false, add a small delay before stopping polling
-                // to ensure we capture the final state
+                // If processing state changed from true to false, continue polling for a bit longer
+                // to ensure we capture any final file updates and state changes
                 if (isProcessing && !isCurrentlyProcessing) {
-                    console.log('🏁 [DocumentDetailView] Processing completed, will stop polling after delay');
+                    console.log('🏁 [DocumentDetailView] Processing completed, continuing polling for final updates');
+                    // Continue polling for 10 more seconds to catch file updates and final state changes
                     setTimeout(() => {
+                        console.log('🛑 [DocumentDetailView] Final polling timeout, stopping polling');
                         setIsProcessing(false);
-                    }, 2000);
+                    }, 10000);
                 } else {
                     setIsProcessing(isCurrentlyProcessing);
                 }
@@ -240,6 +245,22 @@ export function DocumentDetailView({
                 } else {
                     status = 'PENDING';
                 }
+            } else if (document.state === 'pending') {
+                // For pending documents, check if we have any processing history
+                // If currentStage is set, it means some processing has started
+                if (document.currentStage) {
+                    const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                    const currentIndex = stageOrder.indexOf(document.currentStage);
+                    const thisIndex = stageOrder.indexOf(stage);
+
+                    if (thisIndex < currentIndex) {
+                        status = 'COMPLETED';
+                    } else if (thisIndex === currentIndex) {
+                        status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
+                    } else {
+                        status = 'PENDING';
+                    }
+                }
             }
 
             return {
@@ -255,6 +276,34 @@ export function DocumentDetailView({
         console.log('🎯 [DocumentDetailView] Generated stage infos from document state:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
         setStageInfos(stageInfos);
     }, [document]);
+
+    // Detect stage completions and refresh files when stages complete
+    useEffect(() => {
+        const previousStageInfos = previousStageInfosRef.current;
+
+        if (previousStageInfos.length > 0 && stageInfos.length > 0) {
+            const newlyCompleted = stageInfos.filter((current: any) => {
+                const previous = previousStageInfos.find((prev: any) => prev.stage === current.stage);
+                return previous && previous.status !== 'COMPLETED' && current.status === 'COMPLETED';
+            });
+
+            if (newlyCompleted.length > 0) {
+                console.log('🎉 [DocumentDetailView] Newly completed stages:', newlyCompleted.map(s => s.stage));
+                // Force a files refresh when stages complete to show new output files
+                setTimeout(async () => {
+                    console.log('🔄 [DocumentDetailView] Refreshing files after stage completion');
+                    await loadDocumentData();
+                    // Also refresh the document from parent to get updated state
+                    if (onDocumentUpdate) {
+                        onDocumentUpdate();
+                    }
+                }, 1000);
+            }
+        }
+
+        // Update previous stage infos for next comparison
+        previousStageInfosRef.current = [...stageInfos];
+    }, [stageInfos, loadDocumentData, onDocumentUpdate]);
 
     // Load document data when document changes
     useEffect(() => {
@@ -328,13 +377,17 @@ export function DocumentDetailView({
         const interval = setInterval(async () => {
             console.log('⏰ [DocumentDetailView] Polling for updates');
             await loadDocumentData(); // Refresh all data to show progress
-        }, 3000); // Poll every 3 seconds for faster updates
+        }, 2000); // Poll every 2 seconds for faster updates
 
         return () => {
             console.log('🛑 [DocumentDetailView] Clearing polling interval');
             clearInterval(interval);
         };
     }, [isProcessing, loadDocumentData]);
+
+    // Memoize files to prevent unnecessary re-renders of MarkdownPreview
+    const fileIds = useMemo(() => files.map(f => f.id).join(','), [files]);
+    const stableFiles = useMemo(() => files, [files.length, fileIds]);
 
     // Early validation to prevent undefined document ID issues
     if (!document || !document.id) {
@@ -370,6 +423,17 @@ export function DocumentDetailView({
         try {
             setIsExecutingStage(true);
 
+            // Optimistically update the stage status immediately to prevent flickering
+            console.log(`🚀 [DocumentDetailView] Optimistically setting stage ${stage} to RUNNING`);
+            setStageInfos(prevStageInfos =>
+                prevStageInfos.map(stageInfo =>
+                    stageInfo.stage === stage
+                        ? { ...stageInfo, status: 'RUNNING', progress: 10 }
+                        : stageInfo
+                )
+            );
+            setIsProcessing(true);
+
             const response = await fetch('/api/stages', {
                 method: 'POST',
                 headers: {
@@ -384,6 +448,17 @@ export function DocumentDetailView({
 
             if (!response.ok) {
                 const errorData = await response.json();
+
+                // Revert optimistic update on error
+                console.log(`❌ [DocumentDetailView] Reverting optimistic update for stage ${stage} due to error`);
+                setStageInfos(prevStageInfos =>
+                    prevStageInfos.map(stageInfo =>
+                        stageInfo.stage === stage
+                            ? { ...stageInfo, status: 'PENDING', progress: 0 }
+                            : stageInfo
+                    )
+                );
+                setIsProcessing(false);
 
                 // Handle authentication errors specifically
                 if (response.status === 401) {
@@ -404,13 +479,27 @@ export function DocumentDetailView({
             await response.json();
             ToastService.success(`Stage ${stage} execution started successfully`);
 
-            // Refresh data without page reload with a delay to allow backend processing
+            // Refresh data immediately and then again after delays
+            await loadDocumentData();
+            if (onDocumentUpdate) {
+                onDocumentUpdate();
+            }
+
             setTimeout(async () => {
                 await loadDocumentData();
-            }, 1000);
+                if (onDocumentUpdate) {
+                    onDocumentUpdate();
+                }
+            }, 2000);
 
-            // Update processing state to show stage is running
-            setIsProcessing(true);
+            // Additional refresh to catch any delayed file creation
+            setTimeout(async () => {
+                await loadDocumentData();
+                if (onDocumentUpdate) {
+                    onDocumentUpdate();
+                }
+            }, 5000);
+
         } catch (error) {
             console.error('Failed to execute stage:', error);
             ToastService.error(
@@ -439,8 +528,18 @@ export function DocumentDetailView({
     };
 
     const handleExecuteChain = async (fromStage: string) => {
-        setIsProcessing(true);
         try {
+            // Optimistically update the first stage in the chain to RUNNING
+            console.log(`🚀 [DocumentDetailView] Optimistically setting stage ${fromStage} to RUNNING for chain execution`);
+            setStageInfos(prevStageInfos =>
+                prevStageInfos.map(stageInfo =>
+                    stageInfo.stage === fromStage
+                        ? { ...stageInfo, status: 'RUNNING', progress: 10 }
+                        : stageInfo
+                )
+            );
+            setIsProcessing(true);
+
             // Execute remaining stages starting from the specified stage
             const response = await fetch('/api/stages/chain', {
                 method: 'POST',
@@ -452,6 +551,16 @@ export function DocumentDetailView({
             });
 
             if (!response.ok) {
+                // Revert optimistic update on error
+                console.log(`❌ [DocumentDetailView] Reverting optimistic update for stage ${fromStage} due to chain execution error`);
+                setStageInfos(prevStageInfos =>
+                    prevStageInfos.map(stageInfo =>
+                        stageInfo.stage === fromStage
+                            ? { ...stageInfo, status: 'PENDING', progress: 0 }
+                            : stageInfo
+                    )
+                );
+                setIsProcessing(false);
                 throw new Error('Failed to start stage chain execution');
             }
 
@@ -613,9 +722,6 @@ export function DocumentDetailView({
                 return 'bg-gray-100 text-gray-800';
         }
     };
-
-    // Memoize files to prevent unnecessary re-renders of MarkdownPreview
-    const stableFiles = useMemo(() => files, [files.length, files.map(f => f.id).join(',')]);
 
     const renderDocumentEmbed = () => {
         const docType = document.type?.toLowerCase() || '';
