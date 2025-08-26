@@ -205,7 +205,7 @@ model DocumentFile {
   stage        ProcessingStage?
   filename     String
   originalName String?
-  filepath     String
+  filepath     String          @db.VarChar(1000)
   filesize     Int
   contentType  String
   content      String?         @db.LongText

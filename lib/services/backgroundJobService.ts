@@ -202,10 +202,7 @@ class BackgroundJobService {
     failed: number;
     skipped: number;
   }> {
-    console.log(`🔄 [BackgroundJobService] Starting job processing (batch size: ${batchSize})`);
-
     if (this.isProcessing) {
-      console.log(`⏸️ [BackgroundJobService] Already processing, skipping`);
       return { processed: 0, failed: 0, skipped: 0 };
     }
 
@@ -235,6 +232,11 @@ class BackgroundJobService {
           document: true,
         },
       });
+
+      // Only log if there are jobs to process
+      if (jobs.length > 0) {
+        console.log(`🔄 [BackgroundJobService] Processing ${jobs.length} pending jobs`);
+      }
 
       // Process each job
       for (const job of jobs) {

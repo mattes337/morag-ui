@@ -37,7 +37,7 @@ class JobScheduler {
   constructor(config?: Partial<SchedulerConfig>) {
     this.config = {
       enabled: true,
-      processingIntervalMs: 30000, // 30 seconds
+      processingIntervalMs: 5000, // 5 seconds for faster job processing
       maxConcurrentJobs: 5,
       retryDelayMs: 60000, // 1 minute
       healthCheckIntervalMs: 300000, // 5 minutes

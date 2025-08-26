@@ -4,7 +4,7 @@ import { authenticateApiKey, ApiKeyAuthResult } from './apiKeyAuth';
 import { UserService } from '../services/userService';
 import { RealmService } from '../services/realmService';
 import { StartupService } from '../services/startupService';
-import { initializeBackgroundServices } from '../startup';
+import { jobScheduler } from '../services/jobScheduler';
 
 export interface UnifiedAuthResult {
   success: boolean;
@@ -22,19 +22,16 @@ export interface UnifiedAuthResult {
  * Unified authentication that supports both session and API key authentication
  * This allows endpoints to work with both UI (session) and automation (API key)
  */
-// Singleton to ensure background services are only initialized once
-let backgroundServicesInitialized = false;
-
 export async function authenticateUnified(request: NextRequest): Promise<UnifiedAuthResult> {
   try {
     // Ensure database is initialized
     await StartupService.initialize();
 
     // Initialize background services on first API call (singleton pattern)
-    if (!backgroundServicesInitialized) {
-      backgroundServicesInitialized = true;
+    // Use the job scheduler's isRunning check to prevent multiple initializations
+    if (!jobScheduler.isRunning()) {
       // Don't await this - let it initialize in the background
-      initializeBackgroundServices().catch(error => {
+      jobScheduler.start().catch(error => {
         console.warn('Background services initialization failed:', error);
       });
     }
