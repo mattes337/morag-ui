@@ -409,14 +409,6 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         }
     };
 
-    // Reload data when realm changes
-    useEffect(() => {
-        if (user && currentRealm) {
-            console.log('🏰 [AppContext] Realm changed, reloading data for realm:', currentRealm.name);
-            loadUserData();
-        }
-    }, [currentRealm?.id, user]);
-
     const loadCurrentRealm = async () => {
         try {
             console.log('🏰 [AppContext] Loading current realm');

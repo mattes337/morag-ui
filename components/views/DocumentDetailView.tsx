@@ -83,6 +83,8 @@ export function DocumentDetailView({
         console.log('🎯 [DocumentDetailView] Stage infos updated:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
     }, [stageInfos]);
 
+
+
     // Individual loading functions removed - now using combined loadAllDocumentData
 
     // Initialize processing state from document data
@@ -100,8 +102,14 @@ export function DocumentDetailView({
         }
 
         // Check if document is currently processing based on stage status
-        const isCurrentlyProcessing = document?.stageStatus === 'RUNNING' || document?.stageStatus === 'PENDING';
-        console.log('📊 [DocumentDetailView] Setting isProcessing to:', isCurrentlyProcessing);
+        // In manual mode, PENDING means ready to execute, not currently processing
+        // In automatic mode, PENDING could mean processing is scheduled
+        const isCurrentlyProcessing = document?.stageStatus === 'RUNNING' ||
+            (document?.stageStatus === 'PENDING' && document?.processingMode === 'AUTOMATIC');
+        console.log('📊 [DocumentDetailView] Setting isProcessing to:', isCurrentlyProcessing, {
+            stageStatus: document?.stageStatus,
+            processingMode: document?.processingMode
+        });
         setIsProcessing(isCurrentlyProcessing);
     }, [document?.processingMode, document?.stageStatus]);
 
@@ -167,6 +175,26 @@ export function DocumentDetailView({
 
                 console.log('🎯 [DocumentDetailView] Generated stage infos from API:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
                 setStageInfos(stageInfos);
+
+                // Update processing state based on current stage status and processing mode
+                // In manual mode, PENDING means ready to execute, not currently processing
+                const isCurrentlyProcessing = stagesData.pipelineStatus?.stageStatus === 'RUNNING' ||
+                    (stagesData.pipelineStatus?.stageStatus === 'PENDING' && document.processingMode === 'AUTOMATIC');
+                console.log('📊 [DocumentDetailView] Updating processing state:', isCurrentlyProcessing, {
+                    stageStatus: stagesData.pipelineStatus?.stageStatus,
+                    processingMode: document.processingMode
+                });
+
+                // If processing state changed from true to false, add a small delay before stopping polling
+                // to ensure we capture the final state
+                if (isProcessing && !isCurrentlyProcessing) {
+                    console.log('🏁 [DocumentDetailView] Processing completed, will stop polling after delay');
+                    setTimeout(() => {
+                        setIsProcessing(false);
+                    }, 2000);
+                } else {
+                    setIsProcessing(isCurrentlyProcessing);
+                }
             } else {
                 console.error('❌ [DocumentDetailView] Failed to load stage info, falling back to document state:', stagesResponse);
                 // Fallback: generate stage info from document state
@@ -286,11 +314,16 @@ export function DocumentDetailView({
     useEffect(() => {
         if (!isProcessing) return;
 
-        const interval = setInterval(() => {
-            loadDocumentData(); // Refresh all data to show progress
-        }, 5000);
+        console.log('🔄 [DocumentDetailView] Setting up polling for processing document');
+        const interval = setInterval(async () => {
+            console.log('⏰ [DocumentDetailView] Polling for updates');
+            await loadDocumentData(); // Refresh all data to show progress
+        }, 3000); // Poll every 3 seconds for faster updates
 
-        return () => clearInterval(interval);
+        return () => {
+            console.log('🛑 [DocumentDetailView] Clearing polling interval');
+            clearInterval(interval);
+        };
     }, [isProcessing, loadDocumentData]);
 
     // Early validation to prevent undefined document ID issues
@@ -361,8 +394,13 @@ export function DocumentDetailView({
             await response.json();
             ToastService.success(`Stage ${stage} execution started successfully`);
 
-            // Refresh the page to show updated status
-            window.location.reload();
+            // Refresh data without page reload with a delay to allow backend processing
+            setTimeout(async () => {
+                await loadDocumentData();
+            }, 1000);
+
+            // Update processing state to show stage is running
+            setIsProcessing(true);
         } catch (error) {
             console.error('Failed to execute stage:', error);
             ToastService.error(
@@ -408,14 +446,14 @@ export function DocumentDetailView({
             }
 
             ToastService.success('Stage chain execution started');
-            // Refresh to show updated status
-            setTimeout(() => window.location.reload(), 1000);
+            // Refresh data without page reload
+            await loadDocumentData();
         } catch (error) {
             console.error('Failed to execute stage chain:', error);
             ToastService.error('Failed to execute stage chain');
-        } finally {
             setIsProcessing(false);
         }
+        // Note: setIsProcessing(false) is not called on success to keep showing processing state
     };
 
     const hasNextStage = (): boolean => {
@@ -724,6 +762,7 @@ export function DocumentDetailView({
 
                 {/* Stage Control Panel */}
                 <StageControlPanel
+                    key={`stages-${stageInfos.map(s => `${s.stage}-${s.status}`).join('-')}`}
                     documentId={document.id}
                     stages={stageInfos}
                     processingMode={processingMode}
@@ -858,7 +897,7 @@ export function DocumentDetailView({
                                                 console.log('Processing mode updated:', result.message);
 
                                                 // Refresh the document data to show updated mode
-                                                window.location.reload();
+                                                await loadDocumentData();
                                             } catch (error) {
                                                 console.error('Failed to update processing mode:', error);
                                                 ToastService.error(

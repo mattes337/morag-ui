@@ -211,13 +211,14 @@ export function useStageExecution(): UseStageExecutionReturn {
   const fetchPipelineStatus = useCallback(async (documentId: string): Promise<PipelineStatus> => {
     try {
       const response = await fetch(`/api/documents/${documentId}/stages`);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data.pipelineStatus;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setExecutionError(errorMessage);

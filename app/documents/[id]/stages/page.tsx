@@ -165,7 +165,10 @@ export default function DocumentStagesPage() {
   const handleStageExecution = async (stage: ProcessingStage, options: any) => {
     try {
       await executeStage(documentId, stage, options);
-      await handleRefresh();
+      // Add a small delay to allow backend processing to complete
+      setTimeout(async () => {
+        await handleRefresh();
+      }, 1000);
     } catch (err) {
       console.error('Error executing stage:', err);
     }

@@ -122,6 +122,17 @@ export function StageVisualizationView({
   const [selectedStage, setSelectedStage] = useState<ProcessingStage | null>(null);
   const [showExecutionHistory, setShowExecutionHistory] = useState(false);
 
+  // Add debugging to track pipeline status changes
+  useEffect(() => {
+    console.log('🎯 [StageVisualizationView] Pipeline status updated:', {
+      currentStage: pipelineStatus.currentStage,
+      stageStatus: pipelineStatus.stageStatus,
+      completedStages: pipelineStatus.completedStages,
+      failedStages: pipelineStatus.failedStages,
+      progress: pipelineStatus.progress
+    });
+  }, [pipelineStatus]);
+
   const stages: ProcessingStage[] = [
     'MARKDOWN_CONVERSION',
     'MARKDOWN_OPTIMIZER',
@@ -168,8 +179,11 @@ export function StageVisualizationView({
     return true;
   };
 
+  // Create a key that changes when pipeline status changes to force re-render
+  const pipelineKey = `${pipelineStatus.currentStage}-${pipelineStatus.stageStatus}-${pipelineStatus.completedStages.join(',')}-${pipelineStatus.failedStages.join(',')}`;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={pipelineKey}>
       {/* Pipeline Progress */}
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">

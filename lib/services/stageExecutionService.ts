@@ -333,11 +333,19 @@ class StageExecutionService {
 
     // Determine next stage
     let nextStage: ProcessingStage | null = null;
-    if (document.stageStatus === 'COMPLETED' && document.currentStage) {
+    if (document.currentStage) {
       const currentIndex = stages.indexOf(document.currentStage);
-      if (currentIndex >= 0 && currentIndex < stages.length - 1) {
+
+      if (document.stageStatus === 'PENDING' || document.stageStatus === 'FAILED') {
+        // If current stage is pending or failed, it's the next stage to execute
+        nextStage = document.currentStage;
+      } else if (document.stageStatus === 'COMPLETED' && currentIndex >= 0 && currentIndex < stages.length - 1) {
+        // If current stage is completed, move to the next stage
         nextStage = stages[currentIndex + 1];
       }
+    } else {
+      // If no current stage is set, start with the first stage
+      nextStage = stages[0];
     }
 
     return {

@@ -15,14 +15,12 @@ interface DocumentDetailPageProps {
 export default function DocumentDetailPage({ params }: DocumentDetailPageProps) {
     const router = useRouter();
     const {
-        documents,
         selectedDocument,
         setSelectedDocument,
         setShowSupersedeDocumentDialog,
         setDocumentToSupersede,
         updateDocument,
         deleteDocument,
-        isDataLoading,
     } = useApp();
 
     const [document, setDocument] = useState<Document | null>(null);
@@ -152,14 +150,14 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
         };
 
         loadDocument();
-    }, [params.id, documents, isDataLoading, router]);
+    }, [params.id, router]); // Removed documents and isDataLoading to prevent infinite re-renders
 
     // Set the selected document if it's not already set or different
     useEffect(() => {
         if (document && (!selectedDocument || selectedDocument.id !== document.id)) {
             setSelectedDocument(document);
         }
-    }, [document, selectedDocument, setSelectedDocument]);
+    }, [document, selectedDocument]); // Removed setSelectedDocument to prevent re-renders
 
     const handleBackFromDocumentDetail = () => {
         setSelectedDocument(null);

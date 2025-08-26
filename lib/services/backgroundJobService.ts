@@ -1030,33 +1030,16 @@ class BackgroundJobService {
 
     try {
       const { unifiedFileService } = await import('./unifiedFileService');
+      const metadata = job.metadata ? JSON.parse(job.metadata) : {};
+      const moragTaskId = metadata.moragTaskId;
 
-      for (const outputFile of result.output_files) {
+      // Check if we have files with content in the webhook payload
+      const filesWithContent = result.output_files.filter((file: any) => file.content);
+      const filesWithoutContent = result.output_files.filter((file: any) => !file.content);
+
+      // Store files that have content directly
+      for (const outputFile of filesWithContent) {
         try {
-          // Determine content and content type
-          let content = outputFile.content;
-          let contentType = outputFile.content_type || 'application/octet-stream';
-
-          // If no content but file path exists, try to read it (though this usually fails for MoRAG temp files)
-          if (!content && outputFile.file_path) {
-            try {
-              const fs = require('fs');
-              if (fs.existsSync(outputFile.file_path)) {
-                content = fs.readFileSync(outputFile.file_path, 'utf-8');
-                console.log(`Read content from file path: ${outputFile.file_path}`);
-              }
-            } catch (fileError) {
-              console.warn(`Could not read file from path ${outputFile.file_path}:`, fileError);
-            }
-          }
-
-          // Skip files without content (MoRAG temp files are not accessible)
-          if (!content) {
-            console.warn(`Skipping file ${outputFile.filename} - no content available`);
-            continue;
-          }
-
-          // Generate a safe filename
           const safeFilename = this.generateSafeFilename(outputFile.filename, job.stage);
 
           await unifiedFileService.storeFile({
@@ -1065,8 +1048,8 @@ class BackgroundJobService {
             stage: job.stage,
             filename: safeFilename,
             originalName: outputFile.filename,
-            content: content,
-            contentType: contentType,
+            content: outputFile.content,
+            contentType: outputFile.content_type || 'application/octet-stream',
             isPublic: false,
             accessLevel: 'REALM_MEMBERS',
             metadata: {
@@ -1074,15 +1057,62 @@ class BackgroundJobService {
               taskId: job.id,
               createdAt: new Date().toISOString(),
               originalFileInfo: outputFile,
-              jobMetadata: job.metadata ? JSON.parse(job.metadata) : null,
+              jobMetadata: metadata,
             },
           });
 
-          console.log(`✅ Stored output file: ${safeFilename} for stage ${job.stage}`);
+          console.log(`✅ Stored output file with content: ${safeFilename} for stage ${job.stage}`);
         } catch (fileError) {
           console.warn(`Failed to store output file ${outputFile.filename}:`, fileError);
         }
       }
+
+      // For files without content, download them from MoRAG backend
+      if (filesWithoutContent.length > 0 && moragTaskId) {
+        console.log(`Downloading ${filesWithoutContent.length} files without content from MoRAG backend for job ${job.id}`);
+
+        try {
+          const { moragService } = await import('./moragService');
+
+          for (const outputFile of filesWithoutContent) {
+            try {
+              console.log(`Downloading file ${outputFile.filename} for job ${job.id}...`);
+              const fileContent = await moragService.downloadFile(moragTaskId, outputFile.filename);
+
+              const safeFilename = this.generateSafeFilename(outputFile.filename, job.stage);
+
+              await unifiedFileService.storeFile({
+                documentId: job.documentId,
+                fileType: 'STAGE_OUTPUT',
+                stage: job.stage,
+                filename: safeFilename,
+                originalName: outputFile.filename,
+                content: fileContent,
+                contentType: outputFile.content_type || 'application/octet-stream',
+                isPublic: false,
+                accessLevel: 'REALM_MEMBERS',
+                metadata: {
+                  stageType: result.stage_type,
+                  taskId: job.id,
+                  createdAt: new Date().toISOString(),
+                  originalFileInfo: outputFile,
+                  jobMetadata: metadata,
+                  downloadedFrom: 'morag-backend',
+                },
+              });
+
+              console.log(`✅ Downloaded and stored output file: ${safeFilename} for stage ${job.stage}`);
+            } catch (fileError) {
+              console.warn(`Failed to download and store output file ${outputFile.filename}:`, fileError);
+            }
+          }
+        } catch (downloadError) {
+          console.error(`Failed to download files from MoRAG backend for job ${job.id}:`, downloadError);
+        }
+      } else if (filesWithoutContent.length > 0) {
+        console.warn(`${filesWithoutContent.length} files without content found for job ${job.id}, but no MoRAG task ID available for download`);
+      }
+
     } catch (error) {
       console.error(`Failed to store stage output files for job ${job.id}:`, error);
     }
