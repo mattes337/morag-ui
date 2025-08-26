@@ -309,7 +309,7 @@ export function StageControlPanel({
           <div className="text-sm text-gray-500">Execute stages from left to right</div>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex items-stretch space-x-4 overflow-x-auto pb-4">
           {WORKFLOW_ORDER.map((stageName, index) => {
             const stageInfo = stageMap.get(stageName);
             const stageConfig = STAGE_CONFIG[stageName];
@@ -328,189 +328,167 @@ export function StageControlPanel({
             const duration = stageInfo ? getStageDuration(stageInfo) : '';
 
             // Determine if this stage should be collapsed
-            const shouldCollapse = (isCompleted || isSkipped) && !canExecute && !isRunning && !isFailed;
             const isNextExecutable = canExecute && !isRunning;
+            const shouldCollapse = !isRunning && !isFailed && !isNextExecutable && (isCompleted || isSkipped || !canExecute);
 
-            // Collapsed view for completed/skipped stages
-            if (shouldCollapse) {
-              return (
-                <div key={stageName} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-400'
-                    }`} />
-                    <StageIcon className={`w-4 h-4 ${
+            return (
+              <div key={stageName} className="flex items-center">
+                {/* Collapsed view for completed/skipped stages */}
+                {shouldCollapse ? (
+                  <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg border border-gray-200 w-[20px] h-full justify-start space-y-3">
+                    <StageIcon className={`w-6 h-6 ${
                       isCompleted ? 'text-green-600' : 'text-gray-500'
                     }`} />
-                    <span className={`text-sm font-medium ${
-                      isCompleted ? 'text-green-800' : 'text-gray-600'
-                    }`}>
-                      {stageConfig.name}
-                    </span>
+                    <div className="flex-1 flex items-center justify-center">
+                      <span className={`text-xs font-medium whitespace-nowrap transform rotate-90 ${
+                        isCompleted ? 'text-green-800' : 'text-gray-600'
+                      }`}>
+                        {stageConfig.name}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                ) : (
+                  /* Full card view for active/next/failed stages */
+                  <div className={`
+                    relative flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 min-w-[200px]
+                    ${isCompleted ? 'border-green-500 bg-green-50' :
+                      isFailed ? 'border-red-500 bg-red-50' :
+                      isRunning ? 'border-blue-500 bg-blue-50' :
+                      isNextExecutable ? 'border-blue-300 bg-blue-25 shadow-md' :
+                      canExecute ? 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-25' :
+                      'border-gray-200 bg-gray-50'}
+                    ${isOptional ? 'border-dashed' : ''}
+                    ${isNextExecutable ? 'ring-2 ring-blue-200' : ''}
+                  `}>
+                    {/* Next Executable Stage Indicator */}
+                    {isNextExecutable && (
+                      <div className="absolute -top-2 -left-2">
+                        <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          Next
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Optional Badge */}
+                    {isOptional && (
+                      <div className="absolute -top-2 -right-2">
+                        <Badge variant="secondary" className="text-xs px-1 py-0">Optional</Badge>
+                      </div>
+                    )}
+
+                    {/* Stage Icon and Status */}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className={`w-3 h-3 rounded-full ${stageConfig.color}`} />
+                      <StageIcon className={`w-6 h-6 ${
+                        isCompleted ? 'text-green-600' :
+                        isFailed ? 'text-red-600' :
+                        isRunning ? 'text-blue-600' :
+                        canExecute ? 'text-gray-700' : 'text-gray-400'
+                      }`} />
+                      <StatusIcon className={`w-4 h-4 ${statusConfig.textColor} ${isRunning ? 'animate-spin' : ''}`} />
+                    </div>
+
+                    {/* Stage Name and Description */}
+                    <div className="text-center mb-3">
+                      <h4 className={`font-medium text-sm mb-1 ${
+                        isCompleted ? 'text-green-800' :
+                        isFailed ? 'text-red-800' :
+                        isRunning ? 'text-blue-800' :
+                        effectiveStatus === 'SKIPPED' ? 'text-gray-600' :
+                        canExecute ? 'text-gray-900' : 'text-gray-500'
+                      }`}>
+                        {stageConfig.name}
+                      </h4>
+                      <p className="text-xs text-gray-600 leading-tight mb-1">{stageConfig.description}</p>
+                    </div>
+
+                    {/* Timing Information */}
+                    {stageInfo?.startedAt && (
+                      <div className="text-xs text-gray-500 space-y-0.5 mb-2">
+                        <div>Started: {new Date(stageInfo.startedAt).toLocaleTimeString()}</div>
+                        {stageInfo.completedAt && (
+                          <div>Ended: {new Date(stageInfo.completedAt).toLocaleTimeString()}</div>
+                        )}
+                        {duration && (
+                          <div className="font-medium">Duration: {duration}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Estimated time for pending stages */}
+                    {!stageInfo?.startedAt && (
+                      <p className="text-xs text-gray-500 mb-2">Est: {stageConfig.estimatedTime}</p>
+                    )}
+
+                    {/* Progress Bar */}
+                    {isRunning && stageInfo?.progress !== undefined && (
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+                        <div
+                          className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${stageInfo.progress}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Status Badge */}
                     <Badge
-                      variant={isCompleted ? 'default' : 'outline'}
-                      className="text-xs"
+                      variant={isCompleted ? 'default' :
+                              isFailed ? 'destructive' :
+                              isRunning ? 'secondary' :
+                              effectiveStatus === 'SKIPPED' ? 'outline' : 'outline'}
+                      className={`text-xs mb-3 ${
+                        effectiveStatus === 'SKIPPED' ? 'bg-gray-100 text-gray-600' : ''
+                      }`}
                     >
                       {statusConfig.label}
                     </Badge>
-                    {duration && (
-                      <span className="text-xs text-gray-500">{duration}</span>
+
+                    {/* Error Message */}
+                    {stageInfo?.errorMessage && (
+                      <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                        {stageInfo.errorMessage}
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    {processingMode === 'MANUAL' && effectiveStatus !== 'SKIPPED' && (
+                      <Button
+                        size="sm"
+                        variant={isCompleted ? 'outline' : canExecute ? 'default' : 'ghost'}
+                        onClick={() => handleExecuteStage(stageName)}
+                        disabled={!canExecute || isRunning}
+                        className={`w-full text-xs ${
+                          (!canExecute || isRunning) ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
+                      >
+                        {isRunning ? (
+                          <>
+                            Running
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3 h-3 mr-1" />
+                            {isCompleted ? 'Re-run' : 'Execute'}
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    {/* Skipped stage message */}
+                    {effectiveStatus === 'SKIPPED' && (
+                      <div className="w-full text-xs text-gray-500 text-center py-1">
+                        Optional stage skipped
+                      </div>
                     )}
                   </div>
-                </div>
-              );
-            }
-
-            // Full card view for active/next/failed stages
-            return (
-              <div key={stageName} className={`
-                relative p-6 rounded-lg border-2 transition-all duration-200
-                ${isCompleted ? 'border-green-500 bg-green-50' :
-                  isFailed ? 'border-red-500 bg-red-50' :
-                  isRunning ? 'border-blue-500 bg-blue-50' :
-                  isNextExecutable ? 'border-blue-300 bg-blue-25 shadow-md' :
-                  canExecute ? 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-25' :
-                  'border-gray-200 bg-gray-50'}
-                ${isOptional ? 'border-dashed' : ''}
-                ${isNextExecutable ? 'ring-2 ring-blue-200' : ''}
-              `}>
-                {/* Next Executable Stage Indicator */}
-                {isNextExecutable && (
-                  <div className="absolute -top-2 -left-2">
-                    <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      Next
-                    </div>
-                  </div>
                 )}
 
-                {/* Optional Badge */}
-                {isOptional && (
-                  <div className="absolute -top-2 -right-2">
-                    <Badge variant="secondary" className="text-xs px-1 py-0">Optional</Badge>
-                  </div>
-                )}
-
-                {/* Stage Icon and Status */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full ${stageConfig.color}`} />
-                    <StageIcon className={`w-8 h-8 ${
-                      isCompleted ? 'text-green-600' :
-                      isFailed ? 'text-red-600' :
-                      isRunning ? 'text-blue-600' :
-                      canExecute ? 'text-blue-700' : 'text-gray-400'
+                {/* Workflow Arrow */}
+                {index < WORKFLOW_ORDER.length - 1 && (
+                  <div className="flex items-center px-3">
+                    <ChevronRight className={`w-5 h-5 ${
+                      canExecuteStage(WORKFLOW_ORDER[index + 1]) ? 'text-blue-500' : 'text-gray-300'
                     }`} />
-                  </div>
-                  <StatusIcon className={`w-5 h-5 ${statusConfig.textColor} ${isRunning ? 'animate-spin' : ''}`} />
-                </div>
-
-                {/* Stage Name and Description */}
-                <div className="mb-4">
-                  <h4 className={`font-semibold text-lg mb-2 ${
-                    isCompleted ? 'text-green-800' :
-                    isFailed ? 'text-red-800' :
-                    isRunning ? 'text-blue-800' :
-                    effectiveStatus === 'SKIPPED' ? 'text-gray-600' :
-                    canExecute ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
-                    {stageConfig.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{stageConfig.description}</p>
-                </div>
-
-                {/* Timing Information */}
-                {stageInfo?.startedAt && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-700 space-y-1">
-                      <div>Started: {new Date(stageInfo.startedAt).toLocaleTimeString()}</div>
-                      {stageInfo.completedAt && (
-                        <div>Ended: {new Date(stageInfo.completedAt).toLocaleTimeString()}</div>
-                      )}
-                      {duration && (
-                        <div className="font-medium text-blue-700">Duration: {duration}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Estimated time for pending stages */}
-                {!stageInfo?.startedAt && (
-                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-700">
-                      Estimated time: {stageConfig.estimatedTime}
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress Bar */}
-                {isRunning && stageInfo?.progress !== undefined && (
-                  <div className="mb-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${stageInfo.progress}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1 text-center">
-                      {stageInfo.progress}% complete
-                    </div>
-                  </div>
-                )}
-
-                {/* Status Badge */}
-                <div className="mb-4">
-                  <Badge
-                    variant={isCompleted ? 'default' :
-                            isFailed ? 'destructive' :
-                            isRunning ? 'secondary' :
-                            effectiveStatus === 'SKIPPED' ? 'outline' : 'outline'}
-                    className={`text-sm ${
-                      effectiveStatus === 'SKIPPED' ? 'bg-gray-100 text-gray-600' : ''
-                    }`}
-                  >
-                    {statusConfig.label}
-                  </Badge>
-                </div>
-
-                {/* Error Message */}
-                {stageInfo?.errorMessage && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="text-sm text-red-700 font-medium mb-1">Error</div>
-                    <div className="text-sm text-red-600">{stageInfo.errorMessage}</div>
-                  </div>
-                )}
-
-                {/* Action Button */}
-                {processingMode === 'MANUAL' && effectiveStatus !== 'SKIPPED' && (
-                  <Button
-                    size="lg"
-                    variant={isCompleted ? 'outline' : canExecute ? 'default' : 'ghost'}
-                    onClick={() => handleExecuteStage(stageName)}
-                    disabled={!canExecute || isRunning}
-                    className={`w-full ${
-                      (!canExecute || isRunning) ? 'cursor-not-allowed opacity-50' : ''
-                    } ${isNextExecutable ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}`}
-                  >
-                    {isRunning ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Running...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        {isCompleted ? 'Re-run Stage' : 'Execute Stage'}
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {/* Skipped stage message */}
-                {effectiveStatus === 'SKIPPED' && (
-                  <div className="w-full text-center py-3 text-gray-500 bg-gray-50 rounded-lg">
-                    Optional stage skipped
                   </div>
                 )}
               </div>
