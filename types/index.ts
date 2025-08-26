@@ -119,6 +119,13 @@ export interface Document {
     markdown?: string; // Processed markdown content
     metadata?: DocumentMetadata;
     jobs?: Job[];
+    // Processing state fields
+    currentStage?: string;
+    stageStatus?: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+    lastStageError?: string;
+    isProcessingPaused?: boolean;
+    nextScheduledStage?: string;
+    scheduledAt?: string;
 }
 
 export interface Entity {

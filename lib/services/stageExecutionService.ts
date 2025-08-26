@@ -542,8 +542,22 @@ class StageExecutionService {
       startedAt: execution.startedAt,
       completedAt: execution.completedAt || undefined,
       errorMessage: execution.errorMessage || undefined,
-      inputFiles: execution.inputFiles ? JSON.parse(execution.inputFiles) : undefined,
-      outputFiles: execution.outputFiles ? JSON.parse(execution.outputFiles) : undefined,
+      inputFiles: execution.inputFiles ? (() => {
+        try {
+          const parsed = JSON.parse(execution.inputFiles);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })() : [],
+      outputFiles: execution.outputFiles ? (() => {
+        try {
+          const parsed = JSON.parse(execution.outputFiles);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })() : [],
       metadata: execution.metadata ? JSON.parse(execution.metadata) : undefined,
       createdAt: execution.createdAt,
       updatedAt: execution.updatedAt,

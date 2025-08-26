@@ -30,7 +30,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({
             document: {
                 ...document,
-                files
+                files,
+                // Ensure processing state fields are included
+                currentStage: document.currentStage,
+                stageStatus: document.stageStatus,
+                lastStageError: document.lastStageError,
+                processingMode: document.processingMode,
+                isProcessingPaused: document.isProcessingPaused,
+                nextScheduledStage: document.nextScheduledStage,
+                scheduledAt: document.scheduledAt
             },
             authMethod: auth.authMethod,
             realm: auth.realm

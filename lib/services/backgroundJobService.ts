@@ -912,6 +912,9 @@ class BackgroundJobService {
       // Handle different stage types
       switch (result.stage_type) {
         case 'markdown-conversion':
+          // Store all output files from this stage
+          await this.storeStageOutputFiles(job, result);
+
           // Update document with markdown content if available
           if (result.output_files && result.output_files.length > 0) {
             // Extract markdown content from the first output file
@@ -958,56 +961,41 @@ class BackgroundJobService {
             if (markdownContent) {
               // Store markdown content in document
               updateData.markdown = markdownContent;
-
-              // Create a file record for the converted markdown
-              try {
-                const { unifiedFileService } = await import('./unifiedFileService');
-
-                await unifiedFileService.storeFile({
-                  documentId: job.documentId,
-                  fileType: 'STAGE_OUTPUT',
-                  stage: 'MARKDOWN_CONVERSION',
-                  filename: 'converted_document.md', // Use short filename to avoid DB constraints
-                  originalName: markdownFile.filename || 'converted_document.md',
-                  content: markdownContent,
-                  contentType: 'text/markdown',
-                  isPublic: false,
-                  accessLevel: 'REALM_MEMBERS',
-                  metadata: {
-                    convertedFrom: 'morag-backend',
-                    taskId: job.id,
-                    convertedAt: new Date().toISOString(),
-                    stage: 'markdown-conversion',
-                    originalFileInfo: markdownFile,
-                    jobMetadata: job.metadata ? JSON.parse(job.metadata) : null,
-                  },
-                });
-
-                console.log(`Document ${job.documentId} converted markdown file record created`);
-              } catch (fileError) {
-                console.warn(`Could not create file record for converted markdown:`, fileError);
-              }
             }
-
-            // Update document state based on processing progress
-            await this.updateDocumentStateBasedOnProgress(job.documentId);
-            console.log(`Document ${job.documentId} markdown conversion completed`);
           }
+
+          // Update document state based on processing progress
+          await this.updateDocumentStateBasedOnProgress(job.documentId);
+          console.log(`Document ${job.documentId} markdown conversion completed`);
+          break;
+
+        case 'markdown-optimizer':
+          // Store all output files from this stage
+          await this.storeStageOutputFiles(job, result);
+          // Update document state based on processing progress
+          await this.updateDocumentStateBasedOnProgress(job.documentId);
+          console.log(`Document ${job.documentId} markdown optimization completed`);
           break;
 
         case 'chunking':
+          // Store all output files from this stage
+          await this.storeStageOutputFiles(job, result);
           // Update document state based on processing progress
           await this.updateDocumentStateBasedOnProgress(job.documentId);
           console.log(`Document ${job.documentId} chunking completed`);
           break;
 
         case 'embedding':
+          // Store all output files from this stage
+          await this.storeStageOutputFiles(job, result);
           // Update document state based on processing progress
           await this.updateDocumentStateBasedOnProgress(job.documentId);
           console.log(`Document ${job.documentId} embedding completed`);
           break;
 
         case 'ingestor':
+          // Store all output files from this stage
+          await this.storeStageOutputFiles(job, result);
           // Update document state based on processing progress (should be INGESTED now)
           await this.updateDocumentStateBasedOnProgress(job.documentId);
           console.log(`Document ${job.documentId} ingestor stage completed`);
@@ -1032,6 +1020,89 @@ class BackgroundJobService {
   }
 
   /**
+   * Store all output files from a stage completion
+   */
+  private async storeStageOutputFiles(job: any, result: any): Promise<void> {
+    if (!result.output_files || result.output_files.length === 0) {
+      console.log(`No output files to store for job ${job.id}`);
+      return;
+    }
+
+    try {
+      const { unifiedFileService } = await import('./unifiedFileService');
+
+      for (const outputFile of result.output_files) {
+        try {
+          // Determine content and content type
+          let content = outputFile.content;
+          let contentType = outputFile.content_type || 'application/octet-stream';
+
+          // If no content but file path exists, try to read it (though this usually fails for MoRAG temp files)
+          if (!content && outputFile.file_path) {
+            try {
+              const fs = require('fs');
+              if (fs.existsSync(outputFile.file_path)) {
+                content = fs.readFileSync(outputFile.file_path, 'utf-8');
+                console.log(`Read content from file path: ${outputFile.file_path}`);
+              }
+            } catch (fileError) {
+              console.warn(`Could not read file from path ${outputFile.file_path}:`, fileError);
+            }
+          }
+
+          // Skip files without content (MoRAG temp files are not accessible)
+          if (!content) {
+            console.warn(`Skipping file ${outputFile.filename} - no content available`);
+            continue;
+          }
+
+          // Generate a safe filename
+          const safeFilename = this.generateSafeFilename(outputFile.filename, job.stage);
+
+          await unifiedFileService.storeFile({
+            documentId: job.documentId,
+            fileType: 'STAGE_OUTPUT',
+            stage: job.stage,
+            filename: safeFilename,
+            originalName: outputFile.filename,
+            content: content,
+            contentType: contentType,
+            isPublic: false,
+            accessLevel: 'REALM_MEMBERS',
+            metadata: {
+              stageType: result.stage_type,
+              taskId: job.id,
+              createdAt: new Date().toISOString(),
+              originalFileInfo: outputFile,
+              jobMetadata: job.metadata ? JSON.parse(job.metadata) : null,
+            },
+          });
+
+          console.log(`✅ Stored output file: ${safeFilename} for stage ${job.stage}`);
+        } catch (fileError) {
+          console.warn(`Failed to store output file ${outputFile.filename}:`, fileError);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to store stage output files for job ${job.id}:`, error);
+    }
+  }
+
+  /**
+   * Generate a safe filename for database storage
+   */
+  private generateSafeFilename(originalFilename: string, stage: string): string {
+    // Remove problematic characters and limit length
+    const cleanName = originalFilename
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .substring(0, 50);
+
+    // Add stage prefix for clarity
+    const stagePrefix = stage.toLowerCase().replace('_', '-');
+    return `${stagePrefix}_${cleanName}`;
+  }
+
+  /**
    * Update document state based on processing progress
    */
   private async updateDocumentStateBasedOnProgress(documentId: string): Promise<void> {
@@ -1052,19 +1123,45 @@ class BackgroundJobService {
         newState = DocumentState.INGESTING;
       }
 
+      // Also update currentStage and stageStatus to match the pipeline status
+      const updateData: any = {
+        state: newState,
+        currentStage: pipelineStatus.currentStage,
+        stageStatus: pipelineStatus.stageStatus
+      };
+
       await prisma.document.update({
         where: { id: documentId },
-        data: { state: newState }
+        data: updateData
       });
 
-      console.log(`Document ${documentId} state updated to ${newState} (${pipelineStatus.completedStages.length}/5 stages complete)`);
+      console.log(`Document ${documentId} state updated:`, {
+        state: newState,
+        currentStage: pipelineStatus.currentStage,
+        stageStatus: pipelineStatus.stageStatus,
+        completedStages: pipelineStatus.completedStages.length
+      });
     } catch (error) {
       console.warn(`Could not update document state for ${documentId}:`, error);
-      // Fallback to INGESTING state
-      await prisma.document.update({
-        where: { id: documentId },
-        data: { state: DocumentState.INGESTING }
-      });
+      // Fallback to INGESTING state with current stage info if available
+      try {
+        const { stageExecutionService } = await import('./stageExecutionService');
+        const pipelineStatus = await stageExecutionService.getDocumentPipelineStatus(documentId);
+        await prisma.document.update({
+          where: { id: documentId },
+          data: {
+            state: DocumentState.INGESTING,
+            currentStage: pipelineStatus.currentStage,
+            stageStatus: pipelineStatus.stageStatus
+          }
+        });
+      } catch (fallbackError) {
+        // Final fallback - just update state
+        await prisma.document.update({
+          where: { id: documentId },
+          data: { state: DocumentState.INGESTING }
+        });
+      }
     }
   }
 

@@ -78,43 +78,79 @@ export function DocumentDetailView({
     const [isProcessing, setIsProcessing] = useState(false);
     const [stageInfos, setStageInfos] = useState<any[]>([]);
 
-    const loadDocumentFiles = useCallback(async () => {
-        if (!document?.id) return;
-        try {
-          setIsLoadingFiles(true);
-          const response = await fetch(`/api/files?documentId=${document.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setFiles(data.files || []);
-          }
-        } catch (error) {
-          console.error('Failed to load document files:', error);
-          ToastService.error('Failed to load document files');
-        } finally {
-          setIsLoadingFiles(false);
-        }
-    }, [document?.id]);
+    // Add logging when stage infos change
+    useEffect(() => {
+        console.log('🎯 [DocumentDetailView] Stage infos updated:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
+    }, [stageInfos]);
 
-    const loadStageInfo = useCallback(async () => {
-        if (!document?.id) return;
+    // Individual loading functions removed - now using combined loadAllDocumentData
+
+    // Initialize processing state from document data
+    useEffect(() => {
+        console.log('🔄 [DocumentDetailView] Document changed, updating processing state:', {
+            documentId: document?.id,
+            processingMode: document?.processingMode,
+            stageStatus: document?.stageStatus,
+            currentStage: document?.currentStage,
+            state: document?.state
+        });
+
+        if (document?.processingMode) {
+            setProcessingMode(document.processingMode);
+        }
+
+        // Check if document is currently processing based on stage status
+        const isCurrentlyProcessing = document?.stageStatus === 'RUNNING' || document?.stageStatus === 'PENDING';
+        console.log('📊 [DocumentDetailView] Setting isProcessing to:', isCurrentlyProcessing);
+        setIsProcessing(isCurrentlyProcessing);
+    }, [document?.processingMode, document?.stageStatus]);
+
+    // Load document data with proper stages API call
+    const loadDocumentData = useCallback(async () => {
+        if (!document?.id || document.id === 'undefined') return;
+
+        console.log('🔄 [DocumentDetailView] Loading document data for:', document.id);
+
         try {
-            const response = await fetch(`/api/documents/${document.id}/stages?includeExecutions=true`);
-            if (response.ok) {
-                const data = await response.json();
+            // Load files and stages in parallel - but handle stages API errors gracefully
+            const [filesResponse, stagesResponse] = await Promise.allSettled([
+                fetch(`/api/files?documentId=${document.id}`),
+                fetch(`/api/documents/${document.id}/stages?includeExecutions=true`)
+            ]);
+
+            // Handle files response
+            if (filesResponse.status === 'fulfilled' && filesResponse.value.ok) {
+                const filesData = await filesResponse.value.json();
+                console.log('📁 [DocumentDetailView] Loaded files:', filesData.files?.length || 0);
+                setFiles(filesData.files || []);
+            } else {
+                console.error('❌ [DocumentDetailView] Failed to load document files:', filesResponse);
+            }
+
+            // Handle stages response with fallback to document state
+            if (stagesResponse.status === 'fulfilled' && stagesResponse.value.ok) {
+                const stagesData = await stagesResponse.value.json();
+                console.log('📊 [DocumentDetailView] Loaded stages data from API:', {
+                    currentStage: stagesData.pipelineStatus?.currentStage,
+                    stageStatus: stagesData.pipelineStatus?.stageStatus,
+                    completedStages: stagesData.pipelineStatus?.completedStages,
+                    failedStages: stagesData.pipelineStatus?.failedStages
+                });
+
                 // Convert pipelineStatus to stage info format with execution data
                 const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
                 const stageInfos = stages.map(stage => {
-                    const isCompleted = data.pipelineStatus?.completedStages?.includes(stage);
-                    const isFailed = data.pipelineStatus?.failedStages?.includes(stage);
-                    const isCurrent = data.pipelineStatus?.currentStage === stage;
+                    const isCompleted = stagesData.pipelineStatus?.completedStages?.includes(stage);
+                    const isFailed = stagesData.pipelineStatus?.failedStages?.includes(stage);
+                    const isCurrent = stagesData.pipelineStatus?.currentStage === stage;
 
                     let status = 'PENDING';
                     if (isCompleted) status = 'COMPLETED';
                     else if (isFailed) status = 'FAILED';
-                    else if (isCurrent && data.pipelineStatus?.stageStatus === 'RUNNING') status = 'RUNNING';
+                    else if (isCurrent && stagesData.pipelineStatus?.stageStatus === 'RUNNING') status = 'RUNNING';
 
                     // Find the latest execution for this stage
-                    const stageExecutions = data.executions?.filter((exec: any) => exec.stage === stage) || [];
+                    const stageExecutions = stagesData.executions?.filter((exec: any) => exec.stage === stage) || [];
                     const latestExecution = stageExecutions.sort((a: any, b: any) =>
                         new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
                     )[0];
@@ -122,68 +158,140 @@ export function DocumentDetailView({
                     return {
                         stage,
                         status,
-                        progress: isCurrent ? data.pipelineStatus?.progress : (isCompleted ? 100 : 0),
+                        progress: isCurrent ? stagesData.pipelineStatus?.progress : (isCompleted ? 100 : 0),
                         startedAt: latestExecution?.startedAt ? new Date(latestExecution.startedAt) : undefined,
                         completedAt: latestExecution?.completedAt ? new Date(latestExecution.completedAt) : undefined,
                         errorMessage: latestExecution?.errorMessage
                     };
                 });
+
+                console.log('🎯 [DocumentDetailView] Generated stage infos from API:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
                 setStageInfos(stageInfos);
+            } else {
+                console.error('❌ [DocumentDetailView] Failed to load stage info, falling back to document state:', stagesResponse);
+                // Fallback: generate stage info from document state
+                generateStageInfoFromDocumentState();
             }
+
         } catch (error) {
-            console.error('Failed to load stage info:', error);
+            console.error('❌ [DocumentDetailView] Failed to load document data:', error);
+            ToastService.error('Failed to load document data');
+            // Fallback: generate stage info from document state
+            generateStageInfoFromDocumentState();
+        } finally {
+            setIsLoadingFiles(false);
         }
     }, [document?.id]);
 
-    const loadProcessingStatus = useCallback(async () => {
-        if (!document?.id || document.id === 'undefined') {
-            console.warn('DocumentDetailView: Invalid document ID provided:', document?.id);
-            return;
-        }
+    // Fallback function to generate stage info from document state
+    const generateStageInfoFromDocumentState = useCallback(() => {
+        if (!document) return;
 
-        try {
-            const response = await fetch(`/api/documents/${document.id}/processing`);
-            if (response.ok) {
-                const data = await response.json();
+        console.log('🔄 [DocumentDetailView] Generating stage info from document state:', {
+            documentState: document.state,
+            currentStage: document.currentStage,
+            stageStatus: document.stageStatus
+        });
 
-                // Check if there are any active processing jobs
-                const activeJobs = data.jobs?.filter((job: any) =>
-                    job.status === 'PENDING' || job.status === 'PROCESSING'
-                ) || [];
+        const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+        const stageInfos = stages.map(stage => {
+            const isCurrent = document.currentStage === stage;
 
-                setIsProcessing(activeJobs.length > 0);
+            let status = 'PENDING';
+            if (document.state === 'ingested') {
+                status = 'COMPLETED';
+            } else if (document.state === 'ingesting') {
+                const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                const currentIndex = stageOrder.indexOf(document.currentStage || '');
+                const thisIndex = stageOrder.indexOf(stage);
 
-                // Update processing mode from document
-                if (data.processingMode) {
-                    setProcessingMode(data.processingMode);
+                if (thisIndex < currentIndex) {
+                    status = 'COMPLETED';
+                } else if (thisIndex === currentIndex) {
+                    status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
+                } else {
+                    status = 'PENDING';
                 }
-
-                console.log(`📊 [DocumentDetailView] Processing status: ${activeJobs.length} active jobs`);
             }
-        } catch (error) {
-            console.error('Failed to load processing status:', error);
-        }
-    }, [document?.id]);
 
+            return {
+                stage,
+                status,
+                progress: status === 'COMPLETED' ? 100 : (status === 'RUNNING' ? 50 : 0),
+                startedAt: undefined,
+                completedAt: undefined,
+                errorMessage: isCurrent ? document.lastStageError : undefined
+            };
+        });
+
+        console.log('🎯 [DocumentDetailView] Generated stage infos from document state:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
+        setStageInfos(stageInfos);
+    }, [document]);
+
+    // Load document data when document changes
     useEffect(() => {
         if (document?.id) {
-            loadDocumentFiles();
-            loadStageInfo();
-            loadProcessingStatus();
-        }
-    }, [document?.id, loadDocumentFiles, loadStageInfo, loadProcessingStatus]);
+            console.log('🔄 [DocumentDetailView] Document ID changed, checking for pre-loaded data:', document.id);
 
-    // Poll processing status every 5 seconds when processing is active
+            // Check if we have pre-loaded data from the complete API call
+            const completeData = (window as any).__documentCompleteData;
+            if (completeData) {
+                console.log('✅ [DocumentDetailView] Using pre-loaded complete data');
+
+                // Use pre-loaded files
+                setFiles(completeData.files || []);
+
+                // Use pre-loaded pipeline status to generate stage infos
+                if (completeData.pipelineStatus) {
+                    const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                    const stageInfos = stages.map(stage => {
+                        const isCompleted = completeData.pipelineStatus?.completedStages?.includes(stage);
+                        const isFailed = completeData.pipelineStatus?.failedStages?.includes(stage);
+                        const isCurrent = completeData.pipelineStatus?.currentStage === stage;
+
+                        let status = 'PENDING';
+                        if (isCompleted) status = 'COMPLETED';
+                        else if (isFailed) status = 'FAILED';
+                        else if (isCurrent && completeData.pipelineStatus?.stageStatus === 'RUNNING') status = 'RUNNING';
+
+                        return {
+                            stage,
+                            status,
+                            progress: isCurrent ? completeData.pipelineStatus?.progress : (isCompleted ? 100 : 0),
+                            startedAt: undefined,
+                            completedAt: undefined,
+                            errorMessage: undefined
+                        };
+                    });
+
+                    console.log('🎯 [DocumentDetailView] Generated stage infos from pre-loaded data:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
+                    setStageInfos(stageInfos);
+                }
+
+                // Set processing status
+                setIsProcessing(completeData.isProcessing || false);
+                setIsLoadingFiles(false);
+
+                // Clear the pre-loaded data
+                delete (window as any).__documentCompleteData;
+            } else {
+                console.log('⚠️ [DocumentDetailView] No pre-loaded data, falling back to API calls');
+                setIsLoadingFiles(true);
+                loadDocumentData();
+            }
+        }
+    }, [document?.id, loadDocumentData]);
+
+    // Poll document data when processing is active
     useEffect(() => {
         if (!isProcessing) return;
 
         const interval = setInterval(() => {
-            loadProcessingStatus();
-            loadStageInfo(); // Also refresh stage info to show progress
+            loadDocumentData(); // Refresh all data to show progress
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [isProcessing, loadProcessingStatus, loadStageInfo]);
+    }, [isProcessing, loadDocumentData]);
 
     // Early validation to prevent undefined document ID issues
     if (!document || !document.id) {

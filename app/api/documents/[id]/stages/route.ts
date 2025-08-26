@@ -26,9 +26,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const includeFiles = searchParams.get('includeFiles') === 'true';
     const includeExecutions = searchParams.get('includeExecutions') === 'true';
 
+    // Verify document exists first
+    const { prisma } = await import('@/lib/database');
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { id: true }
+    });
+
+    if (!document) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
     // Get pipeline status
     const pipelineStatus = await stageExecutionService.getDocumentPipelineStatus(documentId);
-    
+
     // Get execution statistics
     const executionStats = await stageExecutionService.getDocumentExecutionStats(documentId);
 
@@ -45,14 +56,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Include execution history if requested
     if (includeExecutions) {
-      response.executions = await stageExecutionService.getDocumentExecutions(documentId);
+      try {
+        response.executions = await stageExecutionService.getDocumentExecutions(documentId);
+      } catch (executionError) {
+        console.error('Error fetching executions:', executionError);
+        response.executions = []; // Fallback to empty array
+      }
     }
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching document stages:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch document stages' },
+      { error: 'Failed to fetch document stages', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

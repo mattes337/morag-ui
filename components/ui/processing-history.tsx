@@ -95,8 +95,8 @@ export function ProcessingHistory({
       // Add execution history
       if (processingData && processingData.executions) {
         for (const execution of processingData.executions) {
-          // Get output files for this execution
-          const outputFiles = execution.outputFiles ? execution.outputFiles.map((filename: string) => ({
+          // Get output files for this execution - ensure it's an array
+          const outputFiles = Array.isArray(execution.outputFiles) ? execution.outputFiles.map((filename: string) => ({
             id: `${execution.id}-${filename}`,
             filename,
             filesize: 0, // Will be populated when needed

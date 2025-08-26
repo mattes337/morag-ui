@@ -29,38 +29,38 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Add logging when document state changes
+    useEffect(() => {
+        if (document) {
+            console.log('📄 [DocumentDetailPage] Document state changed:', {
+                id: document.id,
+                name: document.name,
+                state: document.state,
+                currentStage: document.currentStage,
+                stageStatus: document.stageStatus,
+                processingMode: document.processingMode
+            });
+        }
+    }, [document]);
+
     useEffect(() => {
         const loadDocument = async () => {
             try {
                 console.log('🔍 [DocumentDetailPage] Loading document with ID:', params.id);
+                console.log('📊 [DocumentDetailPage] Current state before loading:', {
+                    isLoading,
+                    hasDocument: !!document,
+                    documentState: document?.state,
+                    documentCurrentStage: document?.currentStage,
+                    documentStageStatus: document?.stageStatus
+                });
                 setIsLoading(true);
                 setError(null);
 
-                // First, try to find the document in the context
-                const contextDocument = documents.find(
-                    (doc) => doc.id === params.id || doc.id.toString() === params.id,
-                );
-
-                if (contextDocument) {
-                    console.log(
-                        '✅ [DocumentDetailPage] Found document in context:',
-                        contextDocument.name,
-                    );
-                    setDocument(contextDocument);
-                    setIsLoading(false);
-                    return;
-                }
-
-                // If not found in context and context is still loading, wait for it
-                if (isDataLoading) {
-                    console.log('⏳ [DocumentDetailPage] Context still loading, waiting...');
-                    setIsLoading(false);
-                    return;
-                }
-
-                // If context is loaded but document not found, try to fetch from API
-                console.log('📡 [DocumentDetailPage] Document not in context, fetching from API');
-                const response = await fetch(`/api/documents/${params.id}`);
+                // Always fetch from API to get the most current state
+                // Context data might be stale, especially for processing status
+                console.log('📡 [DocumentDetailPage] Fetching complete document data from API');
+                const response = await fetch(`/api/documents/${params.id}/complete`);
 
                 if (!response.ok) {
                     if (response.status === 404) {
@@ -90,6 +90,14 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     return;
                 }
 
+                // Store the complete response data for DocumentDetailView
+                (window as any).__documentCompleteData = {
+                    files: responseData.files || [],
+                    pipelineStatus: responseData.pipelineStatus,
+                    executionStats: responseData.executionStats,
+                    isProcessing: responseData.isProcessing || false
+                };
+
                 const formattedDoc: Document = {
                     id: docData.id,
                     name: docData.name,
@@ -105,14 +113,26 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     processingMode: docData.processingMode || 'AUTOMATIC',
                     markdown: docData.markdown,
                     metadata: docData.metadata,
+                    // Include processing state fields
+                    currentStage: docData.currentStage,
+                    stageStatus: docData.stageStatus,
+                    lastStageError: docData.lastStageError,
+                    isProcessingPaused: docData.isProcessingPaused,
+                    nextScheduledStage: docData.nextScheduledStage,
+                    scheduledAt: docData.scheduledAt,
                 };
 
-                console.log(
-                    '✅ [DocumentDetailPage] Successfully loaded document from API:',
-                    formattedDoc.name,
-                    'ID:',
-                    formattedDoc.id,
-                );
+                console.log('✅ [DocumentDetailPage] Successfully loaded document from API:');
+                console.log('📊 [DocumentDetailPage] Document state from API:', {
+                    name: formattedDoc.name,
+                    id: formattedDoc.id,
+                    state: formattedDoc.state,
+                    currentStage: formattedDoc.currentStage,
+                    stageStatus: formattedDoc.stageStatus,
+                    processingMode: formattedDoc.processingMode,
+                    isProcessingPaused: formattedDoc.isProcessingPaused
+                });
+                console.log('🔄 [DocumentDetailPage] Setting document state...');
                 setDocument(formattedDoc);
             } catch (err) {
                 console.error('❌ [DocumentDetailPage] Failed to load document:', err);
