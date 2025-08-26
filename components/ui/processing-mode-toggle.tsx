@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Switch } from './switch';
-import { Badge } from './badge';
 import { Settings, Zap } from 'lucide-react';
 
 interface ProcessingModeToggleProps {
@@ -10,7 +9,6 @@ interface ProcessingModeToggleProps {
   onModeChange: (mode: 'MANUAL' | 'AUTOMATIC') => void;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
-  showLabels?: boolean;
   className?: string;
 }
 
@@ -19,15 +17,20 @@ export function ProcessingModeToggle({
   onModeChange,
   disabled = false,
   size = 'md',
-  showLabels = true,
   className = ''
 }: ProcessingModeToggleProps) {
   const isAutomatic = mode === 'AUTOMATIC';
-  
+
   const sizeClasses = {
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-base'
+  };
+
+  const iconSizeClasses = {
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5'
   };
 
   const handleToggle = () => {
@@ -38,37 +41,36 @@ export function ProcessingModeToggle({
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      {showLabels && (
-        <div className="flex items-center space-x-2">
-          <Settings className="w-4 h-4 text-gray-500" />
-          <span className={`font-medium text-gray-700 ${sizeClasses[size]}`}>
-            Manual
-          </span>
-        </div>
-      )}
-      
+      {/* Manual Mode */}
+      <div className={`flex items-center space-x-2 transition-all duration-200 ${
+        !isAutomatic
+          ? 'text-gray-900 font-semibold'
+          : 'text-gray-400 font-normal'
+      }`}>
+        <Settings className={`${iconSizeClasses[size]} ${!isAutomatic ? 'text-gray-700' : 'text-gray-400'}`} />
+        <span className={sizeClasses[size]}>
+          Manual
+        </span>
+      </div>
+
       <Switch
         checked={isAutomatic}
         onCheckedChange={handleToggle}
         disabled={disabled}
         className="data-[state=checked]:bg-blue-600"
       />
-      
-      {showLabels && (
-        <div className="flex items-center space-x-2">
-          <Zap className="w-4 h-4 text-blue-500" />
-          <span className={`font-medium text-blue-700 ${sizeClasses[size]}`}>
-            Automatic
-          </span>
-        </div>
-      )}
-      
-      <Badge 
-        variant={isAutomatic ? 'default' : 'secondary'}
-        className={`ml-2 ${sizeClasses[size]}`}
-      >
-        {mode}
-      </Badge>
+
+      {/* Automatic Mode */}
+      <div className={`flex items-center space-x-2 transition-all duration-200 ${
+        isAutomatic
+          ? 'text-blue-700 font-semibold'
+          : 'text-gray-400 font-normal'
+      }`}>
+        <Zap className={`${iconSizeClasses[size]} ${isAutomatic ? 'text-blue-500' : 'text-gray-400'}`} />
+        <span className={sizeClasses[size]}>
+          Automatic
+        </span>
+      </div>
     </div>
   );
 }

@@ -40,7 +40,7 @@ export default function JobsPage() {
 
             if (response.ok) {
                 const updatedJob = await response.json();
-                
+
                 // Update the job in the local state if it was refreshed
                 const updatedJobs = jobs.map((j) =>
                     j.id === job.id ? { ...j, ...updatedJob } : j

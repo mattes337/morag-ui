@@ -6,6 +6,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { stageExecutionService } from './stageExecutionService';
 import { backgroundJobService } from './backgroundJobService';
+import { RealmCountService } from './realmCountService';
 
 export interface MigrationOptions {
   copyStageFiles: boolean;
@@ -610,23 +611,10 @@ export class DocumentMigrationService {
 
     // Update realm document counts
     if (context.migrationOptions.migrationMode === 'move') {
-      // Decrement source realm count
-      await prisma.realm.update({
-        where: { id: context.sourceDocument.realmId },
-        data: {
-          documentCount: { decrement: 1 },
-          lastUpdated: new Date(),
-        },
-      });
-
-      // Increment target realm count
-      await prisma.realm.update({
-        where: { id: context.targetRealmId },
-        data: {
-          documentCount: { increment: 1 },
-          lastUpdated: new Date(),
-        },
-      });
+      await RealmCountService.handleDocumentRealmMigration(
+        context.sourceDocument.realmId,
+        context.targetRealmId
+      );
     }
     // For copy operations, the document count is already updated in createDocument
   }

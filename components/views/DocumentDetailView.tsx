@@ -11,7 +11,7 @@ import { ProcessingHistory } from '../ui/processing-history';
 import { DocumentStatistics } from '../ui/document-statistics';
 import { ToastService } from '../../lib/services/toastService';
 
-import { Badge } from '../ui/badge';
+
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -767,9 +767,6 @@ Please check back later or refresh the page to see the processed content.`;
                                     <span>Processing Status</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
-                                    <Badge variant={(document.processingMode || 'AUTOMATIC') === 'AUTOMATIC' ? 'default' : 'secondary'}>
-                                        {document.processingMode || 'AUTOMATIC'} Mode
-                                    </Badge>
                                     <ProcessingModeToggle
                                         mode={document.processingMode || 'AUTOMATIC'}
                                         onModeChange={async (mode) => {

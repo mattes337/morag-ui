@@ -1,6 +1,7 @@
 import { Document, DocumentState, ProcessingMode } from '@prisma/client';
 import { prisma } from '../database';
 import { EnhancedDocumentDeletionService } from './enhancedDocumentDeletionService';
+import { RealmCountService } from './realmCountService';
 
 export class DocumentService {
     static async createDocument(data: {
@@ -27,15 +28,7 @@ export class DocumentService {
         console.log('Document created in database with processingMode:', document.processingMode);
 
         // Update realm document count
-        await prisma.realm.update({
-            where: { id: data.realmId },
-            data: {
-                documentCount: {
-                    increment: 1,
-                },
-                lastUpdated: new Date(),
-            },
-        });
+        await RealmCountService.incrementRealmDocumentCount(data.realmId);
 
         return document;
     }
@@ -215,15 +208,7 @@ export class DocumentService {
 
             // Update realm document count
             if (document.realmId) {
-                await prisma.realm.update({
-                    where: { id: document.realmId },
-                    data: {
-                        documentCount: {
-                            decrement: 1,
-                        },
-                        lastUpdated: new Date(),
-                    },
-                });
+                await RealmCountService.decrementRealmDocumentCount(document.realmId);
             }
 
             return result;
@@ -237,15 +222,7 @@ export class DocumentService {
 
             // Update realm document count
             if (document.realmId) {
-                await prisma.realm.update({
-                    where: { id: document.realmId },
-                    data: {
-                        documentCount: {
-                            decrement: 1,
-                        },
-                        lastUpdated: new Date(),
-                    },
-                });
+                await RealmCountService.decrementRealmDocumentCount(document.realmId);
             }
 
             return deletedDocument;

@@ -128,8 +128,13 @@ export function DocumentsView({
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium">
                                         <button
-                                            onClick={() => onViewDocumentDetail(doc)}
-                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onViewDocumentDetail(doc);
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left break-all"
+                                            type="button"
                                         >
                                             {doc.name}
                                         </button>

@@ -39,6 +39,34 @@ class StageExecutionService {
    * Start a new stage execution
    */
   async startExecution(input: StageExecutionInput): Promise<StageExecutionOutput> {
+    // Check if there's already a running execution for this document and stage
+    const existingRunningExecution = await prisma.stageExecution.findFirst({
+      where: {
+        documentId: input.documentId,
+        stage: input.stage,
+        status: 'RUNNING',
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    if (existingRunningExecution) {
+      console.log(`Stage ${input.stage} is already running for document ${input.documentId}, returning existing execution`);
+      return this.mapToOutput(existingRunningExecution);
+    }
+
+    // Check if any stage is currently running for this document
+    const anyRunningExecution = await prisma.stageExecution.findFirst({
+      where: {
+        documentId: input.documentId,
+        status: 'RUNNING',
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    if (anyRunningExecution) {
+      throw new Error(`Cannot start stage ${input.stage} - stage ${anyRunningExecution.stage} is already running for document ${input.documentId}`);
+    }
+
     const execution = await prisma.stageExecution.create({
       data: {
         documentId: input.documentId,
@@ -59,6 +87,7 @@ class StageExecutionService {
       },
     });
 
+    console.log(`Started new execution for stage ${input.stage} on document ${input.documentId}`);
     return this.mapToOutput(execution);
   }
 
@@ -164,6 +193,35 @@ class StageExecutionService {
     if (!execution) return null;
 
     return this.mapToOutput(execution);
+  }
+
+  /**
+   * Check if any stage is currently running for a document
+   */
+  async isAnyStageRunning(documentId: string): Promise<boolean> {
+    const runningExecution = await prisma.stageExecution.findFirst({
+      where: {
+        documentId,
+        status: 'RUNNING',
+      },
+    });
+
+    return !!runningExecution;
+  }
+
+  /**
+   * Get the currently running stage for a document
+   */
+  async getRunningStage(documentId: string): Promise<ProcessingStage | null> {
+    const runningExecution = await prisma.stageExecution.findFirst({
+      where: {
+        documentId,
+        status: 'RUNNING',
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    return runningExecution?.stage || null;
   }
 
   /**

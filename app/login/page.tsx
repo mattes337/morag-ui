@@ -10,38 +10,79 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [headerAuthEnabled, setHeaderAuthEnabled] = useState(false);
+    const [autoLoginEnabled, setAutoLoginEnabled] = useState(false);
+    const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
     const router = useRouter();
     const { setUser } = useApp();
 
     useEffect(() => {
-        // Check if header auth is enabled
+        // Check auth configuration and perform auto-login if enabled
         const checkAuthMode = async () => {
             try {
-                const response = await fetch('/api/auth/login', {
+                // First check if user is already authenticated
+                const loginResponse = await fetch('/api/auth/login', {
                     method: 'GET',
                     credentials: 'include'
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
+
+                if (loginResponse.ok) {
+                    const data = await loginResponse.json();
                     // User is already authenticated via headers
                     setUser(data.user);
                     router.push('/');
                     return;
-                } else if (response.status === 403) {
+                } else if (loginResponse.status === 403) {
                     // Header auth enabled but user not enabled
                     setHeaderAuthEnabled(true);
-                } else {
-                    setHeaderAuthEnabled(false);
+                    return;
+                }
+
+                // Check auth configuration
+                const configResponse = await fetch('/api/auth/config', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (configResponse.ok) {
+                    const config = await configResponse.json();
+                    setAutoLoginEnabled(config.enableAutoLogin);
+
+                    // Perform auto-login if enabled and not already attempted
+                    if (config.enableAutoLogin && !autoLoginAttempted) {
+                        setAutoLoginAttempted(true);
+                        await performAutoLogin();
+                    }
                 }
             } catch (error) {
                 console.error('Auth mode check failed:', error);
                 setHeaderAuthEnabled(false);
             }
         };
-        
+
+        const performAutoLogin = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch('/api/auth/auto-login', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data.user);
+                    router.push('/');
+                } else {
+                    console.warn('Auto-login failed, falling back to manual login');
+                }
+            } catch (error) {
+                console.error('Auto-login error:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         checkAuthMode();
-    }, [setUser, router]);
+    }, [setUser, router, autoLoginAttempted]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,6 +116,7 @@ export default function LoginPage() {
     };
 
     const demoCredentials = [
+        { email: 'admin@morag.local', password: 'admin123', role: 'Development Admin' },
         { email: 'admin@example.com', password: 'admin123', role: 'Admin' },
         { email: 'user@example.com', password: 'user123', role: 'User' },
         { email: 'viewer@example.com', password: 'viewer123', role: 'Viewer' },
@@ -84,6 +126,46 @@ export default function LoginPage() {
         setEmail(email);
         setPassword(password);
     };
+
+    // Show loading state during auto-login attempt
+    if (autoLoginEnabled && !autoLoginAttempted && isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                    <div className="text-center">
+                        <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+                            Auto-Login
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Automatically signing you in...
+                        </p>
+                        <div className="mt-8 flex justify-center">
+                            <svg
+                                className="animate-spin h-8 w-8 text-blue-600"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Don't show login form if header auth is enabled
     if (headerAuthEnabled) {
@@ -285,6 +367,11 @@ export default function LoginPage() {
                             <p data-oid="o_u_xgo">
                                 Use any of the demo credentials above to sign in
                             </p>
+                            {autoLoginEnabled && (
+                                <p className="mt-2 text-blue-600">
+                                    Auto-login is enabled for development
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
