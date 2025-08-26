@@ -835,8 +835,43 @@ class BackgroundJobService {
         }
       }
 
+      // Complete the stage execution record
+      const latestExecution = await stageExecutionService.getLatestExecution(job.documentId, job.stage);
+      if (latestExecution) {
+        await stageExecutionService.completeExecution(
+          latestExecution.id,
+          result.output_files?.map((file: any) => file.file_path || file) || [],
+          {
+            immediateCompletion: true,
+            executionTime: result.metadata?.execution_time || 0,
+            ...result.metadata
+          }
+        );
+        console.log(`✅ [MoRAG] Stage execution ${latestExecution.id} completed for immediate result`);
+      }
+
       // Update document state based on stage completion
       await this.updateDocumentForStageCompletion(job, result);
+
+      // Check if we should schedule the next stage for automatic processing
+      const jobWithDocument = await prisma.processingJob.findUnique({
+        where: { id: job.id },
+        include: { document: true },
+      });
+
+      if (jobWithDocument?.document.processingMode === ProcessingMode.AUTOMATIC) {
+        const nextStage = await stageExecutionService.advanceToNextStage(jobWithDocument.documentId);
+        if (nextStage) {
+          console.log(`📋 [MoRAG] Scheduling next stage ${nextStage} for document ${jobWithDocument.documentId}`);
+          await this.createJob({
+            documentId: jobWithDocument.documentId,
+            stage: nextStage,
+            priority: jobWithDocument.priority,
+          });
+        } else {
+          console.log(`✅ [MoRAG] No next stage available for document ${jobWithDocument.documentId} - processing complete`);
+        }
+      }
 
       console.log(`✅ [MoRAG] Job ${job.id} immediate completion processed successfully`);
 

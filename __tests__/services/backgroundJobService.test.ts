@@ -581,6 +581,65 @@ describe('BackgroundJobService', () => {
       });
     });
 
+    it('should handle immediate completion and schedule next stage for automatic processing', async () => {
+      // Mock stage execution service methods
+      const mockExecution = {
+        id: 'exec-123',
+        documentId: mockJob.documentId,
+        stage: mockJob.stage,
+        status: 'RUNNING'
+      };
+
+      mockStageExecutionService.getLatestExecution.mockResolvedValue(mockExecution);
+      mockStageExecutionService.completeExecution.mockResolvedValue(mockExecution);
+      mockStageExecutionService.advanceToNextStage.mockResolvedValue('MARKDOWN_OPTIMIZER');
+
+      // Mock MoRAG service to return immediate completion
+      mockMoragService.processStage.mockResolvedValue({
+        success: true,
+        taskId: 'IMMEDIATE_COMPLETION',
+        executionId: 'exec-1',
+        stage: 'markdown-conversion',
+        estimatedTimeSeconds: 0,
+        statusUrl: '',
+        message: 'Stage completed immediately',
+        immediateResult: immediateCompletionResult
+      });
+
+      // Mock job with document for next stage scheduling
+      const mockJobWithDocument = {
+        ...mockJob,
+        document: {
+          ...mockDocument,
+          processingMode: 'AUTOMATIC'
+        }
+      };
+      mockPrisma.processingJob.findUnique.mockResolvedValue(mockJobWithDocument);
+
+      // Call the private method through reflection for testing
+      const callMoragBackend = (backgroundJobService as any).callMoragBackend.bind(backgroundJobService);
+      await callMoragBackend(mockJob, 'exec-1');
+
+      // Verify stage execution was completed
+      expect(mockStageExecutionService.completeExecution).toHaveBeenCalledWith(
+        mockExecution.id,
+        expect.any(Array),
+        expect.objectContaining({
+          immediateCompletion: true
+        })
+      );
+
+      // Verify next stage was scheduled
+      expect(mockStageExecutionService.advanceToNextStage).toHaveBeenCalledWith(mockJob.documentId);
+
+      // Verify new job was created for next stage
+      expect(backgroundJobService.createJob).toHaveBeenCalledWith({
+        documentId: mockJob.documentId,
+        stage: 'MARKDOWN_OPTIMIZER',
+        priority: mockJob.priority,
+      });
+    });
+
     it('should handle immediate completion with no output files', async () => {
       const resultWithoutFiles = {
         ...immediateCompletionResult,
