@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Document } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing-status-display';
 import { ProcessingModeToggle } from '../ui/processing-mode-toggle';
 import { StageControlPanel } from '../ui/stage-control-panel';
+import { MarkdownPreview } from '../ui/MarkdownPreview';
 import { ProcessingHistory } from '../ui/processing-history';
 import { DocumentStatistics } from '../ui/document-statistics';
 import { ToastService } from '../../lib/services/toastService';
@@ -457,56 +458,16 @@ export function DocumentDetailView({
         }
     };
 
+    // Memoize files to prevent unnecessary re-renders of MarkdownPreview
+    const stableFiles = useMemo(() => files, [files.length, files.map(f => f.id).join(',')]);
+
     const renderDocumentEmbed = () => {
         const docType = document.type?.toLowerCase() || '';
         const docName = document.name?.toLowerCase() || '';
 
         // Handle markdown files
         if (docType === 'markdown' || docName.includes('.md') || docName.includes('.markdown')) {
-            // Use actual document markdown content or fallback message
-            const markdownContent = document.markdown || `# ${document.name}
-
-## Document Preview
-
-This document is still being processed. The markdown content will appear here once processing is complete.
-
-### Processing Information
-- **Status**: ${document.state}
-- **Chunks**: ${document.chunks || 0}
-- **Quality**: ${document.quality ? (document.quality * 100).toFixed(1) : '0'}%
-
-Please check back later or refresh the page to see the processed content.`;
-
-            return (
-                <div className="w-full border border-gray-300 rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                        <span className="text-sm font-medium text-gray-700">Markdown Preview</span>
-                    </div>
-                    <div className="p-6 bg-white max-h-96 overflow-y-auto">
-                        <div className="prose prose-sm max-w-none">
-                            <ReactMarkdown 
-                                components={{
-                                h1: ({children}) => <h1 className="text-2xl font-bold mb-4 text-gray-900">{children}</h1>,
-                                h2: ({children}) => <h2 className="text-xl font-semibold mb-3 text-gray-800">{children}</h2>,
-                                h3: ({children}) => <h3 className="text-lg font-medium mb-2 text-gray-700">{children}</h3>,
-                                p: ({children}) => <p className="mb-3 text-gray-600 leading-relaxed">{children}</p>,
-                                ul: ({children}) => <ul className="list-disc list-inside mb-3 text-gray-600">{children}</ul>,
-                                ol: ({children}) => <ol className="list-decimal list-inside mb-3 text-gray-600">{children}</ol>,
-                                li: ({children}) => <li className="mb-1">{children}</li>,
-                                blockquote: ({children}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-3">{children}</blockquote>,
-                                code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-gray-800">{children}</code>,
-                                pre: ({children}) => <pre className="bg-gray-100 p-3 rounded overflow-x-auto mb-3">{children}</pre>,
-                                a: ({children, href}) => <a href={href} className="text-blue-600 hover:text-blue-800 underline">{children}</a>,
-                                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                                em: ({children}) => <em className="italic">{children}</em>
-                            }}
-                            >
-                            {markdownContent}
-                            </ReactMarkdown>
-                        </div>
-                    </div>
-                </div>
-            );
+            return <MarkdownPreview key={document.id} document={document} files={stableFiles} />;
         }
 
         // Handle PDF files
@@ -828,34 +789,6 @@ Please check back later or refresh the page to see the processed content.`;
                         onDownloadOutput={handleDownloadFile}
                     />
 
-                    {/* Quick Stage Execution */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <Activity className="w-5 h-5" />
-                                <span>Quick Stage Execution</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {['MARKDOWN_CONVERSION', 'CHUNKER', 'INGESTOR'].map((stage) => (
-                                    <Button
-                                        key={stage}
-                                        variant="outline"
-                                        onClick={() => handleExecuteStage(stage)}
-                                        disabled={isExecutingStage}
-                                        className="flex items-center space-x-2 h-auto py-3"
-                                    >
-                                        <Activity className="w-4 h-4" />
-                                        <span className="text-sm">{stage.replace('_', ' ')}</span>
-                                    </Button>
-                                ))}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-3">
-                                Click any stage to execute it for this document. Make sure you&apos;re logged in.
-                            </p>
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
                 <TabsContent value="files" className="space-y-6">

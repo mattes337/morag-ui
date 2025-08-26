@@ -209,6 +209,10 @@ export class MoragService {
    * Process a specific stage for a document using the new API
    */
   async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
+    console.log(`🎯 [MoragService] Processing stage ${request.stage} for document ${request.documentId}`);
+    console.log(`🔗 [MoragService] Backend URL: ${this.baseUrl}`);
+    console.log(`🔑 [MoragService] Has API Key: ${!!this.apiKey}`);
+
     const canonicalStage = this.getCanonicalStageName(request.stage);
 
     // Create form data for the new API according to BACKEND.json specification

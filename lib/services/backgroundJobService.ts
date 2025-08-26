@@ -99,17 +99,25 @@ class BackgroundJobService {
    * Create a new processing job
    */
   async createJob(input: ProcessingJobInput): Promise<ProcessingJobOutput> {
-    const job = await prisma.processingJob.create({
-      data: {
-        documentId: input.documentId,
-        stage: input.stage,
-        priority: input.priority || 0,
-        scheduledAt: input.scheduledAt || new Date(),
-        metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-      },
-    });
+    console.log(`🔧 [BackgroundJobService] Creating job for document ${input.documentId}, stage ${input.stage}`);
 
-    return this.mapToOutput(job);
+    try {
+      const job = await prisma.processingJob.create({
+        data: {
+          documentId: input.documentId,
+          stage: input.stage,
+          priority: input.priority || 0,
+          scheduledAt: input.scheduledAt || new Date(),
+          metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+        },
+      });
+
+      console.log(`✅ [BackgroundJobService] Job created successfully: ${job.id}`);
+      return this.mapToOutput(job);
+    } catch (error) {
+      console.error(`❌ [BackgroundJobService] Failed to create job:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -194,7 +202,10 @@ class BackgroundJobService {
     failed: number;
     skipped: number;
   }> {
+    console.log(`🔄 [BackgroundJobService] Starting job processing (batch size: ${batchSize})`);
+
     if (this.isProcessing) {
+      console.log(`⏸️ [BackgroundJobService] Already processing, skipping`);
       return { processed: 0, failed: 0, skipped: 0 };
     }
 
@@ -653,6 +664,7 @@ class BackgroundJobService {
    * Call the MoRAG backend to process a stage
    */
   private async callMoragBackend(job: any, executionId: string): Promise<void> {
+    console.log(`🚀 [BackgroundJobService] Calling MoRAG backend for job ${job.id}, execution ${executionId}`);
     const webhookUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/webhooks/stages`;
 
     try {
@@ -902,28 +914,103 @@ class BackgroundJobService {
         case 'markdown-conversion':
           // Update document with markdown content if available
           if (result.output_files && result.output_files.length > 0) {
-            // Keep document in INGESTING state - only mark as INGESTED when all stages complete
-            updateData.state = DocumentState.INGESTING;
-            console.log(`Document ${job.documentId} markdown conversion completed, keeping in INGESTING state`);
+            // Extract markdown content from the first output file
+            const markdownFile = result.output_files.find((file: any) =>
+              file.content_type === 'text/markdown' || file.filename.endsWith('.md')
+            );
+
+            let markdownContent = null;
+
+            if (markdownFile && markdownFile.content) {
+              markdownContent = markdownFile.content;
+              console.log(`Document ${job.documentId} markdown content stored (${markdownFile.content.length} characters)`);
+            } else if (markdownFile && markdownFile.file_path) {
+              // If content is not directly available, try to read from file path
+              try {
+                const fs = require('fs');
+                if (fs.existsSync(markdownFile.file_path)) {
+                  markdownContent = fs.readFileSync(markdownFile.file_path, 'utf-8');
+                  console.log(`Document ${job.documentId} markdown content read from file (${markdownContent.length} characters)`);
+                }
+              } catch (fileError) {
+                console.warn(`Could not read markdown file for document ${job.documentId}:`, fileError);
+              }
+            }
+
+            // Fallback: If no content available and this is a markdown document, use original file
+            if (!markdownContent) {
+              try {
+                const { unifiedFileService } = await import('./unifiedFileService');
+                const originalFile = await unifiedFileService.getOriginalFile(job.documentId);
+
+                if (originalFile && (originalFile.filename.endsWith('.md') || originalFile.filename.endsWith('.markdown'))) {
+                  const fileWithContent = await unifiedFileService.getFile(originalFile.id, true);
+                  if (fileWithContent && fileWithContent.content) {
+                    markdownContent = fileWithContent.content.toString();
+                    console.log(`Document ${job.documentId} using original markdown file as fallback (${markdownContent.length} characters)`);
+                  }
+                }
+              } catch (fallbackError) {
+                console.warn(`Could not use original file as fallback for document ${job.documentId}:`, fallbackError);
+              }
+            }
+
+            if (markdownContent) {
+              // Store markdown content in document
+              updateData.markdown = markdownContent;
+
+              // Create a file record for the converted markdown
+              try {
+                const { unifiedFileService } = await import('./unifiedFileService');
+
+                await unifiedFileService.storeFile({
+                  documentId: job.documentId,
+                  fileType: 'STAGE_OUTPUT',
+                  stage: 'MARKDOWN_CONVERSION',
+                  filename: 'converted_document.md', // Use short filename to avoid DB constraints
+                  originalName: markdownFile.filename || 'converted_document.md',
+                  content: markdownContent,
+                  contentType: 'text/markdown',
+                  isPublic: false,
+                  accessLevel: 'REALM_MEMBERS',
+                  metadata: {
+                    convertedFrom: 'morag-backend',
+                    taskId: job.id,
+                    convertedAt: new Date().toISOString(),
+                    stage: 'markdown-conversion',
+                    originalFileInfo: markdownFile,
+                    jobMetadata: job.metadata ? JSON.parse(job.metadata) : null,
+                  },
+                });
+
+                console.log(`Document ${job.documentId} converted markdown file record created`);
+              } catch (fileError) {
+                console.warn(`Could not create file record for converted markdown:`, fileError);
+              }
+            }
+
+            // Update document state based on processing progress
+            await this.updateDocumentStateBasedOnProgress(job.documentId);
+            console.log(`Document ${job.documentId} markdown conversion completed`);
           }
           break;
 
         case 'chunking':
-          // Keep document in INGESTING state - only mark as INGESTED when all stages complete
-          updateData.state = DocumentState.INGESTING;
-          console.log(`Document ${job.documentId} chunking completed, keeping in INGESTING state`);
+          // Update document state based on processing progress
+          await this.updateDocumentStateBasedOnProgress(job.documentId);
+          console.log(`Document ${job.documentId} chunking completed`);
           break;
 
         case 'embedding':
-          // Keep document in INGESTING state - only mark as INGESTED when all stages complete
-          updateData.state = DocumentState.INGESTING;
-          console.log(`Document ${job.documentId} embedding completed, keeping in INGESTING state`);
+          // Update document state based on processing progress
+          await this.updateDocumentStateBasedOnProgress(job.documentId);
+          console.log(`Document ${job.documentId} embedding completed`);
           break;
 
         case 'ingestor':
-          // Only mark as INGESTED when the final ingestor stage completes
-          updateData.state = DocumentState.INGESTED;
-          console.log(`Document ${job.documentId} marked as ingested after final ingestor stage`);
+          // Update document state based on processing progress (should be INGESTED now)
+          await this.updateDocumentStateBasedOnProgress(job.documentId);
+          console.log(`Document ${job.documentId} ingestor stage completed`);
           break;
 
         default:
@@ -941,6 +1028,43 @@ class BackgroundJobService {
     } catch (error) {
       console.error(`Failed to update document for stage completion:`, error);
       // Don't throw - this is not critical for job completion
+    }
+  }
+
+  /**
+   * Update document state based on processing progress
+   */
+  private async updateDocumentStateBasedOnProgress(documentId: string): Promise<void> {
+    try {
+      const { stageExecutionService } = await import('./stageExecutionService');
+      const pipelineStatus = await stageExecutionService.getDocumentPipelineStatus(documentId);
+
+      let newState: DocumentState = DocumentState.INGESTING; // Default to INGESTING
+
+      // Determine state based on progress
+      if (pipelineStatus.completedStages.length === 0) {
+        newState = DocumentState.PENDING;
+      } else if (pipelineStatus.completedStages.length === 5) {
+        // All stages complete
+        newState = DocumentState.INGESTED;
+      } else {
+        // Some stages complete, still processing
+        newState = DocumentState.INGESTING;
+      }
+
+      await prisma.document.update({
+        where: { id: documentId },
+        data: { state: newState }
+      });
+
+      console.log(`Document ${documentId} state updated to ${newState} (${pipelineStatus.completedStages.length}/5 stages complete)`);
+    } catch (error) {
+      console.warn(`Could not update document state for ${documentId}:`, error);
+      // Fallback to INGESTING state
+      await prisma.document.update({
+        where: { id: documentId },
+        data: { state: DocumentState.INGESTING }
+      });
     }
   }
 

@@ -328,11 +328,12 @@ export function StageControlPanel({
             const duration = stageInfo ? getStageDuration(stageInfo) : '';
 
             // Determine if this stage should be collapsed
-            const isNextExecutable = canExecute && !isRunning;
-            const shouldCollapse = !isRunning && !isFailed && !isNextExecutable && (isCompleted || isSkipped || !canExecute);
+            const isNextExecutable = canExecute && !isRunning && !isCompleted && !isSkipped;
+            //const shouldCollapse = !isRunning && !isFailed && !isNextExecutable && (isCompleted || isSkipped || !canExecute);
+            const shouldCollapse = !isRunning && !isNextExecutable;
 
             return (
-              <div key={stageName} className="flex items-center">
+              <div key={stageName} className="flex items-center pt-3">
                 {/* Collapsed view for completed/skipped stages */}
                 {shouldCollapse ? (
                   <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg border border-gray-200 w-[20px] h-full justify-start space-y-3">
