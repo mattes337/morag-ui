@@ -258,19 +258,21 @@ export function DocumentDetailView({
 
     // Load document data when document changes
     useEffect(() => {
+        let isCancelled = false;
+
         if (document?.id) {
             console.log('🔄 [DocumentDetailView] Document ID changed, checking for pre-loaded data:', document.id);
 
             // Check if we have pre-loaded data from the complete API call
             const completeData = (window as any).__documentCompleteData;
-            if (completeData) {
+            if (completeData && completeData.documentId === document.id) {
                 console.log('✅ [DocumentDetailView] Using pre-loaded complete data');
 
                 // Use pre-loaded files
-                setFiles(completeData.files || []);
+                if (!isCancelled) setFiles(completeData.files || []);
 
                 // Use pre-loaded pipeline status to generate stage infos
-                if (completeData.pipelineStatus) {
+                if (completeData.pipelineStatus && !isCancelled) {
                     const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
                     const stageInfos = stages.map(stage => {
                         const isCompleted = completeData.pipelineStatus?.completedStages?.includes(stage);
@@ -297,18 +299,26 @@ export function DocumentDetailView({
                 }
 
                 // Set processing status
-                setIsProcessing(completeData.isProcessing || false);
-                setIsLoadingFiles(false);
+                if (!isCancelled) {
+                    setIsProcessing(completeData.isProcessing || false);
+                    setIsLoadingFiles(false);
+                }
 
                 // Clear the pre-loaded data
                 delete (window as any).__documentCompleteData;
             } else {
                 console.log('⚠️ [DocumentDetailView] No pre-loaded data, falling back to API calls');
-                setIsLoadingFiles(true);
-                loadDocumentData();
+                if (!isCancelled) {
+                    setIsLoadingFiles(true);
+                    loadDocumentData();
+                }
             }
         }
-    }, [document?.id, loadDocumentData]);
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [document?.id]); // Removed loadDocumentData dependency to prevent infinite loops
 
     // Poll document data when processing is active
     useEffect(() => {

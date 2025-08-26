@@ -187,7 +187,11 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
     // Combined auth check and API health check on mount
     useEffect(() => {
+        let isCancelled = false;
+
         const initializeApp = async () => {
+            if (isCancelled) return;
+
             console.log('🚀 [AppContext] Initializing app...');
             setIsAuthChecking(true);
 
@@ -195,24 +199,32 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 // Check API health first
                 console.log('🏥 [AppContext] Checking API health');
                 const healthy = await checkApiHealth();
+                if (isCancelled) return;
+
                 setApiHealthy(healthy);
                 console.log('✅ [AppContext] API health check completed:', healthy);
-
-
 
                 // Check authentication
                 console.log('🔐 [AppContext] Checking authentication');
                 await checkAuthentication();
 
             } catch (error) {
-                console.error('❌ [AppContext] App initialization failed:', error);
+                if (!isCancelled) {
+                    console.error('❌ [AppContext] App initialization failed:', error);
+                }
             } finally {
-                setIsAuthChecking(false);
-                console.log('✅ [AppContext] App initialization completed');
+                if (!isCancelled) {
+                    setIsAuthChecking(false);
+                    console.log('✅ [AppContext] App initialization completed');
+                }
             }
         };
 
         initializeApp();
+
+        return () => {
+            isCancelled = true;
+        };
     }, []);
 
     // Authentication check function
@@ -251,40 +263,66 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
     // Load data when user becomes authenticated
     useEffect(() => {
+        let isCancelled = false;
+
         const loadInitialData = async () => {
             if (!user) {
                 console.log('👤 [AppContext] No user, skipping data load');
-                setIsDataLoading(false);
+                if (!isCancelled) setIsDataLoading(false);
                 return;
             }
 
             console.log('🔄 [AppContext] User authenticated, loading data for:', user.email);
-            setIsDataLoading(true);
+            if (!isCancelled) setIsDataLoading(true);
 
             try {
                 // Load current realm first
                 await loadCurrentRealm();
-                
+                if (isCancelled) return;
+
                 // Load user-specific data
                 await loadUserData();
             } catch (error) {
-                console.error('❌ [AppContext] Failed to load user data:', error);
+                if (!isCancelled) {
+                    console.error('❌ [AppContext] Failed to load user data:', error);
+                }
             } finally {
-                console.log('✅ [AppContext] Data load completed');
-                setIsDataLoading(false);
+                if (!isCancelled) {
+                    console.log('✅ [AppContext] Data load completed');
+                    setIsDataLoading(false);
+                }
             }
         };
 
         loadInitialData();
+
+        return () => {
+            isCancelled = true;
+        };
     }, [user?.id]); // Only trigger when user changes from null to authenticated
 
-    // Reload data when realm changes
+    // Reload data when realm changes (but only if we already have a user and the realm actually changed)
     useEffect(() => {
-        if (user && currentRealm) {
-            console.log('🏰 [AppContext] Realm changed, reloading data for realm:', currentRealm.name);
-            loadUserData();
+        let isCancelled = false;
+
+        // Skip if no user or if this is the initial realm load (handled by the user effect above)
+        if (!user || !currentRealm) {
+            return;
         }
-    }, [currentRealm?.id, user]);
+
+        // Only reload if we have previously loaded data (avoid duplicate initial load)
+        if (!isDataLoading) {
+            console.log('🏰 [AppContext] Realm changed, reloading data for realm:', currentRealm.name);
+            if (!isCancelled) setIsDataLoading(true);
+            loadUserData().finally(() => {
+                if (!isCancelled) setIsDataLoading(false);
+            });
+        }
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [currentRealm?.id]); // Removed user dependency to prevent duplicate loads
 
     const loadUserData = async () => {
         if (!user) {

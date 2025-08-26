@@ -42,6 +42,8 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     }, [document]);
 
     useEffect(() => {
+        let isCancelled = false;
+
         const loadDocument = async () => {
             try {
                 console.log('🔍 [DocumentDetailPage] Loading document with ID:', params.id);
@@ -52,8 +54,8 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     documentCurrentStage: document?.currentStage,
                     documentStageStatus: document?.stageStatus
                 });
-                setIsLoading(true);
-                setError(null);
+                if (!isCancelled) setIsLoading(true);
+                if (!isCancelled) setError(null);
 
                 // Always fetch from API to get the most current state
                 // Context data might be stale, especially for processing status
@@ -61,6 +63,8 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                 const response = await fetch(`/api/documents/${params.id}/complete`);
 
                 if (!response.ok) {
+                    if (isCancelled) return;
+
                     if (response.status === 404) {
                         console.log('❌ [DocumentDetailPage] Document not found (404)');
                         setError('Document not found');
@@ -78,10 +82,13 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     return;
                 }
 
+                if (isCancelled) return;
+
                 const responseData = await response.json();
                 const docData = responseData.document; // Extract document from the response
 
                 if (!docData || !docData.id) {
+                    if (isCancelled) return;
                     console.error('❌ [DocumentDetailPage] Invalid document data received:', responseData);
                     setError('Invalid document data received from server');
                     setIsLoading(false);
@@ -90,6 +97,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
 
                 // Store the complete response data for DocumentDetailView
                 (window as any).__documentCompleteData = {
+                    documentId: params.id, // Add document ID to prevent stale data usage
                     files: responseData.files || [],
                     pipelineStatus: responseData.pipelineStatus,
                     executionStats: responseData.executionStats,
@@ -131,25 +139,31 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                     isProcessingPaused: formattedDoc.isProcessingPaused
                 });
                 console.log('🔄 [DocumentDetailPage] Setting document state...');
-                setDocument(formattedDoc);
+                if (!isCancelled) setDocument(formattedDoc);
             } catch (err) {
-                console.error('❌ [DocumentDetailPage] Failed to load document:', err);
-                const errorMessage = err instanceof Error ? err.message : 'Failed to load document';
-                setError(errorMessage);
+                if (!isCancelled) {
+                    console.error('❌ [DocumentDetailPage] Failed to load document:', err);
+                    const errorMessage = err instanceof Error ? err.message : 'Failed to load document';
+                    setError(errorMessage);
 
-                // Only redirect on specific errors, not all errors
-                if (errorMessage.includes('404') || errorMessage.includes('not found')) {
-                    console.log('🔄 [DocumentDetailPage] Redirecting due to document not found');
-                    setTimeout(() => router.push('/documents'), 3000);
-                } else {
-                    console.log('⚠️ [DocumentDetailPage] Staying on page despite error:', errorMessage);
+                    // Only redirect on specific errors, not all errors
+                    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+                        console.log('🔄 [DocumentDetailPage] Redirecting due to document not found');
+                        setTimeout(() => router.push('/documents'), 3000);
+                    } else {
+                        console.log('⚠️ [DocumentDetailPage] Staying on page despite error:', errorMessage);
+                    }
                 }
             } finally {
-                setIsLoading(false);
+                if (!isCancelled) setIsLoading(false);
             }
         };
 
         loadDocument();
+
+        return () => {
+            isCancelled = true;
+        };
     }, [params.id, router]); // Removed documents and isDataLoading to prevent infinite re-renders
 
     // Set the selected document if it's not already set or different
