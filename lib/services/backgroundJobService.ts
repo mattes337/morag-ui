@@ -874,6 +874,7 @@ class BackgroundJobService {
       // Determine what content to use based on the stage
       let documentContent = '';
       let contentSource = 'none';
+      let sourceUrl = null;
 
       if (job.stage === 'MARKDOWN_CONVERSION') {
         // For markdown conversion, we need the original file content
@@ -882,6 +883,14 @@ class BackgroundJobService {
           if (fileWithContent && fileWithContent.content) {
             documentContent = fileWithContent.content;
             contentSource = 'original_file';
+
+            // Check if this is a URL-based document by examining the metadata
+            const metadata = fileWithContent.metadata || {};
+            if (metadata.sourceUrl) {
+              sourceUrl = metadata.sourceUrl;
+              contentSource = 'url';
+              console.log(`📄 [BackgroundJob] Detected URL-based document: ${sourceUrl}`);
+            }
           } else {
             throw new Error(`Failed to retrieve content for original file ${originalFile.id}`);
           }
@@ -905,7 +914,7 @@ class BackgroundJobService {
         document: {
           id: document.id,
           title: document.name,
-          content: documentContent,
+          content: sourceUrl || documentContent, // Use URL for URL-based documents
           filePath: originalFile?.filepath || '',
           realmId: document.realmId
         },
@@ -915,6 +924,8 @@ class BackgroundJobService {
           documentName: document.name,
           realmId: document.realmId,
           originalFile: originalFile?.filepath,
+          sourceUrl: sourceUrl, // Include source URL for URL-based documents
+          isUrlDocument: !!sourceUrl, // Flag to indicate this is a URL document
           databaseServers: document.realm?.servers?.map((realmServer: any) => ({
             type: realmServer.server.type.toLowerCase(),
             host: realmServer.server.host,

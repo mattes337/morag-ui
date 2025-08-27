@@ -456,21 +456,70 @@ class StageExecutionService {
 
       // The webhook will handle completion/failure updates
     } catch (error) {
-      // If there's an immediate error, fail the execution
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Check if this is a dependency resolution trigger
+      if (errorMessage.includes('DEPENDENCY_RESOLUTION_TRIGGERED')) {
+        console.log(`🔧 [StageExecution] Dependency resolution triggered for ${stage} on document ${documentId}`);
+
+        // Mark the execution as failed with a special status
+        const execution = await this.getLatestExecution(documentId, stage);
+        if (execution) {
+          await this.failExecution(execution.id, errorMessage, {
+            dependencyResolutionTriggered: true,
+            originalStage: stage
+          });
+        }
+
+        // Update document status to indicate dependency resolution is in progress
+        await prisma.document.update({
+          where: { id: documentId },
+          data: {
+            stageStatus: 'DEPENDENCY_RESOLUTION',
+            lastStageError: `Resolving dependencies for ${stage}`,
+          },
+        });
+
+        // Don't throw the error - dependency resolution was successfully triggered
+        console.log(`✅ [StageExecution] Dependency resolution initiated for ${stage}`);
+        return;
+      }
+
+      // Check if this is a missing dependencies error for manual mode
+      if (errorMessage.includes('MISSING_DEPENDENCIES')) {
+        console.log(`⚠️ [StageExecution] Missing dependencies for ${stage} in manual mode`);
+
+        const execution = await this.getLatestExecution(documentId, stage);
+        if (execution) {
+          await this.failExecution(execution.id, errorMessage);
+        }
+
+        await prisma.document.update({
+          where: { id: documentId },
+          data: {
+            stageStatus: 'FAILED',
+            lastStageError: errorMessage,
+          },
+        });
+
+        throw error;
+      }
+
+      // Handle other errors normally
       const execution = await this.getLatestExecution(documentId, stage);
       if (execution) {
-        await this.failExecution(execution.id, error instanceof Error ? error.message : 'Unknown error');
+        await this.failExecution(execution.id, errorMessage);
       }
-      
+
       // Update document status
       await prisma.document.update({
         where: { id: documentId },
         data: {
           stageStatus: 'FAILED',
-          lastStageError: error instanceof Error ? error.message : 'Unknown error',
+          lastStageError: errorMessage,
         },
       });
-      
+
       throw error;
     }
   }

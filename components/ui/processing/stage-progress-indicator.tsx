@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 type ProcessingStage = 'MARKDOWN_CONVERSION' | 'MARKDOWN_OPTIMIZER' | 'CHUNKER' | 'FACT_GENERATOR' | 'INGESTOR';
-type StageStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+type StageStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'DEPENDENCY_RESOLUTION';
 
 interface StageInfo {
   stage: ProcessingStage;
@@ -77,35 +77,41 @@ const STAGE_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-  PENDING: { 
-    color: 'border-gray-300 bg-gray-50', 
-    iconColor: 'text-gray-400', 
+  PENDING: {
+    color: 'border-gray-300 bg-gray-50',
+    iconColor: 'text-gray-400',
     icon: Clock,
     badgeVariant: 'secondary' as const
   },
-  RUNNING: { 
-    color: 'border-blue-500 bg-blue-50', 
-    iconColor: 'text-blue-600', 
+  RUNNING: {
+    color: 'border-blue-500 bg-blue-50',
+    iconColor: 'text-blue-600',
     icon: Loader,
     badgeVariant: 'default' as const
   },
-  COMPLETED: { 
-    color: 'border-green-500 bg-green-50', 
-    iconColor: 'text-green-600', 
+  COMPLETED: {
+    color: 'border-green-500 bg-green-50',
+    iconColor: 'text-green-600',
     icon: CheckCircle,
     badgeVariant: 'default' as const
   },
-  FAILED: { 
-    color: 'border-red-500 bg-red-50', 
-    iconColor: 'text-red-600', 
+  FAILED: {
+    color: 'border-red-500 bg-red-50',
+    iconColor: 'text-red-600',
     icon: XCircle,
     badgeVariant: 'destructive' as const
   },
-  SKIPPED: { 
-    color: 'border-gray-300 bg-gray-50', 
-    iconColor: 'text-gray-400', 
+  SKIPPED: {
+    color: 'border-gray-300 bg-gray-50',
+    iconColor: 'text-gray-400',
     icon: AlertCircle,
     badgeVariant: 'secondary' as const
+  },
+  DEPENDENCY_RESOLUTION: {
+    color: 'border-orange-500 bg-orange-50',
+    iconColor: 'text-orange-600',
+    icon: Loader,
+    badgeVariant: 'default' as const
   }
 };
 

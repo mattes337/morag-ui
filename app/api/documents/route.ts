@@ -251,8 +251,52 @@ export async function POST(request: NextRequest) {
                 processingMode: processingMode || 'AUTOMATIC'
             });
 
+            // If URL is provided, store it as the original content
+            let storedFile = null;
+            if (url) {
+                storedFile = await unifiedFileService.storeFile({
+                    documentId: document.id,
+                    fileType: 'ORIGINAL_DOCUMENT',
+                    filename: `${finalType}_content.txt`,
+                    originalName: name,
+                    content: Buffer.from(url, 'utf-8'),
+                    contentType: 'text/plain',
+                    isPublic: false,
+                    accessLevel: 'REALM_MEMBERS',
+                    metadata: {
+                        sourceUrl: url,
+                        documentType: finalType,
+                        documentSubType: finalSubType,
+                        createdAt: new Date().toISOString(),
+                        createdBy: auth.user!.userId,
+                    }
+                });
+            }
+
+            // Schedule automatic processing if enabled
+            if ((processingMode || 'AUTOMATIC') === 'AUTOMATIC' && storedFile) {
+                try {
+                    // Import the background job service to schedule processing
+                    const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
+
+                    // Schedule basic processing for URL-based documents
+                    const jobId = await backgroundJobService.createJob({
+                        documentId: document.id,
+                        stage: 'MARKDOWN_CONVERSION',
+                        priority: 0,
+                        scheduledAt: new Date()
+                    });
+
+                    console.log(`Document ${document.id} created from URL, scheduled automatic processing with job ${jobId}`);
+                } catch (processingError) {
+                    console.error(`Failed to schedule automatic processing for document ${document.id}:`, processingError);
+                    // Don't fail the creation if processing scheduling fails
+                }
+            }
+
             return NextResponse.json({
                 document,
+                file: storedFile,
                 message: 'Document created successfully'
             }, { status: 201 });
         }

@@ -108,6 +108,7 @@ const STATUS_CONFIG = {
   COMPLETED: { color: 'bg-green-500', icon: CheckCircle, label: 'Completed' },
   FAILED: { color: 'bg-red-500', icon: XCircle, label: 'Failed' },
   SKIPPED: { color: 'bg-gray-400', icon: ChevronRight, label: 'Skipped' },
+  DEPENDENCY_RESOLUTION: { color: 'bg-orange-500', icon: LoadingSpinner, label: 'Resolving Dependencies' },
 };
 
 export function StageVisualizationView({

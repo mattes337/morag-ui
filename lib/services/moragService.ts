@@ -482,6 +482,52 @@ export class MoragService {
   }
 
   /**
+   * Check if a stage has missing dependencies and can trigger automatic resolution
+   */
+  private async checkMissingDependencies(documentId: string, stage: string): Promise<{ hasMissingDeps: boolean; missingStages: string[] }> {
+    console.log(`🔍 [MoRAG] Checking missing dependencies for stage ${stage} on document ${documentId}`);
+
+    // Define stage dependencies
+    const stageDependencies: Record<string, string[]> = {
+      'MARKDOWN_OPTIMIZER': ['MARKDOWN_CONVERSION'],
+      'CHUNKER': ['MARKDOWN_CONVERSION'], // Chunker requires markdown conversion (optimizer is optional)
+      'FACT_GENERATOR': ['CHUNKER'],
+      'INGESTOR': ['FACT_GENERATOR'],
+    };
+
+    const dependencies = stageDependencies[stage];
+    if (!dependencies || dependencies.length === 0) {
+      return { hasMissingDeps: false, missingStages: [] };
+    }
+
+    // Import here to avoid circular dependency
+    const { stageExecutionService } = await import('./stageExecutionService');
+
+    const missingStages: string[] = [];
+
+    // For chunker, we only require MARKDOWN_CONVERSION (not MARKDOWN_OPTIMIZER)
+    if (stage === 'CHUNKER') {
+      const execution = await stageExecutionService.getLatestExecution(documentId, 'MARKDOWN_CONVERSION' as any);
+      if (!execution || execution.status !== 'COMPLETED' || !execution.outputFiles || execution.outputFiles.length === 0) {
+        missingStages.push('MARKDOWN_CONVERSION');
+      }
+    } else {
+      // For other stages, check all dependencies
+      for (const depStage of dependencies) {
+        const execution = await stageExecutionService.getLatestExecution(documentId, depStage as any);
+        if (!execution || execution.status !== 'COMPLETED' || !execution.outputFiles || execution.outputFiles.length === 0) {
+          missingStages.push(depStage);
+        }
+      }
+    }
+
+    return {
+      hasMissingDeps: missingStages.length > 0,
+      missingStages
+    };
+  }
+
+  /**
    * Process a specific stage for a document using the new API
    */
   async processStage(request: StageProcessRequest): Promise<StageProcessResponse> {
@@ -494,29 +540,39 @@ export class MoragService {
     // Create form data for the new API according to BACKEND.json specification
     const formData = new FormData();
 
+    // Check if this is a URL-based document
+    const isUrlDocument = request.metadata?.isUrlDocument || false;
+    const sourceUrl = request.metadata?.sourceUrl;
+
     // Check if we have document content to upload as a file
-    const hasFileContent = request.document.content && request.document.content.trim().length > 0;
+    const hasFileContent = !isUrlDocument && request.document.content && request.document.content.trim().length > 0;
 
     // Determine input files based on stage dependencies
     let inputFiles: string[] = [];
 
-    console.log(`🔍 [MoRAG] Determining input files for stage ${request.stage}, hasFileContent: ${hasFileContent}`);
+    console.log(`🔍 [MoRAG] Determining input files for stage ${request.stage}, hasFileContent: ${hasFileContent}, isUrlDocument: ${isUrlDocument}`);
 
-    // For stages that depend on previous stages, get output files from previous stage
-    const shouldUsePrevious = await this.shouldUsePreviousStageOutput(request.documentId, request.stage);
-    console.log(`🔍 [MoRAG] Should use previous stage output: ${shouldUsePrevious}`);
+    if (isUrlDocument && sourceUrl) {
+      // For URL documents, pass the URL in input_files array
+      inputFiles = [sourceUrl];
+      console.log(`🌐 [MoRAG] Processing URL document: ${sourceUrl}`);
+    } else {
+      // For stages that depend on previous stages, get output files from previous stage
+      const shouldUsePrevious = await this.shouldUsePreviousStageOutput(request.documentId, request.stage);
+      console.log(`🔍 [MoRAG] Should use previous stage output: ${shouldUsePrevious}`);
 
-    if (shouldUsePrevious) {
-      inputFiles = await this.getPreviousStageOutputFiles(request.documentId, request.stage);
-      console.log(`📁 [MoRAG] Using previous stage output files: ${inputFiles.join(', ')}`);
-    } else if (!hasFileContent && request.document.filePath) {
-      // Use the original file path if available
-      inputFiles = [request.document.filePath];
-      console.log(`📁 [MoRAG] Using document file path: ${request.document.filePath}`);
-    } else if (!hasFileContent) {
-      // Fallback to a standard path pattern
-      inputFiles = [`./uploads/documents/${request.documentId}/original/${request.document.title}`];
-      console.log(`📁 [MoRAG] Using fallback path: ${inputFiles[0]}`);
+      if (shouldUsePrevious) {
+        inputFiles = await this.getPreviousStageOutputFiles(request.documentId, request.stage);
+        console.log(`📁 [MoRAG] Using previous stage output files: ${inputFiles.join(', ')}`);
+      } else if (!hasFileContent && request.document.filePath) {
+        // Use the original file path if available
+        inputFiles = [request.document.filePath];
+        console.log(`📁 [MoRAG] Using document file path: ${request.document.filePath}`);
+      } else if (!hasFileContent) {
+        // Fallback to a standard path pattern
+        inputFiles = [`./uploads/documents/${request.documentId}/original/${request.document.title}`];
+        console.log(`📁 [MoRAG] Using fallback path: ${inputFiles[0]}`);
+      }
     }
 
     const stageRequest = {
@@ -573,6 +629,46 @@ export class MoragService {
         hasFileContent,
         stageRequest
       });
+
+      // Check if this is a validation error that might be due to missing dependencies
+      if (response.status === 500 && errorText.includes('Input validation failed')) {
+        console.log(`🔍 [MoRAG] Input validation failed for ${canonicalStage}, checking for missing dependencies...`);
+
+        const dependencyCheck = await this.checkMissingDependencies(request.documentId, request.stage);
+
+        if (dependencyCheck.hasMissingDeps) {
+          console.log(`🔧 [MoRAG] Missing dependencies detected for ${request.stage}: ${dependencyCheck.missingStages.join(', ')}`);
+
+          // For automatic processing mode, trigger the missing dependencies
+          if (request.metadata?.processingMode === 'AUTOMATIC' || request.metadata?.triggeredBy === 'automatic_processing') {
+            console.log(`🚀 [MoRAG] Automatically triggering missing dependency: ${dependencyCheck.missingStages[0]}`);
+
+            // Import here to avoid circular dependency
+            const { backgroundJobService } = await import('./backgroundJobService');
+
+            // Create a job for the missing dependency stage
+            const missingStage = dependencyCheck.missingStages[0]; // Start with the first missing stage
+            await backgroundJobService.createJob({
+              documentId: request.documentId,
+              stage: missingStage as any,
+              priority: 1, // High priority for dependency resolution
+              metadata: {
+                ...request.metadata,
+                triggeredBy: 'dependency_resolution',
+                originalStage: request.stage,
+                originalExecutionId: request.executionId
+              }
+            });
+
+            // Throw a special error that indicates dependency resolution was triggered
+            throw new Error(`DEPENDENCY_RESOLUTION_TRIGGERED: Missing dependency ${missingStage} has been automatically scheduled for processing. The original ${request.stage} stage will be retried after dependency completion.`);
+          } else {
+            // For manual mode, just indicate what's missing
+            throw new Error(`MISSING_DEPENDENCIES: Stage ${request.stage} requires ${dependencyCheck.missingStages.join(', ')} to be completed first. Please run the missing stages before retrying.`);
+          }
+        }
+      }
+
       throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 

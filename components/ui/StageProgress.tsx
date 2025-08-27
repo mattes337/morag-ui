@@ -69,6 +69,7 @@ const STATUS_ICONS = {
   COMPLETED: CheckCircle,
   FAILED: XCircle,
   SKIPPED: AlertTriangle,
+  DEPENDENCY_RESOLUTION: Loader2,
 };
 
 const STATUS_COLORS = {
@@ -77,6 +78,7 @@ const STATUS_COLORS = {
   COMPLETED: 'text-green-500',
   FAILED: 'text-red-500',
   SKIPPED: 'text-yellow-500',
+  DEPENDENCY_RESOLUTION: 'text-orange-500',
 };
 
 export function StageProgress({
@@ -131,6 +133,7 @@ export function StageProgress({
                     'border-green-500 bg-green-50': status === 'COMPLETED',
                     'border-red-500 bg-red-50': status === 'FAILED',
                     'border-gray-300 bg-gray-50': status === 'PENDING',
+                    'border-orange-500 bg-orange-50': status === 'DEPENDENCY_RESOLUTION',
                   }
                 )}
                 title={`${config.name}: ${status}`}
@@ -206,6 +209,7 @@ export function StageProgress({
                   'border-green-500 bg-green-50': status === 'COMPLETED',
                   'border-red-500 bg-red-50': status === 'FAILED',
                   'border-gray-200 bg-gray-50': status === 'PENDING',
+                  'border-orange-500 bg-orange-50': status === 'DEPENDENCY_RESOLUTION',
                 }
               )}
             >
@@ -217,6 +221,7 @@ export function StageProgress({
                     'bg-green-500 text-white': status === 'COMPLETED',
                     'bg-red-500 text-white': status === 'FAILED',
                     'bg-gray-300 text-gray-600': status === 'PENDING',
+                    'bg-orange-500 text-white': status === 'DEPENDENCY_RESOLUTION',
                   }
                 )}>
                   <StageIcon className="w-4 h-4" />
@@ -268,11 +273,18 @@ export function StageProgress({
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-blue-900">
-              {stageStatus === 'RUNNING' ? 'Processing' : 'Current Stage'}: {STAGE_CONFIG[currentStage].name}
+              {stageStatus === 'RUNNING' ? 'Processing' :
+               stageStatus === 'DEPENDENCY_RESOLUTION' ? 'Resolving Dependencies' :
+               'Current Stage'}: {STAGE_CONFIG[currentStage].name}
             </p>
             {stageStatus === 'FAILED' && (
               <p className="text-xs text-red-600 mt-1">
                 Stage execution failed. Check logs for details.
+              </p>
+            )}
+            {stageStatus === 'DEPENDENCY_RESOLUTION' && (
+              <p className="text-xs text-orange-600 mt-1">
+                Missing dependencies are being processed automatically.
               </p>
             )}
           </div>

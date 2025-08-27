@@ -263,6 +263,9 @@ async function handleStageCompleted(payload: any, documentId: string | null, exe
       });
 
       console.log(`✅ [Stage Webhook] Stage ${stage} completed successfully for document ${documentId}`);
+
+      // Check if this was a dependency resolution job and retry the original stage
+      await checkAndRetryDependentStages(documentId, stage);
     }
 
     // Log metrics if available
@@ -494,6 +497,87 @@ async function downloadFileFromMorag(filePath: string): Promise<string | null> {
   } catch (error) {
     console.error(`❌ [Stage Webhook] Error downloading file from MoRAG:`, error);
     return null;
+  }
+}
+
+/**
+ * Check if any stages are waiting for this completed stage as a dependency and retry them
+ */
+async function checkAndRetryDependentStages(documentId: string, completedStage: string): Promise<void> {
+  try {
+    console.log(`🔍 [Stage Webhook] Checking for stages waiting for ${completedStage} dependency on document ${documentId}`);
+
+    // Find failed jobs that were waiting for this dependency
+    const failedJobs = await prisma.processingJob.findMany({
+      where: {
+        documentId,
+        status: 'FAILED',
+        errorMessage: {
+          contains: 'DEPENDENCY_RESOLUTION_TRIGGERED'
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    console.log(`📋 [Stage Webhook] Found ${failedJobs.length} failed jobs that might be waiting for dependencies`);
+
+    for (const job of failedJobs) {
+      // Parse the error message to check if this job was waiting for the completed stage
+      if (job.errorMessage?.includes(`Missing dependency ${completedStage}`)) {
+        console.log(`🚀 [Stage Webhook] Retrying ${job.stage} stage after ${completedStage} completion`);
+
+        // Create a new job to retry the original stage
+        await backgroundJobService.createJob({
+          documentId,
+          stage: job.stage,
+          priority: 1, // High priority for dependency-resolved retries
+          metadata: {
+            triggeredBy: 'dependency_resolution_retry',
+            originalJobId: job.id,
+            resolvedDependency: completedStage
+          }
+        });
+
+        console.log(`✅ [Stage Webhook] Scheduled retry for ${job.stage} after ${completedStage} dependency resolution`);
+      }
+    }
+
+    // Also check for any pending jobs that might have been created for stages that depend on this one
+    const stageDependents: Record<string, string[]> = {
+      'MARKDOWN_CONVERSION': ['CHUNKER', 'MARKDOWN_OPTIMIZER'],
+      'MARKDOWN_OPTIMIZER': ['CHUNKER'],
+      'CHUNKER': ['FACT_GENERATOR'],
+      'FACT_GENERATOR': ['INGESTOR'],
+    };
+
+    const dependentStages = stageDependents[completedStage];
+    if (dependentStages && dependentStages.length > 0) {
+      console.log(`🔍 [Stage Webhook] Checking for pending ${dependentStages.join(', ')} jobs that can now proceed`);
+
+      for (const dependentStage of dependentStages) {
+        const pendingJobs = await prisma.processingJob.findMany({
+          where: {
+            documentId,
+            stage: dependentStage as any,
+            status: 'PENDING',
+            errorMessage: {
+              contains: 'DEPENDENCY_RESOLUTION_TRIGGERED'
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1 // Only get the most recent one
+        });
+
+        if (pendingJobs.length > 0) {
+          console.log(`🚀 [Stage Webhook] Found pending ${dependentStage} job that can now proceed after ${completedStage} completion`);
+          // The job scheduler will pick up these pending jobs automatically
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error(`❌ [Stage Webhook] Error checking for dependent stages:`, error);
+    // Don't throw - this is a best-effort operation
   }
 }
 

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 type ProcessingStage = 'MARKDOWN_CONVERSION' | 'MARKDOWN_OPTIMIZER' | 'CHUNKER' | 'FACT_GENERATOR' | 'INGESTOR';
-type StageStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+type StageStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'DEPENDENCY_RESOLUTION';
 
 interface StageInfo {
   stage: ProcessingStage;
@@ -72,7 +72,8 @@ const STATUS_CONFIG = {
   RUNNING: { color: 'bg-blue-500', textColor: 'text-blue-700', icon: Loader, label: 'Running' },
   COMPLETED: { color: 'bg-green-500', textColor: 'text-green-700', icon: CheckCircle, label: 'Completed' },
   FAILED: { color: 'bg-red-500', textColor: 'text-red-700', icon: XCircle, label: 'Failed' },
-  SKIPPED: { color: 'bg-gray-400', textColor: 'text-gray-600', icon: AlertCircle, label: 'Skipped' }
+  SKIPPED: { color: 'bg-gray-400', textColor: 'text-gray-600', icon: AlertCircle, label: 'Skipped' },
+  DEPENDENCY_RESOLUTION: { color: 'bg-orange-500', textColor: 'text-orange-700', icon: Loader, label: 'Resolving Dependencies' }
 };
 
 export function ProcessingStatusDisplay({
