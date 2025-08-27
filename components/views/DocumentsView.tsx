@@ -5,10 +5,12 @@ import { FileText, Plus } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
 import { Badge } from '../ui/badge';
+import { LoadingSpinner } from '../ui/loading-spinner';
 
 interface DocumentsViewProps {
     documents: Document[];
     selectedRealm: Realm | null;
+    isLoading?: boolean;
     onBackToRealms: () => void;
     onAddDocument: () => void;
     onPromptDocument: (document: Document) => void;
@@ -20,6 +22,7 @@ interface DocumentsViewProps {
 export function DocumentsView({
     documents,
     selectedRealm,
+    isLoading = false,
     onBackToRealms,
     onAddDocument,
     onPromptDocument,
@@ -40,6 +43,22 @@ export function DocumentsView({
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    // Show loading state while data is being fetched
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 px-4" {...props}>
+                <button
+                    onClick={onBackToRealms}
+                    className="text-blue-600 hover:text-blue-800 text-sm self-start mb-8"
+                >
+                    ← Back to Realms
+                </button>
+                <LoadingSpinner size="lg" />
+                <p className="text-gray-600 mt-4">Loading documents...</p>
+            </div>
+        );
+    }
 
     // Show empty state when no documents exist
     if (documents.length === 0) {

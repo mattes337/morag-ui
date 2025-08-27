@@ -252,8 +252,9 @@ export async function POST(request: NextRequest) {
             });
 
             // If URL is provided, store it as the original content
+            // Skip creating empty original files for websites and YouTube - they will be processed directly
             let storedFile = null;
-            if (url) {
+            if (url && finalType !== 'website' && finalType !== 'youtube') {
                 storedFile = await unifiedFileService.storeFile({
                     documentId: document.id,
                     fileType: 'ORIGINAL_DOCUMENT',
@@ -274,7 +275,8 @@ export async function POST(request: NextRequest) {
             }
 
             // Schedule automatic processing if enabled
-            if ((processingMode || 'AUTOMATIC') === 'AUTOMATIC' && storedFile) {
+            // For websites and YouTube, process even without a stored file since they fetch content dynamically
+            if ((processingMode || 'AUTOMATIC') === 'AUTOMATIC' && (storedFile || finalType === 'website' || finalType === 'youtube')) {
                 try {
                     // Import the background job service to schedule processing
                     const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
@@ -287,7 +289,7 @@ export async function POST(request: NextRequest) {
                         scheduledAt: new Date()
                     });
 
-                    console.log(`Document ${document.id} created from URL, scheduled automatic processing with job ${jobId}`);
+                    console.log(`Document ${document.id} created from URL (type: ${finalType}), scheduled automatic processing with job ${jobId}`);
                 } catch (processingError) {
                     console.error(`Failed to schedule automatic processing for document ${document.id}:`, processingError);
                     // Don't fail the creation if processing scheduling fails

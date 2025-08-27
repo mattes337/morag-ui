@@ -169,17 +169,27 @@ export function extractKeyTerms(query: string): string[] {
     return terms;
 }
 
-// Mock API health check function
+// API health check function that also initializes background services
 export async function checkApiHealth(): Promise<boolean> {
     try {
-        // Simulate API health check delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Call the health check API endpoint which will also initialize background services
+        const response = await fetch('/api/health', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-        // Mock health check - in production, this would ping your actual API
-        // For now, randomly return true/false to simulate API status
-        return Math.random() > 0.1; // 90% chance of being healthy
+        if (response.ok) {
+            const data = await response.json();
+            console.log('🏥 [API Health] Health check response:', data);
+            return data.status === 'healthy' || data.status === 'degraded';
+        } else {
+            console.error('🏥 [API Health] Health check failed with status:', response.status);
+            return false;
+        }
     } catch (error) {
-        console.error('API health check failed:', error);
+        console.error('🏥 [API Health] Health check request failed:', error);
         return false;
     }
 }

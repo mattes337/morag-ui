@@ -43,7 +43,7 @@ export function ExpertModeDocumentDialog({
   onClose,
   onSwitchToEasy
 }: ExpertModeDocumentDialogProps) {
-  const { currentRealm } = useApp();
+  const { currentRealm, refreshData } = useApp();
   const [currentStep, setCurrentStep] = useState<Step>('source');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState('');
@@ -285,6 +285,10 @@ export function ExpertModeDocumentDialog({
       }
 
       ToastService.success(`Document "${documentName}" created successfully with custom configuration`);
+
+      // Refresh the documents list to show the new document
+      await refreshData();
+
       handleClose();
     } catch (error) {
       console.error('Failed to create document:', error);

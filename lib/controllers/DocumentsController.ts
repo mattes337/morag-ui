@@ -17,15 +17,16 @@ interface DocumentsActions {
 }
 
 export function useDocumentsController(): ControllerHook<DocumentsState, DocumentsActions> {
-  const { 
-    documents, 
-    currentRealm, 
-    setSelectedDocument, 
-    setShowAddDocumentDialog 
+  const {
+    documents,
+    currentRealm,
+    isDataLoading,
+    setSelectedDocument,
+    setShowAddDocumentDialog
   } = useApp();
 
   const initialState: DocumentsState = {
-    isLoading: false,
+    isLoading: isDataLoading,
     error: null,
     isInitialized: true,
     documents,
@@ -44,12 +45,13 @@ export function useDocumentsController(): ControllerHook<DocumentsState, Documen
     setState(prev => ({
       ...prev,
       documents,
-      currentRealm
+      currentRealm,
+      isLoading: isDataLoading
     }), 'updateFromContext');
-  }, [documents, currentRealm, setState]);
+  }, [documents, currentRealm, isDataLoading, setState]);
 
   // Keep state in sync with context
-  if (state.documents !== documents || state.currentRealm !== currentRealm) {
+  if (state.documents !== documents || state.currentRealm !== currentRealm || state.isLoading !== isDataLoading) {
     updateFromContext();
   }
 

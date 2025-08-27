@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { logger, HealthLogger } from '@/lib/logging';
 import { getProductionConfig } from '@/lib/config/production';
+import { initializeBackgroundServices } from '@/lib/startup';
 
 export interface HealthCheckResult {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -232,7 +233,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       userAgent: request.headers.get('user-agent'),
       ip: request.headers.get('x-forwarded-for') || 'unknown',
     });
-    
+
+    // Initialize background services on first health check
+    try {
+      await initializeBackgroundServices();
+      logger.info('Background services initialization completed during health check');
+    } catch (initError) {
+      logger.warn('Background services initialization failed during health check', {
+        error: initError instanceof Error ? initError.message : 'Unknown error'
+      });
+      // Don't fail the health check if background services fail to initialize
+    }
+
     // Run all health checks in parallel
     const [
       databaseHealth,

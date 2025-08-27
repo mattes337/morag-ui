@@ -28,7 +28,7 @@ export function EasyModeDocumentDialog({
   onClose,
   onSwitchToExpert
 }: EasyModeDocumentDialogProps) {
-  const { currentRealm } = useApp();
+  const { currentRealm, refreshData } = useApp();
   const [currentStep, setCurrentStep] = useState<Step>('source');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState('');
@@ -194,6 +194,10 @@ export function EasyModeDocumentDialog({
       }
 
       ToastService.success(`Document "${documentName}" created successfully with ${templateToUse.name} template`);
+
+      // Refresh the documents list to show the new document
+      await refreshData();
+
       handleClose();
     } catch (error) {
       console.error('Failed to create document:', error);

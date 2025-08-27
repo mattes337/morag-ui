@@ -10,6 +10,7 @@ export default function DocumentsPage() {
         <DocumentsView
             documents={state.documents}
             selectedRealm={state.currentRealm}
+            isLoading={state.isLoading}
             onBackToRealms={actions.handleBackToRealms}
             onAddDocument={actions.handleAddDocument}
             onPromptDocument={actions.handlePromptDocument}
