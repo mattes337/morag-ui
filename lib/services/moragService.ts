@@ -1,6 +1,135 @@
 import { Server } from '@prisma/client';
 
-// New unified process request structure based on the API spec
+// Stage configuration interfaces based on the new API
+export interface StageConfig {
+  [key: string]: any;
+}
+
+export interface MarkdownConversionConfig extends StageConfig {
+  // Audio/Video processing
+  include_timestamps?: boolean;
+  transcription_model?: string;
+  speaker_diarization?: boolean;
+  topic_segmentation?: boolean;
+  language?: string;
+
+  // Document processing
+  chunk_on_sentences?: boolean;
+  preserve_formatting?: boolean;
+  extract_images?: boolean;
+  quality_threshold?: number;
+
+  // Image processing
+  extract_text?: boolean;
+  generate_descriptions?: boolean;
+  ocr_engine?: string;
+  resize_max_dimension?: number;
+
+  // Web processing
+  follow_links?: boolean;
+  max_depth?: number;
+  respect_robots?: boolean;
+  extract_metadata?: boolean;
+}
+
+export interface MarkdownOptimizerConfig extends StageConfig {
+  model?: string;
+  max_tokens?: number;
+  temperature?: number;
+  fix_transcription_errors?: boolean;
+  improve_readability?: boolean;
+  preserve_timestamps?: boolean;
+  normalize_formatting?: boolean;
+  remove_redundancy?: boolean;
+  enhance_structure?: boolean;
+}
+
+export interface ChunkerConfig extends StageConfig {
+  chunk_strategy?: 'semantic' | 'page-level' | 'topic-based' | 'sentence' | 'paragraph';
+  chunk_size?: number;
+  overlap?: number;
+  generate_summary?: boolean;
+  preserve_structure?: boolean;
+  min_chunk_size?: number;
+  max_chunk_size?: number;
+  split_on_headers?: boolean;
+  include_metadata?: boolean;
+}
+
+export interface FactGeneratorConfig extends StageConfig {
+  max_facts_per_chunk?: number;
+  confidence_threshold?: number;
+  extract_entities?: boolean;
+  entity_types?: string[];
+  extract_relations?: boolean;
+  relation_confidence?: number;
+  extract_keywords?: boolean;
+  domain?: 'general' | 'medical' | 'legal' | 'technical';
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface IngestorConfig extends StageConfig {
+  databases?: string[];
+  collection_name?: string;
+  batch_size?: number;
+  enable_deduplication?: boolean;
+  dedup_threshold?: number;
+  conflict_resolution?: 'merge' | 'replace' | 'skip';
+  overwrite_existing?: boolean;
+  validate_data?: boolean;
+  generate_embeddings?: boolean;
+  qdrant_config?: {
+    host?: string;
+    port?: number;
+    grpc_port?: number;
+    prefer_grpc?: boolean;
+    https?: boolean;
+    api_key?: string;
+    timeout?: number;
+    collection_name?: string;
+    vector_size?: number;
+    verify_ssl?: boolean;
+  };
+  neo4j_config?: {
+    uri?: string;
+    username?: string;
+    password?: string;
+    database?: string;
+    max_connection_lifetime?: number;
+    max_connection_pool_size?: number;
+    connection_acquisition_timeout?: number;
+    verify_ssl?: boolean;
+    trust_all_certificates?: boolean;
+  };
+}
+
+// Stage chain request for executing multiple stages
+export interface StageChainRequest {
+  stages: string[];
+  global_config?: StageConfig;
+  stage_configs?: {
+    [stageName: string]: StageConfig;
+  };
+  output_dir?: string;
+  stop_on_failure?: boolean;
+  webhook_url?: string;
+}
+
+// Execute all stages request
+export interface ExecuteAllStagesRequest {
+  stages: string[];
+  global_config?: StageConfig;
+  stage_configs?: {
+    [stageName: string]: StageConfig;
+  };
+  webhook_url?: string;
+  output_dir?: string;
+  stop_on_failure?: boolean;
+}
+
+// Legacy unified process request structure (kept for backward compatibility)
 export interface UnifiedProcessRequest {
   mode: 'convert' | 'process' | 'ingest';
   source_type: 'file' | 'url' | 'batch';
@@ -31,7 +160,66 @@ export interface UnifiedProcessRequest {
   }>;
 }
 
-// New unified process response structure based on the API spec
+// Stage execution response structure
+export interface StageExecutionResponse {
+  success: boolean;
+  stage_type: string;
+  status: 'completed' | 'failed' | 'running';
+  output_files: Array<{
+    filename: string;
+    file_path: string;
+    file_size: number;
+    created_at: string;
+    stage_type: string;
+    content_type: string;
+    checksum?: string;
+    content?: string;
+  }>;
+  metadata: {
+    execution_time: number;
+    start_time: string;
+    end_time: string;
+    input_files: string[];
+    config_used: StageConfig;
+    warnings: string[];
+  };
+  error_message?: string;
+  webhook_sent: boolean;
+}
+
+// Stage chain response structure
+export interface StageChainResponse {
+  success: boolean;
+  stages_executed: StageExecutionResponse[];
+  total_execution_time: number;
+  failed_stage?: string;
+  final_output_files: Array<{
+    filename: string;
+    file_path: string;
+    file_size: number;
+    stage_type: string;
+  }>;
+}
+
+// Execute all stages response structure
+export interface ExecuteAllStagesResponse {
+  success: boolean;
+  task_id?: string;
+  estimated_time_seconds?: number;
+  status_url?: string;
+  message: string;
+  stages_executed?: StageExecutionResponse[];
+  total_execution_time?: number;
+  failed_stage?: string;
+  final_output_files?: Array<{
+    filename: string;
+    file_path: string;
+    file_size: number;
+    stage_type: string;
+  }>;
+}
+
+// Legacy response structures (kept for backward compatibility)
 export interface UnifiedProcessResponse {
   success: boolean;
   mode: string;
@@ -48,7 +236,6 @@ export interface UnifiedProcessResponse {
   message?: string;
 }
 
-// Markdown conversion response structure
 export interface MarkdownConversionResponse {
   success: boolean;
   markdown: string;
@@ -57,7 +244,6 @@ export interface MarkdownConversionResponse {
   error_message?: string;
 }
 
-// Process with ingestion response structure
 export interface ProcessIngestResponse {
   success: boolean;
   task_id: string;
@@ -528,6 +714,140 @@ export class MoragService {
 
     const response = await fetch(url.toString(), {
       method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Execute multiple stages in sequence using the stage chain API
+   */
+  async executeStageChain(
+    file: File | null,
+    request: StageChainRequest
+  ): Promise<StageChainResponse> {
+    console.log(`🔗 [MoragService] Executing stage chain: ${request.stages.join(' -> ')}`);
+    console.log(`🔗 [MoragService] Backend URL: ${this.baseUrl}`);
+
+    const formData = new FormData();
+
+    // Add file if provided
+    if (file) {
+      formData.append('file', file);
+      console.log(`📄 [MoRAG] Uploading file: ${file.name} (${file.size} bytes)`);
+    }
+
+    // Add request data
+    formData.append('request', JSON.stringify(request));
+
+    console.log(`🚀 [MoRAG] Calling stage chain endpoint`);
+    console.log(`🔗 [MoRAG] Endpoint: ${this.baseUrl}/api/v1/stages/chain`);
+
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/chain`, {
+      method: 'POST',
+      headers: {
+        'Authorization': this.getHeaders().Authorization,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ [MoRAG] Stage chain API error:`, errorText);
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ [MoRAG] Stage chain response:`, {
+      success: result.success,
+      stagesExecuted: result.stages_executed?.length || 0,
+      totalTime: result.total_execution_time,
+      failedStage: result.failed_stage
+    });
+
+    return result;
+  }
+
+  /**
+   * Execute all stages with form data using the execute-all API
+   */
+  async executeAllStages(
+    file: File | null,
+    request: ExecuteAllStagesRequest
+  ): Promise<ExecuteAllStagesResponse> {
+    console.log(`🎯 [MoragService] Executing all stages: ${request.stages.join(' -> ')}`);
+    console.log(`🔗 [MoragService] Backend URL: ${this.baseUrl}`);
+
+    const formData = new FormData();
+
+    // Add file if provided
+    if (file) {
+      formData.append('file', file);
+      console.log(`📄 [MoRAG] Uploading file: ${file.name} (${file.size} bytes)`);
+    }
+
+    // Add form fields as per API spec
+    formData.append('stages', JSON.stringify(request.stages));
+
+    if (request.global_config) {
+      formData.append('global_config', JSON.stringify(request.global_config));
+    }
+
+    if (request.stage_configs) {
+      formData.append('stage_configs', JSON.stringify(request.stage_configs));
+    }
+
+    if (request.webhook_url) {
+      formData.append('webhook_url', request.webhook_url);
+    }
+
+    if (request.output_dir) {
+      formData.append('output_dir', request.output_dir);
+    }
+
+    if (request.stop_on_failure !== undefined) {
+      formData.append('stop_on_failure', request.stop_on_failure.toString());
+    }
+
+    console.log(`🚀 [MoRAG] Calling execute-all endpoint`);
+    console.log(`🔗 [MoRAG] Endpoint: ${this.baseUrl}/api/v1/stages/execute-all`);
+
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/execute-all`, {
+      method: 'POST',
+      headers: {
+        'Authorization': this.getHeaders().Authorization,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ [MoRAG] Execute-all API error:`, errorText);
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ [MoRAG] Execute-all response:`, {
+      success: result.success,
+      taskId: result.task_id,
+      estimatedTime: result.estimated_time_seconds,
+      message: result.message
+    });
+
+    return result;
+  }
+
+  /**
+   * List available stages and their configurations
+   */
+  async listStages(): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/list`, {
+      method: 'GET',
       headers: this.getHeaders(),
     });
 

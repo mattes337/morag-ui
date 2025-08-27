@@ -12,6 +12,16 @@ export interface ProcessingJobInput {
   metadata?: Record<string, any>;
 }
 
+export interface StageChainJobInput {
+  documentId: string;
+  stages: string[];
+  globalConfig?: Record<string, any>;
+  stageConfigs?: Record<string, Record<string, any>>;
+  priority?: number;
+  scheduledAt?: Date;
+  metadata?: Record<string, any>;
+}
+
 export interface ProcessingJobOutput {
   id: string;
   documentId: string;
@@ -116,6 +126,41 @@ class BackgroundJobService {
       return this.mapToOutput(job);
     } catch (error) {
       console.error(`❌ [BackgroundJobService] Failed to create job:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new stage chain processing job
+   */
+  async createStageChainJob(input: StageChainJobInput): Promise<ProcessingJobOutput> {
+    console.log(`🔗 [BackgroundJobService] Creating stage chain job for document ${input.documentId}, stages: ${input.stages.join(' -> ')}`);
+
+    try {
+      // Create a special job for stage chain processing
+      // We'll use the first stage as the primary stage and store the chain config in metadata
+      const primaryStage = input.stages[0] as ProcessingStage;
+
+      const job = await prisma.processingJob.create({
+        data: {
+          documentId: input.documentId,
+          stage: primaryStage,
+          priority: input.priority || 0,
+          scheduledAt: input.scheduledAt || new Date(),
+          metadata: JSON.stringify({
+            jobType: 'STAGE_CHAIN',
+            stages: input.stages,
+            globalConfig: input.globalConfig,
+            stageConfigs: input.stageConfigs,
+            ...input.metadata
+          }),
+        },
+      });
+
+      console.log(`✅ [BackgroundJobService] Stage chain job created successfully: ${job.id}`);
+      return this.mapToOutput(job);
+    } catch (error) {
+      console.error(`❌ [BackgroundJobService] Failed to create stage chain job:`, error);
       throw error;
     }
   }
@@ -676,20 +721,110 @@ class BackgroundJobService {
     }
 
     try {
-      // Start the stage execution
-      const execution = await stageExecutionService.startExecution({
-        documentId: job.documentId,
-        stage: job.stage,
-        metadata: job.metadata ? JSON.parse(job.metadata) : undefined,
-      });
+      const metadata = job.metadata ? JSON.parse(job.metadata) : {};
 
-      // Call the MoRAG backend to process the stage
-      await this.callMoragBackend(job, execution.id);
+      // Check if this is a stage chain job
+      if (metadata.jobType === 'STAGE_CHAIN') {
+        console.log(`🔗 [BackgroundJobService] Processing stage chain job ${jobId} for document ${job.documentId}`);
+        await this.processStageChainJob(job, metadata);
+      } else {
+        // Process as a regular single-stage job
+        console.log(`🔧 [BackgroundJobService] Processing single-stage job ${jobId} for document ${job.documentId}, stage ${job.stage}`);
 
-      console.log(`Started processing job ${jobId} for document ${job.documentId}, stage ${job.stage}`);
+        // Start the stage execution
+        const execution = await stageExecutionService.startExecution({
+          documentId: job.documentId,
+          stage: job.stage,
+          metadata: metadata,
+        });
+
+        // Call the MoRAG backend to process the stage
+        await this.callMoragBackend(job, execution.id);
+      }
+
+      console.log(`Started processing job ${jobId} for document ${job.documentId}`);
     } catch (error) {
       console.error(`Failed to start processing job ${jobId}:`, error);
       await this.failJob(jobId, error instanceof Error ? error.message : 'Failed to start processing');
+    }
+  }
+
+  /**
+   * Process a stage chain job using the new API
+   */
+  private async processStageChainJob(job: any, metadata: any): Promise<void> {
+    console.log(`🔗 [BackgroundJobService] Processing stage chain for document ${job.documentId}`);
+    console.log(`🔗 [BackgroundJobService] Stages: ${metadata.stages.join(' -> ')}`);
+
+    try {
+      // Get the document file
+      const document = job.document;
+      if (!document) {
+        throw new Error('Document not found');
+      }
+
+      // Get the original file
+      const files = await unifiedFileService.getFilesByDocument(document.id);
+      const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT');
+
+      if (!originalFile) {
+        throw new Error('Original document file not found');
+      }
+
+      // Download the file content
+      const fileWithContent = await unifiedFileService.getFile(originalFile.id, true);
+
+      if (!fileWithContent || !fileWithContent.content) {
+        throw new Error('Failed to retrieve file content');
+      }
+
+      // Create a File object from the content
+      const file = new File([fileWithContent.content], originalFile.originalName || 'document', {
+        type: originalFile.contentType || 'application/octet-stream'
+      });
+
+      // Prepare the stage chain request
+      const stageChainRequest = {
+        stages: metadata.stages,
+        global_config: metadata.globalConfig,
+        stage_configs: metadata.stageConfigs,
+        output_dir: `./output/${document.id}`,
+        webhook_url: `${process.env.NEXTAUTH_URL}/api/webhooks/morag`,
+        stop_on_failure: true
+      };
+
+      console.log(`🚀 [BackgroundJobService] Calling MoRAG stage chain API for document ${document.id}`);
+
+      // Call the new stage chain API
+      const response = await moragService.executeStageChain(file, stageChainRequest);
+
+      if (!response.success) {
+        throw new Error(`Stage chain execution failed: ${response.failed_stage || 'Unknown error'}`);
+      }
+
+      // Update job metadata with the response
+      const updatedMetadata = {
+        ...metadata,
+        stageChainResponse: response,
+        totalExecutionTime: response.total_execution_time,
+        stagesExecuted: response.stages_executed?.length || 0
+      };
+
+      await prisma.processingJob.update({
+        where: { id: job.id },
+        data: {
+          metadata: JSON.stringify(updatedMetadata),
+          completedAt: new Date(),
+          status: JobStatus.FINISHED
+        }
+      });
+
+      console.log(`✅ [BackgroundJobService] Stage chain completed for document ${document.id}`);
+      console.log(`✅ [BackgroundJobService] Executed ${response.stages_executed?.length || 0} stages in ${response.total_execution_time}s`);
+
+    } catch (error) {
+      console.error(`❌ [BackgroundJobService] Stage chain failed for document ${job.documentId}:`, error);
+      throw error;
     }
   }
 

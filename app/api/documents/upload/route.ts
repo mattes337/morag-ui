@@ -23,13 +23,49 @@ export async function POST(request: NextRequest) {
     const type = formData.get('type') as string;
     const subType = formData.get('subType') as string;
 
+    // New template and expert mode support
+    const templateId = formData.get('templateId') as string;
+    const templateConfigStr = formData.get('templateConfig') as string;
+    const expertConfigStr = formData.get('expertConfig') as string;
+
     console.log('Upload form data (UPDATED):', {
       processingMode,
       type,
       subType,
       fileName: file?.name,
+      templateId,
+      hasTemplateConfig: !!templateConfigStr,
+      hasExpertConfig: !!expertConfigStr,
       formDataKeys: Array.from(formData.keys())
     });
+
+    // Parse template and expert configurations
+    let templateConfig = null;
+    let expertConfig = null;
+
+    if (templateConfigStr) {
+      try {
+        templateConfig = JSON.parse(templateConfigStr);
+      } catch (error) {
+        console.error('Failed to parse template config:', error);
+        return NextResponse.json(
+          { error: 'Invalid template configuration' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (expertConfigStr) {
+      try {
+        expertConfig = JSON.parse(expertConfigStr);
+      } catch (error) {
+        console.error('Failed to parse expert config:', error);
+        return NextResponse.json(
+          { error: 'Invalid expert configuration' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Validate processing mode
     if (processingMode && !['AUTOMATIC', 'MANUAL'].includes(processingMode)) {
@@ -101,6 +137,14 @@ export async function POST(request: NextRequest) {
       realmId,
       userId: user.userId,
       processingMode: processingMode as 'AUTOMATIC' | 'MANUAL',
+      // Add template and expert configuration metadata
+      metadata: {
+        ...(templateId && { templateId }),
+        ...(templateConfig && { templateConfig }),
+        ...(expertConfig && { expertConfig }),
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: user.userId
+      }
     };
 
     console.log('Creating document with data:', documentData);
@@ -140,15 +184,33 @@ export async function POST(request: NextRequest) {
         // Import the background job service to schedule processing
         const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
 
-        // Schedule the first stage of processing (MARKDOWN_CONVERSION)
-        const jobId = await backgroundJobService.createJob({
-          documentId: document.id,
-          stage: 'MARKDOWN_CONVERSION',
-          priority: 0,
-          scheduledAt: new Date()
-        });
+        if (templateConfig || expertConfig) {
+          // Use new stage-based processing with template/expert configuration
+          const config = expertConfig || templateConfig;
+          const stages = config.stages || ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'];
 
-        console.log(`Document ${document.id} uploaded, scheduled automatic processing with job ${jobId}`);
+          // Schedule processing with the new API
+          const jobId = await backgroundJobService.createStageChainJob({
+            documentId: document.id,
+            stages,
+            globalConfig: config.globalConfig,
+            stageConfigs: config.stageConfigs,
+            priority: 0,
+            scheduledAt: new Date()
+          });
+
+          console.log(`Document ${document.id} uploaded, scheduled stage chain processing with job ${jobId}`);
+        } else {
+          // Fallback to legacy single-stage processing
+          const jobId = await backgroundJobService.createJob({
+            documentId: document.id,
+            stage: 'MARKDOWN_CONVERSION',
+            priority: 0,
+            scheduledAt: new Date()
+          });
+
+          console.log(`Document ${document.id} uploaded, scheduled automatic processing with job ${jobId}`);
+        }
       } catch (processingError) {
         console.error(`Failed to schedule automatic processing for document ${document.id}:`, processingError);
         // Don't fail the upload if processing scheduling fails
