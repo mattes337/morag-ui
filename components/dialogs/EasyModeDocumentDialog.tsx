@@ -239,14 +239,16 @@ export function EasyModeDocumentDialog({
 
 
 
-  const renderSourceStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-medium mb-2">Add Document</h3>
-        <p className="text-sm text-gray-600">Choose how you&apos;d like to add your document</p>
-      </div>
+  const renderSourceStep = () => {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-medium mb-2">Add Document</h3>
+          <p className="text-sm text-gray-600">Choose how you&apos;d like to add your document</p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex-1 flex flex-col justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Upload File Card */}
         <Card
           className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300 group"
@@ -352,25 +354,28 @@ export function EasyModeDocumentDialog({
           </Button>
         </div>
       )}
-    </div>
-  );
-
-  const renderTemplateStep = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Choose Processing Template</h3>
-          <p className="text-sm text-gray-600">
-            Select how you want your document to be processed. Single-click to select, double-click to create immediately.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={handleBackToSource} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
       </div>
+      </div>
+    );
+  };
 
-      <ScrollArea className="h-[400px]">
+  const renderTemplateStep = () => {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-medium">Choose Processing Template</h3>
+            <p className="text-sm text-gray-600">
+              Select how you want your document to be processed. Single-click to select, double-click to create immediately.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleBackToSource} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+
+      <ScrollArea className="flex-1">
         <TemplateSelector
           selectedTemplate={selectedTemplate || undefined}
           onTemplateSelect={setSelectedTemplate}
@@ -379,7 +384,7 @@ export function EasyModeDocumentDialog({
         />
       </ScrollArea>
 
-      <div className="flex justify-between items-center pt-4 border-t">
+      <div className="flex justify-between items-center pt-4 border-t mt-4">
         <Button
           variant="outline"
           onClick={onSwitchToExpert}
@@ -399,12 +404,13 @@ export function EasyModeDocumentDialog({
           <Sparkles className="h-4 w-4" />
         </Button>
       </div>
-    </div>
-  );
+      </div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-500" />

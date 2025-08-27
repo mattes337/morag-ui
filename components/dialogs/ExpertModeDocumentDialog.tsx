@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, FileText, Link, Settings, Sparkles, ArrowRight, ArrowLeft, MousePointer2, Save, Download } from 'lucide-react';
 import { StageConfigEditor } from '@/components/ui/processing/stage-config-editor';
+import { TemplateSelector } from '@/components/ui/processing/template-selector';
 import { StageConfig } from '@/lib/services/moragService';
 import {
   DEFAULT_STAGE_CONFIGS,
@@ -27,7 +28,7 @@ interface ExpertModeDocumentDialogProps {
   onSwitchToEasy?: () => void;
 }
 
-type Step = 'source' | 'configure' | 'review';
+type Step = 'source' | 'template' | 'configure' | 'review';
 
 const AVAILABLE_STAGES = [
   'markdown-conversion',
@@ -48,6 +49,7 @@ export function ExpertModeDocumentDialog({
   const [documentUrl, setDocumentUrl] = useState('');
   const [documentName, setDocumentName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ProcessingTemplate | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stage configuration state
@@ -117,6 +119,7 @@ export function ExpertModeDocumentDialog({
   };
 
   const canProceedFromSource = selectedFile || documentUrl;
+  const canProceedFromTemplate = canProceedFromSource && selectedTemplate;
 
   const handleStageConfigChange = (stage: string, config: StageConfig) => {
     setStageConfigs(prev => ({
@@ -134,7 +137,7 @@ export function ExpertModeDocumentDialog({
 
   const loadTemplate = (template: ProcessingTemplate) => {
     const merged = ProcessingTemplateService.mergeWithDefaults(template);
-    
+
     // Update enabled stages
     const newEnabledStages: { [stage: string]: boolean } = {};
     AVAILABLE_STAGES.forEach(stage => {
@@ -144,13 +147,24 @@ export function ExpertModeDocumentDialog({
 
     // Update stage configs
     setStageConfigs(merged.stageConfigs);
-    
+
     // Update global config
     if (merged.globalConfig) {
       setGlobalConfig(merged.globalConfig);
     }
 
     ToastService.success(`Loaded template: ${template.name}`);
+  };
+
+  const handleTemplateSelect = (template: ProcessingTemplate) => {
+    setSelectedTemplate(template);
+    loadTemplate(template);
+  };
+
+  const handleTemplateDoubleClick = (template: ProcessingTemplate) => {
+    setSelectedTemplate(template);
+    loadTemplate(template);
+    setCurrentStep('configure');
   };
 
   const exportConfiguration = () => {
@@ -285,6 +299,7 @@ export function ExpertModeDocumentDialog({
       setSelectedFile(null);
       setDocumentUrl('');
       setDocumentName('');
+      setSelectedTemplate(null);
       setCurrentStep('source');
       // Reset to defaults
       setEnabledStages({
@@ -331,7 +346,7 @@ export function ExpertModeDocumentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -353,18 +368,22 @@ export function ExpertModeDocumentDialog({
         </DialogHeader>
 
         <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as Step)} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="source" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              Document Source
+              Source
             </TabsTrigger>
-            <TabsTrigger value="configure" className="flex items-center gap-2" disabled={!canProceedFromSource}>
+            <TabsTrigger value="template" className="flex items-center gap-2" disabled={!canProceedFromSource}>
+              <Sparkles className="h-4 w-4" />
+              Template
+            </TabsTrigger>
+            <TabsTrigger value="configure" className="flex items-center gap-2" disabled={!canProceedFromTemplate}>
               <Settings className="h-4 w-4" />
-              Configure Stages
+              Configure
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex items-center gap-2" disabled={!canProceedFromSource}>
+            <TabsTrigger value="review" className="flex items-center gap-2" disabled={!canProceedFromTemplate}>
               <FileText className="h-4 w-4" />
-              Review & Create
+              Review
             </TabsTrigger>
           </TabsList>
 
@@ -478,8 +497,8 @@ export function ExpertModeDocumentDialog({
                     {/* Continue button */}
                     {canProceedFromSource && (
                       <div className="flex justify-end">
-                        <Button onClick={() => setCurrentStep('configure')} className="gap-2">
-                          Configure Processing
+                        <Button onClick={() => setCurrentStep('template')} className="gap-2">
+                          Select Template
                           <ArrowRight className="h-4 w-4" />
                         </Button>
                       </div>
@@ -487,6 +506,41 @@ export function ExpertModeDocumentDialog({
                   </div>
                 </div>
               </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="template" className="h-full">
+              <div className="h-full flex flex-col">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium">Select Processing Template</h3>
+                  <p className="text-sm text-gray-600">Choose a template to configure your processing pipeline</p>
+                </div>
+
+                <ScrollArea className="flex-1">
+                  <div className="p-1">
+                    <TemplateSelector
+                      selectedTemplate={selectedTemplate || undefined}
+                      onTemplateSelect={handleTemplateSelect}
+                      onTemplateDoubleClick={handleTemplateDoubleClick}
+                      fileType={selectedFile ? selectedFile.name.split('.').pop() : getUrlType(documentUrl)}
+                    />
+                  </div>
+                </ScrollArea>
+
+                <div className="flex justify-between mt-4">
+                  <Button variant="outline" onClick={() => setCurrentStep('source')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Source
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep('configure')}
+                    disabled={!selectedTemplate}
+                    className="gap-2"
+                  >
+                    Configure Stages
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="configure" className="h-full">
@@ -555,9 +609,9 @@ export function ExpertModeDocumentDialog({
                 </ScrollArea>
 
                 <div className="flex justify-between mt-4">
-                  <Button variant="outline" onClick={() => setCurrentStep('source')}>
+                  <Button variant="outline" onClick={() => setCurrentStep('template')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Source
+                    Back to Template
                   </Button>
                   <Button onClick={() => setCurrentStep('review')}>
                     Review & Create
