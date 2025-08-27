@@ -19,6 +19,7 @@ import {
 } from '@/lib/processing/templates';
 import { useApp } from '@/contexts/AppContext';
 import { ToastService } from '@/lib/services/toastService';
+import { fetchVideoTitleWithFallback, isYouTubeUrl, generateDocumentNameFromTitle } from '@/lib/utils/youtubeUtils';
 
 interface ExpertModeDocumentDialogProps {
   isOpen: boolean;
@@ -78,14 +79,29 @@ export function ExpertModeDocumentDialog({
     }
   };
 
-  const handleUrlChange = (url: string) => {
+  const handleUrlChange = async (url: string) => {
     setDocumentUrl(url);
     if (url && !documentName) {
-      try {
-        const urlObj = new URL(url);
-        setDocumentName(urlObj.hostname + urlObj.pathname);
-      } catch {
-        setDocumentName(url.substring(0, 50));
+      if (isYouTubeUrl(url)) {
+        // Try to fetch YouTube video title
+        try {
+          const title = await fetchVideoTitleWithFallback(url);
+          if (title) {
+            setDocumentName(generateDocumentNameFromTitle(title));
+          } else {
+            setDocumentName('YouTube Video');
+          }
+        } catch (error) {
+          console.error('Failed to fetch YouTube title:', error);
+          setDocumentName('YouTube Video');
+        }
+      } else {
+        try {
+          const urlObj = new URL(url);
+          setDocumentName(urlObj.hostname + urlObj.pathname);
+        } catch {
+          setDocumentName(url.substring(0, 50));
+        }
       }
     }
   };

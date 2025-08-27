@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Search, Clock, Tag, CheckCircle } from 'lucide-react';
 import { ProcessingTemplate, ProcessingTemplateService } from '@/lib/processing/templates';
 
 interface TemplateSelectorProps {
   selectedTemplate?: ProcessingTemplate;
   onTemplateSelect: (template: ProcessingTemplate) => void;
+  onTemplateDoubleClick?: (template: ProcessingTemplate) => void;
   fileType?: string;
   className?: string;
 }
@@ -20,11 +21,11 @@ interface TemplateSelectorProps {
 export function TemplateSelector({
   selectedTemplate,
   onTemplateSelect,
+  onTemplateDoubleClick,
   fileType,
   className = ''
 }: TemplateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [templates, setTemplates] = useState<ProcessingTemplate[]>([]);
   const [recommendedTemplates, setRecommendedTemplates] = useState<ProcessingTemplate[]>([]);
 
@@ -46,34 +47,40 @@ export function TemplateSelector({
       filtered = ProcessingTemplateService.searchTemplates(searchQuery);
     }
 
-    // Filter by category
-    if (activeCategory !== 'all') {
-      filtered = filtered.filter(template => template.category === activeCategory);
+    // Remove recommended templates from "All Templates" section to avoid duplication
+    if (recommendedTemplates.length > 0) {
+      const recommendedIds = new Set(recommendedTemplates.map(t => t.id));
+      filtered = filtered.filter(template => !recommendedIds.has(template.id));
     }
 
     return filtered;
-  }, [templates, searchQuery, activeCategory]);
+  }, [templates, searchQuery, recommendedTemplates]);
 
-  const categories = [
-    { id: 'all', name: 'All Templates', count: templates.length },
-    { id: 'quick', name: 'Quick', count: templates.filter(t => t.category === 'quick').length },
-    { id: 'quality', name: 'Quality', count: templates.filter(t => t.category === 'quality').length },
-    { id: 'specialized', name: 'Specialized', count: templates.filter(t => t.category === 'specialized').length },
-    { id: 'media', name: 'Media', count: templates.filter(t => t.category === 'media').length },
-  ];
+
 
   const TemplateCard = ({ template }: { template: ProcessingTemplate }) => {
     const isSelected = selectedTemplate?.id === template.id;
     const isRecommended = recommendedTemplates.some(t => t.id === template.id);
 
     return (
-      <Card 
-        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+      <Card
+        className={`relative cursor-pointer transition-all duration-200 hover:shadow-md ${
           isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
         } ${isRecommended ? 'border-green-500' : ''}`}
         onClick={() => onTemplateSelect(template)}
+        onDoubleClick={() => onTemplateDoubleClick?.(template)}
       >
-        <CardHeader className="pb-3">
+        {/* Recommended Badge - positioned absolutely */}
+        {isRecommended && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 right-2 text-xs z-10 bg-green-100 text-green-800 border-green-300"
+          >
+            Recommended
+          </Badge>
+        )}
+
+        <CardHeader className="pb-3 pr-20">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{template.icon}</span>
@@ -81,7 +88,6 @@ export function TemplateSelector({
                 <CardTitle className="text-lg flex items-center gap-2">
                   {template.name}
                   {isSelected && <CheckCircle className="h-4 w-4 text-blue-500" />}
-                  {isRecommended && <Badge variant="secondary" className="text-xs">Recommended</Badge>}
                 </CardTitle>
                 <CardDescription className="text-sm mt-1">
                   {template.description}
@@ -144,18 +150,7 @@ export function TemplateSelector({
           />
         </div>
 
-        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-          <TabsList className="grid w-full grid-cols-5">
-            {categories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="text-xs">
-                {category.name}
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {category.count}
-                </Badge>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+
       </div>
 
       {/* Recommended Templates */}
@@ -178,7 +173,7 @@ export function TemplateSelector({
       {/* All Templates */}
       <div className="space-y-3">
         <Label className="text-base font-medium">
-          {activeCategory === 'all' ? 'All Templates' : `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Templates`}
+          All Templates
           {searchQuery && ` (${filteredTemplates.length} results)`}
         </Label>
         

@@ -37,7 +37,7 @@ export function StageWorkflowView({
       </div>
       
       {/* Horizontal Workflow */}
-      <div className="flex items-stretch overflow-x-auto pb-4 space-x-4 pl-4">
+      <div className="flex items-stretch overflow-x-auto pb-4 space-x-4">
         {WORKFLOW_ORDER.map((stage, index) => {
           const stageInfo = stageMap.get(stage);
           const isExecuting = executingStage === stage;

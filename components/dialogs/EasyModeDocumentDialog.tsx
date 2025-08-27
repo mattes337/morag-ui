@@ -13,6 +13,7 @@ import { TemplateSelector } from '@/components/ui/processing/template-selector';
 import { ProcessingTemplate, ProcessingTemplateService } from '@/lib/processing/templates';
 import { useApp } from '@/contexts/AppContext';
 import { ToastService } from '@/lib/services/toastService';
+import { fetchVideoTitleWithFallback, isYouTubeUrl, generateDocumentNameFromTitle } from '@/lib/utils/youtubeUtils';
 
 interface EasyModeDocumentDialogProps {
   isOpen: boolean;
@@ -73,14 +74,29 @@ export function EasyModeDocumentDialog({
     }
   };
 
-  const handleUrlChange = (url: string) => {
+  const handleUrlChange = async (url: string) => {
     setDocumentUrl(url);
     if (url && !documentName) {
-      try {
-        const urlObj = new URL(url);
-        setDocumentName(urlObj.hostname + urlObj.pathname);
-      } catch {
-        setDocumentName(url.substring(0, 50));
+      if (isYouTubeUrl(url)) {
+        // Try to fetch YouTube video title
+        try {
+          const title = await fetchVideoTitleWithFallback(url);
+          if (title) {
+            setDocumentName(generateDocumentNameFromTitle(title));
+          } else {
+            setDocumentName('YouTube Video');
+          }
+        } catch (error) {
+          console.error('Failed to fetch YouTube title:', error);
+          setDocumentName('YouTube Video');
+        }
+      } else {
+        try {
+          const urlObj = new URL(url);
+          setDocumentName(urlObj.hostname + urlObj.pathname);
+        } catch {
+          setDocumentName(url.substring(0, 50));
+        }
       }
     }
     if (url) {
@@ -88,15 +104,21 @@ export function EasyModeDocumentDialog({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (templateFromDoubleClick?: ProcessingTemplate) => {
     if (!currentRealm) {
       ToastService.error('No realm selected');
       return;
     }
 
-    if (!selectedTemplate) {
+    const templateToUse = templateFromDoubleClick || selectedTemplate;
+    if (!templateToUse) {
       ToastService.error('Please select a processing template');
       return;
+    }
+
+    // If template was passed from double-click, update the selected template
+    if (templateFromDoubleClick) {
+      setSelectedTemplate(templateFromDoubleClick);
     }
 
     if (!selectedFile && !documentUrl) {
@@ -117,8 +139,8 @@ export function EasyModeDocumentDialog({
         name: documentName.trim(),
         realmId: currentRealm.id,
         processingMode: 'AUTOMATIC' as const,
-        templateId: selectedTemplate.id,
-        templateConfig: ProcessingTemplateService.mergeWithDefaults(selectedTemplate),
+        templateId: templateToUse.id,
+        templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
         ...(documentUrl ? { url: documentUrl, type: getUrlType(documentUrl) } : {})
       };
 
@@ -129,7 +151,7 @@ export function EasyModeDocumentDialog({
         formData.append('name', documentName.trim());
         formData.append('realmId', currentRealm.id);
         formData.append('processingMode', 'AUTOMATIC');
-        formData.append('templateId', selectedTemplate.id);
+        formData.append('templateId', templateToUse.id);
         formData.append('templateConfig', JSON.stringify(documentData.templateConfig));
         formData.append('type', getFileType(selectedFile.name));
 
@@ -158,7 +180,7 @@ export function EasyModeDocumentDialog({
         }
       }
 
-      ToastService.success(`Document "${documentName}" created successfully with ${selectedTemplate.name} template`);
+      ToastService.success(`Document "${documentName}" created successfully with ${templateToUse.name} template`);
       handleClose();
     } catch (error) {
       console.error('Failed to create document:', error);
@@ -220,12 +242,7 @@ export function EasyModeDocumentDialog({
                 Upload your document and choose a processing template. We&apos;ll handle the technical details for you.
               </DialogDescription>
             </div>
-            {onSwitchToExpert && (
-              <Button variant="outline" size="sm" onClick={onSwitchToExpert}>
-                <Settings className="h-4 w-4 mr-2" />
-                Expert Mode
-              </Button>
-            )}
+
           </div>
         </DialogHeader>
 
@@ -327,40 +344,34 @@ export function EasyModeDocumentDialog({
           </TabsContent>
 
           <TabsContent value="template" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium">Choose Processing Template</h3>
+                <p className="text-sm text-gray-600">Select how you want your document to be processed. Double-click to create immediately.</p>
+              </div>
+              {onSwitchToExpert && (
+                <Button variant="outline" size="sm" onClick={onSwitchToExpert}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Expert Mode
+                </Button>
+              )}
+            </div>
+
             <TemplateSelector
               selectedTemplate={selectedTemplate || undefined}
               onTemplateSelect={setSelectedTemplate}
+              onTemplateDoubleClick={(template) => handleSubmit(template)}
               fileType={selectedFile ? selectedFile.name.split('.').pop() : getUrlType(documentUrl)}
             />
 
-            {selectedTemplate && (
-              <Card className="border-green-200 bg-green-50">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <span>{selectedTemplate.icon}</span>
-                    Selected: {selectedTemplate.name}
-                  </CardTitle>
-                  <CardDescription>{selectedTemplate.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Estimated Time:</span> {selectedTemplate.estimatedTime}
-                    </div>
-                    <div>
-                      <span className="font-medium">Stages:</span> {selectedTemplate.stages.length}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setActiveTab('upload')}>
                 Back to Upload
               </Button>
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={() => handleSubmit()}
                 disabled={!canProceed || isSubmitting}
                 className="min-w-[120px]"
               >
