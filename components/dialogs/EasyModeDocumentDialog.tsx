@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, Link, Sparkles, Settings, ArrowRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Upload, FileText, Link, Sparkles, Settings, ArrowRight, ArrowLeft, MousePointer2 } from 'lucide-react';
 import { TemplateSelector } from '@/components/ui/processing/template-selector';
 import { ProcessingTemplate, ProcessingTemplateService } from '@/lib/processing/templates';
 import { useApp } from '@/contexts/AppContext';
@@ -21,19 +21,21 @@ interface EasyModeDocumentDialogProps {
   onSwitchToExpert?: () => void;
 }
 
+type Step = 'source' | 'template';
+
 export function EasyModeDocumentDialog({
   isOpen,
   onClose,
   onSwitchToExpert
 }: EasyModeDocumentDialogProps) {
   const { currentRealm } = useApp();
-  const [activeTab, setActiveTab] = useState<'upload' | 'template'>('upload');
+  const [currentStep, setCurrentStep] = useState<Step>('source');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState('');
   const [documentName, setDocumentName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<ProcessingTemplate | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-select recommended template when file is selected
   useEffect(() => {
@@ -63,14 +65,19 @@ export function EasyModeDocumentDialog({
     }
   }, [documentUrl, selectedTemplate]);
 
+  const getUrlType = (url: string): string => {
+    if (isYouTubeUrl(url)) return 'youtube';
+    if (url.match(/\.(pdf|docx?|txt|md)$/i)) return url.split('.').pop()?.toLowerCase() || 'url';
+    return 'url';
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      if (!documentName) {
-        setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
-      }
-      setActiveTab('template');
+      setDocumentUrl(''); // Clear URL if file is selected
+      setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
+      setCurrentStep('template');
     }
   };
 
@@ -100,9 +107,15 @@ export function EasyModeDocumentDialog({
       }
     }
     if (url) {
-      setActiveTab('template');
+      setCurrentStep('template');
     }
   };
+
+  const handleUploadCardClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const canProceedToTemplate = selectedFile || documentUrl;
 
   const handleSubmit = async (templateFromDoubleClick?: ProcessingTemplate) => {
     if (!currentRealm) {
@@ -191,13 +204,18 @@ export function EasyModeDocumentDialog({
   };
 
   const handleClose = () => {
-    setSelectedFile(null);
-    setDocumentUrl('');
-    setDocumentName('');
-    setSelectedTemplate(null);
-    setActiveTab('upload');
-    setUploadType('file');
-    onClose();
+    if (!isSubmitting) {
+      setSelectedFile(null);
+      setDocumentUrl('');
+      setDocumentName('');
+      setSelectedTemplate(null);
+      setCurrentStep('source');
+      onClose();
+    }
+  };
+
+  const handleBackToSource = () => {
+    setCurrentStep('source');
   };
 
   const getFileType = (filename: string): string => {
@@ -219,167 +237,190 @@ export function EasyModeDocumentDialog({
     return typeMap[extension || ''] || 'document';
   };
 
-  const getUrlType = (url: string): string => {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      return 'youtube';
-    }
-    return 'website';
-  };
 
-  const canProceed = (selectedFile || documentUrl) && documentName.trim() && selectedTemplate;
+
+  const renderSourceStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-lg font-medium mb-2">Add Document</h3>
+        <p className="text-sm text-gray-600">Choose how you&apos;d like to add your document</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Upload File Card */}
+        <Card
+          className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300 group"
+          onClick={handleUploadCardClick}
+        >
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+              <Upload className="h-6 w-6 text-blue-600" />
+            </div>
+            <CardTitle className="text-lg">Upload File</CardTitle>
+            <CardDescription>
+              Select a file from your computer
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-gray-500 mb-4">
+              Supports PDF, Word, text, audio, video, and image files
+            </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+              <MousePointer2 className="h-3 w-3" />
+              Click to browse files
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* URL Input Card */}
+        <Card className="transition-all duration-200 hover:shadow-md hover:border-green-300">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Link className="h-6 w-6 text-green-600" />
+            </div>
+            <CardTitle className="text-lg">From URL</CardTitle>
+            <CardDescription>
+              Enter a web URL or YouTube link
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Label htmlFor="document-url" className="sr-only">Document URL</Label>
+              <Input
+                id="document-url"
+                type="url"
+                placeholder="https://example.com/document or YouTube URL"
+                value={documentUrl}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                className="text-center"
+              />
+              <p className="text-xs text-gray-500 text-center">
+                Web pages, PDFs, YouTube videos, and more
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileSelect}
+        accept=".pdf,.docx,.doc,.txt,.md,.mp3,.wav,.mp4,.avi,.jpg,.jpeg,.png"
+        className="hidden"
+      />
+
+      {/* Selected file/URL preview */}
+      {(selectedFile || documentUrl) && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              {selectedFile ? (
+                <>
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-900">{selectedFile.name}</p>
+                    <p className="text-sm text-blue-700">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link className="h-5 w-5 text-blue-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-900">{documentName}</p>
+                    <p className="text-sm text-blue-700 break-all">{documentUrl}</p>
+                  </div>
+                </>
+              )}
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                {getUrlType(documentUrl).toUpperCase() || 'FILE'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Continue button */}
+      {canProceedToTemplate && (
+        <div className="flex justify-end">
+          <Button onClick={() => setCurrentStep('template')} className="gap-2">
+            Continue to Templates
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTemplateStep = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Choose Processing Template</h3>
+          <p className="text-sm text-gray-600">
+            Select how you want your document to be processed. Single-click to select, double-click to create immediately.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleBackToSource} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
+      <ScrollArea className="h-[400px]">
+        <TemplateSelector
+          selectedTemplate={selectedTemplate || undefined}
+          onTemplateSelect={setSelectedTemplate}
+          onTemplateDoubleClick={(template) => handleSubmit(template)}
+          fileType={selectedFile ? selectedFile.name.split('.').pop() : getUrlType(documentUrl)}
+        />
+      </ScrollArea>
+
+      <div className="flex justify-between items-center pt-4 border-t">
+        <Button
+          variant="outline"
+          onClick={onSwitchToExpert}
+          className="gap-2"
+          disabled={isSubmitting}
+        >
+          <Settings className="h-4 w-4" />
+          Expert Mode
+        </Button>
+
+        <Button
+          onClick={() => handleSubmit()}
+          disabled={!selectedTemplate || isSubmitting}
+          className="gap-2"
+        >
+          {isSubmitting ? 'Creating...' : 'Create Document'}
+          <Sparkles className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-blue-500" />
-                Easy Mode - Add Document
-              </DialogTitle>
-              <DialogDescription>
-                Upload your document and choose a processing template. We&apos;ll handle the technical details for you.
-              </DialogDescription>
-            </div>
-
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-500" />
+            Add Document
+          </DialogTitle>
+          <DialogDescription>
+            {currentStep === 'source'
+              ? 'Choose your document source to get started'
+              : 'Select a processing template for your document'
+            }
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'template')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload Document
-            </TabsTrigger>
-            <TabsTrigger value="template" className="flex items-center gap-2" disabled={!selectedFile && !documentUrl}>
-              <Sparkles className="h-4 w-4" />
-              Choose Template
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="upload" className="space-y-6">
-            <div className="space-y-4">
-              <Label className="text-base font-medium">How would you like to add your document?</Label>
-              
-              <Tabs value={uploadType} onValueChange={(value) => setUploadType(value as 'file' | 'url')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="file">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Upload File
-                  </TabsTrigger>
-                  <TabsTrigger value="url">
-                    <Link className="h-4 w-4 mr-2" />
-                    From URL
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="file" className="space-y-4">
-                  <div>
-                    <Label htmlFor="file-upload">Select File</Label>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      onChange={handleFileSelect}
-                      accept=".pdf,.docx,.doc,.txt,.md,.mp3,.wav,.mp4,.avi,.jpg,.jpeg,.png"
-                      className="mt-2"
-                    />
-                    {selectedFile && (
-                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-800">{selectedFile.name}</span>
-                          <Badge variant="secondary">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</Badge>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="url" className="space-y-4">
-                  <div>
-                    <Label htmlFor="document-url">Document URL</Label>
-                    <Input
-                      id="document-url"
-                      type="url"
-                      placeholder="https://example.com/document or YouTube URL"
-                      value={documentUrl}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      className="mt-2"
-                    />
-                    {documentUrl && (
-                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <div className="flex items-center gap-2">
-                          <Link className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-800">
-                            {getUrlType(documentUrl).toUpperCase()} Content
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div>
-                <Label htmlFor="document-name">Document Name</Label>
-                <Input
-                  id="document-name"
-                  placeholder="Enter a name for your document"
-                  value={documentName}
-                  onChange={(e) => setDocumentName(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-
-              {(selectedFile || documentUrl) && (
-                <div className="flex justify-end">
-                  <Button onClick={() => setActiveTab('template')}>
-                    Next: Choose Template
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="template" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Choose Processing Template</h3>
-                <p className="text-sm text-gray-600">Select how you want your document to be processed. Double-click to create immediately.</p>
-              </div>
-              {onSwitchToExpert && (
-                <Button variant="outline" size="sm" onClick={onSwitchToExpert}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Expert Mode
-                </Button>
-              )}
-            </div>
-
-            <TemplateSelector
-              selectedTemplate={selectedTemplate || undefined}
-              onTemplateSelect={setSelectedTemplate}
-              onTemplateDoubleClick={(template) => handleSubmit(template)}
-              fileType={selectedFile ? selectedFile.name.split('.').pop() : getUrlType(documentUrl)}
-            />
-
-
-
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setActiveTab('upload')}>
-                Back to Upload
-              </Button>
-              <Button
-                onClick={() => handleSubmit()}
-                disabled={!canProceed || isSubmitting}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? 'Creating...' : 'Create Document'}
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <div className="flex-1 overflow-hidden">
+          {currentStep === 'source' ? renderSourceStep() : renderTemplateStep()}
+        </div>
       </DialogContent>
     </Dialog>
   );

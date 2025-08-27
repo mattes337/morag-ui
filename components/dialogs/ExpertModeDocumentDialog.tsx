@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, FileText, Link, Settings, Sparkles, ArrowRight, Save, Download } from 'lucide-react';
+import { Upload, FileText, Link, Settings, Sparkles, ArrowRight, ArrowLeft, MousePointer2, Save, Download } from 'lucide-react';
 import { StageConfigEditor } from '@/components/ui/processing/stage-config-editor';
 import { StageConfig } from '@/lib/services/moragService';
 import {
@@ -27,9 +27,11 @@ interface ExpertModeDocumentDialogProps {
   onSwitchToEasy?: () => void;
 }
 
+type Step = 'source' | 'configure' | 'review';
+
 const AVAILABLE_STAGES = [
   'markdown-conversion',
-  'markdown-optimizer', 
+  'markdown-optimizer',
   'chunker',
   'fact-generator',
   'ingestor'
@@ -41,12 +43,12 @@ export function ExpertModeDocumentDialog({
   onSwitchToEasy
 }: ExpertModeDocumentDialogProps) {
   const { currentRealm } = useApp();
-  const [activeTab, setActiveTab] = useState<'upload' | 'configure' | 'review'>('upload');
+  const [currentStep, setCurrentStep] = useState<Step>('source');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState('');
   const [documentName, setDocumentName] = useState('');
-  const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stage configuration state
   const [enabledStages, setEnabledStages] = useState<{ [stage: string]: boolean }>({
@@ -69,21 +71,28 @@ export function ExpertModeDocumentDialog({
     language: 'en'
   });
 
+  const getUrlType = (url: string): string => {
+    if (isYouTubeUrl(url)) return 'youtube';
+    if (url.match(/\.(pdf|docx?|txt|md)$/i)) return url.split('.').pop()?.toLowerCase() || 'url';
+    return 'url';
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      if (!documentName) {
-        setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
-      }
+      setDocumentUrl(''); // Clear URL if file is selected
+      setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
+      setCurrentStep('configure');
     }
   };
 
   const handleUrlChange = async (url: string) => {
     setDocumentUrl(url);
-    if (url && !documentName) {
+    setSelectedFile(null); // Clear file if URL is entered
+
+    if (url) {
       if (isYouTubeUrl(url)) {
-        // Try to fetch YouTube video title
         try {
           const title = await fetchVideoTitleWithFallback(url);
           if (title) {
@@ -96,15 +105,18 @@ export function ExpertModeDocumentDialog({
           setDocumentName('YouTube Video');
         }
       } else {
-        try {
-          const urlObj = new URL(url);
-          setDocumentName(urlObj.hostname + urlObj.pathname);
-        } catch {
-          setDocumentName(url.substring(0, 50));
-        }
+        const urlName = url.split('/').pop()?.split('?')[0] || 'Web Document';
+        setDocumentName(urlName);
       }
+      setCurrentStep('configure');
     }
   };
+
+  const handleUploadCardClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const canProceedFromSource = selectedFile || documentUrl;
 
   const handleStageConfigChange = (stage: string, config: StageConfig) => {
     setStageConfigs(prev => ({
@@ -269,26 +281,27 @@ export function ExpertModeDocumentDialog({
   };
 
   const handleClose = () => {
-    setSelectedFile(null);
-    setDocumentUrl('');
-    setDocumentName('');
-    setActiveTab('upload');
-    setUploadType('file');
-    // Reset to defaults
-    setEnabledStages({
-      'markdown-conversion': true,
-      'markdown-optimizer': false,
-      'chunker': true,
-      'fact-generator': true,
-      'ingestor': true
-    });
-    const configs: { [stage: string]: StageConfig } = {};
-    AVAILABLE_STAGES.forEach(stage => {
-      configs[stage] = { ...DEFAULT_STAGE_CONFIGS[stage as keyof typeof DEFAULT_STAGE_CONFIGS] };
-    });
-    setStageConfigs(configs);
-    setGlobalConfig({ language: 'en' });
-    onClose();
+    if (!isSubmitting) {
+      setSelectedFile(null);
+      setDocumentUrl('');
+      setDocumentName('');
+      setCurrentStep('source');
+      // Reset to defaults
+      setEnabledStages({
+        'markdown-conversion': true,
+        'markdown-optimizer': false,
+        'chunker': true,
+        'fact-generator': true,
+        'ingestor': true
+      });
+      const configs: { [stage: string]: StageConfig } = {};
+      AVAILABLE_STAGES.forEach(stage => {
+        configs[stage] = { ...DEFAULT_STAGE_CONFIGS[stage as keyof typeof DEFAULT_STAGE_CONFIGS] };
+      });
+      setStageConfigs(configs);
+      setGlobalConfig({ language: 'en' });
+      onClose();
+    }
   };
 
   const getFileType = (filename: string): string => {
@@ -310,15 +323,11 @@ export function ExpertModeDocumentDialog({
     return typeMap[extension || ''] || 'document';
   };
 
-  const getUrlType = (url: string): string => {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      return 'youtube';
-    }
-    return 'website';
-  };
+
 
   const canProceed = (selectedFile || documentUrl) && documentName.trim();
   const activeStages = AVAILABLE_STAGES.filter(stage => enabledStages[stage]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -331,7 +340,7 @@ export function ExpertModeDocumentDialog({
                 Expert Mode - Add Document
               </DialogTitle>
               <DialogDescription>
-                Full control over all processing stages and configurations. Configure each stage individually.
+                Full control over all processing stages and configurations
               </DialogDescription>
             </div>
             {onSwitchToEasy && (
@@ -343,104 +352,135 @@ export function ExpertModeDocumentDialog({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
+        <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as Step)} className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload" className="flex items-center gap-2">
+            <TabsTrigger value="source" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              Upload Document
+              Document Source
             </TabsTrigger>
-            <TabsTrigger value="configure" className="flex items-center gap-2" disabled={!canProceed}>
+            <TabsTrigger value="configure" className="flex items-center gap-2" disabled={!canProceedFromSource}>
               <Settings className="h-4 w-4" />
               Configure Stages
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex items-center gap-2" disabled={!canProceed}>
+            <TabsTrigger value="review" className="flex items-center gap-2" disabled={!canProceedFromSource}>
               <FileText className="h-4 w-4" />
               Review & Create
             </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-hidden">
-            <TabsContent value="upload" className="h-full">
+            <TabsContent value="source" className="h-full">
               <ScrollArea className="h-full">
-                <div className="space-y-6 p-1">
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">How would you like to add your document?</Label>
-                    
-                    <Tabs value={uploadType} onValueChange={(value) => setUploadType(value as 'file' | 'url')}>
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="file">
-                          <FileText className="h-4 w-4 mr-2" />
-                          Upload File
-                        </TabsTrigger>
-                        <TabsTrigger value="url">
-                          <Link className="h-4 w-4 mr-2" />
-                          From URL
-                        </TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="file" className="space-y-4">
-                        <div>
-                          <Label htmlFor="file-upload">Select File</Label>
-                          <Input
-                            id="file-upload"
-                            type="file"
-                            onChange={handleFileSelect}
-                            accept=".pdf,.docx,.doc,.txt,.md,.mp3,.wav,.mp4,.avi,.jpg,.jpeg,.png"
-                            className="mt-2"
-                          />
-                          {selectedFile && (
-                            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-800">{selectedFile.name}</span>
-                                <Badge variant="secondary">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</Badge>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="url" className="space-y-4">
-                        <div>
-                          <Label htmlFor="document-url">Document URL</Label>
-                          <Input
-                            id="document-url"
-                            type="url"
-                            placeholder="https://example.com/document or YouTube URL"
-                            value={documentUrl}
-                            onChange={(e) => handleUrlChange(e.target.value)}
-                            className="mt-2"
-                          />
-                          {documentUrl && (
-                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Link className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-800">
-                                  {getUrlType(documentUrl).toUpperCase()} Content
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-
-                    <div>
-                      <Label htmlFor="document-name">Document Name</Label>
-                      <Input
-                        id="document-name"
-                        placeholder="Enter a name for your document"
-                        value={documentName}
-                        onChange={(e) => setDocumentName(e.target.value)}
-                        className="mt-2"
-                      />
+                <div className="p-1">
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-lg font-medium mb-2">Add Document - Expert Mode</h3>
+                      <p className="text-sm text-gray-600">Choose your document source and configure processing stages</p>
                     </div>
 
-                    {canProceed && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Upload File Card */}
+                      <Card
+                        className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-purple-300 group"
+                        onClick={handleUploadCardClick}
+                      >
+                        <CardHeader className="text-center pb-4">
+                          <div className="mx-auto w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                            <Upload className="h-6 w-6 text-purple-600" />
+                          </div>
+                          <CardTitle className="text-lg">Upload File</CardTitle>
+                          <CardDescription>
+                            Select a file from your computer
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                          <p className="text-sm text-gray-500 mb-4">
+                            Supports PDF, Word, text, audio, video, and image files
+                          </p>
+                          <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                            <MousePointer2 className="h-3 w-3" />
+                            Click to browse files
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* URL Input Card */}
+                      <Card className="transition-all duration-200 hover:shadow-md hover:border-purple-300">
+                        <CardHeader className="text-center pb-4">
+                          <div className="mx-auto w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <Link className="h-6 w-6 text-purple-600" />
+                          </div>
+                          <CardTitle className="text-lg">From URL</CardTitle>
+                          <CardDescription>
+                            Enter a web URL or YouTube link
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <Label htmlFor="document-url" className="sr-only">Document URL</Label>
+                            <Input
+                              id="document-url"
+                              type="url"
+                              placeholder="https://example.com/document or YouTube URL"
+                              value={documentUrl}
+                              onChange={(e) => handleUrlChange(e.target.value)}
+                              className="text-center"
+                            />
+                            <p className="text-xs text-gray-500 text-center">
+                              Web pages, PDFs, YouTube videos, and more
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileSelect}
+                      accept=".pdf,.docx,.doc,.txt,.md,.mp3,.wav,.mp4,.avi,.jpg,.jpeg,.png"
+                      className="hidden"
+                    />
+
+                    {/* Selected file/URL preview */}
+                    {(selectedFile || documentUrl) && (
+                      <Card className="bg-purple-50 border-purple-200">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-3">
+                            {selectedFile ? (
+                              <>
+                                <FileText className="h-5 w-5 text-purple-600" />
+                                <div className="flex-1">
+                                  <p className="font-medium text-purple-900">{selectedFile.name}</p>
+                                  <p className="text-sm text-purple-700">
+                                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Link className="h-5 w-5 text-purple-600" />
+                                <div className="flex-1">
+                                  <p className="font-medium text-purple-900">{documentName}</p>
+                                  <p className="text-sm text-purple-700 break-all">{documentUrl}</p>
+                                </div>
+                              </>
+                            )}
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                              {getUrlType(documentUrl).toUpperCase() || 'FILE'}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Continue button */}
+                    {canProceedFromSource && (
                       <div className="flex justify-end">
-                        <Button onClick={() => setActiveTab('configure')}>
-                          Next: Configure Stages
-                          <ArrowRight className="h-4 w-4 ml-2" />
+                        <Button onClick={() => setCurrentStep('configure')} className="gap-2">
+                          Configure Processing
+                          <ArrowRight className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
@@ -492,7 +532,7 @@ export function ExpertModeDocumentDialog({
                             <Input
                               id="global-language"
                               value={globalConfig.language || 'en'}
-                              onChange={(e) => setGlobalConfig(prev => ({ ...prev, language: e.target.value }))}
+                              onChange={(e) => setGlobalConfig((prev: any) => ({ ...prev, language: e.target.value }))}
                               placeholder="en"
                             />
                           </div>
@@ -515,11 +555,12 @@ export function ExpertModeDocumentDialog({
                 </ScrollArea>
 
                 <div className="flex justify-between mt-4">
-                  <Button variant="outline" onClick={() => setActiveTab('upload')}>
-                    Back to Upload
+                  <Button variant="outline" onClick={() => setCurrentStep('source')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Source
                   </Button>
-                  <Button onClick={() => setActiveTab('review')}>
-                    Next: Review & Create
+                  <Button onClick={() => setCurrentStep('review')}>
+                    Review & Create
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
@@ -531,7 +572,7 @@ export function ExpertModeDocumentDialog({
                 <div className="space-y-6 p-1">
                   <div>
                     <h3 className="text-lg font-medium mb-4">Review Configuration</h3>
-                    
+
                     <div className="grid gap-6">
                       {/* Document Info */}
                       <Card>
@@ -548,65 +589,54 @@ export function ExpertModeDocumentDialog({
                         </CardContent>
                       </Card>
 
-                      {/* Processing Pipeline */}
+                      {/* Processing Configuration */}
                       <Card>
                         <CardHeader>
-                          <CardTitle>Processing Pipeline</CardTitle>
-                          <CardDescription>
-                            {activeStages.length} stages enabled
-                          </CardDescription>
+                          <CardTitle>Processing Configuration</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="flex flex-wrap gap-2">
-                            {activeStages.map((stage, index) => (
-                              <div key={stage} className="flex items-center gap-2">
-                                <Badge variant="default">
-                                  {stage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                </Badge>
-                                {index < activeStages.length - 1 && <ArrowRight className="h-4 w-4 text-gray-400" />}
+                          <div className="space-y-4">
+                            <div>
+                              <strong>Enabled Stages:</strong>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {Object.keys(enabledStages)
+                                  .filter(stage => enabledStages[stage])
+                                  .map(stage => (
+                                    <Badge key={stage} variant="secondary">
+                                      {stage}
+                                    </Badge>
+                                  ))}
                               </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                            </div>
 
-                      {/* Configuration Summary */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Configuration Summary</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2 text-sm">
-                            {activeStages.map((stage) => {
-                              const config = stageConfigs[stage];
-                              const configCount = Object.keys(config).length;
-                              return (
-                                <div key={stage} className="flex justify-between">
-                                  <span>{stage.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                  <Badge variant="outline">{configCount} settings</Badge>
-                                </div>
-                              );
-                            })}
+                            <div>
+                              <strong>Global Configuration:</strong>
+                              <pre className="mt-2 p-3 bg-gray-50 rounded text-sm overflow-auto">
+                                {JSON.stringify(globalConfig, null, 2)}
+                              </pre>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
                     </div>
                   </div>
-
-                  <div className="flex justify-between">
-                    <Button variant="outline" onClick={() => setActiveTab('configure')}>
-                      Back to Configure
-                    </Button>
-                    <Button 
-                      onClick={handleSubmit} 
-                      disabled={isSubmitting}
-                      className="min-w-[120px]"
-                    >
-                      {isSubmitting ? 'Creating...' : 'Create Document'}
-                    </Button>
-                  </div>
                 </div>
               </ScrollArea>
+
+              <div className="flex justify-between mt-4">
+                <Button variant="outline" onClick={() => setCurrentStep('configure')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Configure
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="gap-2"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Document'}
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
             </TabsContent>
           </div>
         </Tabs>
