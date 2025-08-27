@@ -32,12 +32,12 @@ export function StageWorkflowView({
 
   return (
     <div className="space-y-4">
-      <div className="text-sm text-gray-600 mb-4">
+      <div className="text-sm text-gray-600 mb-4 text-center">
         Processing stages are executed in order. Optional stages can be skipped.
       </div>
-      
-      {/* Horizontal Workflow */}
-      <div className="flex items-stretch overflow-x-auto pb-4 space-x-4">
+
+      {/* Desktop Horizontal Workflow */}
+      <div className="hidden md:flex items-stretch justify-center overflow-x-auto pb-4 space-x-4">
         {WORKFLOW_ORDER.map((stage, index) => {
           const stageInfo = stageMap.get(stage);
           const isExecuting = executingStage === stage;
@@ -68,7 +68,7 @@ export function StageWorkflowView({
                     isLoading={isLoading}
                   />
                 ) : (
-                  // Past/Future stages - compact vertical display
+                  // Past/Future stages - compact vertical display (hidden on mobile)
                   <div className={`
                     w-20 h-52 border-2 rounded-xl flex flex-col items-center justify-between p-3 transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm
                     ${status === 'COMPLETED' ? 'bg-gradient-to-b from-green-50 to-green-100 border-green-300 hover:shadow-green-200' :
@@ -120,23 +120,66 @@ export function StageWorkflowView({
         })}
       </div>
 
-      {/* Mobile Workflow Indicators */}
-      <div className="xl:hidden flex items-center justify-center space-x-2 mt-6">
+      {/* Mobile Layout - Current Stage Only */}
+      <div className="md:hidden">
+        {WORKFLOW_ORDER.map((stage, index) => {
+          const stageInfo = stageMap.get(stage);
+          const isExecuting = executingStage === stage;
+          const status = stageInfo?.status || 'PENDING';
+          const isCurrentStage = status === 'RUNNING' || (status === 'PENDING' && index === 0) ||
+                                (status === 'PENDING' && WORKFLOW_ORDER.slice(0, index).every(s => {
+                                  const prevStage = stageMap.get(s);
+                                  return prevStage?.status === 'COMPLETED' || prevStage?.status === 'SKIPPED';
+                                }));
+
+          // Only show the current stage on mobile
+          if (!isCurrentStage) return null;
+
+          return (
+            <div key={stage} className="flex justify-center">
+              <StageCard
+                stage={stage}
+                stageInfo={stageInfo}
+                stageMap={stageMap}
+                isExecuting={isExecuting}
+                onExecuteStage={onExecuteStage}
+                onExecuteChain={onExecuteChain}
+                onResetToStage={onResetToStage}
+                isLoading={isLoading}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile Progress Indicators */}
+      <div className="md:hidden flex items-center justify-center space-x-2 mt-6">
         {WORKFLOW_ORDER.map((stage, index) => {
           const stageInfo = stageMap.get(stage);
           const status = stageInfo?.status || 'PENDING';
-          
+          const isCurrentStage = status === 'RUNNING' || (status === 'PENDING' && index === 0) ||
+                                (status === 'PENDING' && WORKFLOW_ORDER.slice(0, index).every(s => {
+                                  const prevStage = stageMap.get(s);
+                                  return prevStage?.status === 'COMPLETED' || prevStage?.status === 'SKIPPED';
+                                }));
+
           return (
             <React.Fragment key={stage}>
               <div className={`
-                w-3 h-3 rounded-full
-                ${status === 'COMPLETED' ? 'bg-green-500' : 
-                  status === 'RUNNING' ? 'bg-blue-500' : 
-                  status === 'FAILED' ? 'bg-red-500' : 
+                transition-all duration-300
+                ${isCurrentStage ? 'w-6 h-6 rounded-lg' : 'w-3 h-3 rounded-full'}
+                ${status === 'COMPLETED' ? 'bg-green-500' :
+                  status === 'RUNNING' ? 'bg-blue-500' :
+                  status === 'FAILED' ? 'bg-red-500' :
                   status === 'SKIPPED' ? 'bg-gray-400' : 'bg-gray-300'}
+                ${isCurrentStage ? 'ring-2 ring-blue-200' : ''}
               `} />
               {index < WORKFLOW_ORDER.length - 1 && (
-                <div className="w-4 h-0.5 bg-gray-300" />
+                <div className={`
+                  h-0.5 transition-all duration-300
+                  ${isCurrentStage ? 'w-6' : 'w-4'}
+                  ${status === 'COMPLETED' ? 'bg-green-300' : 'bg-gray-300'}
+                `} />
               )}
             </React.Fragment>
           );

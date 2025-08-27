@@ -115,9 +115,13 @@ export function RealmSelector() {
                 <Button
                     variant="outline"
                     className="text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={() => window.location.reload()}
+                    onClick={() => {
+                        // Soft refresh by clearing error and retrying
+                        setError(null);
+                        // The useEffect will automatically retry loading realms
+                    }}
                 >
-                    ⚠️ Realm Error - Click to Refresh
+                    ⚠️ Realm Error - Click to Retry
                 </Button>
             </div>
         );

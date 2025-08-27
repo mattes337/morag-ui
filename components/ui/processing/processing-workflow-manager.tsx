@@ -9,11 +9,12 @@ import { Alert, AlertDescription } from '../alert';
 import { StageControlPanel } from './stage-control-panel';
 import { StageProgressIndicator } from './stage-progress-indicator';
 import { ProcessingModeToggle } from './processing-mode-toggle';
-import { 
-  Settings, 
-  Activity, 
-  Play, 
-  Pause, 
+import { RetryButton } from './retry-button';
+import {
+  Settings,
+  Activity,
+  Play,
+  Pause,
   RefreshCw,
   AlertCircle,
   CheckCircle,
@@ -174,15 +175,14 @@ export function ProcessingWorkflowManager({
           />
           
           {/* Refresh Button */}
-          <Button
+          <RetryButton
             variant="outline"
             size="sm"
-            onClick={handleRefreshStatus}
-            disabled={isLoading}
+            onRetry={handleRefreshStatus}
+            isLoading={isLoading}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+            Refresh Status
+          </RetryButton>
         </div>
       </div>
 
