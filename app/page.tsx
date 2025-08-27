@@ -1,58 +1,29 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useApp } from '../contexts/AppContext';
 import { RealmsView } from '../components/views/RealmsView';
 import { LoadingSpinner } from '../components/ui/loading-spinner';
-import { useEffect } from 'react';
+import { useRealmsController } from '../lib/controllers/RealmsController';
+import { useApp } from '../contexts/AppContext';
 
 export default function RealmsPage() {
-    const router = useRouter();
-    const {
-        user,
-        realms,
-        isDataLoading,
-        setCurrentRealm,
-        setSelectedDocument,
-        setShowCreateRealmDialog,
-    } = useApp();
+    const { state, actions } = useRealmsController();
+    const { setShowCreateRealmDialog } = useApp();
 
-    useEffect(() => {
-        if (!user && !isDataLoading) {
-            router.push('/login');
-        }
-    }, [user, isDataLoading, router]);
-
-    if (isDataLoading) {
+    if (state.isLoading) {
         return <LoadingSpinner data-oid="a1hr43t" />;
     }
 
-    if (!user) {
+    if (!state.user) {
         return null; // or a loading spinner
     }
 
-    const handleSelectRealm = (realm: any) => {
-        setCurrentRealm(realm);
-        router.push('/documents');
-    };
-
-    const handlePromptRealm = (realm: any) => {
-        setCurrentRealm(realm);
-        setSelectedDocument(null);
-        router.push('/prompt');
-    };
-
-    const handleViewRealm = (realm: any) => {
-        router.push(`/realms/${realm.id}`);
-    };
-
     return (
         <RealmsView
-            realms={realms}
+            realms={state.realms}
             onCreateRealm={() => setShowCreateRealmDialog(true)}
-            onSelectRealm={handleSelectRealm}
-            onPromptRealm={handlePromptRealm}
-            onViewRealm={handleViewRealm}
+            onSelectRealm={actions.handleSelectRealm}
+            onPromptRealm={actions.handlePromptRealm}
+            onViewRealm={actions.handleViewRealm}
             data-oid="bs7d6n9"
         />
     );

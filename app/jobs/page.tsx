@@ -1,32 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useApp } from '../../contexts/AppContext';
 import { JobsView } from '../../components/views/JobsView';
+import { useJobsController } from '../../lib/controllers/JobsController';
 import { Job } from '../../types';
+import { useApp } from '../../contexts/AppContext';
 
 export default function JobsPage() {
     const router = useRouter();
+    const { state, actions } = useJobsController();
     const { jobs, setJobs } = useApp();
-
-    const handleCancelJob = (job: Job) => {
-        // Update job status to cancelled
-        const updatedJobs = jobs.map((j) =>
-            j.id === job.id
-                ? {
-                      ...j,
-                      status: 'CANCELLED' as const,
-                      endDate: new Date().toISOString(),
-                      progress: {
-                          ...j.progress,
-                          summary: 'Job cancelled by user',
-                      },
-                      updatedAt: new Date().toISOString(),
-                  }
-                : j,
-        );
-        setJobs(updatedJobs);
-    };
 
     const handleViewJobDetail = async (job: Job) => {
         try {
@@ -57,8 +40,8 @@ export default function JobsPage() {
 
     return (
         <JobsView
-            jobs={jobs}
-            onCancelJob={handleCancelJob}
+            jobs={state.jobs}
+            onCancelJob={actions.handleCancelJob}
             onViewJobDetail={handleViewJobDetail}
             data-oid="qa53lh_"
         />

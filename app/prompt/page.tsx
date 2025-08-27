@@ -1,12 +1,12 @@
 'use client';
 
-import { useApp } from '../../contexts/AppContext';
 import { PromptExecutionView } from '../../components/views/PromptExecutionView';
+import { usePromptController } from '../../lib/controllers/PromptController';
 
 export default function PromptPage() {
-    const { currentRealm } = useApp();
+    const { state } = usePromptController();
 
-    if (!currentRealm) {
+    if (!state.hasRealm) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -23,8 +23,8 @@ export default function PromptPage() {
 
     return (
         <PromptExecutionView
-            realmId={currentRealm.id}
-            realmName={currentRealm.name}
+            realmId={state.currentRealm.id}
+            realmName={state.currentRealm.name}
         />
     );
 }

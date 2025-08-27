@@ -1,10 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import { useApp } from '../../../contexts/AppContext';
 import { DocumentDetailView } from '../../../components/views/DocumentDetailView';
-import { Document } from '../../../types';
+import { useDocumentDetailController } from '../../../lib/controllers/DocumentDetailController';
 
 interface DocumentDetailPageProps {
     params: {
@@ -13,240 +10,19 @@ interface DocumentDetailPageProps {
 }
 
 export default function DocumentDetailPage({ params }: DocumentDetailPageProps) {
-    const router = useRouter();
-    const {
-        selectedDocument,
-        setSelectedDocument,
-        setShowSupersedeDocumentDialog,
-        setDocumentToSupersede,
-        updateDocument,
-        deleteDocument,
-    } = useApp();
+    const { state, actions } = useDocumentDetailController(params.id);
 
-    const [document, setDocument] = useState<Document | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    // Add logging when document state changes
-    useEffect(() => {
-        if (document) {
-            console.log('📄 [DocumentDetailPage] Document state changed:', {
-                id: document.id,
-                name: document.name,
-                state: document.state,
-                currentStage: document.currentStage,
-                stageStatus: document.stageStatus,
-                processingMode: document.processingMode
-            });
-        }
-    }, [document]);
-
-    useEffect(() => {
-        let isCancelled = false;
-
-        const loadDocument = async () => {
-            try {
-                console.log('🔍 [DocumentDetailPage] Loading document with ID:', params.id);
-                console.log('📊 [DocumentDetailPage] Current state before loading:', {
-                    isLoading,
-                    hasDocument: !!document,
-                    documentState: document?.state,
-                    documentCurrentStage: document?.currentStage,
-                    documentStageStatus: document?.stageStatus
-                });
-                if (!isCancelled) setIsLoading(true);
-                if (!isCancelled) setError(null);
-
-                // Always fetch from API to get the most current state
-                // Context data might be stale, especially for processing status
-                console.log('📡 [DocumentDetailPage] Fetching complete document data from API');
-                const response = await fetch(`/api/documents/${params.id}/complete`);
-
-                if (!response.ok) {
-                    if (isCancelled) return;
-
-                    if (response.status === 404) {
-                        console.log('❌ [DocumentDetailPage] Document not found (404)');
-                        setError('Document not found');
-                        // Only redirect after a longer delay and show error message
-                        setTimeout(() => {
-                            console.log('🔄 [DocumentDetailPage] Redirecting to documents list after 404');
-                            router.push('/documents');
-                        }, 3000);
-                        return;
-                    }
-                    console.log('❌ [DocumentDetailPage] API fetch failed:', response.status, response.statusText);
-                    // Don't redirect on API errors, just show error
-                    setError(`Failed to load document: ${response.status} ${response.statusText}`);
-                    setIsLoading(false);
-                    return;
-                }
-
-                if (isCancelled) return;
-
-                const responseData = await response.json();
-                const docData = responseData.document; // Extract document from the response
-
-                if (!docData || !docData.id) {
-                    if (isCancelled) return;
-                    console.error('❌ [DocumentDetailPage] Invalid document data received:', responseData);
-                    setError('Invalid document data received from server');
-                    setIsLoading(false);
-                    return;
-                }
-
-                // Store the complete response data for DocumentDetailView
-                (window as any).__documentCompleteData = {
-                    documentId: params.id, // Add document ID to prevent stale data usage
-                    files: responseData.files || [],
-                    pipelineStatus: responseData.pipelineStatus,
-                    executionStats: responseData.executionStats,
-                    isProcessing: responseData.isProcessing || false
-                };
-
-                const formattedDoc: Document = {
-                    id: docData.id,
-                    name: docData.name,
-                    type: docData.type,
-                    subType: docData.subType,
-                    state: (docData.state || 'pending').toLowerCase() as Document['state'],
-                    version: docData.version || 1,
-                    chunks: docData.chunks || 0,
-                    quality: docData.quality || 0,
-                    uploadDate: docData.uploadDate
-                        ? new Date(docData.uploadDate).toISOString().split('T')[0]
-                        : new Date().toISOString().split('T')[0],
-                    processingMode: docData.processingMode || 'AUTOMATIC',
-                    markdown: docData.markdown,
-                    metadata: docData.metadata,
-                    // Include processing state fields
-                    currentStage: docData.currentStage,
-                    stageStatus: docData.stageStatus,
-                    lastStageError: docData.lastStageError,
-                    isProcessingPaused: docData.isProcessingPaused,
-                    nextScheduledStage: docData.nextScheduledStage,
-                    scheduledAt: docData.scheduledAt,
-                };
-
-                console.log('✅ [DocumentDetailPage] Successfully loaded document from API:');
-                console.log('📊 [DocumentDetailPage] Document state from API:', {
-                    name: formattedDoc.name,
-                    id: formattedDoc.id,
-                    state: formattedDoc.state,
-                    currentStage: formattedDoc.currentStage,
-                    stageStatus: formattedDoc.stageStatus,
-                    processingMode: formattedDoc.processingMode,
-                    isProcessingPaused: formattedDoc.isProcessingPaused
-                });
-                console.log('🔄 [DocumentDetailPage] Setting document state...');
-                if (!isCancelled) setDocument(formattedDoc);
-            } catch (err) {
-                if (!isCancelled) {
-                    console.error('❌ [DocumentDetailPage] Failed to load document:', err);
-                    const errorMessage = err instanceof Error ? err.message : 'Failed to load document';
-                    setError(errorMessage);
-
-                    // Only redirect on specific errors, not all errors
-                    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
-                        console.log('🔄 [DocumentDetailPage] Redirecting due to document not found');
-                        setTimeout(() => router.push('/documents'), 3000);
-                    } else {
-                        console.log('⚠️ [DocumentDetailPage] Staying on page despite error:', errorMessage);
-                    }
-                }
-            } finally {
-                if (!isCancelled) setIsLoading(false);
-            }
-        };
-
-        loadDocument();
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [params.id, router]); // Removed documents and isDataLoading to prevent infinite re-renders
-
-    // Set the selected document if it's not already set or different
-    useEffect(() => {
-        if (document && (!selectedDocument || selectedDocument.id !== document.id)) {
-            setSelectedDocument(document);
-        }
-    }, [document, selectedDocument]); // Removed setSelectedDocument to prevent re-renders
-
-    const handleBackFromDocumentDetail = () => {
-        setSelectedDocument(null);
-        router.push('/documents');
-    };
-
-    const handleReingestDocument = async (document: Document) => {
-        try {
-            await updateDocument(document.id, { state: 'ingesting' });
-            console.log('Reingesting document:', document.name);
-        } catch (error) {
-            console.error('Failed to reingest document:', error);
-        }
-    };
-
-    const handleSupersedeDocument = (document: Document) => {
-        setDocumentToSupersede(document);
-        setShowSupersedeDocumentDialog(true);
-        console.log('Opening supersede dialog for document:', document.name);
-    };
-
-    const handleDeleteDocument = async (document: Document) => {
-        try {
-            await deleteDocument(document.id);
-            console.log('Deleting document:', document.name);
-            // Navigate back to documents list after deletion
-            router.push('/documents');
-        } catch (error) {
-            console.error('Failed to delete document:', error);
-        }
-    };
-
-    const handleDocumentUpdate = useCallback(async () => {
-        console.log('🔄 [DocumentDetailPage] Refreshing document due to stage completion');
-        try {
-            const response = await fetch(`/api/documents/${params.id}/complete`);
-            if (response.ok) {
-                const responseData = await response.json();
-                const docData = responseData.document;
-
-                if (docData && docData.id) {
-                    const formattedDoc: Document = {
-                        id: docData.id,
-                        name: docData.name,
-                        type: docData.type,
-                        subType: docData.subType,
-                        state: (docData.state || 'pending').toLowerCase() as Document['state'],
-                        version: docData.version || 1,
-                        chunks: docData.chunks || 0,
-                        quality: docData.quality || 0,
-                        uploadDate: docData.uploadDate
-                            ? new Date(docData.uploadDate).toISOString().split('T')[0]
-                            : new Date().toISOString().split('T')[0],
-                        processingMode: docData.processingMode || 'AUTOMATIC',
-                        markdown: docData.markdown,
-                        metadata: docData.metadata,
-                        currentStage: docData.currentStage,
-                        stageStatus: docData.stageStatus,
-                        lastStageError: docData.lastStageError,
-                        isProcessingPaused: docData.isProcessingPaused,
-                        nextScheduledStage: docData.nextScheduledStage,
-                        scheduledAt: docData.scheduledAt,
-                    };
-
-                    setDocument(formattedDoc);
-                    console.log('✅ [DocumentDetailPage] Document refreshed successfully');
-                }
-            }
-        } catch (error) {
-            console.error('❌ [DocumentDetailPage] Failed to refresh document:', error);
-        }
-    }, [params.id]);
+    // Debug logging
+    console.log('🔍 [DocumentDetailPage] Current state:', {
+        isLoading: state.isLoading,
+        hasDocument: !!state.document,
+        documentId: state.document?.id,
+        documentName: state.document?.name,
+        error: state.error
+    });
 
     // Loading state
-    if (isLoading) {
+    if (state.isLoading) {
         return (
             <div className="flex items-center justify-center min-h-96" data-oid="fl._5qc">
                 <div className="text-center" data-oid="-bpnv.j">
@@ -263,8 +39,8 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     }
 
     // Error state
-    if (error) {
-        const isNotFoundError = error.includes('404') || error.includes('not found');
+    if (state.error) {
+        const isNotFoundError = state.error.includes('404') || state.error.includes('not found');
         return (
             <div className="flex items-center justify-center min-h-96" data-oid="l_hm87s">
                 <div className="text-center" data-oid="9_oy9g:">
@@ -275,17 +51,17 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                         {isNotFoundError ? 'Document Not Found' : 'Error Loading Document'}
                     </h2>
                     <p className="text-gray-600 mb-4" data-oid="23wudt-">
-                        {error}
+                        {state.error}
                     </p>
                     <div className="space-y-2">
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => actions.loadDocument()}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2"
                         >
                             Retry
                         </button>
                         <button
-                            onClick={() => router.push('/documents')}
+                            onClick={() => actions.handleBack()}
                             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                         >
                             Back to Documents
@@ -302,7 +78,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
     }
 
     // Document not found
-    if (!document) {
+    if (!state.document) {
         return (
             <div className="flex items-center justify-center min-h-96" data-oid="f9od37k">
                 <div className="text-center" data-oid="l2flp.g">
@@ -316,7 +92,7 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
                         The document you&apos;re looking for doesn&apos;t exist.
                     </p>
                     <button
-                        onClick={() => router.push('/documents')}
+                        onClick={() => actions.handleBack()}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         data-oid="0of7ekw"
                     >
@@ -327,34 +103,14 @@ export default function DocumentDetailPage({ params }: DocumentDetailPageProps) 
         );
     }
 
-    // Additional validation before rendering
-    if (!document.id) {
-        console.error('❌ [DocumentDetailPage] Document loaded but ID is missing:', document);
-        return (
-            <div className="flex items-center justify-center min-h-96">
-                <div className="text-center">
-                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Document Data</h2>
-                    <p className="text-gray-600 mb-4">Document loaded but missing required ID</p>
-                    <button
-                        onClick={() => router.push('/documents')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Back to Documents
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <DocumentDetailView
-            document={document}
-            onBack={handleBackFromDocumentDetail}
-            onReingest={handleReingestDocument}
-            onSupersede={handleSupersedeDocument}
-            onDelete={handleDeleteDocument}
-            onDocumentUpdate={handleDocumentUpdate}
+            document={state.document}
+            onBack={actions.handleBack}
+            onReingest={() => actions.handleReingest()}
+            onSupersede={actions.handleSupersede}
+            onDelete={() => actions.handleDelete()}
+            onDocumentUpdate={actions.handleDocumentUpdate}
             data-oid="1e07g3x"
         />
     );

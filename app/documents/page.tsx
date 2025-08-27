@@ -1,36 +1,19 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useApp } from '../../contexts/AppContext';
 import { DocumentsView } from '../../components/views/DocumentsView';
+import { useDocumentsController } from '../../lib/controllers/DocumentsController';
 
 export default function DocumentsPage() {
-    const router = useRouter();
-
-    const { documents, currentRealm, setSelectedDocument, setShowAddDocumentDialog } = useApp();
-
-    const handleBackToRealms = () => {
-        router.push('/');
-    };
-
-    const handlePromptDocument = (document: any) => {
-        setSelectedDocument(document);
-        router.push('/prompt');
-    };
-
-    const handleViewDocumentDetail = (document: any) => {
-        setSelectedDocument(document);
-        router.push(`/documents/${document.id}`);
-    };
+    const { state, actions } = useDocumentsController();
 
     return (
         <DocumentsView
-            documents={documents}
-            selectedRealm={currentRealm}
-            onBackToRealms={handleBackToRealms}
-            onAddDocument={() => setShowAddDocumentDialog(true)}
-            onPromptDocument={handlePromptDocument}
-            onViewDocumentDetail={handleViewDocumentDetail}
+            documents={state.documents}
+            selectedRealm={state.currentRealm}
+            onBackToRealms={actions.handleBackToRealms}
+            onAddDocument={actions.handleAddDocument}
+            onPromptDocument={actions.handlePromptDocument}
+            onViewDocumentDetail={actions.handleViewDocumentDetail}
             data-oid="f__.a_s"
         />
     );
