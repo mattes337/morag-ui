@@ -111,22 +111,22 @@ export function validateFileSize(file: File): { isValid: boolean; error?: string
 
 export function validateFileName(fileName: string): { isValid: boolean; error?: string } {
   const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
-  
+
   if (DANGEROUS_FILE_EXTENSIONS.includes(extension)) {
     return {
       isValid: false,
       error: `File extension ${extension} is not allowed for security reasons`
     };
   }
-  
-  // Check for path traversal attempts
-  if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+
+  // Check for path traversal attempts - look for actual path traversal patterns
+  if (fileName.includes('../') || fileName.includes('..\\') || fileName.includes('/') || fileName.includes('\\')) {
     return {
       isValid: false,
       error: 'File name contains invalid characters'
     };
   }
-  
+
   return { isValid: true };
 }
 

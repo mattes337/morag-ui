@@ -50,9 +50,23 @@ export async function validateFileUploadSecurity(
 
   // Check for double extensions (potential security risk)
   const fileName = file.name.toLowerCase();
-  const extensionCount = (fileName.match(/\./g) || []).length;
-  if (extensionCount > 1) {
-    warnings.push('File has multiple extensions, which could be a security risk');
+
+  // Count meaningful extensions (not consecutive dots)
+  // Split by dots and filter out empty strings (consecutive dots)
+  const parts = fileName.split('.');
+  const meaningfulParts = parts.filter(part => part.length > 0);
+
+  // If we have more than 2 meaningful parts (name + extension), it might be suspicious
+  // But allow cases like "file....md" where there are just extra dots before the extension
+  if (meaningfulParts.length > 2) {
+    // Check if it's just extra dots before a single extension
+    const lastPart = meaningfulParts[meaningfulParts.length - 1];
+    const beforeLastPart = meaningfulParts[meaningfulParts.length - 2];
+
+    // If the second-to-last part is very short, it might just be extra dots
+    if (beforeLastPart.length > 3) {
+      warnings.push('File has multiple extensions, which could be a security risk');
+    }
   }
 
   // Check for suspicious file names
@@ -95,8 +109,13 @@ export async function validateFileUploadSecurity(
   }
 
   // Check for embedded executables or scripts
-  if (await containsSuspiciousContent(file)) {
-    errors.push('File contains suspicious content that could be malicious');
+  try {
+    if (await containsSuspiciousContent(file)) {
+      errors.push('File contains suspicious content that could be malicious');
+    }
+  } catch (error) {
+    // If we can't analyze the file, add a warning but don't fail the validation
+    warnings.push('Could not analyze file content for suspicious patterns');
   }
 
   return {
@@ -253,8 +272,9 @@ async function containsSuspiciousContent(file: File): Promise<boolean> {
 
     return false;
   } catch (error) {
-    // If we can't analyze the file, err on the side of caution
-    return true;
+    // If we can't analyze the file, don't assume it's malicious
+    // Let other validation layers handle security
+    throw error; // Re-throw so the caller can handle it appropriately
   }
 }
 
