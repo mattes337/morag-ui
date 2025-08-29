@@ -511,13 +511,26 @@ class StageExecutionService {
         await this.failExecution(execution.id, errorMessage);
       }
 
+      // Get document to check processing mode
+      const document = await prisma.document.findUnique({
+        where: { id: documentId }
+      });
+
+      // If document is in AUTOMATIC mode, degrade to MANUAL on failure
+      const updateData: any = {
+        stageStatus: 'FAILED',
+        lastStageError: errorMessage,
+      };
+
+      if (document?.processingMode === 'AUTOMATIC') {
+        updateData.processingMode = 'MANUAL';
+        console.log(`🔄 [StageExecution] Degrading document ${documentId} from AUTOMATIC to MANUAL mode due to failure`);
+      }
+
       // Update document status
       await prisma.document.update({
         where: { id: documentId },
-        data: {
-          stageStatus: 'FAILED',
-          lastStageError: errorMessage,
-        },
+        data: updateData,
       });
 
       throw error;
@@ -575,14 +588,27 @@ class StageExecutionService {
       }
     } else {
       await this.failExecution(executionId, data?.errorMessage || 'Stage processing failed', data?.metadata);
-      
+
+      // Get document to check processing mode
+      const document = await prisma.document.findUnique({
+        where: { id: execution.documentId }
+      });
+
+      // If document is in AUTOMATIC mode, degrade to MANUAL on failure
+      const updateData: any = {
+        stageStatus: 'FAILED',
+        lastStageError: data?.errorMessage || 'Stage processing failed',
+      };
+
+      if (document?.processingMode === 'AUTOMATIC') {
+        updateData.processingMode = 'MANUAL';
+        console.log(`🔄 [StageExecution] Degrading document ${execution.documentId} from AUTOMATIC to MANUAL mode due to stage failure`);
+      }
+
       // Update document status
       await prisma.document.update({
         where: { id: execution.documentId },
-        data: {
-          stageStatus: 'FAILED',
-          lastStageError: data?.errorMessage || 'Stage processing failed',
-        },
+        data: updateData,
       });
     }
   }

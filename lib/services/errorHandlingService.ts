@@ -75,18 +75,16 @@ class ErrorHandlingService {
 
   /**
    * Handle processing error and determine retry strategy
+   * NOTE: Per requirements, no automatic retries - jobs should only be retried by user action
    */
   async handleProcessingError(context: ErrorContext): Promise<{
     shouldRetry: boolean;
     retryAt?: Date;
     errorRecord: ProcessingError;
   }> {
-    const config = this.getRetryConfig(context.stage);
     const errorType = this.categorizeError(context.error);
-    const isRetryable = this.isErrorRetryable(errorType, config);
-    const shouldRetry = isRetryable && context.attempt < config.maxRetries;
 
-    // Create error record
+    // Create error record - never retry automatically
     const errorRecord = await this.createErrorRecord({
       jobId: context.jobId,
       documentId: context.documentId,
@@ -95,21 +93,17 @@ class ErrorHandlingService {
       errorMessage: context.error.message,
       errorStack: context.error.stack,
       attempt: context.attempt,
-      isRetryable,
-      retryAt: shouldRetry ? this.calculateRetryDelay(context.attempt, config) : undefined
+      isRetryable: false, // Never automatically retryable
+      retryAt: undefined // No automatic retry scheduling
     });
 
-    if (shouldRetry) {
-      console.log(`Scheduling retry for job ${context.jobId}, attempt ${context.attempt + 1}`);
-      await this.scheduleRetry(context, errorRecord.retryAt!);
-    } else {
-      console.error(`Job ${context.jobId} failed permanently after ${context.attempt} attempts`);
-      await this.markJobAsFailed(context.jobId, errorRecord.id);
-    }
+    // Always mark job as failed immediately - no automatic retries
+    console.error(`Job ${context.jobId} failed on attempt ${context.attempt}. Error: ${context.error.message}`);
+    await this.markJobAsFailed(context.jobId, errorRecord.id);
 
     return {
-      shouldRetry,
-      retryAt: errorRecord.retryAt,
+      shouldRetry: false, // Never automatically retry
+      retryAt: undefined,
       errorRecord
     };
   }

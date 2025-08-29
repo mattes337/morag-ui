@@ -23,20 +23,38 @@ The current system processes documents in a monolithic way. The new staged appro
 
 ### 3. chunker Stage
 - **Purpose**: Create summary, chunks, and contextual embeddings
-- **Input**: `{filename}.md` or `{filename}.opt.md`
+- **Input**: `{filename}.opt.md` (preferred) or `{filename}.md` (fallback)
 - **Output**: `{filename}.chunks.json`
+- **Note**: Always prioritizes optimized markdown over converted markdown
 
 ### 4. fact-generator Stage
 - **Purpose**: Extract facts, entities, relations, and keywords
-- **Input**: `{filename}.chunks.json`
+- **Input**: `{filename}.chunks.json` (REQUIRED - only accepts chunk files)
 - **Output**: `{filename}.facts.json`
+- **Note**: Will fail if chunk files are not available
 
 ### 5. ingestor Stage
 - **Purpose**: Database ingestion and storage
-- **Input**: `{filename}.chunks.json` and `{filename}.facts.json`
+- **Input**: `{filename}.facts.json` (REQUIRED - only accepts fact files)
 - **Output**: Database records and `{filename}.ingestion.json`
+- **Note**: Will fail if fact files are not available
 
 ## Key Invariants
+
+### Error Handling
+- **No Automatic Retries**: When any stage fails, it is immediately marked as failed with error message/code stored
+- **Manual Retry Only**: Jobs can only be retried by explicit user action
+- **Mode Degradation**: Documents in AUTOMATIC processing mode are degraded to MANUAL when any stage fails
+
+### File Type Requirements
+- **Chunker**: Prioritizes `.opt.md` files over `.md` files when both are available
+- **Fact-Generator**: Only accepts `.chunks.json` files - will fail if chunk files are missing
+- **Ingestor**: Only accepts `.facts.json` files - will fail if fact files are missing
+
+### Processing Flow
+- Each stage validates its required input file types before processing
+- Missing required files cause immediate failure with descriptive error messages
+- Optimized files are always preferred over non-optimized versions when available
 
 1. **Output File Management**: We will receive output files for each stage via webhooks (alternative: manual REST calls)
 2. **Database Storage**: Each output file for documents must be stored in the database

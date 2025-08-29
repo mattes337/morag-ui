@@ -867,7 +867,10 @@ class BackgroundJobService {
 
       // Get the original file for processing
       const originalFile = document.files?.[0];
-      if (!originalFile) {
+
+      // For YouTube and website documents, we don't require an original file
+      // as they are processed directly from their URLs
+      if (!originalFile && document.type !== 'youtube' && document.type !== 'website') {
         throw new Error(`No original file found for document ${job.documentId}`);
       }
 
@@ -877,26 +880,45 @@ class BackgroundJobService {
       let sourceUrl = null;
 
       if (job.stage === 'MARKDOWN_CONVERSION') {
-        // For markdown conversion, we need the original file content
-        try {
-          const fileWithContent = await unifiedFileService.getFile(originalFile.id, true);
-          if (fileWithContent && fileWithContent.content) {
-            documentContent = fileWithContent.content;
-            contentSource = 'original_file';
+        // For YouTube and website documents, we need to extract the URL from job metadata or document
+        if (document.type === 'youtube' || document.type === 'website') {
+          // Try to get URL from job metadata first
+          const jobMetadata = job.metadata ? JSON.parse(job.metadata) : {};
+          sourceUrl = jobMetadata.sourceUrl;
 
-            // Check if this is a URL-based document by examining the metadata
-            const metadata = fileWithContent.metadata || {};
-            if (metadata.sourceUrl) {
-              sourceUrl = metadata.sourceUrl;
-              contentSource = 'url';
-              console.log(`📄 [BackgroundJob] Detected URL-based document: ${sourceUrl}`);
-            }
-          } else {
-            throw new Error(`Failed to retrieve content for original file ${originalFile.id}`);
+          // If not in job metadata, check if we have it stored elsewhere
+          // For now, we'll need the URL to be passed in the job metadata
+          if (!sourceUrl) {
+            throw new Error(`No source URL found for ${document.type} document ${job.documentId}. URL must be provided in job metadata.`);
           }
-        } catch (error) {
-          console.error(`Failed to read original file ${originalFile.id}:`, error);
-          throw new Error(`Failed to read original file for document ${job.documentId}`);
+
+          documentContent = sourceUrl;
+          contentSource = 'url';
+          console.log(`📄 [BackgroundJob] Processing ${document.type} document with URL: ${sourceUrl}`);
+        } else if (originalFile) {
+          // For regular documents with files, read the original file content
+          try {
+            const fileWithContent = await unifiedFileService.getFile(originalFile.id, true);
+            if (fileWithContent && fileWithContent.content) {
+              documentContent = fileWithContent.content;
+              contentSource = 'original_file';
+
+              // Check if this is a URL-based document by examining the metadata
+              const metadata = fileWithContent.metadata || {};
+              if (metadata.sourceUrl) {
+                sourceUrl = metadata.sourceUrl;
+                contentSource = 'url';
+                console.log(`📄 [BackgroundJob] Detected URL-based document: ${sourceUrl}`);
+              }
+            } else {
+              throw new Error(`Failed to retrieve content for original file ${originalFile.id}`);
+            }
+          } catch (error) {
+            console.error(`Failed to read original file ${originalFile.id}:`, error);
+            throw new Error(`Failed to read original file for document ${job.documentId}`);
+          }
+        } else {
+          throw new Error(`No content source available for document ${job.documentId}`);
         }
       } else {
         // For other stages, use the markdown content from previous stages

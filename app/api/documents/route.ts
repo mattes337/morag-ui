@@ -286,7 +286,12 @@ export async function POST(request: NextRequest) {
                         documentId: document.id,
                         stage: 'MARKDOWN_CONVERSION',
                         priority: 0,
-                        scheduledAt: new Date()
+                        scheduledAt: new Date(),
+                        metadata: {
+                            sourceUrl: url,
+                            documentType: finalType,
+                            documentSubType: finalSubType
+                        }
                     });
 
                     console.log(`Document ${document.id} created from URL (type: ${finalType}), scheduled automatic processing with job ${jobId}`);
