@@ -196,17 +196,19 @@ export function DocumentDetailView({
                     processingMode: document.processingMode
                 });
 
-                // If processing state changed from true to false, continue polling for a bit longer
-                // to ensure we capture any final file updates and state changes
+                // Update processing state with improved logic
+                setIsProcessing(isCurrentlyProcessing);
+
+                // If processing just completed, trigger a final refresh after a short delay
                 if (isProcessing && !isCurrentlyProcessing) {
-                    console.log('🏁 [DocumentDetailView] Processing completed, continuing polling for final updates');
-                    // Continue polling for 10 more seconds to catch file updates and final state changes
-                    setTimeout(() => {
-                        console.log('🛑 [DocumentDetailView] Final polling timeout, stopping polling');
-                        setIsProcessing(false);
-                    }, 10000);
-                } else {
-                    setIsProcessing(isCurrentlyProcessing);
+                    console.log('🏁 [DocumentDetailView] Processing completed, scheduling final refresh');
+                    setTimeout(async () => {
+                        console.log('🔄 [DocumentDetailView] Final refresh after processing completion');
+                        await loadDocumentData();
+                        if (onDocumentUpdate) {
+                            onDocumentUpdate();
+                        }
+                    }, 3000);
                 }
             } else {
                 console.error('❌ [DocumentDetailView] Failed to load stage info, falling back to document state:', stagesResponse);
@@ -380,9 +382,26 @@ export function DocumentDetailView({
         if (!isProcessing) return;
 
         console.log('🔄 [DocumentDetailView] Setting up polling for processing document');
+        let pollCount = 0;
+        const maxPolls = 300; // Maximum 10 minutes of polling (300 * 2 seconds)
+
         const interval = setInterval(async () => {
-            console.log('⏰ [DocumentDetailView] Polling for updates');
-            await loadDocumentData(); // Refresh all data to show progress
+            pollCount++;
+            console.log(`⏰ [DocumentDetailView] Polling for updates (${pollCount}/${maxPolls})`);
+
+            try {
+                await loadDocumentData(); // Refresh all data to show progress
+
+                // Check if we should stop polling due to timeout
+                if (pollCount >= maxPolls) {
+                    console.warn('🚨 [DocumentDetailView] Polling timeout reached, stopping polling');
+                    setIsProcessing(false);
+                    clearInterval(interval);
+                }
+            } catch (error) {
+                console.error('❌ [DocumentDetailView] Error during polling:', error);
+                // Continue polling despite errors, but log them
+            }
         }, 2000); // Poll every 2 seconds for faster updates
 
         return () => {
@@ -770,19 +789,63 @@ export function DocumentDetailView({
         }
 
         if (docType === 'youtube' || docName.includes('youtube')) {
-            // Using a sample educational YouTube video
-            const videoId = 'dQw4w9WgXcQ'; // Sample video ID
-            return (
-                <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        className="w-full h-full"
-                        title={`YouTube Video - ${document.name}`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    />
-                </div>
-            );
+            // Extract video ID from document metadata or URL
+            let videoId = null;
+
+            // Try to get video ID from original file metadata
+            const originalFile = files.find(f => f.fileType === 'ORIGINAL_DOCUMENT');
+            if (originalFile?.metadata?.sourceUrl) {
+                // Extract video ID from YouTube URL
+                const url = originalFile.metadata.sourceUrl;
+                const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+                if (match) {
+                    videoId = match[1];
+                }
+            }
+
+            // Fallback: try to extract from document name if it contains a YouTube URL
+            if (!videoId && docName.includes('youtube.com')) {
+                const match = docName.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+                if (match) {
+                    videoId = match[1];
+                }
+            }
+
+            // If we have a valid video ID, show the actual video
+            if (videoId && videoId !== 'dQw4w9WgXcQ') {
+                return (
+                    <div className="w-full h-96 border border-gray-300 rounded-lg overflow-hidden">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            className="w-full h-full"
+                            title={`YouTube Video - ${document.name}`}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    </div>
+                );
+            } else {
+                // Show placeholder if no valid video ID found
+                return (
+                    <div className="w-full h-96 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                        <div className="text-center">
+                            <div className="text-4xl mb-4">📺</div>
+                            <p className="text-gray-600">YouTube video preview</p>
+                            <p className="text-sm text-gray-500 mt-2">Video will be available after processing</p>
+                            {originalFile?.metadata?.sourceUrl && (
+                                <a
+                                    href={originalFile.metadata.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 text-sm mt-2 inline-block"
+                                >
+                                    View on YouTube
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
         }
 
         if (docType === 'website' || docType === 'url' || docName.includes('http')) {

@@ -488,9 +488,33 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
     const jobMetadata = job.metadata ? JSON.parse(job.metadata) : {};
     let sourceUrl = jobMetadata.sourceUrl;
 
-    // If not in job metadata, this is an error for YouTube documents
+    // If not in job metadata, try to get it from document files
     if (!sourceUrl) {
-      throw new Error(`No source URL found for YouTube document ${document.id}. URL must be provided in job metadata.`);
+      const { prisma } = await import('../../database');
+      const documentFiles = await prisma.documentFile.findMany({
+        where: { documentId: document.id },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      // Look for source URL in file metadata
+      for (const file of documentFiles) {
+        if (file.metadata) {
+          try {
+            const fileMetadata = JSON.parse(file.metadata);
+            if (fileMetadata.sourceUrl) {
+              sourceUrl = fileMetadata.sourceUrl;
+              break;
+            }
+          } catch (error) {
+            console.warn(`Failed to parse file metadata for file ${file.id}:`, error);
+          }
+        }
+      }
+    }
+
+    // If still no source URL found, this is an error for YouTube documents
+    if (!sourceUrl) {
+      throw new Error(`No source URL found for YouTube document ${document.id}. URL must be provided in job metadata or file metadata.`);
     }
 
     // Fix common URL corruption issues using centralized utility
@@ -599,9 +623,33 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
     const jobMetadata = job.metadata ? JSON.parse(job.metadata) : {};
     let sourceUrl = jobMetadata.sourceUrl;
 
-    // If not in job metadata, this is an error for website documents
+    // If not in job metadata, try to get it from document files
     if (!sourceUrl) {
-      throw new Error(`No source URL found for website document ${document.id}. URL must be provided in job metadata.`);
+      const { prisma } = await import('../../database');
+      const documentFiles = await prisma.documentFile.findMany({
+        where: { documentId: document.id },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      // Look for source URL in file metadata
+      for (const file of documentFiles) {
+        if (file.metadata) {
+          try {
+            const fileMetadata = JSON.parse(file.metadata);
+            if (fileMetadata.sourceUrl) {
+              sourceUrl = fileMetadata.sourceUrl;
+              break;
+            }
+          } catch (error) {
+            console.warn(`Failed to parse file metadata for file ${file.id}:`, error);
+          }
+        }
+      }
+    }
+
+    // If still no source URL found, this is an error for website documents
+    if (!sourceUrl) {
+      throw new Error(`No source URL found for website document ${document.id}. URL must be provided in job metadata or file metadata.`);
     }
 
     return {

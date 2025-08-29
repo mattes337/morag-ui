@@ -5,6 +5,9 @@ import { unifiedFileService } from '@/lib/services/unifiedFileService';
 import { detectDocumentType } from '@/lib/utils/documentTypeDetection';
 import { validateFileUploadSecurity, generateSecureFilePath } from '@/lib/middleware/fileUploadSecurity';
 import { validateRequestBody, documentUploadSchema } from '@/lib/validation';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * POST /api/documents/upload
@@ -162,12 +165,53 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Validate realm exists and user has access
+    let validRealmId = realmId;
+    if (realmId) {
+      const realmExists = await prisma.realm.findFirst({
+        where: {
+          id: realmId,
+          userRealms: {
+            some: {
+              userId: user.userId
+            }
+          }
+        }
+      });
+
+      if (!realmExists) {
+        console.warn(`Realm ${realmId} not found or user has no access, falling back to default realm`);
+        validRealmId = null;
+      }
+    }
+
+    // If no valid realm, get user's default realm
+    if (!validRealmId) {
+      const defaultRealm = await prisma.userRealm.findFirst({
+        where: {
+          userId: user.userId,
+          realm: { isDefault: true }
+        },
+        include: { realm: true }
+      });
+
+      if (defaultRealm) {
+        validRealmId = defaultRealm.realmId;
+        console.log(`Using default realm: ${validRealmId}`);
+      } else {
+        return NextResponse.json(
+          { error: 'No valid realm found. Please create a realm first.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create document record
     const documentData = {
       name: name || file.name,
       type: finalType,
       subType: finalSubType,
-      realmId,
+      realmId: validRealmId,
       userId: user.userId,
       processingMode: processingMode as 'AUTOMATIC' | 'MANUAL'
     };
@@ -182,7 +226,9 @@ export async function POST(request: NextRequest) {
       uploadedAt: new Date().toISOString(),
       uploadedBy: user.userId,
       originalSize: file.size,
-      processingMode
+      processingMode,
+      // Add source URL for YouTube documents
+      ...(finalType === 'youtube' && inputFiles && inputFiles.length > 0 && { sourceUrl: inputFiles[0] })
     };
 
     console.log('Creating document with data:', documentData);
@@ -222,29 +268,56 @@ export async function POST(request: NextRequest) {
           const config = expertConfig || youtubeConfig || templateConfig;
           const stages = config.stages || ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'];
 
+          // Map kebab-case stage names to SCREAMING_SNAKE_CASE enum values
+          const stageMapping: Record<string, string> = {
+            'markdown-conversion': 'MARKDOWN_CONVERSION',
+            'markdown-optimizer': 'MARKDOWN_OPTIMIZER',
+            'chunker': 'CHUNKER',
+            'fact-generator': 'FACT_GENERATOR',
+            'ingestor': 'INGESTOR'
+          };
+
           // Schedule processing with the first stage
-          const firstStage = stages[0] || 'MARKDOWN_CONVERSION';
+          const firstStageKebab = stages[0] || 'markdown-conversion';
+          const firstStage = stageMapping[firstStageKebab] || 'MARKDOWN_CONVERSION';
+
+          // Prepare job metadata with source URL for YouTube/website documents
+          const jobMetadata = {
+            ...config.globalConfig,
+            ...config,
+            stages: stages.map(stage => stageMapping[stage] || stage), // Convert all stages
+            stageConfigs: config.stageConfigs
+          };
+
+          // Add source URL for YouTube documents
+          if (finalType === 'youtube' && inputFiles && inputFiles.length > 0) {
+            jobMetadata.sourceUrl = inputFiles[0]; // First input file should be the YouTube URL
+          }
+
           const jobId = await jobManager.createJob({
             documentId: document.id,
             stage: firstStage as any,
             priority: 0,
             scheduledAt: new Date(),
-            metadata: {
-              ...config.globalConfig,
-              ...config,
-              stages,
-              stageConfigs: config.stageConfigs
-            }
+            metadata: jobMetadata
           });
 
           console.log(`Document ${document.id} uploaded, scheduled stage chain processing with job ${jobId}`);
         } else {
           // Fallback to legacy single-stage processing
+          const fallbackMetadata: any = {};
+
+          // Add source URL for YouTube documents even in fallback mode
+          if (finalType === 'youtube' && inputFiles && inputFiles.length > 0) {
+            fallbackMetadata.sourceUrl = inputFiles[0]; // First input file should be the YouTube URL
+          }
+
           const jobId = await jobManager.createJob({
             documentId: document.id,
             stage: 'MARKDOWN_CONVERSION',
             priority: 0,
-            scheduledAt: new Date()
+            scheduledAt: new Date(),
+            metadata: Object.keys(fallbackMetadata).length > 0 ? fallbackMetadata : undefined
           });
 
           console.log(`Document ${document.id} uploaded, scheduled automatic processing with job ${jobId}`);

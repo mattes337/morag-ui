@@ -112,55 +112,57 @@ export function DocumentsView({
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Document
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Type
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                State
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Processing
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Version
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Content Stats
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Metadata
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-0 w-1/4">
+                                    <div className="truncate">Document</div>
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 hidden sm:table-cell">
+                                    Type
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                    State
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 hidden md:table-cell">
+                                    Processing
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 hidden lg:table-cell">
+                                    Version
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 hidden lg:table-cell">
+                                    Content Stats
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 hidden xl:table-cell">
+                                    Metadata
+                                </th>
+                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {documents.map((doc) => (
                             <tr key={doc.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium">
+                                <td className="px-3 sm:px-6 py-4 min-w-0 w-1/4">
+                                    <div className="text-sm font-medium min-w-0">
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
                                                 onViewDocumentDetail(doc);
                                             }}
-                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left break-all"
+                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left truncate block w-full max-w-xs"
                                             type="button"
+                                            title={doc.name}
                                         >
                                             {doc.name}
                                         </button>
                                     </div>
-                                    <div className="text-sm text-gray-500">{doc.uploadDate}</div>
+                                    <div className="text-sm text-gray-500 truncate">{doc.uploadDate}</div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden sm:table-cell">
                                     <div>
                                         <div className="font-medium">{getDocumentTypeDescription(doc.type, doc.subType)}</div>
                                         {doc.subType && (
@@ -168,16 +170,16 @@ export function DocumentsView({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                     <span
                                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
                                     >
                                         {doc.state}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                                     <div className="flex items-center space-x-2">
-                                        <Badge 
+                                        <Badge
                                             variant={doc.processingMode === 'AUTOMATIC' ? 'default' : 'secondary'}
                                             className="text-xs"
                                         >
@@ -193,10 +195,10 @@ export function DocumentsView({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
                                     v{doc.version}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
                                     <div>{doc.metadata?.chunk_count || doc.chunks} chunks</div>
                                     <div className="text-gray-500">
                                         {(
@@ -210,18 +212,18 @@ export function DocumentsView({
                                         </div>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <div className="space-y-1">
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
+                                    <div className="space-y-1 max-w-xs">
                                         {doc.metadata?.title && (
                                             <div
-                                                className="text-gray-900 font-medium truncate max-w-xs"
+                                                className="text-gray-900 font-medium truncate"
                                                 title={doc.metadata.title}
                                             >
                                                 {doc.metadata.title}
                                             </div>
                                         )}
                                         {doc.metadata?.author && (
-                                            <div className="text-gray-500 text-xs">
+                                            <div className="text-gray-500 text-xs truncate">
                                                 by {doc.metadata.author}
                                             </div>
                                         )}
@@ -256,19 +258,21 @@ export function DocumentsView({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                    <button
-                                        onClick={() => onViewDocumentDetail(doc)}
-                                        className="text-indigo-600 hover:text-indigo-900"
-                                    >
-                                        View Details
-                                    </button>
-                                    <button
-                                        onClick={() => onPromptDocument(doc)}
-                                        className="text-green-600 hover:text-green-900"
-                                    >
-                                        Prompt
-                                    </button>
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <button
+                                            onClick={() => onViewDocumentDetail(doc)}
+                                            className="text-indigo-600 hover:text-indigo-900 text-xs sm:text-sm"
+                                        >
+                                            View
+                                        </button>
+                                        <button
+                                            onClick={() => onPromptDocument(doc)}
+                                            className="text-green-600 hover:text-green-900 text-xs sm:text-sm"
+                                        >
+                                            Prompt
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -276,5 +280,6 @@ export function DocumentsView({
                 </table>
             </div>
         </div>
+    </div>
     );
 }

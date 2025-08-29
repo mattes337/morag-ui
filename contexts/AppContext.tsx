@@ -389,6 +389,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     id: doc.id,
                     name: doc.name,
                     type: doc.type,
+                    subType: doc.subType,
                     state: doc.state.toLowerCase() as Document['state'],
                     version: doc.version,
                     chunks: doc.chunks,
@@ -397,6 +398,13 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                         ? new Date(doc.uploadDate).toISOString().split('T')[0]
                         : '',
                     processingMode: doc.processingMode || 'AUTOMATIC',
+                    metadata: doc.metadata || {},
+                    currentStage: doc.currentStage,
+                    stageStatus: doc.stageStatus,
+                    lastStageError: doc.lastStageError,
+                    isProcessingPaused: doc.isProcessingPaused,
+                    nextScheduledStage: doc.nextScheduledStage,
+                    scheduledAt: doc.scheduledAt,
                 }));
                 console.log('✅ [AppContext] Loaded', formattedDocuments.length, 'documents. First doc processingMode:', formattedDocuments[0]?.processingMode);
                 setDocuments(formattedDocuments);
@@ -790,6 +798,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     id: doc.id,
                     name: doc.name,
                     type: doc.type,
+                    subType: doc.subType,
                     state: doc.state.toLowerCase() as Document['state'],
                     version: doc.version,
                     chunks: doc.chunks,
@@ -797,6 +806,14 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                     uploadDate: doc.uploadDate
                         ? new Date(doc.uploadDate).toISOString().split('T')[0]
                         : '',
+                    processingMode: doc.processingMode || 'AUTOMATIC',
+                    metadata: doc.metadata || {},
+                    currentStage: doc.currentStage,
+                    stageStatus: doc.stageStatus,
+                    lastStageError: doc.lastStageError,
+                    isProcessingPaused: doc.isProcessingPaused,
+                    nextScheduledStage: doc.nextScheduledStage,
+                    scheduledAt: doc.scheduledAt,
                 }));
                 setDocuments(formattedDocuments);
             }
