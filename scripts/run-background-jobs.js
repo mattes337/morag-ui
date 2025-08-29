@@ -67,17 +67,19 @@ class JobRunner {
 
   async importService(serviceName) {
     try {
-      const module = await import(`../lib/services/${serviceName}.js`);
+      // With tsx, we can import TypeScript files directly
+      if (serviceName === 'jobProcessor' || serviceName === 'jobManager') {
+        const module = await import(`../lib/services/jobs/index.ts`);
+        return module[serviceName];
+      }
+
+      // Try importing from main services directory
+      const module = await import(`../lib/services/${serviceName}.ts`);
       return module[serviceName] || module.default;
     } catch (error) {
-      // Try alternative import paths
-      try {
-        const module = await import(`../lib/services/jobs/${serviceName}.js`);
-        return module[serviceName] || module.default;
-      } catch (error2) {
-        console.warn(`Could not import ${serviceName}, will use direct database operations`);
-        return null;
-      }
+      console.warn(`Could not import ${serviceName}:`, error.message);
+      console.warn(`Will use direct database operations`);
+      return null;
     }
   }
 
@@ -142,6 +144,33 @@ class JobRunner {
 
     try {
       if (this.useDirectDb) {
+        // Get document details to extract URL if it's a URL-based document
+        const document = await prisma.document.findUnique({
+          where: { id: documentId },
+          include: { files: true }
+        });
+
+        if (!document) {
+          throw new Error(`Document ${documentId} not found`);
+        }
+
+        // Prepare metadata for URL-based documents
+        let metadata = {};
+        if (document.type === 'youtube' || document.type === 'website') {
+          // Check if there's a file with URL metadata
+          const urlFile = document.files.find(f => f.metadata);
+          if (urlFile && urlFile.metadata) {
+            try {
+              const fileMetadata = JSON.parse(urlFile.metadata);
+              if (fileMetadata.sourceUrl) {
+                metadata.sourceUrl = fileMetadata.sourceUrl;
+              }
+            } catch (e) {
+              console.warn(`Failed to parse file metadata for document ${documentId}`);
+            }
+          }
+        }
+
         // Direct database creation
         const job = await prisma.processingJob.create({
           data: {
@@ -149,7 +178,8 @@ class JobRunner {
             stage,
             priority: priority || 0,
             scheduledAt: new Date(),
-            status: 'PENDING'
+            status: 'PENDING',
+            metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null
           }
         });
         console.log(`✅ Created job: ${job.id}`);
@@ -187,25 +217,34 @@ class JobRunner {
 
   async processJob(job) {
     console.log(`🔄 Processing job ${job.id} (${job.stage}) for document ${job.documentId}`);
-    
-    try {
-      // Mark job as processing
-      await prisma.processingJob.update({
-        where: { id: job.id },
-        data: {
-          status: 'PROCESSING',
-          startedAt: new Date()
-        }
-      });
 
-      // Use service if available, otherwise simulate processing
+    try {
+      // Use the job processor if available
       if (this.jobProcessor) {
+        console.log(`🔧 Using JobProcessor service for job ${job.id}`);
         await this.jobProcessor.processJob(job);
+      } else if (this.jobManager) {
+        console.log(`🔧 Using JobManager service for job ${job.id}`);
+        // Mark job as processing first
+        await this.jobManager.markJobAsProcessing(job.id);
+        // Then process it (this will call the actual backend)
+        await this.jobManager.processJob(job.id);
       } else {
+        console.log(`⚠️ No job processing services available, using simulation for job ${job.id}`);
+
+        // Mark job as processing
+        await prisma.processingJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'PROCESSING',
+            startedAt: new Date()
+          }
+        });
+
         // Simulate job processing
         console.log(`⏳ Simulating processing for job ${job.id}...`);
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Mark as completed
         await prisma.processingJob.update({
           where: { id: job.id },
@@ -218,10 +257,10 @@ class JobRunner {
 
       this.processedJobs.push(job.id);
       console.log(`✅ Completed job ${job.id}`);
-      
+
     } catch (error) {
       console.error(`❌ Failed to process job ${job.id}:`, error.message);
-      
+
       // Mark job as failed
       await prisma.processingJob.update({
         where: { id: job.id },
@@ -231,7 +270,7 @@ class JobRunner {
           completedAt: new Date()
         }
       });
-      
+
       throw error;
     }
   }

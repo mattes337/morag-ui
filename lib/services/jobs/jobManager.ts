@@ -181,6 +181,19 @@ export class JobManager {
           completedAt: new Date(),
         },
       });
+
+      // Also fail the corresponding stage execution
+      try {
+        const { stageExecutionService } = await import('../stageExecutionService');
+        const execution = await stageExecutionService.getLatestExecution(job.documentId, job.stage);
+
+        if (execution && execution.status === 'RUNNING') {
+          await stageExecutionService.failExecution(execution.id, errorMessage);
+          console.log(`🔄 [JobManager] Failed stage execution ${execution.id} for failed job ${jobId}`);
+        }
+      } catch (error) {
+        console.error(`❌ [JobManager] Failed to fail stage execution for job ${jobId}:`, error);
+      }
     }
   }
 

@@ -922,7 +922,9 @@ export class MoragService {
     if (request.use_file_upload && request.file_content) {
       // For file uploads (first stage with file content)
       const blob = new Blob([request.file_content], { type: 'application/octet-stream' });
-      formData.append('file', blob, 'document');
+      // Use the original filename from metadata if available, otherwise fallback to 'document'
+      const filename = request.metadata?.originalFile || 'document';
+      formData.append('file', blob, filename);
     } else if (request.input_files && request.input_files.length > 0) {
       // For URL-based documents or subsequent stages
       // Fix URL corruption issues before sending to backend

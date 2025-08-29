@@ -31,7 +31,7 @@ abstract class BaseDocumentHandler {
     content: string;
     contentSource: string;
     sourceUrl?: string;
-  }): any;
+  }): Promise<any>;
 
   /**
    * Handle immediate completion when backend returns results synchronously
@@ -42,40 +42,107 @@ abstract class BaseDocumentHandler {
     // Import services to avoid circular dependencies
     const { stageExecutionService } = await import('../stageExecutionService');
     const { unifiedFileService } = await import('../unifiedFileService');
+    const { prisma } = await import('../../database');
 
     try {
-      // Start execution record
-      const execution = await stageExecutionService.startExecution({
-        documentId: request.documentId,
-        stage: request.stage as any,
-        metadata: { immediateCompletion: true, processedAt: new Date().toISOString() }
-      });
+      // Get the existing execution that was already started by the job processor
+      // Don't create a new one as that would cause conflicts
+      const execution = await stageExecutionService.getLatestExecution(request.documentId, request.stage as any);
+
+      if (!execution) {
+        throw new Error(`No existing execution found for document ${request.documentId}, stage ${request.stage}`);
+      }
+
+      if (execution.status !== 'RUNNING') {
+        console.warn(`⚠️ [${this.constructor.name}] Expected execution to be RUNNING, but found status: ${execution.status}`);
+      }
+
+      console.log(`🔄 [${this.constructor.name}] Using existing execution ${execution.id} for immediate completion`);
 
       // Store output files if any
       if (result.output_files && result.output_files.length > 0) {
-        console.log(`📁 [${this.constructor.name}] Storing ${result.output_files.length} output files`);
+        console.log(`📁 [${this.constructor.name}] Downloading and storing ${result.output_files.length} output files`);
 
         for (const file of result.output_files) {
-          // The file content would need to be fetched from the backend
-          // For now, we'll store the file metadata
-          await unifiedFileService.storeFile({
-            documentId: request.documentId,
-            fileType: 'STAGE_OUTPUT',
-            filename: file.filename,
-            originalName: file.filename,
-            content: Buffer.from(''), // Empty content for now - would need to fetch from backend
-            contentType: file.content_type || 'text/plain',
-            isPublic: false,
-            accessLevel: 'REALM_MEMBERS',
-            metadata: {
-              stage: request.stage,
-              executionId: execution.id,
-              backendFilePath: file.file_path,
-              fileSize: file.file_size,
-              checksum: file.checksum,
-              createdAt: file.created_at
+          try {
+            const filePath = file.file_path || file.filename;
+            console.log(`🔽 [${this.constructor.name}] Downloading file: ${filePath}`);
+
+            // Download file content from MoRAG backend
+            const fileContent = await this.downloadFileFromMorag(filePath);
+
+            if (fileContent) {
+              // Extract filename from path
+              const filename = file.filename || filePath.split('/').pop() || filePath.split('\\').pop() || 'output_file';
+
+              // Store file in database and on disk
+              const storedFile = await unifiedFileService.storeFile({
+                documentId: request.documentId,
+                fileType: 'STAGE_OUTPUT',
+                filename,
+                originalName: filename,
+                content: Buffer.from(fileContent, 'utf-8'),
+                contentType: file.content_type || this.getContentTypeFromFilename(filename),
+                isPublic: false,
+                accessLevel: 'REALM_MEMBERS',
+                metadata: {
+                  stage: request.stage,
+                  executionId: execution.id,
+                  backendFilePath: filePath,
+                  fileSize: file.file_size,
+                  checksum: file.checksum,
+                  createdAt: file.created_at,
+                  immediateCompletion: true,
+                  downloadedAt: new Date().toISOString()
+                }
+              });
+
+              console.log(`✅ [${this.constructor.name}] Stored file ${filename} for stage ${request.stage} (ID: ${storedFile.id})`);
+
+              // For markdown conversion stage, also update document markdown field
+              if (request.stage === 'MARKDOWN_CONVERSION' && filename.endsWith('.md')) {
+                await prisma.document.update({
+                  where: { id: request.documentId },
+                  data: {
+                    markdown: fileContent,
+                  },
+                });
+                console.log(`✅ [${this.constructor.name}] Updated document ${request.documentId} with markdown content (${fileContent.length} chars)`);
+              }
+
+              // For chunker stage, parse chunk JSON and create documentChunk records
+              console.log(`🔍 [${this.constructor.name}] Checking chunk processing: stage=${request.stage}, filename=${filename}, endsWithChunksJson=${filename.endsWith('.chunks.json')}`);
+              if (request.stage === 'CHUNKER' && filename.endsWith('.chunks.json')) {
+                console.log(`📊 [${this.constructor.name}] Processing chunk file ${filename} for document ${request.documentId}`);
+                try {
+                  const chunkData = JSON.parse(fileContent);
+                  console.log(`📋 [${this.constructor.name}] Parsed chunk JSON, structure:`, Object.keys(chunkData));
+                  await this.createDocumentChunks(request.documentId, chunkData);
+                  console.log(`✅ [${this.constructor.name}] Created chunks for document ${request.documentId} from ${filename}`);
+                } catch (parseError) {
+                  console.error(`❌ [${this.constructor.name}] Failed to parse chunk JSON for ${filename}:`, parseError);
+                }
+              }
+
+              // For fact generator stage, parse fact JSON and create fact/entity records
+              console.log(`🔍 [${this.constructor.name}] Checking fact processing: stage=${request.stage}, filename=${filename}, endsWithFactsJson=${filename.endsWith('.facts.json')}`);
+              if (request.stage === 'FACT_GENERATOR' && filename.endsWith('.facts.json')) {
+                console.log(`📊 [${this.constructor.name}] Processing fact file ${filename} for document ${request.documentId}`);
+                try {
+                  const factData = JSON.parse(fileContent);
+                  console.log(`📋 [${this.constructor.name}] Parsed fact JSON, structure:`, Object.keys(factData));
+                  await this.createDocumentFacts(request.documentId, factData);
+                  console.log(`✅ [${this.constructor.name}] Created facts and entities for document ${request.documentId} from ${filename}`);
+                } catch (parseError) {
+                  console.error(`❌ [${this.constructor.name}] Failed to parse fact JSON for ${filename}:`, parseError);
+                }
+              }
+            } else {
+              console.warn(`⚠️ [${this.constructor.name}] Could not download file: ${filePath}`);
             }
-          });
+          } catch (fileError) {
+            console.error(`❌ [${this.constructor.name}] Error processing file ${file.filename || file.file_path}:`, fileError);
+          }
         }
       }
 
@@ -93,6 +160,257 @@ abstract class BaseDocumentHandler {
     }
   }
 
+  /**
+   * Download a file from MoRAG backend
+   */
+  private async downloadFileFromMorag(filePath: string): Promise<string | null> {
+    try {
+      const moragBaseUrl = process.env.MORAG_API_URL || 'http://localhost:8000';
+      const moragApiKey = process.env.MORAG_API_KEY;
+
+      // Use the correct URL format: /api/v1/files/download/{encoded_path}?inline=true
+      const encodedPath = encodeURIComponent(filePath);
+      const downloadUrl = `${moragBaseUrl}/api/v1/files/download/${encodedPath}?inline=true`;
+
+      console.log(`🔽 [${this.constructor.name}] Downloading from: ${downloadUrl}`);
+
+      const headers: Record<string, string> = {
+        'Accept': 'text/plain, text/markdown, application/octet-stream',
+      };
+
+      if (moragApiKey) {
+        headers['Authorization'] = `Bearer ${moragApiKey}`;
+      }
+
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers,
+      });
+
+      if (response.ok) {
+        const content = await response.text();
+        console.log(`✅ [${this.constructor.name}] Downloaded file content (${content.length} chars)`);
+        return content;
+      } else {
+        console.error(`❌ [${this.constructor.name}] Download failed: ${response.status} ${response.statusText}`);
+
+        // Try to get error details
+        try {
+          const errorText = await response.text();
+          console.error(`❌ [${this.constructor.name}] Error response: ${errorText}`);
+        } catch (e) {
+          // Ignore error reading response
+        }
+
+        return null;
+      }
+
+    } catch (error) {
+      console.error(`❌ [${this.constructor.name}] Error downloading file from MoRAG:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get content type from filename
+   */
+  private getContentTypeFromFilename(filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop();
+    switch (ext) {
+      case 'md':
+        return 'text/markdown';
+      case 'txt':
+        return 'text/plain';
+      case 'json':
+        return 'application/json';
+      case 'csv':
+        return 'text/csv';
+      case 'html':
+        return 'text/html';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'text/plain';
+    }
+  }
+
+  /**
+   * Create documentChunk records from chunk JSON data
+   */
+  private async createDocumentChunks(documentId: string, chunkData: any): Promise<void> {
+    const { prisma } = await import('../../database');
+
+    try {
+      // Delete existing chunks for this document
+      await prisma.documentChunk.deleteMany({
+        where: { documentId }
+      });
+
+      // Parse chunk data structure - handle different possible formats
+      let chunks: any[] = [];
+
+      if (Array.isArray(chunkData)) {
+        chunks = chunkData;
+      } else if (chunkData.chunks && Array.isArray(chunkData.chunks)) {
+        chunks = chunkData.chunks;
+      } else if (chunkData.data && Array.isArray(chunkData.data)) {
+        chunks = chunkData.data;
+      } else {
+        console.warn(`⚠️ [${this.constructor.name}] Unexpected chunk data format:`, Object.keys(chunkData));
+        return;
+      }
+
+      console.log(`📊 [${this.constructor.name}] Processing ${chunks.length} chunks for document ${documentId}`);
+
+      // Create chunk records
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+
+        try {
+          await prisma.documentChunk.create({
+            data: {
+              documentId,
+              chunkIndex: i,
+              content: chunk.content || chunk.text || '',
+              metadata: chunk.metadata ? JSON.stringify(chunk.metadata) : null,
+              embedding: chunk.embedding || null,
+            }
+          });
+        } catch (chunkError) {
+          console.error(`❌ [${this.constructor.name}] Failed to create chunk ${i}:`, chunkError);
+        }
+      }
+
+      console.log(`✅ [${this.constructor.name}] Successfully created ${chunks.length} chunks for document ${documentId}`);
+    } catch (error) {
+      console.error(`❌ [${this.constructor.name}] Failed to create document chunks:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create fact and entity records from fact JSON data
+   */
+  private async createDocumentFacts(documentId: string, factData: any): Promise<void> {
+    const { prisma } = await import('../../database');
+
+    try {
+      // Delete existing facts for this document
+      await prisma.fact.deleteMany({
+        where: { documentId }
+      });
+
+      // Parse fact data structure - handle different possible formats
+      let facts: any[] = [];
+      let entities: any[] = [];
+
+      if (factData.facts && Array.isArray(factData.facts)) {
+        facts = factData.facts;
+      } else if (factData.relations && Array.isArray(factData.relations)) {
+        facts = factData.relations;
+      } else if (Array.isArray(factData)) {
+        facts = factData;
+      }
+
+      if (factData.entities && Array.isArray(factData.entities)) {
+        entities = factData.entities;
+      } else if (factData.named_entities && Array.isArray(factData.named_entities)) {
+        entities = factData.named_entities;
+      }
+
+      console.log(`📊 [${this.constructor.name}] Processing ${entities.length} entities and ${facts.length} facts for document ${documentId}`);
+
+      // Create entities first
+      const entityMap = new Map<string, string>(); // name -> id mapping
+
+      for (const entity of entities) {
+        try {
+          const entityName = entity.name || entity.text || entity.entity;
+          const entityType = entity.type || entity.label || 'UNKNOWN';
+
+          if (!entityName) continue;
+
+          // Check if entity already exists
+          let existingEntity = await prisma.entity.findUnique({
+            where: {
+              name_type: {
+                name: entityName,
+                type: entityType
+              }
+            }
+          });
+
+          if (!existingEntity) {
+            existingEntity = await prisma.entity.create({
+              data: {
+                name: entityName,
+                type: entityType,
+                description: entity.description || null,
+                metadata: entity.metadata ? JSON.stringify(entity.metadata) : null,
+              }
+            });
+          }
+
+          entityMap.set(entityName, existingEntity.id);
+
+          // Create document-entity relationship
+          await prisma.documentEntity.upsert({
+            where: {
+              documentId_entityId: {
+                documentId,
+                entityId: existingEntity.id
+              }
+            },
+            create: {
+              documentId,
+              entityId: existingEntity.id
+            },
+            update: {} // No updates needed if it exists
+          });
+
+        } catch (entityError) {
+          console.error(`❌ [${this.constructor.name}] Failed to create entity:`, entityError);
+        }
+      }
+
+      // Create facts
+      for (let i = 0; i < facts.length; i++) {
+        const fact = facts[i];
+
+        try {
+          const subject = fact.subject || fact.head || '';
+          const predicate = fact.predicate || fact.relation || fact.relationship || '';
+          const object = fact.object || fact.tail || '';
+          const confidence = fact.confidence || fact.score || 1.0;
+          const source = fact.source || `fact_${i}`;
+
+          // Try to find related entity
+          const entityId = entityMap.get(subject) || entityMap.get(object) || null;
+
+          await prisma.fact.create({
+            data: {
+              documentId,
+              subject,
+              predicate,
+              object,
+              confidence,
+              source,
+              metadata: fact.metadata ? JSON.stringify(fact.metadata) : null,
+              entityId,
+            }
+          });
+        } catch (factError) {
+          console.error(`❌ [${this.constructor.name}] Failed to create fact ${i}:`, factError);
+        }
+      }
+
+      console.log(`✅ [${this.constructor.name}] Successfully created ${entities.length} entities and ${facts.length} facts for document ${documentId}`);
+    } catch (error) {
+      console.error(`❌ [${this.constructor.name}] Failed to create document facts:`, error);
+      throw error;
+    }
+  }
+
   async processDocument(request: DocumentProcessingRequest): Promise<DocumentProcessingResult> {
     try {
       console.log(`🚀 [${this.constructor.name}] Processing document ${request.documentId}, stage ${request.stage}`);
@@ -101,7 +419,7 @@ abstract class BaseDocumentHandler {
       const contentData = await this.getDocumentContent(request);
 
       // Build backend request
-      const backendRequest = this.buildBackendRequest(request, contentData);
+      const backendRequest = await this.buildBackendRequest(request, contentData);
 
       // Call MoRAG backend
       const response = await moragService.executeStage(backendRequest);
@@ -197,11 +515,11 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
     };
   }
 
-  buildBackendRequest(request: DocumentProcessingRequest, content: {
+  async buildBackendRequest(request: DocumentProcessingRequest, content: {
     content: string;
     contentSource: string;
     sourceUrl?: string;
-  }): any {
+  }): Promise<any> {
     const { document, job } = request;
 
     // Build stage-specific configuration according to backend API guide
@@ -293,11 +611,11 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
     };
   }
 
-  buildBackendRequest(request: DocumentProcessingRequest, content: {
+  async buildBackendRequest(request: DocumentProcessingRequest, content: {
     content: string;
     contentSource: string;
     sourceUrl?: string;
-  }): any {
+  }): Promise<any> {
     const { document, job } = request;
 
     // Build stage-specific configuration according to backend API guide
@@ -414,11 +732,11 @@ export class FileDocumentHandler extends BaseDocumentHandler {
     }
   }
 
-  buildBackendRequest(request: DocumentProcessingRequest, content: {
+  async buildBackendRequest(request: DocumentProcessingRequest, content: {
     content: string;
     contentSource: string;
     sourceUrl?: string;
-  }): any {
+  }): Promise<any> {
     const { document, job } = request;
 
     // Build stage-specific configuration according to backend API guide
@@ -438,7 +756,7 @@ export class FileDocumentHandler extends BaseDocumentHandler {
         jobId: job.id,
         documentName: document.name,
         realmId: document.realmId,
-        originalFile: document.files?.[0]?.filepath,
+        originalFile: document.files?.[0]?.originalName || document.files?.[0]?.filename,
         sourceUrl: content.sourceUrl,
         isUrlDocument: !!content.sourceUrl,
         hasFileContent: isFileContent,
@@ -464,10 +782,69 @@ export class FileDocumentHandler extends BaseDocumentHandler {
       };
     } else {
       // For subsequent stages, use input_files with previous stage outputs
-      return {
-        ...baseRequest,
-        input_files: [content.content] // This should be file paths from previous stages
-      };
+      // We need to get the output file paths from the previous stage
+      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+      if (previousStageFiles.length > 0) {
+        return {
+          ...baseRequest,
+          input_files: previousStageFiles
+        };
+      } else {
+        // Fallback: create a temporary file with the markdown content
+        const tempFileName = `${document.id}_${job.stage.toLowerCase()}_input.md`;
+        return {
+          ...baseRequest,
+          input_files: [`./temp/${tempFileName}`],
+          temp_file_content: content.content,
+          temp_file_name: tempFileName
+        };
+      }
+    }
+  }
+
+  /**
+   * Get output file paths from the previous stage
+   */
+  private async getPreviousStageOutputFiles(documentId: string, currentStage: string): Promise<string[]> {
+    try {
+      const { prisma } = await import('../../database');
+
+    // Define stage order
+    const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+    const currentIndex = stageOrder.indexOf(currentStage);
+
+    if (currentIndex <= 0) {
+      return []; // No previous stage
+    }
+
+      const previousStage = stageOrder[currentIndex - 1];
+
+      // Get files from the previous stage
+      const files = await prisma.file.findMany({
+        where: {
+          documentId,
+          stage: previousStage
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Return file paths that the backend can access
+      return files.map(file => {
+        // Try to get the backend file path from metadata
+        const metadata = file.metadata ? JSON.parse(file.metadata) : {};
+        if (metadata.originalPath) {
+          return metadata.originalPath;
+        }
+
+        // Fallback to constructing the path
+        return `./output/${documentId}/${file.filename}`;
+      });
+    } catch (error) {
+      console.error(`Failed to get previous stage files for ${documentId}, stage ${currentStage}:`, error);
+      return [];
     }
   }
 

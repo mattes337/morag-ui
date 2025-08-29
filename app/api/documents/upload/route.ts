@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     if (processingMode === 'AUTOMATIC') {
       try {
         // Import the background job service to schedule processing
-        const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
+        const { jobManager } = await import('@/lib/services/jobs');
 
         if (templateConfig || expertConfig || youtubeConfig) {
           // Use new stage-based processing with template/expert/YouTube configuration
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
           const stages = config.stages || ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'];
 
           // Schedule processing with the new API
-          const jobId = await backgroundJobService.createStageChainJob({
+          const jobId = await jobManager.createStageChainJob({
             documentId: document.id,
             stages,
             globalConfig: config.globalConfig || config,
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
           console.log(`Document ${document.id} uploaded, scheduled stage chain processing with job ${jobId}`);
         } else {
           // Fallback to legacy single-stage processing
-          const jobId = await backgroundJobService.createJob({
+          const jobId = await jobManager.createJob({
             documentId: document.id,
             stage: 'MARKDOWN_CONVERSION',
             priority: 0,

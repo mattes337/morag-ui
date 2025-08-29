@@ -287,7 +287,8 @@ class DocumentCreator {
             filepath: config.url,
             filesize: 0,
             contentType: 'text/url',
-            content: config.url
+            content: config.url,
+            metadata: JSON.stringify({ sourceUrl: config.url })
           }
         });
       }
@@ -300,7 +301,7 @@ class DocumentCreator {
             documentId: document.id,
             fileType: 'ORIGINAL_DOCUMENT',
             filename: path.basename(config.file),
-            originalName: config.name,
+            originalName: path.basename(config.file), // Use actual filename instead of config.name
             filepath: config.file,
             filesize: stats.size,
             contentType: this.getContentType(config.file),

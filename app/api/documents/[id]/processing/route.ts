@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jobScheduler } from '../../../../../lib/services/jobScheduler';
+import { jobScheduler } from '../../../../../lib/services/jobs';
 import { getAuthUser } from '../../../../../lib/auth';
 import { PrismaClient, ProcessingMode } from '@prisma/client';
 import { DocumentProcessingService } from '../../../../../lib/services/documentProcessingService';

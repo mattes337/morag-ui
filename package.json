@@ -24,7 +24,7 @@
     "test:run-jobs:watch": "cross-env SKIP_AUTH=true node scripts/run-background-jobs.js --watch",
     "test:cleanup": "cross-env SKIP_AUTH=true node scripts/cleanup-test-data.js",
     "test:cleanup:force": "cross-env SKIP_AUTH=true node scripts/cleanup-test-data.js --confirm",
-    "test:pipeline": "cross-env SKIP_AUTH=true node scripts/test-processing-pipeline.js",
+    "test:pipeline": "cross-env SKIP_AUTH=true npx tsx scripts/test-processing-pipeline.js",
     "test:pipeline:youtube": "cross-env SKIP_AUTH=true node scripts/test-processing-pipeline.js --type=youtube",
     "test:pipeline:website": "cross-env SKIP_AUTH=true node scripts/test-processing-pipeline.js --type=website",
     "test:pipeline:document": "cross-env SKIP_AUTH=true node scripts/test-processing-pipeline.js --type=document",
