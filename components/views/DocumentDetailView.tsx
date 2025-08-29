@@ -299,17 +299,15 @@ export function DocumentDetailView({
                 setTimeout(async () => {
                     console.log('🔄 [DocumentDetailView] Refreshing files after stage completion');
                     await loadDocumentData();
-                    // Also refresh the document from parent to get updated state
-                    if (onDocumentUpdate) {
-                        onDocumentUpdate();
-                    }
+                    // Don't call onDocumentUpdate here to prevent page reload
+                    // The parent will get updated through normal polling
                 }, 1000);
             }
         }
 
         // Update previous stage infos for next comparison
         previousStageInfosRef.current = [...stageInfos];
-    }, [stageInfos, loadDocumentData, onDocumentUpdate]);
+    }, [stageInfos, loadDocumentData]);
 
     // Load document data when document changes
     useEffect(() => {

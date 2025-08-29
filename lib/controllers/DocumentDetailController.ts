@@ -256,6 +256,7 @@ export function useDocumentDetailController(
 
   const handleDocumentUpdate = useCallback(async () => {
     logger.info('Refreshing document due to stage completion');
+    // Use a more gentle refresh that doesn't cause page reload
     await refreshDocument();
   }, [logger, refreshDocument]);
 

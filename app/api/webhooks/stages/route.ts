@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stageExecutionService } from '../../../../lib/services/stageExecutionService';
-import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
+// Removed backgroundJobService import - using dynamic import where needed
 import { unifiedFileService } from '../../../../lib/services/unifiedFileService';
 import { prisma } from '../../../../lib/database';
 
@@ -527,7 +527,8 @@ async function checkAndRetryDependentStages(documentId: string, completedStage: 
         console.log(`🚀 [Stage Webhook] Retrying ${job.stage} stage after ${completedStage} completion`);
 
         // Create a new job to retry the original stage
-        await backgroundJobService.createJob({
+        const { jobManager } = await import('../../../../lib/services/jobs');
+        await jobManager.createJob({
           documentId,
           stage: job.stage,
           priority: 1, // High priority for dependency-resolved retries

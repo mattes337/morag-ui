@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
+// Removed backgroundJobService - using direct Prisma calls
 import { getAuthUser } from '../../../../lib/auth';
 import { PrismaClient } from '@prisma/client';
 

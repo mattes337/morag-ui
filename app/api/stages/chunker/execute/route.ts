@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { backgroundJobService } from '@/lib/services/backgroundJobService';
+// Removed backgroundJobService import - using dynamic import
 import { ProcessingStage } from '@prisma/client';
 
 /**
@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     console.log(`🚀 [API] Creating background job for chunker, document: ${documentId}`);
 
     // Create a background job for chunker stage
-    const job = await backgroundJobService.createJob({
+    const { jobManager } = await import('../../../../lib/services/jobs');
+    const job = await jobManager.createJob({
       documentId,
       stage: ProcessingStage.CHUNKER,
       priority,

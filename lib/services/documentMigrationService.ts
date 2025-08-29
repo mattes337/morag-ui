@@ -5,7 +5,7 @@ import { Document, DocumentState, MigrationStatus, ProcessingStage } from '@pris
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { stageExecutionService } from './stageExecutionService';
-import { backgroundJobService } from './backgroundJobService';
+// Removed backgroundJobService import - using dynamic import where needed
 import { RealmCountService } from './realmCountService';
 
 export interface MigrationOptions {
@@ -533,7 +533,8 @@ export class DocumentMigrationService {
 
         try {
           // Create a processing job for this stage
-          const job = await backgroundJobService.createJob({
+          const { jobManager } = await import('./jobs');
+          const job = await jobManager.createJob({
             documentId: targetDocumentId,
             stage: stage,
             priority: 10, // High priority for migration reprocessing

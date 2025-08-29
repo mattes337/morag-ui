@@ -251,48 +251,79 @@ export async function POST(request: NextRequest) {
                 processingMode: processingMode || 'AUTOMATIC'
             });
 
-            // If URL is provided, store it as the original content
-            // Skip creating empty original files for websites and YouTube - they will be processed directly
+            // Handle URL storage based on document type
             let storedFile = null;
-            if (url && finalType !== 'website' && finalType !== 'youtube') {
-                storedFile = await unifiedFileService.storeFile({
-                    documentId: document.id,
-                    fileType: 'ORIGINAL_DOCUMENT',
-                    filename: `${finalType}_content.txt`,
-                    originalName: name,
-                    content: Buffer.from(url, 'utf-8'),
-                    contentType: 'text/plain',
-                    isPublic: false,
-                    accessLevel: 'REALM_MEMBERS',
-                    metadata: {
-                        sourceUrl: url,
-                        documentType: finalType,
-                        documentSubType: finalSubType,
-                        createdAt: new Date().toISOString(),
-                        createdBy: auth.user!.userId,
-                    }
-                });
+            if (url) {
+                if (finalType === 'youtube' || finalType === 'website') {
+                    // For YouTube and websites, store URL reference as metadata-only file
+                    // This preserves the URL for job scheduling without creating actual file content
+                    storedFile = await unifiedFileService.storeFile({
+                        documentId: document.id,
+                        fileType: 'ORIGINAL_DOCUMENT',
+                        filename: `${finalType}_url_reference.json`,
+                        originalName: `${name} (${finalType.toUpperCase()} URL)`,
+                        content: Buffer.from(JSON.stringify({
+                            type: 'url_reference',
+                            sourceUrl: url,
+                            documentType: finalType,
+                            documentSubType: finalSubType,
+                            note: 'This is a URL reference, not file content'
+                        }, null, 2), 'utf-8'),
+                        contentType: 'application/json',
+                        isPublic: false,
+                        accessLevel: 'REALM_MEMBERS',
+                        metadata: {
+                            isUrlReference: true,
+                            sourceUrl: url,
+                            documentType: finalType,
+                            documentSubType: finalSubType,
+                            createdAt: new Date().toISOString(),
+                            createdBy: auth.user!.userId,
+                        }
+                    });
+
+                    console.log(`📋 [DocumentAPI] Stored URL reference for ${finalType} document ${document.id}: ${url}`);
+                } else {
+                    // For other types, store the URL as file content
+                    storedFile = await unifiedFileService.storeFile({
+                        documentId: document.id,
+                        fileType: 'ORIGINAL_DOCUMENT',
+                        filename: `${finalType}_source.txt`,
+                        originalName: name,
+                        content: Buffer.from(url, 'utf-8'),
+                        contentType: 'text/plain',
+                        isPublic: false,
+                        accessLevel: 'REALM_MEMBERS',
+                        metadata: {
+                            sourceUrl: url,
+                            documentType: finalType,
+                            documentSubType: finalSubType,
+                            createdAt: new Date().toISOString(),
+                            createdBy: auth.user!.userId,
+                        }
+                    });
+
+                    console.log(`📁 [DocumentAPI] Stored file for ${finalType} document ${document.id} with URL: ${url}`);
+                }
             }
 
             // Schedule automatic processing if enabled
             // For websites and YouTube, process even without a stored file since they fetch content dynamically
             if ((processingMode || 'AUTOMATIC') === 'AUTOMATIC' && (storedFile || finalType === 'website' || finalType === 'youtube')) {
                 try {
-                    // Import the background job service to schedule processing
-                    const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
+                    // Import the job orchestrator to schedule processing
+                    const { jobOrchestrator } = await import('@/lib/services/jobs');
 
                     // Schedule basic processing for URL-based documents
-                    const jobId = await backgroundJobService.createJob({
-                        documentId: document.id,
-                        stage: 'MARKDOWN_CONVERSION',
-                        priority: 0,
-                        scheduledAt: new Date(),
-                        metadata: {
+                    const jobId = await jobOrchestrator.scheduleJobForDocument(
+                        document.id,
+                        'MARKDOWN_CONVERSION',
+                        {
                             sourceUrl: url,
                             documentType: finalType,
                             documentSubType: finalSubType
                         }
-                    });
+                    );
 
                     console.log(`Document ${document.id} created from URL (type: ${finalType}), scheduled automatic processing with job ${jobId}`);
                 } catch (processingError) {

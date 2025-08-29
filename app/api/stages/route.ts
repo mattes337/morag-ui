@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { backgroundJobService } from '@/lib/services/backgroundJobService';
+// Removed backgroundJobService import - using dynamic import
 import { ProcessingStage, JobStatus } from '@prisma/client';
 
 /**
@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const runningJobs = await backgroundJobService.getJobsByStatus(JobStatus.PROCESSING);
+    const { prisma } = await import('../../../lib/database');
+    const runningJobs = await prisma.processingJob.findMany({
+      where: { status: JobStatus.PROCESSING }
+    });
 
     return NextResponse.json({
       jobs: runningJobs,
@@ -69,7 +72,8 @@ export async function POST(request: NextRequest) {
     console.log(`🚀 [API] Creating background job for stage: ${stage}, document: ${documentId}`);
 
     // Create a background job for the stage
-    const job = await backgroundJobService.createJob({
+    const { jobManager } = await import('../../../lib/services/jobs');
+    const job = await jobManager.createJob({
       documentId,
       stage,
       priority,

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backgroundJobService } from '../../../lib/services/backgroundJobService';
 import { requireUnifiedAuth } from '../../../lib/middleware/unifiedAuth';
 import { prisma } from '../../../lib/database';
 import { z } from 'zod';
@@ -122,8 +121,9 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Create the job
-    const job = await backgroundJobService.createJob({
+    // Create the job using dynamic import
+    const { jobManager } = await import('../../../lib/services/jobs');
+    const job = await jobManager.createJob({
       documentId: validatedData.documentId,
       stage: validatedData.stage,
       priority: validatedData.priority,
@@ -170,7 +170,10 @@ export async function DELETE(request: NextRequest) {
       // Cancel specific jobs
       for (const jobId of jobIds) {
         try {
-          await backgroundJobService.cancelJob(jobId);
+          await prisma.processingJob.update({
+            where: { id: jobId },
+            data: { status: 'CANCELLED' }
+          });
           cancelledCount++;
         } catch (error) {
           console.error(`Failed to cancel job ${jobId}:`, error);
@@ -187,7 +190,10 @@ export async function DELETE(request: NextRequest) {
 
       for (const job of jobs) {
         try {
-          await backgroundJobService.cancelJob(job.id);
+          await prisma.processingJob.update({
+            where: { id: job.id },
+            data: { status: 'CANCELLED' }
+          });
           cancelledCount++;
         } catch (error) {
           console.error(`Failed to cancel job ${job.id}:`, error);

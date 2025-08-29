@@ -1,5 +1,5 @@
 import { ProcessingStage, ProcessingMode, DocumentState, JobStatus } from '@prisma/client';
-import { backgroundJobService } from './backgroundJobService';
+// Removed backgroundJobService import - using dynamic import
 import { stageExecutionService } from './stageExecutionService';
 import { unifiedFileService } from './unifiedFileService';
 import { prisma } from '../database';
@@ -165,16 +165,15 @@ export class DocumentProcessingService {
       if (mode === 'AUTOMATIC') {
         // For automatic mode, only create the first job
         // Subsequent jobs will be created automatically as each stage completes
-        const job = await backgroundJobService.createJob({
-          documentId,
-          stage: stages[0],
-          priority: 0,
-        });
+        const { jobOrchestrator } = await import('./jobs');
+        const jobId = await jobOrchestrator.scheduleJobForDocument(documentId, stages[0]);
+        const job = { id: jobId };
         jobIds.push(job.id);
       } else {
         // For manual mode, create all jobs but they won't auto-advance
+        const { jobManager } = await import('./jobs');
         for (let i = 0; i < stages.length; i++) {
-          const job = await backgroundJobService.createJob({
+          const job = await jobManager.createJob({
             documentId,
             stage: stages[i],
             priority: 0,

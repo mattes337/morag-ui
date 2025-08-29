@@ -1,6 +1,6 @@
 import { PrismaClient, ProcessingStage, StageStatus, StageExecution } from '@prisma/client';
 import { moragService } from './moragService';
-import { backgroundJobService } from './backgroundJobService';
+// Removed backgroundJobService import - using dynamic import in executeStageAsync
 
 const prisma = new PrismaClient();
 
@@ -395,11 +395,14 @@ class StageExecutionService {
   }
 
   /**
-   * Execute a stage asynchronously using the background job service
+   * Execute a stage asynchronously using the job orchestrator
    */
   async executeStageAsync(documentId: string, stage: ProcessingStage, priority: number = 5): Promise<string> {
+    // Import the job orchestrator
+    const { jobOrchestrator } = await import('./jobs');
+
     // Create a processing job for this stage
-    const job = await backgroundJobService.createJob({ documentId, stage, priority });
+    const jobId = await jobOrchestrator.scheduleJobForDocument(documentId, stage, { priority });
 
     // Update document status to indicate processing has started
     await prisma.document.update({
@@ -411,7 +414,7 @@ class StageExecutionService {
       },
     });
 
-    return job.id;
+    return jobId;
   }
 
   /**
@@ -570,8 +573,7 @@ class StageExecutionService {
       if (document?.processingMode === 'AUTOMATIC' && !document.isProcessingPaused) {
         const nextStage = await this.advanceToNextStage(execution.documentId);
         if (nextStage) {
-          // Schedule the next stage
-          await backgroundJobService.scheduleAutomaticJobs();
+          // The next stage will be automatically scheduled by the job scheduler
         } else {
           // No next stage - check if all stages are complete and mark document as INGESTED
           const pipelineStatus = await this.getDocumentPipelineStatus(execution.documentId);

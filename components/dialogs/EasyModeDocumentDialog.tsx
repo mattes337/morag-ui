@@ -127,7 +127,7 @@ export function EasyModeDocumentDialog({
 
   const canProceedToTemplate = selectedFile || documentUrl;
 
-  const handleSubmit = async (templateFromDoubleClick?: ProcessingTemplate) => {
+  const handleSubmit = async (templateFromDoubleClick?: ProcessingTemplate, processingMode: 'AUTOMATIC' | 'MANUAL' = 'AUTOMATIC') => {
     if (!currentRealm) {
       ToastService.error('No realm selected');
       return;
@@ -163,7 +163,7 @@ export function EasyModeDocumentDialog({
         formData.append('file', selectedFile);
         formData.append('name', documentName.trim());
         formData.append('realmId', currentRealm.id);
-        formData.append('processingMode', 'AUTOMATIC');
+        formData.append('processingMode', processingMode);
         formData.append('templateId', templateToUse.id);
         formData.append('templateConfig', JSON.stringify(ProcessingTemplateService.mergeWithDefaults(templateToUse)));
         formData.append('type', getFileType(selectedFile.name));
@@ -182,7 +182,7 @@ export function EasyModeDocumentDialog({
         const documentData = {
           name: documentName.trim(),
           realmId: currentRealm.id,
-          processingMode: 'AUTOMATIC' as const,
+          processingMode: processingMode,
           templateId: templateToUse.id,
           templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
           url: documentUrl,
@@ -206,7 +206,7 @@ export function EasyModeDocumentDialog({
         const documentData = {
           name: documentName.trim(),
           realmId: currentRealm.id,
-          processingMode: 'AUTOMATIC' as const,
+          processingMode: processingMode,
           templateId: templateToUse.id,
           templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
           url: documentUrl,
@@ -227,7 +227,8 @@ export function EasyModeDocumentDialog({
         }
       }
 
-      ToastService.success(`Document "${documentName}" created successfully with ${templateToUse.name} template`);
+      const modeText = processingMode === 'AUTOMATIC' ? 'with automatic processing' : 'with manual processing';
+      ToastService.success(`Document "${documentName}" created successfully ${modeText} using ${templateToUse.name} template`);
 
       // Refresh the documents list to show the new document
       await refreshData();
@@ -461,14 +462,25 @@ export function EasyModeDocumentDialog({
           Expert Mode
         </Button>
 
-        <Button
-          onClick={() => handleSubmit()}
-          disabled={!selectedTemplate || isSubmitting}
-          className="gap-2"
-        >
-          {isSubmitting ? 'Creating...' : 'Create Document'}
-          <Sparkles className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => handleSubmit(undefined, 'MANUAL')}
+            disabled={!selectedTemplate || isSubmitting}
+            variant="outline"
+            className="gap-2"
+          >
+            {isSubmitting ? 'Creating...' : 'Create Manual'}
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => handleSubmit(undefined, 'AUTOMATIC')}
+            disabled={!selectedTemplate || isSubmitting}
+            className="gap-2"
+          >
+            {isSubmitting ? 'Creating...' : 'Create Auto'}
+            <Sparkles className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       </div>
     );

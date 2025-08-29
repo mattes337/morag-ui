@@ -4,7 +4,7 @@ import { authenticateApiKey, ApiKeyAuthResult } from './apiKeyAuth';
 import { UserService } from '../services/userService';
 import { RealmService } from '../services/realmService';
 import { StartupService } from '../services/startupService';
-import { jobScheduler } from '../services/jobScheduler';
+import { jobOrchestrator } from '../services/jobs';
 
 export interface UnifiedAuthResult {
   success: boolean;
@@ -28,10 +28,11 @@ export async function authenticateUnified(request: NextRequest): Promise<Unified
     await StartupService.initialize();
 
     // Initialize background services on first API call (singleton pattern)
-    // Use the job scheduler's stats to check if it's running
-    if (!jobScheduler.getStats().isRunning) {
+    // Use the job orchestrator's status to check if it's running or starting
+    const status = jobOrchestrator.getStatus();
+    if (!status.isRunning && !status.isStarting) {
       // Don't await this - let it initialize in the background
-      jobScheduler.start().catch(error => {
+      jobOrchestrator.start().catch(error => {
         console.warn('Background services initialization failed:', error);
       });
     }

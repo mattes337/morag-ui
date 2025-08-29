@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { backgroundJobService } from '../../../../lib/services/backgroundJobService';
+import { jobManager } from '../../../../lib/services/jobs';
 import { prisma } from '../../../../lib/database';
 
 /**

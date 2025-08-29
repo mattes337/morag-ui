@@ -204,6 +204,19 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
                 setApiHealthy(healthy);
                 console.log('✅ [AppContext] API health check completed:', healthy);
 
+                // Initialize background services early if API is healthy
+                if (healthy) {
+                    console.log('🔧 [AppContext] Initializing background services...');
+                    try {
+                        // Call a simple API endpoint to trigger background service initialization
+                        await fetch('/api/health', { method: 'GET' });
+                        console.log('✅ [AppContext] Background services initialization triggered');
+                    } catch (bgError) {
+                        console.warn('⚠️ [AppContext] Background services initialization failed:', bgError);
+                        // Don't fail the app initialization for this
+                    }
+                }
+
                 // Check authentication
                 console.log('🔐 [AppContext] Checking authentication');
                 await checkAuthentication();

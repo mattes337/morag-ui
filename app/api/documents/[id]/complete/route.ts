@@ -3,7 +3,7 @@ import { requireUnifiedAuth } from '../../../../../lib/middleware/unifiedAuth';
 import { DocumentService } from '../../../../../lib/services/documentService';
 import { stageExecutionService } from '../../../../../lib/services/stageExecutionService';
 import { unifiedFileService } from '../../../../../lib/services/unifiedFileService';
-import { backgroundJobService } from '../../../../../lib/services/backgroundJobService';
+// Removed backgroundJobService import - using dynamic import where needed
 
 /**
  * GET /api/documents/[id]/complete
@@ -48,10 +48,15 @@ export async function GET(
     const statsData = executionStats.status === 'fulfilled' ? executionStats.value : null;
 
     // Check if there are any active processing jobs
-    const documentJobs = await backgroundJobService.getDocumentJobs(documentId);
-    const activeJobs = documentJobs.filter(job =>
-      job.status === 'PENDING' || job.status === 'PROCESSING'
-    );
+    const { prisma } = await import('../../../../../lib/database');
+    const activeJobs = await prisma.processingJob.findMany({
+      where: {
+        documentId,
+        status: {
+          in: ['PENDING', 'PROCESSING', 'WAITING_FOR_REMOTE_WORKER']
+        }
+      }
+    });
 
     const response = {
       document: {

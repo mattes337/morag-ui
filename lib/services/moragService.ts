@@ -487,6 +487,11 @@ export class MoragService {
           if (stage === 'FACT_GENERATOR') {
             const chunkFiles = execution.outputFiles.filter(file => file.includes('.chunks.json'));
 
+            console.log(`🔍 [MoRAG] Fact-generator dependency check for ${depStage}:`);
+            console.log(`   - Execution ID: ${execution.id}`);
+            console.log(`   - All output files: ${execution.outputFiles.join(', ')}`);
+            console.log(`   - Chunk files found: ${chunkFiles.join(', ')}`);
+
             if (chunkFiles.length > 0) {
               console.log(`✅ [MoRAG] Found chunk files from ${depStage}: ${chunkFiles.join(', ')}`);
               return chunkFiles;
@@ -615,6 +620,15 @@ export class MoragService {
       if (shouldUsePrevious) {
         inputFiles = await this.getPreviousStageOutputFiles(request.documentId, request.stage);
         console.log(`📁 [MoRAG] Using previous stage output files: ${inputFiles.join(', ')}`);
+
+        // Special logging for fact-generator to verify chunk files
+        if (request.stage === 'FACT_GENERATOR') {
+          console.log(`🔍 [MoRAG] FACT_GENERATOR input verification:`);
+          console.log(`   - Stage: ${request.stage}`);
+          console.log(`   - Document ID: ${request.documentId}`);
+          console.log(`   - Input files: ${JSON.stringify(inputFiles)}`);
+          console.log(`   - All files are chunk files: ${inputFiles.every(f => f.includes('.chunks.json'))}`);
+        }
       } else if (!hasFileContent && request.document.filePath) {
         // Use the original file path if available
         inputFiles = [request.document.filePath];
@@ -661,6 +675,11 @@ export class MoragService {
 
     console.log(`🚀 [MoRAG] Calling ${canonicalStage} stage for document ${request.documentId}`);
     console.log(`🔗 [MoRAG] Endpoint: ${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`);
+    console.log(`📋 [MoRAG] Request details:`);
+    console.log(`   - Stage: ${canonicalStage}`);
+    console.log(`   - Input files: ${JSON.stringify(stageRequest.input_files)}`);
+    console.log(`   - Has file content: ${hasFileContent}`);
+    console.log(`   - Output dir: ${stageRequest.output_dir}`);
 
     const response = await fetch(`${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`, {
       method: 'POST',
@@ -695,21 +714,21 @@ export class MoragService {
             console.log(`🚀 [MoRAG] Automatically triggering missing dependency: ${dependencyCheck.missingStages[0]}`);
 
             // Import here to avoid circular dependency
-            const { backgroundJobService } = await import('./backgroundJobService');
+            const { jobOrchestrator } = await import('./jobs');
 
             // Create a job for the missing dependency stage
             const missingStage = dependencyCheck.missingStages[0]; // Start with the first missing stage
-            await backgroundJobService.createJob({
-              documentId: request.documentId,
-              stage: missingStage as any,
-              priority: 1, // High priority for dependency resolution
-              metadata: {
+            await jobOrchestrator.scheduleJobForDocument(
+              request.documentId,
+              missingStage,
+              {
                 ...request.metadata,
                 triggeredBy: 'dependency_resolution',
                 originalStage: request.stage,
-                originalExecutionId: request.executionId
+                originalExecutionId: request.executionId,
+                priority: 1 // High priority for dependency resolution
               }
-            });
+            );
 
             // Throw a special error that indicates dependency resolution was triggered
             throw new Error(`DEPENDENCY_RESOLUTION_TRIGGERED: Missing dependency ${missingStage} has been automatically scheduled for processing. The original ${request.stage} stage will be retried after dependency completion.`);
@@ -869,6 +888,141 @@ export class MoragService {
     }
 
     return await response.json();
+  }
+
+  /**
+   * Execute a single stage using the stage-based API
+   * This method is used by the new document handlers
+   */
+  async executeStage(request: {
+    stage: string;
+    input_files?: string[];
+    file_content?: string;
+    use_file_upload?: boolean;
+    output_dir: string;
+    webhook_url?: string;
+    metadata?: Record<string, any>;
+  }): Promise<{ task_id: string; immediateResult?: any }> {
+    const canonicalStage = this.getCanonicalStageName(request.stage);
+    const endpoint = `${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`;
+
+    console.log(`🚀 [MoragService] Executing single stage: ${canonicalStage}`);
+    console.log(`🔗 [MoragService] Endpoint: ${endpoint}`);
+    console.log(`📋 [MoragService] Request details:`);
+    console.log(`   - Stage: ${canonicalStage}`);
+    console.log(`   - Input files: ${JSON.stringify(request.input_files || [])}`);
+    console.log(`   - Has file content: ${!!request.file_content}`);
+    console.log(`   - Use file upload: ${request.use_file_upload || false}`);
+    console.log(`   - Output dir: ${request.output_dir}`);
+
+    // Create form data according to the backend API guide
+    const formData = new FormData();
+
+    // Handle file upload vs input_files according to backend API guide
+    if (request.use_file_upload && request.file_content) {
+      // For file uploads (first stage with file content)
+      const blob = new Blob([request.file_content], { type: 'application/octet-stream' });
+      formData.append('file', blob, 'document');
+    } else if (request.input_files && request.input_files.length > 0) {
+      // For URL-based documents or subsequent stages
+      console.log(`🔍 [MoragService] Original input_files:`, request.input_files);
+
+      // Fix URL corruption issues before sending to backend
+      const correctedInputFiles = request.input_files.map(file => {
+        if (typeof file === 'string' && (file.startsWith('http') || file.startsWith('https'))) {
+          let correctedUrl = file;
+
+          // Fix missing slash in protocol (https:/ -> https://)
+          if (correctedUrl.startsWith('https:/') && !correctedUrl.startsWith('https://')) {
+            correctedUrl = correctedUrl.replace('https:/', 'https://');
+            console.log(`🔧 [MoragService] Fixed URL protocol: ${file} -> ${correctedUrl}`);
+          }
+
+          // Fix missing slash in protocol (http:/ -> http://)
+          if (correctedUrl.startsWith('http:/') && !correctedUrl.startsWith('http://')) {
+            correctedUrl = correctedUrl.replace('http:/', 'http://');
+            console.log(`🔧 [MoragService] Fixed URL protocol: ${file} -> ${correctedUrl}`);
+          }
+
+          return correctedUrl;
+        }
+        return file;
+      });
+
+      console.log(`🔍 [MoragService] Corrected input_files:`, correctedInputFiles);
+      const inputFilesJson = JSON.stringify(correctedInputFiles);
+      console.log(`🔍 [MoragService] JSON stringified input_files:`, inputFilesJson);
+      formData.append('input_files', inputFilesJson);
+    }
+
+    // Build configuration object with stage-specific settings
+    const config: Record<string, any> = {};
+
+    // Extract stage-specific config from metadata
+    if (request.metadata) {
+      const { jobId, documentName, realmId, sourceUrl, isUrlDocument, hasFileContent, databaseServers, ...stageConfig } = request.metadata;
+      Object.assign(config, stageConfig);
+    }
+
+    // Add configuration
+    formData.append('config', JSON.stringify(config));
+
+    // Add webhook URL if provided
+    if (request.webhook_url) {
+      formData.append('webhook_url', request.webhook_url);
+    }
+
+    // Log what we're sending to the backend
+    console.log(`📤 [MoragService] Sending FormData to backend:`);
+    console.log(`   - Has input_files: ${formData.has('input_files')}`);
+    console.log(`   - Has file: ${formData.has('file')}`);
+    console.log(`   - Has config: ${formData.has('config')}`);
+    console.log(`   - Has webhook_url: ${formData.has('webhook_url')}`);
+    if (formData.has('config')) {
+      console.log(`   - Config value: ${formData.get('config')}`);
+    }
+    if (formData.has('input_files')) {
+      console.log(`   - Input files value: ${formData.get('input_files')}`);
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        // Don't set Content-Type for FormData - let the browser set it with boundary
+        'Authorization': this.getHeaders().Authorization,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Stage execution failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    console.log(`📋 [MoragService] Backend response:`, result);
+
+    // Handle both async and sync responses
+    if (result.task_id) {
+      // Async response - stage is running in background
+      console.log(`✅ [MoragService] Stage execution started with task_id: ${result.task_id}`);
+      return result;
+    } else if (result.success && (result.status === 'completed' || result.status === 'skipped') && result.output_files) {
+      // Sync response - stage completed immediately
+      console.log(`✅ [MoragService] Stage completed immediately with status: ${result.status}`);
+      console.log(`📁 [MoragService] Output files: ${result.output_files.length} files`);
+
+      // Return a synthetic task_id for immediate completion
+      return {
+        task_id: 'IMMEDIATE_COMPLETION',
+        immediateResult: result
+      };
+    } else {
+      // Unexpected response format
+      console.error(`❌ [MoragService] Unexpected backend response format. Full response:`, result);
+      throw new Error(`Backend returned unexpected response format: ${JSON.stringify(result)}`);
+    }
   }
 
   /**
