@@ -925,23 +925,14 @@ export class MoragService {
       formData.append('file', blob, 'document');
     } else if (request.input_files && request.input_files.length > 0) {
       // For URL-based documents or subsequent stages
-      console.log(`🔍 [MoragService] Original input_files:`, request.input_files);
-
       // Fix URL corruption issues before sending to backend
+      const { fixUrlCorruption } = await import('../utils/youtubeUtils');
       const correctedInputFiles = request.input_files.map(file => {
         if (typeof file === 'string' && (file.startsWith('http') || file.startsWith('https'))) {
-          let correctedUrl = file;
+          const correctedUrl = fixUrlCorruption(file);
 
-          // Fix missing slash in protocol (https:/ -> https://)
-          if (correctedUrl.startsWith('https:/') && !correctedUrl.startsWith('https://')) {
-            correctedUrl = correctedUrl.replace('https:/', 'https://');
-            console.log(`🔧 [MoragService] Fixed URL protocol: ${file} -> ${correctedUrl}`);
-          }
-
-          // Fix missing slash in protocol (http:/ -> http://)
-          if (correctedUrl.startsWith('http:/') && !correctedUrl.startsWith('http://')) {
-            correctedUrl = correctedUrl.replace('http:/', 'http://');
-            console.log(`🔧 [MoragService] Fixed URL protocol: ${file} -> ${correctedUrl}`);
+          if (correctedUrl !== file) {
+            console.log(`🔧 [MoragService] Fixed URL corruption: ${file} -> ${correctedUrl}`);
           }
 
           return correctedUrl;
@@ -949,9 +940,7 @@ export class MoragService {
         return file;
       });
 
-      console.log(`🔍 [MoragService] Corrected input_files:`, correctedInputFiles);
       const inputFilesJson = JSON.stringify(correctedInputFiles);
-      console.log(`🔍 [MoragService] JSON stringified input_files:`, inputFilesJson);
       formData.append('input_files', inputFilesJson);
     }
 

@@ -255,6 +255,14 @@ export async function POST(request: NextRequest) {
             let storedFile = null;
             if (url) {
                 if (finalType === 'youtube' || finalType === 'website') {
+                    // Fix URL corruption issues before storing
+                    const { fixUrlCorruption } = await import('@/lib/utils/youtubeUtils');
+                    const correctedUrl = fixUrlCorruption(url);
+
+                    if (correctedUrl !== url) {
+                        console.log(`🔧 [Document API] Fixed URL corruption during file storage: ${url} -> ${correctedUrl}`);
+                    }
+
                     // For YouTube and websites, store URL reference as metadata-only file
                     // This preserves the URL for job scheduling without creating actual file content
                     storedFile = await unifiedFileService.storeFile({
@@ -264,7 +272,7 @@ export async function POST(request: NextRequest) {
                         originalName: `${name} (${finalType.toUpperCase()} URL)`,
                         content: Buffer.from(JSON.stringify({
                             type: 'url_reference',
-                            sourceUrl: url,
+                            sourceUrl: correctedUrl,
                             documentType: finalType,
                             documentSubType: finalSubType,
                             note: 'This is a URL reference, not file content'
@@ -314,12 +322,20 @@ export async function POST(request: NextRequest) {
                     // Import the job orchestrator to schedule processing
                     const { jobOrchestrator } = await import('@/lib/services/jobs');
 
+                    // Fix URL corruption issues before scheduling job
+                    const { fixUrlCorruption } = await import('@/lib/utils/youtubeUtils');
+                    const correctedUrl = fixUrlCorruption(url);
+
+                    if (correctedUrl !== url) {
+                        console.log(`🔧 [Document API] Fixed URL corruption during job creation: ${url} -> ${correctedUrl}`);
+                    }
+
                     // Schedule basic processing for URL-based documents
                     const jobId = await jobOrchestrator.scheduleJobForDocument(
                         document.id,
                         'MARKDOWN_CONVERSION',
                         {
-                            sourceUrl: url,
+                            sourceUrl: correctedUrl,
                             documentType: finalType,
                             documentSubType: finalSubType
                         }

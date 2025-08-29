@@ -2,6 +2,30 @@
  * Utility functions for YouTube video handling
  */
 
+/**
+ * Fixes common URL corruption issues, particularly the missing slash in protocol
+ * This addresses the issue where URLs like "https://www.youtube.com" become "https:/www.youtube.com"
+ */
+export function fixUrlCorruption(url: string): string {
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
+
+  let correctedUrl = url;
+
+  // Fix missing slash in HTTPS protocol (https:/ -> https://)
+  if (correctedUrl.startsWith('https:/') && !correctedUrl.startsWith('https://')) {
+    correctedUrl = correctedUrl.replace('https:/', 'https://');
+  }
+
+  // Fix missing slash in HTTP protocol (http:/ -> http://)
+  if (correctedUrl.startsWith('http:/') && !correctedUrl.startsWith('http://')) {
+    correctedUrl = correctedUrl.replace('http:/', 'http://');
+  }
+
+  return correctedUrl;
+}
+
 export interface YouTubeVideoInfo {
   id: string;
   title: string;

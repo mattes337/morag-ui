@@ -166,60 +166,21 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
   }> {
     const { document, job } = request;
 
-    // Debug: Log raw metadata
-    console.log(`🔍 [YouTubeDocumentHandler] Raw job metadata for document ${document.id}:`, job.metadata);
-
     // Try to get URL from job metadata first
     const jobMetadata = job.metadata ? JSON.parse(job.metadata) : {};
-    console.log(`🔍 [YouTubeDocumentHandler] Parsed job metadata:`, jobMetadata);
-
     let sourceUrl = jobMetadata.sourceUrl;
-    console.log(`🔍 [YouTubeDocumentHandler] Extracted sourceUrl:`, sourceUrl);
-
-    // Test JSON round-trip to see if URL gets corrupted
-    if (sourceUrl) {
-      const testArray = [sourceUrl];
-      const jsonString = JSON.stringify(testArray);
-      const parsedBack = JSON.parse(jsonString);
-      console.log(`🔍 [YouTubeDocumentHandler] JSON round-trip test:`);
-      console.log(`   Original: ${sourceUrl}`);
-      console.log(`   JSON string: ${jsonString}`);
-      console.log(`   Parsed back: ${parsedBack[0]}`);
-      console.log(`   URLs match: ${sourceUrl === parsedBack[0]}`);
-
-      // Additional debugging - check character by character
-      if (sourceUrl !== parsedBack[0]) {
-        console.log(`🔍 [YouTubeDocumentHandler] URL CORRUPTION DETECTED!`);
-        console.log(`   Original length: ${sourceUrl.length}`);
-        console.log(`   Parsed length: ${parsedBack[0].length}`);
-        for (let i = 0; i < Math.max(sourceUrl.length, parsedBack[0].length); i++) {
-          const orig = sourceUrl[i] || 'undefined';
-          const parsed = parsedBack[0][i] || 'undefined';
-          if (orig !== parsed) {
-            console.log(`   Difference at position ${i}: '${orig}' vs '${parsed}'`);
-          }
-        }
-      }
-    }
 
     // If not in job metadata, this is an error for YouTube documents
     if (!sourceUrl) {
       throw new Error(`No source URL found for YouTube document ${document.id}. URL must be provided in job metadata.`);
     }
 
-    // Fix common URL corruption issues
-    let correctedUrl = sourceUrl;
+    // Fix common URL corruption issues using centralized utility
+    const { fixUrlCorruption } = await import('../../utils/youtubeUtils');
+    const correctedUrl = fixUrlCorruption(sourceUrl);
 
-    // Fix missing slash in protocol (https:/ -> https://)
-    if (correctedUrl.startsWith('https:/') && !correctedUrl.startsWith('https://')) {
-      correctedUrl = correctedUrl.replace('https:/', 'https://');
-      console.log(`🔧 [YouTubeDocumentHandler] Fixed URL protocol: ${sourceUrl} -> ${correctedUrl}`);
-    }
-
-    // Fix missing slash in protocol (http:/ -> http://)
-    if (correctedUrl.startsWith('http:/') && !correctedUrl.startsWith('http://')) {
-      correctedUrl = correctedUrl.replace('http:/', 'http://');
-      console.log(`🔧 [YouTubeDocumentHandler] Fixed URL protocol: ${sourceUrl} -> ${correctedUrl}`);
+    if (correctedUrl !== sourceUrl) {
+      console.log(`🔧 [YouTubeDocumentHandler] Fixed URL corruption: ${sourceUrl} -> ${correctedUrl}`);
     }
 
     // Validate the corrected URL
@@ -246,10 +207,7 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
     // Build stage-specific configuration according to backend API guide
     const stageConfig = this.getYouTubeStageConfig(job.stage);
 
-    console.log(`🔍 [YouTubeDocumentHandler] Building backend request with sourceUrl:`, content.sourceUrl);
-    console.log(`🔍 [YouTubeDocumentHandler] input_files will be:`, [content.sourceUrl]);
-
-    const backendRequest = {
+    return {
       stage: job.stage,
       input_files: [content.sourceUrl],
       output_dir: `./output/${document.id}`,
@@ -265,9 +223,6 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
         databaseServers: this.getDatabaseServers(document)
       }
     };
-
-    console.log(`🔍 [YouTubeDocumentHandler] Final backend request:`, JSON.stringify(backendRequest, null, 2));
-    return backendRequest;
   }
 
   private getYouTubeStageConfig(stage: string): Record<string, any> {
