@@ -2,6 +2,18 @@
  * Utility functions for YouTube video handling
  */
 
+export interface YouTubeVideoInfo {
+  id: string;
+  title: string;
+  channel: string;
+  channelUrl?: string;
+  thumbnail: string;
+  duration?: string;
+  uploadDate?: string;
+  viewCount?: string;
+  description?: string;
+}
+
 /**
  * Extracts video ID from YouTube URL
  */
@@ -120,4 +132,78 @@ export function generateDocumentNameFromTitle(title: string): string {
     .replace(/\s+/g, ' ')
     .trim()
     .substring(0, 100); // Limit length
+}
+
+/**
+ * Extracts basic YouTube video info for user verification
+ */
+export async function extractYouTubeVideoInfo(url: string): Promise<YouTubeVideoInfo | null> {
+  const videoId = extractYouTubeVideoId(url);
+  if (!videoId) {
+    return null;
+  }
+
+  try {
+    // Use YouTube's oEmbed API for basic video information
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+
+    try {
+      const oembedResponse = await fetch(oembedUrl);
+      if (oembedResponse.ok) {
+        const oembedData = await oembedResponse.json();
+
+        return {
+          id: videoId,
+          title: oembedData.title || 'YouTube Video',
+          channel: oembedData.author_name || 'Unknown Channel',
+          channelUrl: oembedData.author_url,
+          thumbnail: oembedData.thumbnail_url || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          // Note: oEmbed doesn't provide duration, view count, or upload date
+          // These would need to be fetched from YouTube Data API (server-side)
+        };
+      }
+    } catch (error) {
+      console.warn('oEmbed API failed:', error);
+    }
+
+    // Fallback with minimal data
+    return {
+      id: videoId,
+      title: 'YouTube Video',
+      channel: 'Unknown Channel',
+      thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+    };
+
+  } catch (error) {
+    console.error('Failed to extract YouTube video info:', error);
+    return null;
+  }
+}
+
+/**
+ * Formats duration from seconds to readable format (MM:SS or HH:MM:SS)
+ */
+export function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  }
+}
+
+/**
+ * Formats view count to readable format (1.2M, 345K, etc.)
+ */
+export function formatViewCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  } else if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  } else {
+    return count.toString();
+  }
 }

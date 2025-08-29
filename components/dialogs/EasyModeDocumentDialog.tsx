@@ -13,7 +13,8 @@ import { TemplateSelector } from '@/components/ui/processing/template-selector';
 import { ProcessingTemplate, ProcessingTemplateService } from '@/lib/processing/templates';
 import { useApp } from '@/contexts/AppContext';
 import { ToastService } from '@/lib/services/toastService';
-import { fetchVideoTitleWithFallback, isYouTubeUrl, generateDocumentNameFromTitle } from '@/lib/utils/youtubeUtils';
+import { fetchVideoTitleWithFallback, isYouTubeUrl, generateDocumentNameFromTitle, YouTubeVideoInfo } from '@/lib/utils/youtubeUtils';
+import { YouTubeInputHandler } from '@/components/ui/youtube/YouTubeInputHandler';
 
 interface EasyModeDocumentDialogProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ interface EasyModeDocumentDialogProps {
   onSwitchToExpert?: () => void;
 }
 
-type Step = 'source' | 'template';
+type Step = 'source' | 'youtube' | 'template';
 
 export function EasyModeDocumentDialog({
   isOpen,
@@ -36,6 +37,9 @@ export function EasyModeDocumentDialog({
   const [selectedTemplate, setSelectedTemplate] = useState<ProcessingTemplate | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // YouTube-specific state
+  const [youtubeVideoInfo, setYoutubeVideoInfo] = useState<YouTubeVideoInfo | null>(null);
 
   // Auto-select recommended template when file is selected
   useEffect(() => {
@@ -85,18 +89,9 @@ export function EasyModeDocumentDialog({
     setDocumentUrl(url);
     if (url && !documentName) {
       if (isYouTubeUrl(url)) {
-        // Try to fetch YouTube video title
-        try {
-          const title = await fetchVideoTitleWithFallback(url);
-          if (title) {
-            setDocumentName(generateDocumentNameFromTitle(title));
-          } else {
-            setDocumentName('YouTube Video');
-          }
-        } catch (error) {
-          console.error('Failed to fetch YouTube title:', error);
-          setDocumentName('YouTube Video');
-        }
+        // For YouTube URLs, redirect to YouTube processing step
+        setCurrentStep('youtube');
+        return;
       } else {
         try {
           const urlObj = new URL(url);
@@ -109,6 +104,21 @@ export function EasyModeDocumentDialog({
     if (url) {
       setCurrentStep('template');
     }
+  };
+
+  const handleYouTubeProcessed = (data: {
+    url: string;
+    videoInfo: YouTubeVideoInfo;
+    suggestedName: string;
+  }) => {
+    setYoutubeVideoInfo(data.videoInfo);
+    setDocumentName(data.suggestedName);
+    setCurrentStep('template');
+  };
+
+  const handleYouTubeError = (error: string) => {
+    ToastService.error(`YouTube processing failed: ${error}`);
+    setCurrentStep('source');
   };
 
   const handleUploadCardClick = () => {
@@ -147,16 +157,6 @@ export function EasyModeDocumentDialog({
     setIsSubmitting(true);
 
     try {
-      // Create the document with template configuration
-      const documentData = {
-        name: documentName.trim(),
-        realmId: currentRealm.id,
-        processingMode: 'AUTOMATIC' as const,
-        templateId: templateToUse.id,
-        templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
-        ...(documentUrl ? { url: documentUrl, type: getUrlType(documentUrl) } : {})
-      };
-
       if (selectedFile) {
         // Handle file upload
         const formData = new FormData();
@@ -165,7 +165,7 @@ export function EasyModeDocumentDialog({
         formData.append('realmId', currentRealm.id);
         formData.append('processingMode', 'AUTOMATIC');
         formData.append('templateId', templateToUse.id);
-        formData.append('templateConfig', JSON.stringify(documentData.templateConfig));
+        formData.append('templateConfig', JSON.stringify(ProcessingTemplateService.mergeWithDefaults(templateToUse)));
         formData.append('type', getFileType(selectedFile.name));
 
         const response = await fetch('/api/documents/upload', {
@@ -177,8 +177,42 @@ export function EasyModeDocumentDialog({
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to upload document');
         }
+      } else if (youtubeVideoInfo) {
+        // Handle YouTube document - just send the URL, backend will handle everything
+        const documentData = {
+          name: documentName.trim(),
+          realmId: currentRealm.id,
+          processingMode: 'AUTOMATIC' as const,
+          templateId: templateToUse.id,
+          templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
+          url: documentUrl,
+          type: 'youtube'
+        };
+
+        const response = await fetch('/api/documents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(documentData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create YouTube document');
+        }
       } else {
-        // Handle URL-based document
+        // Handle regular URL-based document
+        const documentData = {
+          name: documentName.trim(),
+          realmId: currentRealm.id,
+          processingMode: 'AUTOMATIC' as const,
+          templateId: templateToUse.id,
+          templateConfig: ProcessingTemplateService.mergeWithDefaults(templateToUse),
+          url: documentUrl,
+          type: getUrlType(documentUrl)
+        };
+
         const response = await fetch('/api/documents', {
           method: 'POST',
           headers: {
@@ -213,6 +247,7 @@ export function EasyModeDocumentDialog({
       setDocumentUrl('');
       setDocumentName('');
       setSelectedTemplate(null);
+      setYoutubeVideoInfo(null);
       setCurrentStep('source');
       onClose();
     }
@@ -363,6 +398,33 @@ export function EasyModeDocumentDialog({
     );
   };
 
+  const renderYouTubeStep = () => {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-medium">YouTube Video Processing</h3>
+            <p className="text-sm text-gray-600">
+              Configure how you want to process this YouTube video.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleBackToSource} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+
+        <div className="flex-1">
+          <YouTubeInputHandler
+            initialUrl={documentUrl}
+            onUrlProcessed={handleYouTubeProcessed}
+            onError={handleYouTubeError}
+          />
+        </div>
+      </div>
+    );
+  };
+
   const renderTemplateStep = () => {
     return (
       <div className="h-full flex flex-col">
@@ -423,13 +485,17 @@ export function EasyModeDocumentDialog({
           <DialogDescription>
             {currentStep === 'source'
               ? 'Choose your document source to get started'
+              : currentStep === 'youtube'
+              ? 'Configure YouTube video processing options'
               : 'Select a processing template for your document'
             }
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          {currentStep === 'source' ? renderSourceStep() : renderTemplateStep()}
+          {currentStep === 'source' && renderSourceStep()}
+          {currentStep === 'youtube' && renderYouTubeStep()}
+          {currentStep === 'template' && renderTemplateStep()}
         </div>
       </DialogContent>
     </Dialog>

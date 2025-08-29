@@ -28,6 +28,10 @@ export async function POST(request: NextRequest) {
     const templateConfigStr = formData.get('templateConfig') as string;
     const expertConfigStr = formData.get('expertConfig') as string;
 
+    // YouTube-specific fields
+    const inputFilesStr = formData.get('input_files') as string;
+    const configStr = formData.get('config') as string;
+
     console.log('Upload form data (UPDATED):', {
       processingMode,
       type,
@@ -36,12 +40,16 @@ export async function POST(request: NextRequest) {
       templateId,
       hasTemplateConfig: !!templateConfigStr,
       hasExpertConfig: !!expertConfigStr,
+      hasInputFiles: !!inputFilesStr,
+      hasConfig: !!configStr,
       formDataKeys: Array.from(formData.keys())
     });
 
     // Parse template and expert configurations
     let templateConfig = null;
     let expertConfig = null;
+    let inputFiles = null;
+    let youtubeConfig = null;
 
     if (templateConfigStr) {
       try {
@@ -62,6 +70,31 @@ export async function POST(request: NextRequest) {
         console.error('Failed to parse expert config:', error);
         return NextResponse.json(
           { error: 'Invalid expert configuration' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Parse YouTube-specific fields
+    if (inputFilesStr) {
+      try {
+        inputFiles = JSON.parse(inputFilesStr);
+      } catch (error) {
+        console.error('Failed to parse input files:', error);
+        return NextResponse.json(
+          { error: 'Invalid input files configuration' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (configStr) {
+      try {
+        youtubeConfig = JSON.parse(configStr);
+      } catch (error) {
+        console.error('Failed to parse YouTube config:', error);
+        return NextResponse.json(
+          { error: 'Invalid YouTube configuration' },
           { status: 400 }
         );
       }
@@ -136,15 +169,20 @@ export async function POST(request: NextRequest) {
       subType: finalSubType,
       realmId,
       userId: user.userId,
-      processingMode: processingMode as 'AUTOMATIC' | 'MANUAL',
-      // Add template and expert configuration metadata
-      metadata: {
-        ...(templateId && { templateId }),
-        ...(templateConfig && { templateConfig }),
-        ...(expertConfig && { expertConfig }),
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: user.userId
-      }
+      processingMode: processingMode as 'AUTOMATIC' | 'MANUAL'
+    };
+
+    // Prepare metadata for file storage
+    const fileMetadata = {
+      ...(templateId && { templateId }),
+      ...(templateConfig && { templateConfig }),
+      ...(expertConfig && { expertConfig }),
+      ...(inputFiles && { inputFiles }),
+      ...(youtubeConfig && { youtubeConfig }),
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: user.userId,
+      originalSize: file.size,
+      processingMode
     };
 
     console.log('Creating document with data:', documentData);
@@ -167,12 +205,7 @@ export async function POST(request: NextRequest) {
       contentType: file.type,
       isPublic: false,
       accessLevel: 'REALM_MEMBERS',
-      metadata: {
-        uploadedBy: user.userId,
-        uploadedAt: new Date().toISOString(),
-        originalSize: file.size,
-        processingMode,
-      },
+      metadata: fileMetadata,
     });
     
     // Trigger processing pipeline if in automatic mode
@@ -184,16 +217,16 @@ export async function POST(request: NextRequest) {
         // Import the background job service to schedule processing
         const { backgroundJobService } = await import('@/lib/services/backgroundJobService');
 
-        if (templateConfig || expertConfig) {
-          // Use new stage-based processing with template/expert configuration
-          const config = expertConfig || templateConfig;
+        if (templateConfig || expertConfig || youtubeConfig) {
+          // Use new stage-based processing with template/expert/YouTube configuration
+          const config = expertConfig || youtubeConfig || templateConfig;
           const stages = config.stages || ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'];
 
           // Schedule processing with the new API
           const jobId = await backgroundJobService.createStageChainJob({
             documentId: document.id,
             stages,
-            globalConfig: config.globalConfig,
+            globalConfig: config.globalConfig || config,
             stageConfigs: config.stageConfigs,
             priority: 0,
             scheduledAt: new Date()
