@@ -58,16 +58,19 @@ export class DocumentProcessingService {
 
       if (request.stage) {
         // Process single stage
-        const job = await backgroundJobService.createJob({
+        const { jobManager } = await import('./jobs');
+        const job = await jobManager.createJob({
           documentId: request.documentId,
           stage: request.stage,
           priority: request.priority || 0,
+          scheduledAt: new Date()
         });
         jobIds.push(job.id);
       } else if (request.stages && request.stages.length > 0) {
         // Process multiple stages
+        const { jobManager } = await import('./jobs');
         for (const stage of request.stages) {
-          const job = await backgroundJobService.createJob({
+          const job = await jobManager.createJob({
             documentId: request.documentId,
             stage,
             priority: request.priority || 0,
@@ -78,10 +81,12 @@ export class DocumentProcessingService {
         // Start full processing pipeline
         const nextStage = this.getNextStage(document.state);
         if (nextStage) {
-          const job = await backgroundJobService.createJob({
+          const { jobManager } = await import('./jobs');
+          const job = await jobManager.createJob({
             documentId: request.documentId,
             stage: nextStage,
             priority: request.priority || 0,
+            scheduledAt: new Date()
           });
           jobIds.push(job.id);
         }
@@ -264,10 +269,12 @@ export class DocumentProcessingService {
       if (document.processingMode === ProcessingMode.AUTOMATIC) {
         const nextStage = this.getNextStage(document.state);
         if (nextStage) {
-          const job = await backgroundJobService.createJob({
+          const { jobManager } = await import('./jobs');
+          const job = await jobManager.createJob({
             documentId,
             stage: nextStage,
             priority: 0,
+            scheduledAt: new Date()
           });
 
           return {
@@ -350,10 +357,12 @@ export class DocumentProcessingService {
     try {
       if (stage) {
         // Retry specific stage
-        const job = await backgroundJobService.createJob({
+        const { jobManager } = await import('./jobs');
+        const job = await jobManager.createJob({
           documentId,
           stage,
           priority: 5, // Higher priority for retries
+          scheduledAt: new Date()
         });
 
         return {
@@ -372,10 +381,12 @@ export class DocumentProcessingService {
         });
 
         if (lastFailedJob) {
-          const job = await backgroundJobService.createJob({
+          const { jobManager } = await import('./jobs');
+          const job = await jobManager.createJob({
             documentId,
             stage: lastFailedJob.stage,
             priority: 5,
+            scheduledAt: new Date()
           });
 
           return {

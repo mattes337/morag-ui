@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const batchSize = body.batchSize || 10;
 
     // Trigger manual cleanup
-    const result = await backgroundJobService.cleanupCompletedJobs(batchSize);
+    const result = await jobManager.cleanupCompletedJobs(batchSize);
 
     return NextResponse.json({
       success: true,

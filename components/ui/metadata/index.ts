@@ -28,10 +28,18 @@ export { YouTubeMetadataCard } from './youtube-metadata-card';
 export type { YouTubeMetadata } from './youtube-metadata-card';
 
 // Utility function to determine which metadata card to use
-export function getMetadataCardComponent(contentType: string, filename?: string) {
+export function getMetadataCardComponent(contentType: string, filename?: string, documentType?: string, metadata?: any) {
   // Normalize content type
   const type = contentType.toLowerCase();
   const ext = filename?.split('.').pop()?.toLowerCase();
+
+  // Check for YouTube content first (highest priority)
+  // YouTube documents create JSON reference files, so we need to check document type and metadata
+  if (documentType === 'youtube' ||
+      filename?.includes('youtube_url_reference') ||
+      isYouTubeContent(metadata?.sourceUrl, metadata)) {
+    return 'youtube';
+  }
 
   // PDF documents
   if (type.includes('pdf') || ext === 'pdf') {
@@ -39,7 +47,7 @@ export function getMetadataCardComponent(contentType: string, filename?: string)
   }
 
   // Word documents
-  if (type.includes('word') || type.includes('msword') || 
+  if (type.includes('word') || type.includes('msword') ||
       type.includes('officedocument.wordprocessingml') ||
       ext === 'doc' || ext === 'docx') {
     return 'word';
@@ -51,19 +59,19 @@ export function getMetadataCardComponent(contentType: string, filename?: string)
   }
 
   // Audio files
-  if (type.includes('audio') || 
+  if (type.includes('audio') ||
       ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg'].includes(ext || '')) {
     return 'audio';
   }
 
   // Video files
-  if (type.includes('video') || 
+  if (type.includes('video') ||
       ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(ext || '')) {
     return 'video';
   }
 
   // Image files
-  if (type.includes('image') || 
+  if (type.includes('image') ||
       ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'svg'].includes(ext || '')) {
     return 'image';
   }
@@ -73,9 +81,10 @@ export function getMetadataCardComponent(contentType: string, filename?: string)
     return 'web';
   }
 
-  // YouTube (special case - would need to be determined by source URL or metadata)
-  // This would typically be determined by checking if the source URL contains youtube.com
-  // or if there's specific YouTube metadata present
+  // Website documents (URL references)
+  if (documentType === 'website' || filename?.includes('website_url_reference')) {
+    return 'web';
+  }
 
   // Default to base metadata card
   return 'base';

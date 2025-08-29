@@ -222,14 +222,19 @@ export async function POST(request: NextRequest) {
           const config = expertConfig || youtubeConfig || templateConfig;
           const stages = config.stages || ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'];
 
-          // Schedule processing with the new API
-          const jobId = await jobManager.createStageChainJob({
+          // Schedule processing with the first stage
+          const firstStage = stages[0] || 'MARKDOWN_CONVERSION';
+          const jobId = await jobManager.createJob({
             documentId: document.id,
-            stages,
-            globalConfig: config.globalConfig || config,
-            stageConfigs: config.stageConfigs,
+            stage: firstStage as any,
             priority: 0,
-            scheduledAt: new Date()
+            scheduledAt: new Date(),
+            metadata: {
+              ...config.globalConfig,
+              ...config,
+              stages,
+              stageConfigs: config.stageConfigs
+            }
           });
 
           console.log(`Document ${document.id} uploaded, scheduled stage chain processing with job ${jobId}`);

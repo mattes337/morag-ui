@@ -43,17 +43,23 @@ async function checkDatabaseHealth(): Promise<ServiceHealth> {
       await tx.$queryRaw`SELECT 1`;
     });
     
-    // Get database statistics
+    // Get database statistics - convert BigInt to number to avoid serialization issues
     const stats = await prisma.$queryRaw<Array<{
-      table_count: number;
+      table_count: bigint;
       total_size_mb: number;
     }>>`
-      SELECT 
+      SELECT
         COUNT(*) as table_count,
         ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as total_size_mb
-      FROM information_schema.tables 
+      FROM information_schema.tables
       WHERE table_schema = DATABASE()
     `;
+
+    // Convert BigInt to number for JSON serialization
+    const convertedStats = stats.map(stat => ({
+      table_count: Number(stat.table_count),
+      total_size_mb: stat.total_size_mb
+    }));
     
     const latency = Date.now() - startTime;
     
@@ -63,18 +69,22 @@ async function checkDatabaseHealth(): Promise<ServiceHealth> {
       status = 'degraded';
     }
     
+    // Ensure all values are properly serializable
+    const tableCount = Number(convertedStats[0]?.table_count || 0);
+    const totalSizeMB = Number(convertedStats[0]?.total_size_mb || 0);
+
     HealthLogger.logHealthCheck('database', status, {
       latency,
-      tableCount: stats[0]?.table_count || 0,
-      totalSizeMB: stats[0]?.total_size_mb || 0,
+      tableCount,
+      totalSizeMB,
     });
-    
+
     return {
       status,
       latency,
       details: {
-        tableCount: stats[0]?.table_count || 0,
-        totalSizeMB: stats[0]?.total_size_mb || 0,
+        tableCount,
+        totalSizeMB,
       },
     };
   } catch (error) {

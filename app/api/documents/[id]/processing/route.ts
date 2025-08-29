@@ -28,8 +28,11 @@ export async function GET(
     // Get comprehensive processing status including executions
     const processingStatus = await DocumentProcessingService.getProcessingStatus(documentId);
 
-    // Get jobs from job scheduler
-    const jobs = await jobScheduler.getDocumentJobs(documentId);
+    // Get jobs for this document
+    const jobs = await prisma.processingJob.findMany({
+      where: { documentId },
+      orderBy: { createdAt: 'desc' }
+    });
 
     return NextResponse.json({
       processing: processingStatus,
@@ -87,11 +90,12 @@ export async function PUT(
       });
 
       if (processingMode === 'AUTOMATIC') {
-        await jobScheduler.resumeDocumentProcessing(documentId);
-        result.message = 'Document processing mode set to AUTOMATIC and processing resumed';
+        // For automatic mode, schedule a job if needed
+        await jobScheduler.scheduleJobForDocument(documentId, 'MARKDOWN_CONVERSION' as any);
+        result.message = 'Document processing mode set to AUTOMATIC and processing scheduled';
       } else {
-        await jobScheduler.pauseDocumentProcessing(documentId);
-        result.message = 'Document processing mode set to MANUAL and processing paused';
+        // For manual mode, we don't need to pause anything - just update the mode
+        result.message = 'Document processing mode set to MANUAL';
       }
 
       result.processingMode = processingMode;
@@ -101,17 +105,31 @@ export async function PUT(
     if (action) {
       switch (action) {
         case 'pause':
-          await jobScheduler.pauseDocumentProcessing(documentId);
-          result.message = 'Document processing paused';
+          // Cancel pending jobs for this document
+          const pausedCount = await prisma.processingJob.updateMany({
+            where: {
+              documentId,
+              status: 'PENDING'
+            },
+            data: { status: 'CANCELLED' }
+          });
+          result.message = `Document processing paused - cancelled ${pausedCount.count} pending jobs`;
           break;
         case 'resume':
-          await jobScheduler.resumeDocumentProcessing(documentId);
+          // Schedule a new job if document is in automatic mode
+          await jobScheduler.scheduleJobForDocument(documentId, 'MARKDOWN_CONVERSION' as any);
           result.message = 'Document processing resumed';
           break;
         case 'cancel':
-          const cancelledCount = await jobScheduler.cancelDocumentJobs(documentId);
-          result.message = `Cancelled ${cancelledCount} pending jobs`;
-          result.cancelledJobs = cancelledCount;
+          const cancelledCount = await prisma.processingJob.updateMany({
+            where: {
+              documentId,
+              status: { in: ['PENDING', 'PROCESSING'] }
+            },
+            data: { status: 'CANCELLED' }
+          });
+          result.message = `Cancelled ${cancelledCount.count} jobs`;
+          result.cancelledJobs = cancelledCount.count;
           break;
         case 'schedule':
           if (!stage) {
@@ -120,10 +138,10 @@ export async function PUT(
               { status: 400 }
             );
           }
-          const jobId = await jobScheduler.scheduleDocumentProcessing(
+          const jobId = await jobScheduler.scheduleJobForDocument(
             documentId,
-            stage,
-            priority || 0
+            stage as any,
+            { priority: priority || 0 }
           );
           result.message = `Scheduled job for stage ${stage}`;
           result.jobId = jobId;
@@ -207,11 +225,13 @@ export async function POST(
     }
 
     // Schedule the job
-    const jobId = await jobScheduler.scheduleDocumentProcessing(
+    const jobId = await jobScheduler.scheduleJobForDocument(
       documentId,
-      stage,
-      priority,
-      scheduledAt ? new Date(scheduledAt) : undefined
+      stage as any,
+      {
+        priority,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined
+      }
     );
 
     return NextResponse.json({

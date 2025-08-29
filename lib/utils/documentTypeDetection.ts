@@ -4,7 +4,7 @@
  */
 
 export interface DocumentTypeInfo {
-    type: 'document' | 'video' | 'audio' | 'website' | 'youtube';
+    type: 'document' | 'video' | 'audio' | 'website' | 'youtube' | 'pdf' | 'markdown';
     subType?: string;
 }
 
@@ -93,11 +93,21 @@ export function detectDocumentType(input: string | { filename?: string; url?: st
         'aiff': 'aiff',
     };
     
-    // Check document types
+    // Check document types - handle PDF and Markdown as main types
     if (extension in documentExtensions) {
+        const subType = documentExtensions[extension as keyof typeof documentExtensions];
+
+        // PDF and Markdown are treated as main types for validation
+        if (subType === 'pdf') {
+            return { type: 'pdf', subType: 'pdf' };
+        }
+        if (subType === 'markdown') {
+            return { type: 'markdown', subType: 'markdown' };
+        }
+
         return {
             type: 'document',
-            subType: documentExtensions[extension as keyof typeof documentExtensions]
+            subType
         };
     }
     

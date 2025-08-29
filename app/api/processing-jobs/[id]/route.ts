@@ -89,18 +89,25 @@ export async function PUT(
 
     switch (action) {
       case 'cancel':
-        await backgroundJobService.cancelJob(jobId);
+        await prisma.processingJob.update({
+          where: { id: jobId },
+          data: { status: 'CANCELLED' }
+        });
         result.message = 'Job cancelled successfully';
         result.status = 'CANCELLED';
         break;
 
       case 'retry':
         // Create a new job with the same parameters
-        const newJob = await backgroundJobService.createJob({
-          documentId: job.documentId,
-          stage: job.stage,
-          priority: priority || job.priority,
-          scheduledAt: scheduledAt ? new Date(scheduledAt) : new Date()
+        const newJob = await prisma.processingJob.create({
+          data: {
+            documentId: job.documentId,
+            stage: job.stage,
+            priority: priority || job.priority,
+            scheduledAt: scheduledAt ? new Date(scheduledAt) : new Date(),
+            status: 'PENDING',
+            metadata: job.metadata
+          }
         });
         result.message = 'Job retry scheduled successfully';
         result.newJobId = newJob.id;
@@ -206,7 +213,10 @@ export async function DELETE(
     }
 
     // Cancel the job
-    await backgroundJobService.cancelJob(jobId);
+    await prisma.processingJob.update({
+      where: { id: jobId },
+      data: { status: 'CANCELLED' }
+    });
 
     return NextResponse.json({
       success: true,

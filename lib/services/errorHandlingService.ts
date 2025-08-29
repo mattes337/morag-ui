@@ -1,6 +1,6 @@
 import { JobStatus, ProcessingStage } from '@prisma/client';
 import { prisma } from '../database';
-import { backgroundJobService } from './backgroundJobService';
+// Removed backgroundJobService import - using dynamic import
 
 export interface RetryConfig {
   maxRetries: number;
@@ -213,7 +213,8 @@ class ErrorHandlingService {
    */
   private async scheduleRetry(context: ErrorContext, retryAt: Date): Promise<void> {
     // Create new job for retry
-    await backgroundJobService.createJob({
+    const { jobManager } = await import('./jobs');
+    await jobManager.createJob({
       documentId: context.documentId,
       stage: context.stage as ProcessingStage,
       priority: 1, // Higher priority for retries

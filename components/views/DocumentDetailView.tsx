@@ -15,6 +15,7 @@ import {
   PDFMetadataCard,
   WordMetadataCard,
   TextMetadataCard,
+  YouTubeMetadataCard,
   getMetadataCardComponent
 } from '../ui/metadata';
 
@@ -47,6 +48,7 @@ interface DocumentFile {
   filesize: number;
   contentType: string;
   content?: string;
+  metadata?: Record<string, any>;
   createdAt: string;
 }
 
@@ -1007,7 +1009,12 @@ export function DocumentDetailView({
                         }
 
                         // Determine which metadata card to show
-                        const cardType = getMetadataCardComponent(originalFile.contentType, originalFile.filename);
+                        const cardType = getMetadataCardComponent(
+                            originalFile.contentType,
+                            originalFile.filename,
+                            document.type,
+                            originalFile.metadata || {}
+                        );
 
                         // Create base metadata from file info
                         const baseMetadata = {
@@ -1023,6 +1030,52 @@ export function DocumentDetailView({
                         const handleDownload = () => handleDownloadFile(originalFile.id);
 
                         switch (cardType) {
+                            case 'youtube':
+                                // For YouTube documents, we need to create mock metadata since the actual
+                                // metadata comes from backend processing. The JSON file just contains URL reference.
+                                const youtubeMetadata = {
+                                    ...baseMetadata,
+                                    video_path: '',
+                                    audio_path: '',
+                                    subtitle_paths: [],
+                                    thumbnail_paths: [],
+                                    transcript_path: '',
+                                    transcript_text: '',
+                                    transcript_language: 'en',
+                                    metadata: {
+                                        id: '',
+                                        title: document.name,
+                                        description: 'YouTube video processing in progress...',
+                                        uploader: 'Unknown',
+                                        upload_date: new Date().toISOString().slice(0, 8).replace(/-/g, ''),
+                                        duration: 0,
+                                        view_count: 0,
+                                        like_count: 0,
+                                        comment_count: 0,
+                                        tags: [],
+                                        categories: [],
+                                        thumbnail_url: '',
+                                        webpage_url: originalFile.metadata?.sourceUrl || '',
+                                        channel_id: '',
+                                        channel_url: '',
+                                    },
+                                    success: false,
+                                    error_message: 'Video metadata will be available after processing completes'
+                                };
+
+                                const handleOpenYouTube = () => {
+                                    if (originalFile.metadata?.sourceUrl) {
+                                        window.open(originalFile.metadata.sourceUrl, '_blank');
+                                    }
+                                };
+
+                                return <YouTubeMetadataCard
+                                    metadata={youtubeMetadata}
+                                    onView={handleView}
+                                    onDownload={handleDownload}
+                                    onOpenYouTube={handleOpenYouTube}
+                                />;
+
                             case 'pdf':
                                 const pdfMetadata = {
                                     ...baseMetadata,
@@ -1073,7 +1126,7 @@ export function DocumentDetailView({
                                                 <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                                                 <p>Metadata card not available for this file type</p>
                                                 <p className="text-sm">File type: {originalFile.contentType}</p>
-                                                <p className="text-sm mt-2">Supported types: PDF, Word, Text files</p>
+                                                <p className="text-sm mt-2">Supported types: PDF, Word, Text, YouTube files</p>
                                             </div>
                                         </CardContent>
                                     </Card>

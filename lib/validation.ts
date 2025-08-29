@@ -8,7 +8,7 @@ export const realmIdSchema = z.string().min(1, 'Realm ID is required');
 export const documentIdSchema = z.string().min(1, 'Document ID is required');
 
 // File validation schemas
-export const fileTypeSchema = z.enum(['document', 'image', 'video', 'audio', 'youtube', 'website']);
+export const fileTypeSchema = z.enum(['document', 'image', 'video', 'audio', 'youtube', 'website', 'markdown', 'pdf']);
 export const fileSubTypeSchema = z.string().min(1, 'File subtype is required');
 export const processingModeSchema = z.enum(['AUTOMATIC', 'MANUAL', 'SCHEDULED']);
 

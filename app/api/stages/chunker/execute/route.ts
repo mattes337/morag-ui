@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     console.log(`🚀 [API] Creating background job for chunker, document: ${documentId}`);
 
     // Create a background job for chunker stage
-    const { jobManager } = await import('../../../../lib/services/jobs');
+    const { jobManager } = await import('@/lib/services/jobs');
     const job = await jobManager.createJob({
       documentId,
       stage: ProcessingStage.CHUNKER,

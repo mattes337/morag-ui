@@ -211,7 +211,7 @@ export class StatusPoller {
       const existingFiles = await unifiedFileService.getFilesByDocument(job.documentId, undefined, job.stage);
       const existingFilenames = existingFiles.map(f => f.filename);
 
-      const filesToDownload = availableFiles.filter(file => !existingFilenames.includes(file.filename));
+      const filesToDownload = availableFiles.filter((file: any) => !existingFilenames.includes(file.filename));
 
       if (filesToDownload.length === 0) {
         console.log(`📁 [StatusPoller] All ${availableFiles.length} files already downloaded for job ${job.id}`);

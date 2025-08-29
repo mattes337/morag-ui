@@ -821,10 +821,10 @@ export class FileDocumentHandler extends BaseDocumentHandler {
       const previousStage = stageOrder[currentIndex - 1];
 
       // Get files from the previous stage
-      const files = await prisma.file.findMany({
+      const files = await prisma.documentFile.findMany({
         where: {
           documentId,
-          stage: previousStage
+          stage: previousStage as any
         },
         orderBy: {
           createdAt: 'desc'
