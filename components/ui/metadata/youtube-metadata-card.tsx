@@ -48,6 +48,10 @@ export interface YouTubeMetadata extends BaseMetadata {
   };
   success: boolean;
   error_message?: string;
+  // Additional fields from backend API
+  processing_time?: number;
+  has_transcript?: boolean;
+  transcript_segments?: number;
 }
 
 interface YouTubeMetadataCardProps {

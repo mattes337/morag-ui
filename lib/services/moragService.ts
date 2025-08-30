@@ -891,6 +891,32 @@ export class MoragService {
   }
 
   /**
+   * Execute YouTube transcription stage
+   */
+  async executeYouTubeTranscription(request: any): Promise<any> {
+    console.log(`🚀 [MoRAG] Executing YouTube transcription for URL: ${request.url}`);
+
+    const response = await fetch(`${this.baseUrl}/api/v1/stages/youtube-transcription/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': this.getHeaders().Authorization,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ [MoRAG] YouTube transcription API error:`, errorText);
+      throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ [MoRAG] YouTube transcription completed successfully`);
+    return result;
+  }
+
+  /**
    * Execute a single stage using the stage-based API
    * This method is used by the new document handlers
    */

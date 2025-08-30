@@ -47,130 +47,6 @@ curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
 curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
   -F "file=@image.png" \
   -F 'config={"extract_text": true, "generate_descriptions": false}'
-
-# Process YouTube video URL
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "include_timestamps": true,
-    "speaker_diarization": true,
-    "topic_segmentation": true,
-    "language": "en"
-  }'
-
-# Process YouTube video with provided transcript file
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@transcript.md" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "include_timestamps": true,
-    "language": "en"
-  }'
-
-# Process YouTube video with provided video file
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@video.mp4" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "extract_audio": true,
-    "include_timestamps": true,
-    "language": "en"
-  }'
-
-# Process YouTube video with provided file and custom metadata (skip YouTube metadata extraction)
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@transcript.md" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "skip_metadata_extraction": true,
-    "provided_metadata": {
-      "id": "dQw4w9WgXcQ",
-      "title": "Custom Video Title",
-      "description": "Custom description provided by user",
-      "uploader": "Custom Channel Name",
-      "upload_date": "20231201",
-      "duration": 212,
-      "view_count": 1500000,
-      "like_count": 75000,
-      "comment_count": 2500,
-      "tags": ["custom", "tags", "provided"],
-      "categories": ["Entertainment"],
-      "thumbnail_url": "https://example.com/custom-thumb.jpg",
-      "channel_id": "UCCustomChannelId",
-      "channel_url": "https://www.youtube.com/channel/UCCustomChannelId"
-    },
-    "include_timestamps": true,
-    "language": "en"
-  }'
-
-## YouTube Processing Modes
-
-The API supports several YouTube processing modes to handle different scenarios:
-
-### 1. Standard YouTube Processing (URL only)
-Downloads video/audio and extracts transcript automatically:
-```bash
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={"include_timestamps": true, "language": "en"}'
-```
-
-### 2. YouTube with Provided Transcript
-Use a manually downloaded transcript file with YouTube metadata:
-```bash
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@transcript.md" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={"include_timestamps": true, "language": "en"}'
-```
-
-### 3. YouTube with Provided Video File
-Use a manually downloaded video file with YouTube metadata:
-```bash
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@video.mp4" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={"extract_audio": true, "include_timestamps": true}'
-```
-
-### 4. YouTube with Custom Metadata (No YouTube API calls)
-Provide all metadata manually to avoid YouTube API restrictions:
-```bash
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F "file=@transcript.md" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "skip_metadata_extraction": true,
-    "provided_metadata": {
-      "id": "dQw4w9WgXcQ",
-      "title": "Never Gonna Give You Up",
-      "description": "Official music video",
-      "uploader": "Rick Astley",
-      "upload_date": "20091025",
-      "duration": 212,
-      "view_count": 1500000000,
-      "like_count": 15000000,
-      "tags": ["rick astley", "never gonna give you up", "music"],
-      "categories": ["Music"]
-    }
-  }'
-```
-
-**Benefits of each mode:**
-- **Mode 1**: Fully automated, requires YouTube access
-- **Mode 2**: Faster processing, uses provided transcript, gets fresh metadata
-- **Mode 3**: Uses provided video, gets fresh metadata, can extract audio
-- **Mode 4**: No YouTube API calls, completely offline processing, user controls all metadata
-
-# Process webpage URL
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://example.com/article"]' \
-  -F 'config={
-    "follow_links": false,
-    "max_depth": 1,
-    "extract_metadata": true,
-    "clean_content": true
-  }'
 ```
 
 ### 2. Stage Chain Execution - Multiple Stages
@@ -208,59 +84,6 @@ curl -X POST "http://localhost:8000/api/v1/stages/chain" \
       }
     }
   }'
-
-# Process YouTube video with full pipeline
-curl -X POST "http://localhost:8000/api/v1/stages/chain" \
-  -F 'request={
-    "input_files": ["https://www.youtube.com/watch?v=VIDEO_ID"],
-    "stages": ["markdown-conversion", "markdown-optimizer", "chunker"],
-    "stage_configs": {
-      "markdown-conversion": {
-        "include_timestamps": true,
-        "speaker_diarization": true,
-        "topic_segmentation": true,
-        "language": "en"
-      },
-      "markdown-optimizer": {
-        "fix_transcription_errors": true,
-        "improve_readability": true,
-        "preserve_timestamps": true
-      },
-      "chunker": {
-        "chunk_strategy": "topic",
-        "chunk_size": 4000,
-        "generate_summary": true
-      }
-    },
-    "output_dir": "./output"
-  }'
-
-# Process multiple web pages with content extraction
-curl -X POST "http://localhost:8000/api/v1/stages/chain" \
-  -F 'request={
-    "input_files": [
-      "https://example.com/article1",
-      "https://example.com/article2"
-    ],
-    "stages": ["markdown-conversion", "chunker", "fact-generator"],
-    "stage_configs": {
-      "markdown-conversion": {
-        "follow_links": false,
-        "extract_metadata": true,
-        "clean_content": true
-      },
-      "chunker": {
-        "chunk_strategy": "semantic",
-        "chunk_size": 3000,
-        "generate_summary": true
-      },
-      "fact-generator": {
-        "extract_entities": true,
-        "extract_relations": true,
-        "domain": "general"
-      }
-    }
-  }'
 ```
 
 ### 3. Full Pipeline - Complete Processing with Storage
@@ -290,93 +113,6 @@ curl -X POST "http://localhost:8000/api/v1/stages/execute-all" \
   -F 'webhook_url=https://your-app.com/webhook' \
   -F 'output_dir=./output' \
   -F 'stop_on_failure=true'
-
-# Process YouTube video with full pipeline and storage
-curl -X POST "http://localhost:8000/api/v1/stages/execute-all" \
-  -F 'input_files=["https://www.youtube.com/watch?v=VIDEO_ID"]' \
-  -F 'stages=["markdown-conversion", "markdown-optimizer", "chunker", "fact-generator", "ingestor"]' \
-  -F 'global_config={"language": "en"}' \
-  -F 'stage_configs={
-    "markdown-conversion": {
-      "include_timestamps": true,
-      "speaker_diarization": true,
-      "topic_segmentation": true
-    },
-    "markdown-optimizer": {
-      "fix_transcription_errors": true,
-      "improve_readability": true,
-      "preserve_timestamps": true
-    },
-    "chunker": {
-      "chunk_strategy": "topic",
-      "chunk_size": 4000,
-      "generate_summary": true
-    },
-    "fact-generator": {
-      "extract_entities": true,
-      "extract_relations": true,
-      "domain": "general"
-    },
-    "ingestor": {
-      "databases": ["qdrant", "neo4j"],
-      "collection_name": "youtube_videos",
-      "qdrant_config": {
-        "host": "localhost",
-        "port": 6333
-      },
-      "neo4j_config": {
-        "uri": "bolt://localhost:7687",
-        "username": "neo4j",
-        "password": "password"
-      }
-    }
-  }' \
-  -F 'webhook_url=https://your-app.com/webhook' \
-  -F 'output_dir=./output'
-
-# Process webpage with full pipeline and storage
-curl -X POST "http://localhost:8000/api/v1/stages/execute-all" \
-  -F 'input_files=["https://example.com/important-article"]' \
-  -F 'stages=["markdown-conversion", "markdown-optimizer", "chunker", "fact-generator", "ingestor"]' \
-  -F 'global_config={"language": "en"}' \
-  -F 'stage_configs={
-    "markdown-conversion": {
-      "follow_links": false,
-      "extract_metadata": true,
-      "clean_content": true
-    },
-    "markdown-optimizer": {
-      "improve_readability": true,
-      "normalize_formatting": true,
-      "enhance_structure": true
-    },
-    "chunker": {
-      "chunk_strategy": "semantic",
-      "chunk_size": 3000,
-      "generate_summary": true
-    },
-    "fact-generator": {
-      "extract_entities": true,
-      "extract_relations": true,
-      "extract_keywords": true,
-      "domain": "general"
-    },
-    "ingestor": {
-      "databases": ["qdrant", "neo4j"],
-      "collection_name": "web_articles",
-      "qdrant_config": {
-        "host": "localhost",
-        "port": 6333
-      },
-      "neo4j_config": {
-        "uri": "bolt://localhost:7687",
-        "username": "neo4j",
-        "password": "password"
-      }
-    }
-  }' \
-  -F 'webhook_url=https://your-app.com/webhook' \
-  -F 'output_dir=./output'
 ```
 
 ### 4. Ingestor Stage with Explicit Database Configuration
@@ -544,28 +280,11 @@ curl -X POST "http://localhost:8000/api/v1/stages/ingestor/execute" \
     "ocr_engine": "tesseract",
     "resize_max_dimension": 1024,
 
-    // YouTube processing
-    "download_subtitles": true,
-    "subtitle_languages": ["en", "auto"],
-    "extract_audio": true,
-    "quality": "best",
-    "max_filesize": "100M",
-    "cookies_file": null,  // Path to cookies file for private videos
-
     // Web processing
     "follow_links": false,
     "max_depth": 1,
     "respect_robots": true,
-    "extract_metadata": true,
-    "clean_content": true,
-    "timeout": 30,
-    "max_retries": 3,
-    "rate_limit_delay": 1.0,
-    "extract_links": true,
-    "remove_navigation": true,
-    "remove_footer": true,
-    "preserve_tables": true,
-    "preserve_lists": true
+    "extract_metadata": true
   }
 }
 ```
@@ -675,7 +394,7 @@ curl -X POST "http://localhost:8000/api/v1/stages/ingestor/execute" \
 
 | Stage | Purpose | Input | Output |
 |-------|---------|-------|--------|
-| `markdown-conversion` | Convert content to markdown | Raw files (PDF, audio, video, images), URLs (YouTube, web) | `.md` files |
+| `markdown-conversion` | Convert content to markdown | Raw files (PDF, audio, video, images, web) | `.md` files |
 | `markdown-optimizer` | Clean and optimize markdown | `.md` files | Optimized `.md` files |
 | `chunker` | Split content into chunks | `.md` files | `.chunks.json` files |
 | `fact-generator` | Extract facts and entities | `.chunks.json` files | `.facts.json` files |
@@ -686,17 +405,6 @@ curl -X POST "http://localhost:8000/api/v1/stages/ingestor/execute" \
 | Single Stage | `/api/v1/stages/{stage}/execute` | Execute one stage, debug, testing |
 | Stage Chain | `/api/v1/stages/chain` | Execute multiple stages with JSON config |
 | Execute All | `/api/v1/stages/execute-all` | Execute all stages with form data |
-
-### Supported Input Types
-
-| Input Type | Format | Example | Processing Features |
-|------------|--------|---------|-------------------|
-| **Documents** | PDF, DOCX, TXT, MD, HTML, RTF | `document.pdf` | Text extraction, formatting preservation |
-| **Audio** | MP3, WAV, FLAC, M4A, OGG, AAC | `audio.mp3` | Transcription, speaker diarization, timestamps |
-| **Video** | MP4, AVI, MOV, MKV, WEBM, FLV | `video.mp4` | Audio extraction, transcription, metadata |
-| **Images** | JPG, PNG, GIF, WEBP, BMP, TIFF | `image.png` | OCR, text extraction, descriptions |
-| **YouTube** | YouTube URLs | `https://youtube.com/watch?v=...` | Download, transcription, subtitles, metadata |
-| **Web Pages** | HTTP/HTTPS URLs | `https://example.com/article` | Content extraction, link following, metadata |
 
 ## 🔧 Webhook Configuration
 
@@ -791,37 +499,6 @@ async def main():
             )
         conversion_result = response.json()
 
-        # Process YouTube video
-        response = await client.post(
-            f"{base_url}/api/v1/stages/markdown-conversion/execute",
-            data={
-                "input_files": json.dumps(["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]),
-                "config": json.dumps({
-                    "include_timestamps": True,
-                    "speaker_diarization": True,
-                    "language": "en",
-                    "download_subtitles": True,
-                    "quality": "720p"
-                })
-            }
-        )
-        youtube_result = response.json()
-
-        # Process webpage
-        response = await client.post(
-            f"{base_url}/api/v1/stages/markdown-conversion/execute",
-            data={
-                "input_files": json.dumps(["https://example.com/article"]),
-                "config": json.dumps({
-                    "extract_metadata": True,
-                    "clean_content": True,
-                    "extract_links": True,
-                    "preserve_tables": True
-                })
-            }
-        )
-        webpage_result = response.json()
-
         # Execute stage chain - conversion + chunking
         with open("audio.mp3", "rb") as f:
             response = await client.post(
@@ -843,49 +520,39 @@ async def main():
             )
         chain_result = response.json()
 
-        # Process multiple URLs with full pipeline
-        response = await client.post(
-            f"{base_url}/api/v1/stages/execute-all",
-            data={
-                "input_files": json.dumps([
-                    "https://www.youtube.com/watch?v=VIDEO_ID",
-                    "https://example.com/article1",
-                    "https://example.com/article2"
-                ]),
-                "stages": json.dumps([
-                    "markdown-conversion", "markdown-optimizer",
-                    "chunker", "fact-generator", "ingestor"
-                ]),
-                "stage_configs": json.dumps({
-                    "markdown-conversion": {
-                        "include_timestamps": True,
-                        "extract_metadata": True,
-                        "clean_content": True
-                    },
-                    "ingestor": {
-                        "databases": ["qdrant", "neo4j"],
-                        "collection_name": "mixed_content",
-                        "qdrant_config": {
-                            "host": "localhost",
-                            "port": 6333
-                        },
-                        "neo4j_config": {
-                            "uri": "bolt://localhost:7687",
-                            "username": "neo4j",
-                            "password": "password"
+        # Execute full pipeline with database storage
+        with open("document.pdf", "rb") as f:
+            response = await client.post(
+                f"{base_url}/api/v1/stages/execute-all",
+                files={"file": f},
+                data={
+                    "stages": json.dumps([
+                        "markdown-conversion", "markdown-optimizer",
+                        "chunker", "fact-generator", "ingestor"
+                    ]),
+                    "stage_configs": json.dumps({
+                        "ingestor": {
+                            "databases": ["qdrant", "neo4j"],
+                            "collection_name": "documents",
+                            "qdrant_config": {
+                                "host": "localhost",
+                                "port": 6333
+                            },
+                            "neo4j_config": {
+                                "uri": "bolt://localhost:7687",
+                                "username": "neo4j",
+                                "password": "password"
+                            }
                         }
-                    }
-                }),
-                "webhook_url": "https://your-app.com/webhook"
-            }
-        )
-        url_pipeline_result = response.json()
+                    }),
+                    "webhook_url": "https://your-app.com/webhook"
+                }
+            )
+        full_pipeline_result = response.json()
 
-        print(f"Document Conversion: {conversion_result['success']}")
-        print(f"YouTube Processing: {youtube_result['success']}")
-        print(f"Webpage Processing: {webpage_result['success']}")
-        print(f"Audio Chain: {chain_result['success']}")
-        print(f"URL Pipeline: {url_pipeline_result['success']}")
+        print(f"Conversion: {conversion_result['success']}")
+        print(f"Chain: {chain_result['success']}")
+        print(f"Full Pipeline: {full_pipeline_result['success']}")
 
 asyncio.run(main())
 ```
@@ -1012,137 +679,502 @@ export MORAG_TEMP_DIR=/tmp/morag
 export MORAG_OUTPUT_DIR=./output
 ```
 
-## 🌐 URL Processing Examples
-
-### YouTube Video Processing
-
-```bash
-# Basic YouTube video processing
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]' \
-  -F 'config={
-    "include_timestamps": true,
-    "speaker_diarization": true,
-    "language": "en",
-    "download_subtitles": true,
-    "subtitle_languages": ["en", "auto"]
-  }'
-
-# YouTube video with custom quality and audio extraction
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://youtu.be/VIDEO_ID"]' \
-  -F 'config={
-    "quality": "720p",
-    "extract_audio": true,
-    "max_filesize": "50M",
-    "include_timestamps": true,
-    "topic_segmentation": true
-  }'
-
-# YouTube playlist processing (first video)
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://www.youtube.com/playlist?list=PLAYLIST_ID"]' \
-  -F 'config={
-    "include_timestamps": true,
-    "speaker_diarization": true,
-    "download_subtitles": true
-  }'
-```
-
-### Webpage Processing
-
-```bash
-# Basic webpage processing
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://example.com/article"]' \
-  -F 'config={
-    "extract_metadata": true,
-    "clean_content": true,
-    "extract_links": true,
-    "preserve_tables": true
-  }'
-
-# News article processing with link following
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://news.example.com/breaking-news"]' \
-  -F 'config={
-    "follow_links": true,
-    "max_depth": 2,
-    "extract_metadata": true,
-    "clean_content": true,
-    "remove_navigation": true,
-    "remove_footer": true,
-    "timeout": 60,
-    "rate_limit_delay": 2.0
-  }'
-
-# Documentation page processing
-curl -X POST "http://localhost:8000/api/v1/stages/markdown-conversion/execute" \
-  -F 'input_files=["https://docs.example.com/api-reference"]' \
-  -F 'config={
-    "preserve_tables": true,
-    "preserve_lists": true,
-    "extract_metadata": true,
-    "clean_content": false,
-    "extract_links": true
-  }'
-```
-
-### Batch URL Processing
-
-```bash
-# Process multiple URLs in one request
-curl -X POST "http://localhost:8000/api/v1/stages/chain" \
-  -F 'request={
-    "input_files": [
-      "https://www.youtube.com/watch?v=VIDEO1",
-      "https://example.com/article1",
-      "https://example.com/article2",
-      "https://www.youtube.com/watch?v=VIDEO2"
-    ],
-    "stages": ["markdown-conversion", "chunker"],
-    "stage_configs": {
-      "markdown-conversion": {
-        "include_timestamps": true,
-        "extract_metadata": true,
-        "clean_content": true
-      },
-      "chunker": {
-        "chunk_strategy": "semantic",
-        "chunk_size": 3000
-      }
-    }
-  }'
-```
-
 ## 🔍 Content Type Auto-Detection
 
-MoRAG automatically detects content types based on file extensions and URL patterns:
+MoRAG automatically detects content types based on file extensions and patterns:
 
 - **Documents**: `.pdf`, `.docx`, `.txt`, `.md`, `.html`, `.rtf`
 - **Audio**: `.mp3`, `.wav`, `.flac`, `.m4a`, `.ogg`, `.aac`
 - **Video**: `.mp4`, `.avi`, `.mov`, `.mkv`, `.webm`, `.flv`
 - **Images**: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.tiff`
-- **YouTube**: URLs containing `youtube.com`, `youtu.be`, or `youtube-nocookie.com`
-- **Web**: All other URLs starting with `http://` or `https://`
+- **Web**: URLs starting with `http://` or `https://`
+- **YouTube**: URLs containing `youtube.com` or `youtu.be` (requires Apify configuration)
 
-### URL Processing Features
+## 📺 YouTube Video Processing
 
-**YouTube Processing:**
-- Automatic video ID extraction from various YouTube URL formats
-- Transcript extraction using YouTube's API or audio transcription fallback
-- Support for cookies file for private/age-restricted videos
-- Configurable video quality and audio extraction
-- Subtitle download in multiple languages
-- Speaker diarization and topic segmentation for long videos
+**⚠️ Important**: YouTube processing requires Apify configuration. The service will fail if `APIFY_API_TOKEN` is not configured.
 
-**Web Processing:**
-- Intelligent content extraction using MarkItDown
-- Automatic removal of navigation, ads, and footer content
-- Metadata extraction (title, description, author, etc.)
-- Link extraction and optional link following
-- Rate limiting and respectful crawling
-- Support for various content types (HTML, plain text, etc.)
+### Basic YouTube Video Processing
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/stages/youtube-transcription/execute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "extract_metadata": true,
+    "extract_transcript": true,
+    "use_proxy": true
+  }'
+```
+
+### Pre-Transcribed YouTube Videos
+
+For videos where you already have metadata and transcripts, you can skip the Apify transcription:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/stages/youtube-transcription/execute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "pre_transcribed": true,
+    "metadata": {
+      "title": "Rick Astley - Never Gonna Give You Up",
+      "channel": "RickAstleyVEVO",
+      "duration": "213",
+      "viewCount": "1000000000",
+      "uploadDate": "2009-10-25",
+      "description": "The official video for Rick Astley..."
+    },
+    "transcript": "We'\''re no strangers to love. You know the rules and so do I...",
+    "transcript_segments": [
+      {
+        "text": "We'\''re no strangers to love",
+        "start": 0.0,
+        "duration": 2.5
+      },
+      {
+        "text": "You know the rules and so do I",
+        "start": 2.5,
+        "duration": 3.0
+      }
+    ]
+  }'
+```
+
+### YouTube Processing Error Handling
+
+If Apify is not configured, you'll receive an error:
+
+```json
+{
+  "success": false,
+  "error_message": "Failed to initialize Apify service: Apify API token is required. Set APIFY_API_TOKEN environment variable.",
+  "processing_time": 0.1
+}
+```
+
+### YouTube Configuration Requirements
+
+1. **Set Environment Variables**:
+   ```bash
+   APIFY_API_TOKEN=your_apify_api_token_here
+   APIFY_YOUTUBE_ACTOR_ID=SWvgAAm9FpfWHRrUm
+   ```
+
+2. **Get Apify API Token**:
+   - Sign up at [Apify.com](https://apify.com/)
+   - Go to Settings → Integrations → API tokens
+   - Create or copy your API token
+
+3. **Test Configuration**:
+   ```bash
+   # Test if Apify is configured correctly
+   python test_apify_youtube.py
+   ```
+
+### YouTube Response Format
+
+```json
+{
+  "success": true,
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "metadata": {
+    "title": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+    "source": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "type": "youtube",
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video_id": "dQw4w9WgXcQ",
+    "uploader": "RickAstleyVEVO",
+    "duration": 213.0,
+    "view_count": 1000000000,
+    "like_count": 50000,
+    "comment_count": 10000,
+    "upload_date": "20091025",
+    "description": "The official video for Rick Astley - Never Gonna Give You Up...",
+    "tags": ["Rick Astley", "Never Gonna Give You Up", "Music"],
+    "categories": ["Music"],
+    "thumbnail_url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+    "webpage_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "channel_id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+    "channel_url": "https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw",
+    "playlist_id": null,
+    "playlist_title": null,
+    "playlist_index": null,
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "transcript": "We're no strangers to love. You know the rules and so do I...",
+  "transcript_segments": [
+    {
+      "text": "We're no strangers to love",
+      "start": 0.0,
+      "duration": 2.5
+    }
+  ],
+  "processing_time": 45.2,
+  "pre_transcribed": false
+}
+```
+
+## 📋 Complete Metadata Reference
+
+This section provides comprehensive metadata examples for all supported file types and processing stages.
+
+### 📄 Document Processing Metadata
+
+**PDF, DOCX, TXT, HTML, RTF Files**
+
+```json
+{
+  "filename": "document.pdf",
+  "file_path": "/path/to/document.pdf",
+  "file_size": 2048576,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "markdown-conversion",
+  "content_type": "application/pdf",
+  "checksum": "sha256:abc123...",
+  "source": "/path/to/document.pdf",
+  "type": "document",
+  "page_count": 25,
+  "word_count": 5000,
+  "character_count": 30000,
+  "language": "en",
+  "processing_time": 12.5,
+  "extraction_method": "pymupdf",
+  "has_images": true,
+  "has_tables": true,
+  "metadata": {
+    "title": "Document Title",
+    "author": "John Doe",
+    "subject": "Document Subject",
+    "creator": "Microsoft Word",
+    "producer": "PDF Producer",
+    "creation_date": "2024-01-10T09:00:00Z",
+    "modification_date": "2024-01-12T14:30:00Z"
+  }
+}
+```
+
+### 🎵 Audio Processing Metadata
+
+**MP3, WAV, FLAC, M4A, OGG, AAC Files**
+
+```json
+{
+  "filename": "audio.mp3",
+  "file_path": "/path/to/audio.mp3",
+  "file_size": 8388608,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "markdown-conversion",
+  "content_type": "audio/mpeg",
+  "checksum": "sha256:def456...",
+  "source": "/path/to/audio.mp3",
+  "type": "audio",
+  "duration": 600.0,
+  "sample_rate": 44100,
+  "channels": 2,
+  "bitrate": 128000,
+  "codec": "mp3",
+  "language": "en",
+  "processing_time": 85.3,
+  "transcription_service": "whisper",
+  "has_speaker_info": true,
+  "has_topic_info": true,
+  "transcript": {
+    "text": "Full transcript content...",
+    "segments": [
+      {
+        "text": "Hello and welcome to this podcast",
+        "start": 0.0,
+        "duration": 3.2,
+        "speaker": "SPEAKER_00"
+      }
+    ],
+    "metadata": {
+      "word_count": 2500,
+      "segment_count": 45,
+      "num_speakers": 2,
+      "speakers": ["SPEAKER_00", "SPEAKER_01"],
+      "num_topics": 8,
+      "topics": ["introduction", "technology", "future"]
+    }
+  }
+}
+```
+
+### 🎬 Video Processing Metadata
+
+**MP4, AVI, MOV, MKV, WEBM, FLV Files**
+
+```json
+{
+  "filename": "video.mp4",
+  "file_path": "/path/to/video.mp4",
+  "file_size": 104857600,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "markdown-conversion",
+  "content_type": "video/mp4",
+  "checksum": "sha256:ghi789...",
+  "source": "/path/to/video.mp4",
+  "type": "video",
+  "duration": 900.0,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30.0,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "bitrate": 5000000,
+  "format": "mp4",
+  "has_audio": true,
+  "processing_time": 120.5,
+  "thumbnails": ["/path/to/thumbnail_001.jpg"],
+  "keyframes": ["/path/to/keyframe_001.jpg"],
+  "audio_processing_result": {
+    "transcript": "Full video transcript...",
+    "segments": [
+      {
+        "text": "Welcome to this video tutorial",
+        "start": 0.0,
+        "duration": 2.8
+      }
+    ],
+    "metadata": {
+      "processing_time": 85.3,
+      "word_count": 2500,
+      "segment_count": 45,
+      "has_speaker_info": true,
+      "num_speakers": 1,
+      "speakers": ["SPEAKER_00"]
+    }
+  }
+}
+```
+
+### 🖼️ Image Processing Metadata
+
+**JPG, PNG, GIF, WEBP, BMP, TIFF Files**
+
+```json
+{
+  "filename": "image.jpg",
+  "file_path": "/path/to/image.jpg",
+  "file_size": 1048576,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "markdown-conversion",
+  "content_type": "image/jpeg",
+  "checksum": "sha256:jkl012...",
+  "source": "/path/to/image.jpg",
+  "type": "image",
+  "width": 1920,
+  "height": 1080,
+  "format": "JPEG",
+  "mode": "RGB",
+  "has_transparency": false,
+  "processing_time": 5.2,
+  "ocr_result": {
+    "text": "Extracted text from image...",
+    "confidence": 0.95,
+    "word_count": 150,
+    "language": "en"
+  },
+  "description": "AI-generated description of the image content",
+  "metadata": {
+    "camera_make": "Canon",
+    "camera_model": "EOS R5",
+    "datetime": "2024-01-10T15:30:00Z",
+    "gps_latitude": 40.7128,
+    "gps_longitude": -74.0060
+  }
+}
+```
+
+### 🌐 Web Content Processing Metadata
+
+**HTTP/HTTPS URLs**
+
+```json
+{
+  "filename": "webpage.html",
+  "file_path": "/path/to/webpage.html",
+  "file_size": 524288,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "markdown-conversion",
+  "content_type": "text/html",
+  "checksum": "sha256:mno345...",
+  "source": "https://example.com/article",
+  "type": "web",
+  "url": "https://example.com/article",
+  "title": "Article Title",
+  "processing_time": 8.7,
+  "word_count": 1200,
+  "character_count": 7500,
+  "language": "en",
+  "metadata": {
+    "title": "Article Title",
+    "description": "Article meta description",
+    "author": "Jane Smith",
+    "publish_date": "2024-01-10T12:00:00Z",
+    "canonical_url": "https://example.com/article",
+    "og_title": "Open Graph Title",
+    "og_description": "Open Graph Description",
+    "og_image": "https://example.com/image.jpg",
+    "twitter_card": "summary_large_image",
+    "keywords": ["technology", "AI", "machine learning"],
+    "robots": "index,follow"
+  }
+}
+```
+
+### 📺 YouTube Processing Metadata
+
+**YouTube URLs (youtube.com, youtu.be)**
+
+```json
+{
+  "filename": "youtube_dQw4w9WgXcQ.md",
+  "file_path": "/path/to/youtube_dQw4w9WgXcQ.md",
+  "file_size": 65536,
+  "created_at": "2024-01-15T10:30:00Z",
+  "stage_type": "youtube-transcription",
+  "content_type": "text/markdown",
+  "checksum": "sha256:pqr678...",
+  "source": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "type": "youtube",
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "video_id": "dQw4w9WgXcQ",
+  "title": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+  "uploader": "RickAstleyVEVO",
+  "duration": 213.0,
+  "view_count": 1000000000,
+  "like_count": 50000,
+  "comment_count": 10000,
+  "upload_date": "20091025",
+  "description": "The official video for Rick Astley - Never Gonna Give You Up...",
+  "tags": ["Rick Astley", "Never Gonna Give You Up", "Music", "80s"],
+  "categories": ["Music"],
+  "thumbnail_url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+  "webpage_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "channel_id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+  "channel_url": "https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw",
+  "playlist_id": null,
+  "playlist_title": null,
+  "playlist_index": null,
+  "processing_time": 45.2,
+  "processing_method": "apify",
+  "has_transcript": true,
+  "transcript_segments_count": 156,
+  "transcript": {
+    "text": "We're no strangers to love. You know the rules and so do I...",
+    "segments": [
+      {
+        "text": "We're no strangers to love",
+        "start": 0.0,
+        "duration": 2.5
+      },
+      {
+        "text": "You know the rules and so do I",
+        "start": 2.5,
+        "duration": 2.8
+      }
+    ]
+  }
+}
+```
+
+### 📊 Stage Processing Metadata
+
+**Common metadata fields added by each processing stage:**
+
+#### Markdown Conversion Stage
+```json
+{
+  "stage_type": "markdown-conversion",
+  "processing_time": 12.5,
+  "input_format": "pdf",
+  "output_format": "markdown",
+  "conversion_method": "pymupdf",
+  "success": true
+}
+```
+
+#### Markdown Optimizer Stage
+```json
+{
+  "stage_type": "markdown-optimizer",
+  "processing_time": 3.2,
+  "optimizations_applied": ["fix_transcription_errors", "normalize_whitespace", "fix_headers"],
+  "original_length": 15000,
+  "optimized_length": 14500,
+  "improvement_ratio": 0.97
+}
+```
+
+#### Chunker Stage
+```json
+{
+  "stage_type": "chunker",
+  "processing_time": 5.8,
+  "chunk_strategy": "semantic",
+  "chunk_size": 4000,
+  "overlap_size": 200,
+  "total_chunks": 12,
+  "chunks": [
+    {
+      "id": "chunk_001",
+      "content": "First chunk content...",
+      "start_char": 0,
+      "end_char": 3800,
+      "word_count": 650,
+      "summary": "Introduction and overview"
+    }
+  ]
+}
+```
+
+#### Fact Generator Stage
+```json
+{
+  "stage_type": "fact-generator",
+  "processing_time": 18.7,
+  "total_facts": 45,
+  "total_entities": 23,
+  "total_relations": 67,
+  "facts": [
+    {
+      "id": "fact_001",
+      "text": "The company was founded in 2020",
+      "confidence": 0.95,
+      "source_chunk": "chunk_003",
+      "entities": ["company", "2020"],
+      "relations": ["founded_in"]
+    }
+  ],
+  "entities": [
+    {
+      "id": "entity_001",
+      "text": "OpenAI",
+      "type": "ORGANIZATION",
+      "confidence": 0.98,
+      "mentions": 12
+    }
+  ]
+}
+```
+
+#### Ingestor Stage
+```json
+{
+  "stage_type": "ingestor",
+  "processing_time": 25.3,
+  "databases": ["qdrant", "neo4j"],
+  "collection_name": "documents",
+  "vector_count": 12,
+  "graph_nodes": 23,
+  "graph_relationships": 67,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "vector_dimensions": 384,
+  "success": true
+}
+```
 
 ## 🔄 Migration from Legacy API
 

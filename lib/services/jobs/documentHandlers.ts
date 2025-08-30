@@ -1,5 +1,6 @@
 import { moragService } from '../moragService';
 import { unifiedFileService } from '../unifiedFileService';
+import { prisma } from '../../database';
 
 export interface DocumentProcessingRequest {
   documentId: string;
@@ -411,6 +412,76 @@ abstract class BaseDocumentHandler {
     }
   }
 
+  async updateDocumentWithYouTubeMetadata(documentId: string, youtubeResponse: any): Promise<void> {
+    try {
+      console.log(`📺 [${this.constructor.name}] Updating document ${documentId} with YouTube metadata`);
+
+      const metadata = youtubeResponse.metadata;
+      if (!metadata) {
+        console.warn(`⚠️ [${this.constructor.name}] No metadata in YouTube response`);
+        return;
+      }
+
+      // Update document name with video title if available
+      const updates: any = {};
+      if (metadata.title) {
+        updates.name = metadata.title;
+      }
+
+      // Update document metadata
+      const documentMetadata = {
+        youtubeVideoId: metadata.video_id,
+        youtubeTitle: metadata.title,
+        youtubeChannel: metadata.uploader,
+        youtubeDuration: metadata.duration,
+        youtubeViewCount: metadata.view_count,
+        youtubeLikeCount: metadata.like_count,
+        youtubeUploadDate: metadata.upload_date,
+        youtubeDescription: metadata.description,
+        youtubeTags: metadata.tags,
+        youtubeCategories: metadata.categories,
+        youtubeThumbnail: metadata.thumbnail_url,
+        youtubeChannelId: metadata.channel_id,
+        youtubeChannelUrl: metadata.channel_url,
+        processingTime: youtubeResponse.processing_time,
+        hasTranscript: youtubeResponse.transcript ? true : false,
+        transcriptSegments: youtubeResponse.transcript_segments?.length || 0
+      };
+
+      if (Object.keys(updates).length > 0) {
+        await prisma.document.update({
+          where: { id: documentId },
+          data: updates
+        });
+      }
+
+      // Store YouTube metadata in the original file's metadata
+      const originalFile = await prisma.documentFile.findFirst({
+        where: {
+          documentId,
+          fileType: 'ORIGINAL_DOCUMENT'
+        }
+      });
+
+      if (originalFile) {
+        await prisma.documentFile.update({
+          where: { id: originalFile.id },
+          data: {
+            metadata: {
+              ...originalFile.metadata as any,
+              ...documentMetadata
+            }
+          }
+        });
+      }
+
+      console.log(`✅ [${this.constructor.name}] Updated document ${documentId} with YouTube metadata`);
+    } catch (error) {
+      console.error(`❌ [${this.constructor.name}] Failed to update document with YouTube metadata:`, error);
+      throw error;
+    }
+  }
+
   async processDocument(request: DocumentProcessingRequest): Promise<DocumentProcessingResult> {
     try {
       console.log(`🚀 [${this.constructor.name}] Processing document ${request.documentId}, stage ${request.stage}`);
@@ -421,8 +492,19 @@ abstract class BaseDocumentHandler {
       // Build backend request
       const backendRequest = await this.buildBackendRequest(request, contentData);
 
-      // Call MoRAG backend
-      const response = await moragService.executeStage(backendRequest);
+      // Call MoRAG backend - use YouTube transcription endpoint for YouTube documents
+      let response;
+      if (request.job.stage === 'MARKDOWN_CONVERSION' && request.document.type === 'youtube') {
+        response = await moragService.executeYouTubeTranscription(backendRequest);
+
+        // For YouTube responses, we need to handle the different response format
+        if (response.success && response.metadata) {
+          // Update document with YouTube metadata
+          await this.updateDocumentWithYouTubeMetadata(request.documentId, response);
+        }
+      } else {
+        response = await moragService.executeStage(backendRequest);
+      }
 
       if (response.immediateResult) {
         // Handle immediate completion
@@ -546,7 +628,27 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
-    // Build stage-specific configuration according to backend API guide
+    // For YouTube processing, use the youtube-transcription stage according to backend API guide
+    if (job.stage === 'MARKDOWN_CONVERSION' && document.type === 'youtube') {
+      return {
+        url: content.sourceUrl,
+        extract_metadata: true,
+        extract_transcript: true,
+        use_proxy: true,
+        webhook_url: this.getWebhookUrl(),
+        metadata: {
+          jobId: job.id,
+          documentName: document.name,
+          realmId: document.realmId,
+          sourceUrl: content.sourceUrl,
+          isUrlDocument: true,
+          hasFileContent: false,
+          databaseServers: this.getDatabaseServers(document)
+        }
+      };
+    }
+
+    // For other stages or non-YouTube documents, use standard stage execution
     const stageConfig = this.getYouTubeStageConfig(job.stage);
 
     return {

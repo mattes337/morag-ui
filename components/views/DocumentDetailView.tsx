@@ -1161,8 +1161,45 @@ export function DocumentDetailView({
                                     (f.contentType === 'text/markdown' || f.contentType === 'application/json')
                                 );
 
-                                if (metadataFile && metadataFile.metadata && document.state === 'ingested') {
-                                    // Use actual metadata from processing
+                                // First check the original file's metadata for YouTube data (updated by backend)
+                                const originalFileMetadata = originalFile.metadata as any || {};
+
+                                if (originalFileMetadata.youtubeVideoId) {
+                                    // Use metadata from the updated original file (backend API format)
+                                    youtubeMetadata = {
+                                        ...baseMetadata,
+                                        video_path: '',
+                                        audio_path: '',
+                                        subtitle_paths: [],
+                                        thumbnail_paths: [],
+                                        transcript_path: '',
+                                        transcript_text: '',
+                                        transcript_language: 'en',
+                                        metadata: {
+                                            id: originalFileMetadata.youtubeVideoId,
+                                            title: originalFileMetadata.youtubeTitle || document.name,
+                                            description: originalFileMetadata.youtubeDescription || 'No description available',
+                                            uploader: originalFileMetadata.youtubeChannel || 'Unknown',
+                                            upload_date: originalFileMetadata.youtubeUploadDate || '',
+                                            duration: originalFileMetadata.youtubeDuration || 0,
+                                            view_count: originalFileMetadata.youtubeViewCount || 0,
+                                            like_count: originalFileMetadata.youtubeLikeCount || 0,
+                                            comment_count: originalFileMetadata.youtubeCommentCount || 0,
+                                            tags: originalFileMetadata.youtubeTags || [],
+                                            categories: originalFileMetadata.youtubeCategories || [],
+                                            thumbnail_url: originalFileMetadata.youtubeThumbnail || '',
+                                            webpage_url: originalFileMetadata.youtubeChannelUrl || originalFile?.metadata?.sourceUrl || '',
+                                            channel_id: originalFileMetadata.youtubeChannelId || '',
+                                            channel_url: originalFileMetadata.youtubeChannelUrl || '',
+                                        },
+                                        success: true,
+                                        error_message: undefined,
+                                        processing_time: originalFileMetadata.processingTime || 0,
+                                        has_transcript: originalFileMetadata.hasTranscript || false,
+                                        transcript_segments: originalFileMetadata.transcriptSegments || 0
+                                    };
+                                } else if (metadataFile && metadataFile.metadata && document.state === 'ingested') {
+                                    // Fallback: Use actual metadata from processing (legacy format)
                                     try {
                                         const processedMetadata = typeof metadataFile.metadata === 'string'
                                             ? JSON.parse(metadataFile.metadata)

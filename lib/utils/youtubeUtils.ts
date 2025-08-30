@@ -36,6 +36,18 @@ export interface YouTubeVideoInfo {
   uploadDate?: string;
   viewCount?: string;
   description?: string;
+  // Additional fields from backend API
+  uploader?: string;
+  view_count?: number;
+  like_count?: number;
+  comment_count?: number;
+  upload_date?: string;
+  tags?: string[];
+  categories?: string[];
+  thumbnail_url?: string;
+  webpage_url?: string;
+  channel_id?: string;
+  channel_url?: string;
 }
 
 /**
@@ -202,6 +214,39 @@ export async function extractYouTubeVideoInfo(url: string): Promise<YouTubeVideo
     console.error('Failed to extract YouTube video info:', error);
     return null;
   }
+}
+
+/**
+ * Converts backend YouTube metadata to frontend YouTubeVideoInfo format
+ */
+export function convertBackendYouTubeMetadata(backendMetadata: any): YouTubeVideoInfo | null {
+  if (!backendMetadata || !backendMetadata.video_id) {
+    return null;
+  }
+
+  return {
+    id: backendMetadata.video_id,
+    title: backendMetadata.title || 'YouTube Video',
+    channel: backendMetadata.uploader || backendMetadata.channel || 'Unknown Channel',
+    channelUrl: backendMetadata.channel_url,
+    thumbnail: backendMetadata.thumbnail_url || `https://img.youtube.com/vi/${backendMetadata.video_id}/maxresdefault.jpg`,
+    duration: backendMetadata.duration ? formatDuration(backendMetadata.duration) : undefined,
+    uploadDate: backendMetadata.upload_date,
+    viewCount: backendMetadata.view_count ? formatViewCount(backendMetadata.view_count) : undefined,
+    description: backendMetadata.description,
+    // Additional backend fields
+    uploader: backendMetadata.uploader,
+    view_count: backendMetadata.view_count,
+    like_count: backendMetadata.like_count,
+    comment_count: backendMetadata.comment_count,
+    upload_date: backendMetadata.upload_date,
+    tags: backendMetadata.tags,
+    categories: backendMetadata.categories,
+    thumbnail_url: backendMetadata.thumbnail_url,
+    webpage_url: backendMetadata.webpage_url,
+    channel_id: backendMetadata.channel_id,
+    channel_url: backendMetadata.channel_url
+  };
 }
 
 /**
