@@ -1,7 +1,7 @@
 'use client';
 
 import { Realm, Document } from '../../types';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
 import { Badge } from '../ui/badge';
@@ -41,6 +41,25 @@ export function DocumentsView({
                 return 'bg-red-100 text-red-800';
             default:
                 return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusIcon = (state: string, hasFailedJobs?: boolean) => {
+        if (hasFailedJobs) {
+            return <XCircle className="w-4 h-4 text-red-500" />;
+        }
+
+        switch (state) {
+            case 'pending':
+                return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
+            case 'ingesting':
+                return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+            case 'ingested':
+                return <CheckCircle className="w-4 h-4 text-green-500" />;
+            case 'deleted':
+                return <XCircle className="w-4 h-4 text-red-500" />;
+            default:
+                return <FileText className="w-4 h-4 text-gray-500" />;
         }
     };
 
@@ -146,21 +165,24 @@ export function DocumentsView({
                         {documents.map((doc) => (
                             <tr key={doc.id}>
                                 <td className="px-3 sm:px-6 py-4 min-w-0 w-1/4">
-                                    <div className="text-sm font-medium min-w-0">
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onViewDocumentDetail(doc);
-                                            }}
-                                            className="text-blue-600 hover:text-blue-800 hover:underline text-left truncate block w-full max-w-xs"
-                                            type="button"
-                                            title={doc.name}
-                                        >
-                                            {doc.name}
-                                        </button>
+                                    <div className="flex items-center space-x-3">
+                                        {getStatusIcon(doc.state, doc.jobs?.some(job => job.status === 'FAILED'))}
+                                        <div className="text-sm font-medium min-w-0 flex-1">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    onViewDocumentDetail(doc);
+                                                }}
+                                                className="text-blue-600 hover:text-blue-800 hover:underline text-left truncate block w-full max-w-xs"
+                                                type="button"
+                                                title={doc.name}
+                                            >
+                                                {doc.name}
+                                            </button>
+                                            <div className="text-sm text-gray-500 truncate">{doc.uploadDate}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-gray-500 truncate">{doc.uploadDate}</div>
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden sm:table-cell">
                                     <div>

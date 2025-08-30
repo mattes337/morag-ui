@@ -149,11 +149,19 @@ export function getDocumentTypeDescription(type: string, subType?: string): stri
     if (type === 'youtube') {
         return 'YouTube Video';
     }
-    
+
     if (type === 'website') {
         return 'Website';
     }
-    
+
+    if (type === 'pdf') {
+        return 'PDF Document';
+    }
+
+    if (type === 'markdown') {
+        return 'Markdown Document';
+    }
+
     if (type === 'document') {
         if (subType) {
             switch (subType) {
@@ -181,14 +189,23 @@ export function getDocumentTypeDescription(type: string, subType?: string): stri
         }
         return 'Document';
     }
-    
+
     if (type === 'video') {
         return `${subType?.toUpperCase() || 'Video'} File`;
     }
-    
+
     if (type === 'audio') {
         return `${subType?.toUpperCase() || 'Audio'} File`;
     }
-    
-    return 'Unknown Document Type';
+
+    // Fallback: try to create a meaningful description from the type and subType
+    if (subType && subType !== 'unknown') {
+        return `${subType.toUpperCase()} ${type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Document'}`;
+    }
+
+    if (type && type !== 'unknown') {
+        return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    return 'Document';
 }

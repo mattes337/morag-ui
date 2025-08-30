@@ -9,7 +9,7 @@ export const documentIdSchema = z.string().min(1, 'Document ID is required');
 
 // File validation schemas
 export const fileTypeSchema = z.enum(['document', 'image', 'video', 'audio', 'youtube', 'website', 'markdown', 'pdf']);
-export const fileSubTypeSchema = z.string().min(1, 'File subtype is required');
+export const fileSubTypeSchema = z.string().optional();
 export const processingModeSchema = z.enum(['AUTOMATIC', 'MANUAL', 'SCHEDULED']);
 
 // File upload validation
@@ -49,7 +49,7 @@ export const documentUploadSchema = z.object({
   realmId: uuidSchema,
   processingMode: processingModeSchema.optional().default('AUTOMATIC'),
   type: fileTypeSchema,
-  subType: fileSubTypeSchema,
+  subType: fileSubTypeSchema.optional(),
 });
 
 // User registration/update validation

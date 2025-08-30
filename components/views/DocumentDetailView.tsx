@@ -35,7 +35,8 @@ import {
   ArrowLeft,
   Play,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -604,6 +605,12 @@ export function DocumentDetailView({
         return getNextStage() !== null;
     };
 
+    const isDocumentFullyProcessed = (): boolean => {
+        const allStages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+        const completedStages = stageInfos.filter(stage => stage.status === 'COMPLETED').map(stage => stage.stage);
+        return allStages.every(stage => completedStages.includes(stage)) && document.state === 'ingested';
+    };
+
     const getNextStage = (): string | null => {
         const stageOrder = ['MARKDOWN_CONVERSION', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
         const completedStages = stageInfos
@@ -917,32 +924,40 @@ export function DocumentDetailView({
                             Execute stages in order to process your document. Optional stages can be skipped.
                         </p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <ProcessingModeToggle
-                            mode={processingMode}
-                            onModeChange={handleProcessingModeChange}
-                            disabled={isProcessing}
-                        />
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handleContinueProcessing}
-                            disabled={isProcessing || !hasNextStage()}
-                            className="flex items-center space-x-2"
-                        >
-                            {isProcessing ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Processing...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Play className="w-4 h-4" />
-                                    <span>Continue Processing</span>
-                                </>
-                            )}
-                        </Button>
-                    </div>
+                    {!isDocumentFullyProcessed() && (
+                        <div className="flex items-center space-x-3">
+                            <ProcessingModeToggle
+                                mode={processingMode}
+                                onModeChange={handleProcessingModeChange}
+                                disabled={isProcessing}
+                            />
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleContinueProcessing}
+                                disabled={isProcessing || !hasNextStage()}
+                                className="flex items-center space-x-2"
+                            >
+                                {isProcessing ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Processing...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Play className="w-4 h-4" />
+                                        <span>Continue Processing</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+                    {isDocumentFullyProcessed() && (
+                        <div className="flex items-center space-x-2 text-green-600">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="font-medium">Processing Complete</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Stage Control Panel */}
@@ -1206,44 +1221,52 @@ export function DocumentDetailView({
                                     <Activity className="w-5 h-5" />
                                     <span>Processing Status</span>
                                 </div>
-                                <div className="flex items-center space-x-3">
-                                    <ProcessingModeToggle
-                                        mode={document.processingMode || 'AUTOMATIC'}
-                                        onModeChange={async (mode) => {
-                                            try {
-                                                const response = await fetch(`/api/documents/${document.id}/processing`, {
-                                                    method: 'PUT',
-                                                    headers: {
-                                                        'Content-Type': 'application/json',
-                                                    },
-                                                    body: JSON.stringify({
-                                                        processingMode: mode
-                                                    })
-                                                });
+                                {!isDocumentFullyProcessed() && (
+                                    <div className="flex items-center space-x-3">
+                                        <ProcessingModeToggle
+                                            mode={document.processingMode || 'AUTOMATIC'}
+                                            onModeChange={async (mode) => {
+                                                try {
+                                                    const response = await fetch(`/api/documents/${document.id}/processing`, {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                        },
+                                                        body: JSON.stringify({
+                                                            processingMode: mode
+                                                        })
+                                                    });
 
-                                                if (!response.ok) {
-                                                    throw new Error('Failed to update processing mode');
-                                                }
-
-                                                const result = await response.json();
-                                                console.log('Processing mode updated:', result.message);
-
-                                                // Refresh the document data to show updated mode
-                                                await loadDocumentData();
-                                            } catch (error) {
-                                                console.error('Failed to update processing mode:', error);
-                                                ToastService.error(
-                                                    'Failed to update processing mode',
-                                                    {
-                                                        description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                                                    if (!response.ok) {
+                                                        throw new Error('Failed to update processing mode');
                                                     }
-                                                );
-                                            }
-                                        }}
-                                        disabled={document.state === 'ingesting'}
-                                        size="sm"
-                                    />
-                                </div>
+
+                                                    const result = await response.json();
+                                                    console.log('Processing mode updated:', result.message);
+
+                                                    // Refresh the document data to show updated mode
+                                                    await loadDocumentData();
+                                                } catch (error) {
+                                                    console.error('Failed to update processing mode:', error);
+                                                    ToastService.error(
+                                                        'Failed to update processing mode',
+                                                        {
+                                                            description: error instanceof Error ? error.message : 'An unexpected error occurred'
+                                                        }
+                                                    );
+                                                }
+                                            }}
+                                            disabled={document.state === 'ingesting'}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )}
+                                {isDocumentFullyProcessed() && (
+                                    <div className="flex items-center space-x-2 text-green-600">
+                                        <CheckCircle className="w-5 h-5" />
+                                        <span className="font-medium">Processing Complete</span>
+                                    </div>
+                                )}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>

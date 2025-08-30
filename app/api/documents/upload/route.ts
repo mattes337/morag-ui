@@ -150,15 +150,20 @@ export async function POST(request: NextRequest) {
     finalSubType = finalSubType || 'unknown';
 
     // Validate the document data
+    const validationData = {
+      name: name || file.name,
+      realmId,
+      processingMode,
+      type: finalType,
+      subType: finalSubType,
+    };
+
+    console.log('Validation data for TXT file:', validationData);
+
     try {
-      validateRequestBody(documentUploadSchema, {
-        name: name || file.name,
-        realmId,
-        processingMode,
-        type: finalType,
-        subType: finalSubType,
-      });
+      validateRequestBody(documentUploadSchema, validationData);
     } catch (error) {
+      console.error('Validation error for TXT file:', error);
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Validation failed' },
         { status: 400 }
@@ -166,7 +171,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate realm exists and user has access
-    let validRealmId = realmId;
+    let validRealmId: string | undefined = realmId;
     if (realmId) {
       const realmExists = await prisma.realm.findFirst({
         where: {
@@ -181,7 +186,7 @@ export async function POST(request: NextRequest) {
 
       if (!realmExists) {
         console.warn(`Realm ${realmId} not found or user has no access, falling back to default realm`);
-        validRealmId = null;
+        validRealmId = undefined;
       }
     }
 
@@ -285,7 +290,7 @@ export async function POST(request: NextRequest) {
           const jobMetadata = {
             ...config.globalConfig,
             ...config,
-            stages: stages.map(stage => stageMapping[stage] || stage), // Convert all stages
+            stages: stages.map((stage: string) => stageMapping[stage] || stage), // Convert all stages
             stageConfigs: config.stageConfigs
           };
 
@@ -301,6 +306,9 @@ export async function POST(request: NextRequest) {
             scheduledAt: new Date(),
             metadata: jobMetadata
           });
+
+          // Update document state to INGESTING when first job is created
+          await DocumentService.updateDocumentState(document.id, 'INGESTING');
 
           console.log(`Document ${document.id} uploaded, scheduled stage chain processing with job ${jobId}`);
         } else {
@@ -319,6 +327,9 @@ export async function POST(request: NextRequest) {
             scheduledAt: new Date(),
             metadata: Object.keys(fallbackMetadata).length > 0 ? fallbackMetadata : undefined
           });
+
+          // Update document state to INGESTING when first job is created
+          await DocumentService.updateDocumentState(document.id, 'INGESTING');
 
           console.log(`Document ${document.id} uploaded, scheduled automatic processing with job ${jobId}`);
         }
