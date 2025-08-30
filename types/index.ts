@@ -119,6 +119,7 @@ export interface Document {
     markdown?: string; // Processed markdown content
     metadata?: DocumentMetadata;
     jobs?: Job[];
+    processingJobs?: ProcessingJob[];
     // Processing state fields
     currentStage?: string;
     stageStatus?: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
@@ -323,6 +324,23 @@ export interface Job {
     updatedAt: string;
     userId: string;
     realmId: string;
+}
+
+export interface ProcessingJob {
+    id: string;
+    documentId: string;
+    stage: string;
+    status: 'PENDING' | 'WAITING_FOR_REMOTE_WORKER' | 'PROCESSING' | 'FINISHED' | 'FAILED' | 'CANCELLED';
+    priority: number;
+    scheduledAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    retryCount: number;
+    maxRetries: number;
+    errorMessage?: string;
+    metadata?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Realm {

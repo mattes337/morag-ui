@@ -147,14 +147,8 @@ export function DocumentsView({
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 hidden md:table-cell">
                                     Processing
                                 </th>
-                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 hidden lg:table-cell">
-                                    Version
-                                </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 hidden lg:table-cell">
                                     Content Stats
-                                </th>
-                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 hidden xl:table-cell">
-                                    Metadata
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                                     Actions
@@ -166,7 +160,7 @@ export function DocumentsView({
                             <tr key={doc.id}>
                                 <td className="px-3 sm:px-6 py-4 min-w-0 w-1/4">
                                     <div className="flex items-center space-x-3">
-                                        {getStatusIcon(doc.state, doc.jobs?.some(job => job.status === 'FAILED'))}
+                                        {getStatusIcon(doc.state, doc.processingJobs?.some(job => job.status === 'FAILED'))}
                                         <div className="text-sm font-medium min-w-0 flex-1">
                                             <button
                                                 onClick={(e) => {
@@ -187,17 +181,24 @@ export function DocumentsView({
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden sm:table-cell">
                                     <div>
                                         <div className="font-medium">{getDocumentTypeDescription(doc.type, doc.subType)}</div>
-                                        {doc.subType && (
+                                        {doc.subType && doc.subType !== 'unknown' && (
                                             <div className="text-xs text-gray-500">{doc.subType}</div>
                                         )}
                                     </div>
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
-                                    >
-                                        {doc.state}
-                                    </span>
+                                    <div className="flex flex-col space-y-1">
+                                        <span
+                                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
+                                        >
+                                            {doc.state}
+                                        </span>
+                                        {doc.currentStage && doc.state !== 'ingested' && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {doc.currentStage.replace(/_/g, ' ').toLowerCase()}
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                                     <div className="flex items-center space-x-2">
@@ -217,9 +218,7 @@ export function DocumentsView({
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-                                    v{doc.version}
-                                </td>
+
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
                                     <div>{doc.metadata?.chunk_count || doc.chunks} chunks</div>
                                     <div className="text-gray-500">
@@ -234,52 +233,7 @@ export function DocumentsView({
                                         </div>
                                     )}
                                 </td>
-                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell">
-                                    <div className="space-y-1 max-w-xs">
-                                        {doc.metadata?.title && (
-                                            <div
-                                                className="text-gray-900 font-medium truncate"
-                                                title={doc.metadata.title}
-                                            >
-                                                {doc.metadata.title}
-                                            </div>
-                                        )}
-                                        {doc.metadata?.author && (
-                                            <div className="text-gray-500 text-xs truncate">
-                                                by {doc.metadata.author}
-                                            </div>
-                                        )}
-                                        {doc.metadata?.page_count && (
-                                            <div className="text-gray-500 text-xs">
-                                                {doc.metadata.page_count} pages
-                                            </div>
-                                        )}
-                                        {doc.metadata?.duration && (
-                                            <div className="text-gray-500 text-xs">
-                                                {Math.floor(doc.metadata.duration / 60)}:
-                                                {(doc.metadata.duration % 60)
-                                                    .toFixed(0)
-                                                    .padStart(2, '0')}
-                                            </div>
-                                        )}
-                                        {doc.metadata?.word_count && (
-                                            <div className="text-gray-500 text-xs">
-                                                {doc.metadata.word_count.toLocaleString()} words
-                                            </div>
-                                        )}
-                                        {doc.metadata?.file_size && (
-                                            <div className="text-gray-500 text-xs">
-                                                {(doc.metadata.file_size / 1024 / 1024).toFixed(1)}{' '}
-                                                MB
-                                            </div>
-                                        )}
-                                        {doc.metadata?.language && (
-                                            <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                                                {doc.metadata.language.toUpperCase()}
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
+
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                                         <button

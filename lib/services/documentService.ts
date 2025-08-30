@@ -300,11 +300,11 @@ export class DocumentService {
                             email: true,
                         },
                     },
-                    jobs: {
+                    processingJobs: {
                         orderBy: {
                             createdAt: 'desc',
                         },
-                        take: 1,
+                        take: 5, // Get recent processing jobs to check for failures
                     },
                 },
                 orderBy: {

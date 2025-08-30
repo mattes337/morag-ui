@@ -90,40 +90,41 @@ export function DocumentDetailView({
     const [stageInfos, setStageInfos] = useState<any[]>([]);
     const previousStageInfosRef = useRef<any[]>([]);
 
-    // Add logging when stage infos change
+    // Add logging when stage infos change (reduced logging)
     useEffect(() => {
-        console.log('🎯 [DocumentDetailView] Stage infos updated:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
-    }, [stageInfos]);
+        if (stageInfos.length > 0) {
+            console.log('🎯 [DocumentDetailView] Stage infos updated:', stageInfos.length, 'stages');
+        }
+    }, [stageInfos.length]); // Only log when count changes, not on every update
 
 
 
     // Individual loading functions removed - now using combined loadAllDocumentData
 
-    // Initialize processing state from document data
+    // Initialize processing state from document data (optimized)
     useEffect(() => {
-        console.log('🔄 [DocumentDetailView] Document changed, updating processing state:', {
-            documentId: document?.id,
-            processingMode: document?.processingMode,
-            stageStatus: document?.stageStatus,
-            currentStage: document?.currentStage,
-            state: document?.state
-        });
+        if (document?.id) {
+            console.log('🔄 [DocumentDetailView] Document changed, updating processing state:', {
+                documentId: document.id,
+                state: document.state
+            });
 
-        if (document?.processingMode) {
-            setProcessingMode(document.processingMode);
+            if (document.processingMode) {
+                setProcessingMode(document.processingMode);
+            }
+
+            // Check if document is currently processing based on stage status
+            // In manual mode, PENDING means ready to execute, not currently processing
+            // In automatic mode, PENDING could mean processing is scheduled
+            const isCurrentlyProcessing = document.stageStatus === 'RUNNING' ||
+                (document.stageStatus === 'PENDING' && document.processingMode === 'AUTOMATIC');
+            console.log('📊 [DocumentDetailView] Setting isProcessing to:', isCurrentlyProcessing, {
+                stageStatus: document.stageStatus,
+                processingMode: document.processingMode
+            });
+            setIsProcessing(isCurrentlyProcessing);
         }
-
-        // Check if document is currently processing based on stage status
-        // In manual mode, PENDING means ready to execute, not currently processing
-        // In automatic mode, PENDING could mean processing is scheduled
-        const isCurrentlyProcessing = document?.stageStatus === 'RUNNING' ||
-            (document?.stageStatus === 'PENDING' && document?.processingMode === 'AUTOMATIC');
-        console.log('📊 [DocumentDetailView] Setting isProcessing to:', isCurrentlyProcessing, {
-            stageStatus: document?.stageStatus,
-            processingMode: document?.processingMode
-        });
-        setIsProcessing(isCurrentlyProcessing);
-    }, [document?.processingMode, document?.stageStatus]);
+    }, [document?.id, document?.processingMode, document?.stageStatus]);
 
     // Load document data with proper stages API call
     const loadDocumentData = useCallback(async () => {
@@ -314,7 +315,7 @@ export function DocumentDetailView({
         previousStageInfosRef.current = [...stageInfos];
     }, [stageInfos, loadDocumentData]);
 
-    // Load document data when document changes
+    // Load document data when document changes (optimized to reduce API calls)
     useEffect(() => {
         let isCancelled = false;
 
@@ -327,7 +328,11 @@ export function DocumentDetailView({
                 console.log('✅ [DocumentDetailView] Using pre-loaded complete data');
 
                 // Use pre-loaded files
-                if (!isCancelled) setFiles(completeData.files || []);
+                if (!isCancelled) {
+                    setFiles(completeData.files || []);
+                    // Clear the pre-loaded data to prevent reuse
+                    delete (window as any).__documentCompleteData;
+                }
 
                 // Use pre-loaded pipeline status to generate stage infos
                 if (completeData.pipelineStatus && !isCancelled) {
@@ -905,7 +910,7 @@ export function DocumentDetailView({
                         </span>
                         <span className="text-sm text-gray-500">
                             Type: {getDocumentTypeDescription(document.type, document.subType)}
-                            {document.subType && ` (${document.subType})`}
+                            {document.subType && document.subType !== 'unknown' && ` (${document.subType})`}
                         </span>
                         <span className="text-sm text-gray-500">Version: v{document.version}</span>
                         <span className="text-sm text-gray-500">
@@ -1109,37 +1114,98 @@ export function DocumentDetailView({
 
                         switch (cardType) {
                             case 'youtube':
-                                // For YouTube documents, we need to create mock metadata since the actual
-                                // metadata comes from backend processing. The JSON file just contains URL reference.
-                                const youtubeMetadata = {
-                                    ...baseMetadata,
-                                    video_path: '',
-                                    audio_path: '',
-                                    subtitle_paths: [],
-                                    thumbnail_paths: [],
-                                    transcript_path: '',
-                                    transcript_text: '',
-                                    transcript_language: 'en',
-                                    metadata: {
-                                        id: '',
-                                        title: document.name,
-                                        description: 'YouTube video processing in progress...',
-                                        uploader: 'Unknown',
-                                        upload_date: new Date().toISOString().slice(0, 8).replace(/-/g, ''),
-                                        duration: 0,
-                                        view_count: 0,
-                                        like_count: 0,
-                                        comment_count: 0,
-                                        tags: [],
-                                        categories: [],
-                                        thumbnail_url: '',
-                                        webpage_url: originalFile.metadata?.sourceUrl || '',
-                                        channel_id: '',
-                                        channel_url: '',
-                                    },
-                                    success: false,
-                                    error_message: 'Video metadata will be available after processing completes'
+                                // Helper function to create placeholder metadata
+                                const createPlaceholderYouTubeMetadata = () => {
+                                    return {
+                                        ...baseMetadata,
+                                        video_path: '',
+                                        audio_path: '',
+                                        subtitle_paths: [],
+                                        thumbnail_paths: [],
+                                        transcript_path: '',
+                                        transcript_text: '',
+                                        transcript_language: 'en',
+                                        metadata: {
+                                            id: '',
+                                            title: document.name,
+                                            description: document.state === 'ingested'
+                                                ? 'No description available'
+                                                : 'YouTube video processing in progress...',
+                                            uploader: 'Unknown',
+                                            upload_date: new Date().toISOString().slice(0, 8).replace(/-/g, ''),
+                                            duration: 0,
+                                            view_count: 0,
+                                            like_count: 0,
+                                            comment_count: 0,
+                                            tags: [],
+                                            categories: [],
+                                            thumbnail_url: '',
+                                            webpage_url: originalFile?.metadata?.sourceUrl || '',
+                                            channel_id: '',
+                                            channel_url: '',
+                                        },
+                                        success: false,
+                                        error_message: document.state === 'ingested'
+                                            ? 'Video metadata not available'
+                                            : 'Video metadata will be available after processing completes'
+                                    };
                                 };
+
+                                // Check if we have actual YouTube metadata from processing
+                                let youtubeMetadata;
+
+                                // Look for processed files with YouTube metadata
+                                const metadataFile = files.find(f =>
+                                    f.stage === 'MARKDOWN_CONVERSION' &&
+                                    f.metadata &&
+                                    (f.contentType === 'text/markdown' || f.contentType === 'application/json')
+                                );
+
+                                if (metadataFile && metadataFile.metadata && document.state === 'ingested') {
+                                    // Use actual metadata from processing
+                                    try {
+                                        const processedMetadata = typeof metadataFile.metadata === 'string'
+                                            ? JSON.parse(metadataFile.metadata)
+                                            : metadataFile.metadata;
+
+                                        youtubeMetadata = {
+                                            ...baseMetadata,
+                                            video_path: processedMetadata.video_path || '',
+                                            audio_path: processedMetadata.audio_path || '',
+                                            subtitle_paths: processedMetadata.subtitle_paths || [],
+                                            thumbnail_paths: processedMetadata.thumbnail_paths || [],
+                                            transcript_path: processedMetadata.transcript_path || '',
+                                            transcript_text: processedMetadata.transcript_text || '',
+                                            transcript_language: processedMetadata.transcript_language || 'en',
+                                            metadata: {
+                                                id: processedMetadata.metadata?.id || '',
+                                                title: processedMetadata.metadata?.title || document.name,
+                                                description: processedMetadata.metadata?.description || '',
+                                                uploader: processedMetadata.metadata?.uploader || 'Unknown',
+                                                upload_date: processedMetadata.metadata?.upload_date || '',
+                                                duration: processedMetadata.metadata?.duration || 0,
+                                                view_count: processedMetadata.metadata?.view_count || 0,
+                                                like_count: processedMetadata.metadata?.like_count || 0,
+                                                comment_count: processedMetadata.metadata?.comment_count || 0,
+                                                tags: processedMetadata.metadata?.tags || [],
+                                                categories: processedMetadata.metadata?.categories || [],
+                                                thumbnail_url: processedMetadata.metadata?.thumbnail_url || '',
+                                                webpage_url: processedMetadata.metadata?.webpage_url || originalFile?.metadata?.sourceUrl || '',
+                                                channel_id: processedMetadata.metadata?.channel_id || '',
+                                                channel_url: processedMetadata.metadata?.channel_url || '',
+                                            },
+                                            success: true,
+                                            error_message: undefined
+                                        };
+                                    } catch (error) {
+                                        console.warn('Failed to parse YouTube metadata:', error);
+                                        // Fall back to placeholder metadata
+                                        youtubeMetadata = createPlaceholderYouTubeMetadata();
+                                    }
+                                } else {
+                                    // Use placeholder metadata for documents still processing or without metadata
+                                    youtubeMetadata = createPlaceholderYouTubeMetadata();
+                                }
 
                                 const handleOpenYouTube = () => {
                                     if (originalFile.metadata?.sourceUrl) {

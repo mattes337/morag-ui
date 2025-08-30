@@ -580,11 +580,50 @@ class StageExecutionService {
           const allStagesComplete = pipelineStatus.completedStages.length === 5; // All 5 stages
 
           if (allStagesComplete) {
-            await prisma.document.update({
+            // Calculate content stats for the completed document
+            const document = await prisma.document.findUnique({
               where: { id: execution.documentId },
-              data: { state: 'INGESTED' }
+              include: {
+                documentChunks: true,
+                entities: true,
+                facts: true
+              }
             });
-            console.log(`Document ${execution.documentId} marked as INGESTED - all stages complete`);
+
+            if (document) {
+              const chunks = document.documentChunks.length;
+              const entities = document.entities.length;
+              const facts = document.facts.length;
+
+              // Calculate quality score based on content richness
+              let quality = 0;
+              if (chunks > 0) {
+                quality = Math.min(1.0, (entities * 0.1 + facts * 0.05 + chunks * 0.01));
+              }
+
+              await prisma.document.update({
+                where: { id: execution.documentId },
+                data: {
+                  state: 'INGESTED',
+                  chunks: chunks,
+                  quality: quality
+                }
+              });
+
+              console.log(`Document ${execution.documentId} marked as INGESTED - all stages complete`, {
+                chunks,
+                entities,
+                facts,
+                quality: Math.round(quality * 100) + '%'
+              });
+            } else {
+              // Fallback if document not found
+              await prisma.document.update({
+                where: { id: execution.documentId },
+                data: { state: 'INGESTED' }
+              });
+              console.log(`Document ${execution.documentId} marked as INGESTED - all stages complete (no stats)`);
+            }
           }
         }
       }
