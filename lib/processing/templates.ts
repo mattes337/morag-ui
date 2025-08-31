@@ -26,6 +26,15 @@ export interface ProcessingTemplate {
   tags: string[];
 }
 
+// Quality gate preset interface
+export interface QualityGatePreset {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  config: Partial<FactGeneratorConfig>;
+}
+
 // Default configurations for all stages
 export const DEFAULT_STAGE_CONFIGS = {
   'markdown-conversion': {
@@ -83,7 +92,14 @@ export const DEFAULT_STAGE_CONFIGS = {
     domain: 'general',
     model: 'gemini-pro',
     temperature: 0.1,
-    max_tokens: 4096
+    max_tokens: 4096,
+
+    // Quality Gate Configuration - Balanced Mode (Recommended)
+    min_confidence: 0.4,
+    strict_validation: false,
+    allow_vague_language: true,
+    require_entities: true,
+    min_fact_length: 15
   } as FactGeneratorConfig,
   
   'ingestor': {
@@ -121,6 +137,75 @@ export const DEFAULT_STAGE_CONFIGS = {
     }
   } as IngestorConfig
 };
+
+// Quality Gate Presets for Fact Generator
+export const QUALITY_GATE_PRESETS: QualityGatePreset[] = [
+  {
+    id: 'strict',
+    name: 'Strict Mode',
+    description: 'High-quality production processing with strict validation',
+    icon: '🔒',
+    config: {
+      min_confidence: 0.7,
+      strict_validation: true,
+      allow_vague_language: false,
+      require_entities: true,
+      min_fact_length: 25
+    }
+  },
+  {
+    id: 'balanced',
+    name: 'Balanced Mode',
+    description: 'Recommended settings balancing quality and coverage',
+    icon: '⚖️',
+    config: {
+      min_confidence: 0.4,
+      strict_validation: false,
+      allow_vague_language: true,
+      require_entities: true,
+      min_fact_length: 15
+    }
+  },
+  {
+    id: 'lenient',
+    name: 'Lenient Mode',
+    description: 'Development and testing with relaxed validation',
+    icon: '🔓',
+    config: {
+      min_confidence: 0.3,
+      strict_validation: false,
+      allow_vague_language: true,
+      require_entities: false,
+      min_fact_length: 10
+    }
+  },
+  {
+    id: 'academic',
+    name: 'Academic Research',
+    description: 'Optimized for academic papers and research documents',
+    icon: '🎓',
+    config: {
+      min_confidence: 0.8,
+      strict_validation: true,
+      allow_vague_language: false,
+      require_entities: true,
+      min_fact_length: 30
+    }
+  },
+  {
+    id: 'legal',
+    name: 'Legal Compliance',
+    description: 'Strictest validation for legal and regulatory documents',
+    icon: '⚖️',
+    config: {
+      min_confidence: 0.9,
+      strict_validation: true,
+      allow_vague_language: false,
+      require_entities: true,
+      min_fact_length: 35
+    }
+  }
+];
 
 // Predefined processing templates
 export const PROCESSING_TEMPLATES: ProcessingTemplate[] = [
@@ -171,7 +256,13 @@ export const PROCESSING_TEMPLATES: ProcessingTemplate[] = [
         max_facts_per_chunk: 15,
         confidence_threshold: 0.8,
         extract_entities: true,
-        extract_relations: true
+        extract_relations: true,
+        // High Quality - Strict Mode
+        min_confidence: 0.7,
+        strict_validation: true,
+        allow_vague_language: false,
+        require_entities: true,
+        min_fact_length: 25
       }
     },
     recommendedFor: ['Research documents', 'Important content', 'Knowledge bases'],
@@ -206,13 +297,53 @@ export const PROCESSING_TEMPLATES: ProcessingTemplate[] = [
         extract_entities: true,
         entity_types: ['PERSON', 'ORG', 'GPE', 'EVENT', 'WORK_OF_ART'],
         extract_relations: true,
-        extract_keywords: true
+        extract_keywords: true,
+        // Academic Research - Strict Mode for high quality
+        min_confidence: 0.8,
+        strict_validation: true,
+        allow_vague_language: false,
+        require_entities: true,
+        min_fact_length: 30
       }
     },
     recommendedFor: ['Academic papers', 'Research documents', 'Scientific literature'],
     tags: ['academic', 'research', 'detailed', 'structured']
   },
-  
+
+  {
+    id: 'development-testing',
+    name: 'Development & Testing',
+    description: 'Lenient processing for development and testing with relaxed validation',
+    category: 'quick',
+    icon: '🧪',
+    estimatedTime: '2-4 minutes',
+    stages: ['markdown-conversion', 'chunker', 'fact-generator'],
+    stageConfigs: {
+      'markdown-conversion': {
+        preserve_formatting: false,
+        extract_metadata: false
+      },
+      'chunker': {
+        chunk_strategy: 'simple',
+        chunk_size: 2000
+      },
+      'fact-generator': {
+        max_facts_per_chunk: 8,
+        confidence_threshold: 0.5,
+        extract_entities: true,
+        extract_relations: false,
+        // Development - Lenient Mode for testing
+        min_confidence: 0.3,
+        strict_validation: false,
+        allow_vague_language: true,
+        require_entities: false,
+        min_fact_length: 10
+      }
+    },
+    recommendedFor: ['Draft documents', 'Testing', 'Development', 'Quick prototyping'],
+    tags: ['development', 'testing', 'lenient', 'quick']
+  },
+
   {
     id: 'media-transcription',
     name: 'Media Transcription',
@@ -292,7 +423,13 @@ export const PROCESSING_TEMPLATES: ProcessingTemplate[] = [
         max_facts_per_chunk: 25,
         extract_entities: true,
         entity_types: ['PERSON', 'ORG', 'GPE', 'LAW', 'DATE'],
-        extract_relations: true
+        extract_relations: true,
+        // Legal Documents - Strictest Mode for compliance
+        min_confidence: 0.9,
+        strict_validation: true,
+        allow_vague_language: false,
+        require_entities: true,
+        min_fact_length: 35
       }
     },
     recommendedFor: ['Legal documents', 'Contracts', 'Regulations', 'Court filings'],
@@ -460,5 +597,53 @@ export class ProcessingTemplateService {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  /**
+   * Get all quality gate presets
+   */
+  static getQualityGatePresets(): QualityGatePreset[] {
+    return QUALITY_GATE_PRESETS;
+  }
+
+  /**
+   * Get a specific quality gate preset by ID
+   */
+  static getQualityGatePreset(id: string): QualityGatePreset | undefined {
+    return QUALITY_GATE_PRESETS.find(preset => preset.id === id);
+  }
+
+  /**
+   * Apply a quality gate preset to a fact generator configuration
+   */
+  static applyQualityGatePreset(
+    config: FactGeneratorConfig,
+    presetId: string
+  ): FactGeneratorConfig {
+    const preset = this.getQualityGatePreset(presetId);
+    if (!preset) {
+      throw new Error(`Quality gate preset not found: ${presetId}`);
+    }
+
+    return {
+      ...config,
+      ...preset.config
+    };
+  }
+
+  /**
+   * Get recommended quality gate preset based on domain
+   */
+  static getRecommendedQualityGatePreset(domain?: string): QualityGatePreset {
+    switch (domain) {
+      case 'legal':
+        return this.getQualityGatePreset('legal')!;
+      case 'medical':
+      case 'technical':
+        return this.getQualityGatePreset('academic')!;
+      case 'general':
+      default:
+        return this.getQualityGatePreset('balanced')!;
+    }
   }
 }

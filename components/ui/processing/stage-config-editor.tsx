@@ -291,14 +291,48 @@ export function StageConfigEditor({
             { value: 'technical', label: 'Technical' }
           ]
         },
-        model: { 
-          type: 'select', 
+        model: {
+          type: 'select',
           label: 'LLM Model',
           options: [
             { value: 'gemini-pro', label: 'Gemini Pro' },
             { value: 'gpt-4', label: 'GPT-4' },
             { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
           ]
+        },
+        temperature: { type: 'number', label: 'Temperature', min: 0, max: 2, step: 0.1 },
+        max_tokens: { type: 'number', label: 'Max Tokens', min: 100, max: 32000 },
+
+        // Quality Gate Configuration
+        min_confidence: {
+          type: 'number',
+          label: 'Min Confidence',
+          description: 'Minimum confidence threshold for accepting facts (0.0-1.0)',
+          min: 0,
+          max: 1,
+          step: 0.1
+        },
+        strict_validation: {
+          type: 'boolean',
+          label: 'Strict Validation',
+          description: 'Enable strict quality validation (converts failures to warnings when false)'
+        },
+        allow_vague_language: {
+          type: 'boolean',
+          label: 'Allow Vague Language',
+          description: 'Accept facts with vague language but reduce confidence and add warnings'
+        },
+        require_entities: {
+          type: 'boolean',
+          label: 'Require Entities',
+          description: 'Whether to require primary entities in structured metadata'
+        },
+        min_fact_length: {
+          type: 'number',
+          label: 'Min Fact Length',
+          description: 'Minimum character length for fact text',
+          min: 1,
+          max: 1000
         }
       },
       'ingestor': {

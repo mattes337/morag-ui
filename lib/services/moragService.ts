@@ -68,6 +68,13 @@ export interface FactGeneratorConfig extends StageConfig {
   model?: string;
   temperature?: number;
   max_tokens?: number;
+
+  // Quality Gate Configuration (NEW)
+  min_confidence?: number;           // Minimum confidence threshold (0.0-1.0)
+  allow_vague_language?: boolean;    // Accept facts with vague language but mark them
+  require_entities?: boolean;        // Whether to require structured entities
+  min_fact_length?: number;          // Minimum character length for facts
+  strict_validation?: boolean;       // Overall validation strictness
 }
 
 export interface IngestorConfig extends StageConfig {

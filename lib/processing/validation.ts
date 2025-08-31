@@ -109,7 +109,14 @@ export const STAGE_VALIDATION_SCHEMAS: { [stageName: string]: { [field: string]:
       enum: ['gemini-pro', 'gpt-4', 'gpt-3.5-turbo', 'claude-3-sonnet', 'claude-3-haiku'] 
     },
     temperature: { type: 'number', min: 0, max: 2 },
-    max_tokens: { type: 'number', min: 100, max: 32000 }
+    max_tokens: { type: 'number', min: 100, max: 32000 },
+
+    // Quality Gate Configuration validation
+    min_confidence: { type: 'number', min: 0, max: 1 },
+    allow_vague_language: { type: 'boolean' },
+    require_entities: { type: 'boolean' },
+    min_fact_length: { type: 'number', min: 1, max: 1000 },
+    strict_validation: { type: 'boolean' }
   },
   
   'ingestor': {

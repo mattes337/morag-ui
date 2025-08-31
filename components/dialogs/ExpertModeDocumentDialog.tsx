@@ -12,11 +12,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, FileText, Link, Settings, Sparkles, ArrowRight, ArrowLeft, MousePointer2, Save, Download } from 'lucide-react';
 import { StageConfigEditor } from '@/components/ui/processing/stage-config-editor';
 import { TemplateSelector } from '@/components/ui/processing/template-selector';
+import { QualityGatePresetSelector } from '@/components/ui/processing/quality-gate-preset-selector';
 import { StageConfig } from '@/lib/services/moragService';
 import {
   DEFAULT_STAGE_CONFIGS,
   ProcessingTemplateService,
-  ProcessingTemplate
+  ProcessingTemplate,
+  QualityGatePreset
 } from '@/lib/processing/templates';
 import { useApp } from '@/contexts/AppContext';
 import { ToastService } from '@/lib/services/toastService';
@@ -72,6 +74,9 @@ export function ExpertModeDocumentDialog({
   const [globalConfig, setGlobalConfig] = useState<StageConfig>({
     language: 'en'
   });
+
+  // Quality gate preset state
+  const [selectedQualityGatePreset, setSelectedQualityGatePreset] = useState<QualityGatePreset | undefined>();
 
   const getUrlType = (url: string): string => {
     if (isYouTubeUrl(url)) return 'youtube';
@@ -133,6 +138,20 @@ export function ExpertModeDocumentDialog({
       ...prev,
       [stage]: enabled
     }));
+  };
+
+  const handleQualityGatePresetSelect = (preset: QualityGatePreset) => {
+    setSelectedQualityGatePreset(preset);
+    // Apply the preset to the fact-generator configuration
+    if (preset.config) {
+      setStageConfigs(prev => ({
+        ...prev,
+        'fact-generator': {
+          ...prev['fact-generator'],
+          ...preset.config
+        }
+      }));
+    }
   };
 
   const loadTemplate = (template: ProcessingTemplate) => {
@@ -597,6 +616,23 @@ export function ExpertModeDocumentDialog({
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* Quality Gate Presets for Fact Generator */}
+                    {enabledStages['fact-generator'] && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Fact Generator Quality Gates</CardTitle>
+                          <CardDescription>Choose validation settings for fact extraction quality control</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <QualityGatePresetSelector
+                            selectedPreset={selectedQualityGatePreset}
+                            onPresetSelect={handleQualityGatePresetSelect}
+                            currentConfig={stageConfigs['fact-generator']}
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
 
                     {/* Stage Configurations */}
                     {AVAILABLE_STAGES.map((stage) => (
