@@ -241,6 +241,51 @@ async function handleStageCompleted(payload: any, documentId: string | null, exe
         await downloadAndStoreStageOutputFiles(documentId, stage, payload.files.output_files);
       }
 
+      // Extract and store YouTube metadata if this is a YouTube document and MARKDOWN_CONVERSION stage
+      let youtubeMetadata = null;
+      if (stage === 'MARKDOWN_CONVERSION') {
+        const document = await prisma.document.findUnique({
+          where: { id: documentId },
+          select: { type: true }
+        });
+
+        if (document?.type === 'youtube' && payload.metadata?.metrics) {
+          // Extract YouTube metadata from backend response
+          const metrics = payload.metadata.metrics;
+          if (metrics.video_id || metrics.title) {
+            youtubeMetadata = {
+              video_id: metrics.video_id,
+              title: metrics.title,
+              uploader: metrics.uploader,
+              duration: metrics.duration,
+              view_count: metrics.view_count,
+              like_count: metrics.like_count,
+              comment_count: metrics.comment_count,
+              upload_date: metrics.upload_date,
+              description: metrics.description,
+              tags: metrics.tags,
+              categories: metrics.categories,
+              thumbnail_url: metrics.thumbnail_url,
+              webpage_url: metrics.webpage_url,
+              channel_id: metrics.channel_id,
+              channel_url: metrics.channel_url,
+              playlist_id: metrics.playlist_id,
+              playlist_title: metrics.playlist_title,
+              playlist_index: metrics.playlist_index,
+              processing_time: metrics.processing_time,
+              has_transcript: metrics.has_transcript,
+              transcript_segments_count: metrics.transcript_segments_count,
+              transcript: metrics.transcript
+            };
+            console.log(`📺 [Stage Webhook] Extracted YouTube metadata for document ${documentId}:`, {
+              title: youtubeMetadata.title,
+              uploader: youtubeMetadata.uploader,
+              duration: youtubeMetadata.duration
+            });
+          }
+        }
+      }
+
       // Complete the stage execution
       await stageExecutionService.completeExecution(
         execution.id,
@@ -249,17 +294,25 @@ async function handleStageCompleted(payload: any, documentId: string | null, exe
           executionTime,
           metrics: payload.metadata?.metrics,
           warnings: payload.metadata?.warnings,
-          stageWebhookCompletion: true
+          stageWebhookCompletion: true,
+          youtubeMetadata
         }
       );
 
-      // Update document status to completed
+      // Update document status to completed and store YouTube metadata if available
+      const updateData: any = {
+        stageStatus: 'COMPLETED',
+        lastStageError: null,
+      };
+
+      if (youtubeMetadata) {
+        updateData.metadata = JSON.stringify(youtubeMetadata);
+        console.log(`📺 [Stage Webhook] Storing YouTube metadata in document ${documentId}`);
+      }
+
       await prisma.document.update({
         where: { id: documentId },
-        data: {
-          stageStatus: 'COMPLETED',
-          lastStageError: null,
-        },
+        data: updateData,
       });
 
       console.log(`✅ [Stage Webhook] Stage ${stage} completed successfully for document ${documentId}`);

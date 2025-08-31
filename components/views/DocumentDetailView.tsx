@@ -1161,10 +1161,53 @@ export function DocumentDetailView({
                                     (f.contentType === 'text/markdown' || f.contentType === 'application/json')
                                 );
 
-                                // First check the original file's metadata for YouTube data (updated by backend)
-                                const originalFileMetadata = originalFile.metadata as any || {};
+                                // First check the document's metadata field for YouTube data (stored by webhook)
+                                let documentMetadata = null;
+                                try {
+                                    documentMetadata = document.metadata ? JSON.parse(document.metadata as string) : null;
+                                } catch (error) {
+                                    console.warn('Failed to parse document metadata:', error);
+                                }
 
-                                if (originalFileMetadata.youtubeVideoId) {
+                                if (documentMetadata && documentMetadata.video_id) {
+                                    // Use metadata from the document's metadata field (backend webhook format)
+                                    youtubeMetadata = {
+                                        ...baseMetadata,
+                                        video_path: '',
+                                        audio_path: '',
+                                        subtitle_paths: [],
+                                        thumbnail_paths: [],
+                                        transcript_path: '',
+                                        transcript_text: documentMetadata.transcript?.text || '',
+                                        transcript_language: 'en',
+                                        metadata: {
+                                            id: documentMetadata.video_id,
+                                            title: documentMetadata.title || document.name,
+                                            description: documentMetadata.description || 'No description available',
+                                            uploader: documentMetadata.uploader || 'Unknown',
+                                            upload_date: documentMetadata.upload_date || '',
+                                            duration: documentMetadata.duration || 0,
+                                            view_count: documentMetadata.view_count || 0,
+                                            like_count: documentMetadata.like_count || 0,
+                                            comment_count: documentMetadata.comment_count || 0,
+                                            tags: documentMetadata.tags || [],
+                                            categories: documentMetadata.categories || [],
+                                            thumbnail_url: documentMetadata.thumbnail_url || '',
+                                            webpage_url: documentMetadata.webpage_url || originalFile?.metadata?.sourceUrl || '',
+                                            channel_id: documentMetadata.channel_id || '',
+                                            channel_url: documentMetadata.channel_url || '',
+                                        },
+                                        success: true,
+                                        error_message: undefined,
+                                        processing_time: documentMetadata.processing_time || 0,
+                                        has_transcript: documentMetadata.has_transcript || false,
+                                        transcript_segments: documentMetadata.transcript_segments_count || 0
+                                    };
+                                } else {
+                                    // Fallback: Check the original file's metadata for YouTube data (updated by backend)
+                                    const originalFileMetadata = originalFile.metadata as any || {};
+
+                                    if (originalFileMetadata.youtubeVideoId) {
                                     // Use metadata from the updated original file (backend API format)
                                     youtubeMetadata = {
                                         ...baseMetadata,
@@ -1242,6 +1285,7 @@ export function DocumentDetailView({
                                 } else {
                                     // Use placeholder metadata for documents still processing or without metadata
                                     youtubeMetadata = createPlaceholderYouTubeMetadata();
+                                }
                                 }
 
                                 const handleOpenYouTube = () => {

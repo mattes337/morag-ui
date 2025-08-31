@@ -131,6 +131,7 @@ export function StageControlPanel({
         onExecuteChain={handleExecuteChain}
         onResetToStage={handleResetToStage}
         isLoading={isLoading}
+        processingMode={processingMode}
       />
     </div>
   );

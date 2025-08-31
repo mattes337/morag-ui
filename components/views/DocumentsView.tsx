@@ -29,20 +29,7 @@ export function DocumentsView({
     onViewDocumentDetail,
     ...props
 }: DocumentsViewProps) {
-    const getStateColor = (state: string) => {
-        switch (state) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'ingesting':
-                return 'bg-blue-100 text-blue-800';
-            case 'ingested':
-                return 'bg-green-100 text-green-800';
-            case 'deleted':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
+
 
     const getStatusIcon = (state: string, hasFailedJobs?: boolean) => {
         if (hasFailedJobs) {
@@ -187,15 +174,18 @@ export function DocumentsView({
                                     </div>
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="flex flex-col space-y-1">
-                                        <span
-                                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStateColor(doc.state)}`}
-                                        >
-                                            {doc.state}
-                                        </span>
-                                        {doc.currentStage && doc.state !== 'ingested' && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <div className="flex justify-center">
+                                        {doc.state === 'ingested' ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Completed
+                                            </span>
+                                        ) : doc.currentStage ? (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 {doc.currentStage.replace(/_/g, ' ').toLowerCase()}
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                {doc.state}
                                             </span>
                                         )}
                                     </div>

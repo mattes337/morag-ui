@@ -23,6 +23,7 @@ interface StageCardProps {
   onExecuteChain?: (fromStage: ProcessingStage) => Promise<void>;
   onResetToStage?: (stage: ProcessingStage) => Promise<void>;
   isLoading?: boolean;
+  processingMode?: 'MANUAL' | 'AUTOMATIC';
 }
 
 export function StageCard({
@@ -33,7 +34,8 @@ export function StageCard({
   onExecuteStage,
   onExecuteChain,
   onResetToStage,
-  isLoading = false
+  isLoading = false,
+  processingMode = 'MANUAL'
 }: StageCardProps) {
   const config = STAGE_CONFIG[stage];
   const effectiveStatus = getEffectiveStageStatus(stage, stageMap);
@@ -140,7 +142,8 @@ export function StageCard({
 
       {/* Action Buttons */}
       <div className="flex items-center space-x-2">
-        {canExecute && effectiveStatus !== 'RUNNING' && (
+        {/* Only show execute buttons in manual mode or when processing is halted/failed */}
+        {processingMode === 'MANUAL' && canExecute && effectiveStatus !== 'RUNNING' && (
           <Button
             size="sm"
             onClick={handleExecuteStage}
@@ -152,7 +155,7 @@ export function StageCard({
           </Button>
         )}
 
-        {canExecuteChain && effectiveStatus !== 'RUNNING' && (
+        {processingMode === 'MANUAL' && canExecuteChain && effectiveStatus !== 'RUNNING' && (
           <Button
             size="sm"
             variant="outline"

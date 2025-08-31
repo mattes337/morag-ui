@@ -549,39 +549,12 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
-    // For YouTube processing, use the markdown-conversion stage with YouTube URL
-    if (job.stage === 'MARKDOWN_CONVERSION' && document.type === 'youtube') {
-      return {
-        stage: 'markdown-conversion',
-        input_files: [content.sourceUrl],
-        output_dir: `./output/${document.id}`,
-        webhook_url: this.getWebhookUrl(),
-        config: {
-          extract_metadata: true,
-          extract_transcript: true,
-          use_proxy: true
-        },
-        metadata: {
-          jobId: job.id,
-          documentName: document.name,
-          realmId: document.realmId,
-          sourceUrl: content.sourceUrl,
-          isUrlDocument: true,
-          hasFileContent: false,
-          databaseServers: this.getDatabaseServers(document)
-        }
-      };
-    }
-
-    // For other stages, use standard stage execution with input files from previous stages
-    const stageConfig = this.getYouTubeStageConfig(job.stage);
-
-    return {
+    // Base request configuration
+    const baseRequest = {
       stage: job.stage.toLowerCase().replace('_', '-'),
-      input_files: [content.sourceUrl],
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
-      config: stageConfig,
+      config: this.getYouTubeStageConfig(job.stage),
       metadata: {
         jobId: job.id,
         documentName: document.name,
@@ -592,6 +565,92 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
         databaseServers: this.getDatabaseServers(document)
       }
     };
+
+    // For YouTube processing, use the markdown-conversion stage with YouTube URL
+    if (job.stage === 'MARKDOWN_CONVERSION' && document.type === 'youtube') {
+      return {
+        ...baseRequest,
+        stage: 'markdown-conversion',
+        input_files: [content.sourceUrl],
+        config: {
+          extract_metadata: true,
+          extract_transcript: true,
+          use_proxy: true
+        }
+      };
+    }
+
+    // For subsequent stages, we need to check what type of input they expect
+    const stageInputRequirements = this.getStageInputRequirements(job.stage);
+
+    if (stageInputRequirements.requiresSpecificFiles) {
+      // This stage requires specific output files from previous stages
+      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+      if (previousStageFiles.length > 0) {
+        // Try to get the file content and upload it directly instead of referencing file paths
+        // This is more reliable than expecting files to persist on the backend filesystem
+        const fileContent = await this.getFileContentFromPreviousStage(document.id, job.stage, previousStageFiles[0]);
+
+        if (fileContent) {
+          // Extract filename from the path
+          const filename = previousStageFiles[0].split('/').pop() || `${document.id}_${job.stage.toLowerCase()}_input`;
+
+          return {
+            ...baseRequest,
+            file_content: fileContent,
+            use_file_upload: true,
+            metadata: {
+              ...baseRequest.metadata,
+              originalFile: filename,
+              contentType: this.getContentTypeFromFilename(filename)
+            }
+          };
+        } else {
+          // Fallback to input_files if we can't get the content
+          return {
+            ...baseRequest,
+            input_files: previousStageFiles
+          };
+        }
+      } else {
+        throw new Error(`Stage ${job.stage} requires ${stageInputRequirements.expectedFileTypes.join(' or ')} files from previous stages, but none were found for document ${document.id}`);
+      }
+    } else {
+      // This stage can work with markdown content from previous stages
+      // For YouTube documents, we need to get the markdown output from the previous stage
+      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+      if (previousStageFiles.length > 0) {
+        const fileContent = await this.getFileContentFromPreviousStage(document.id, job.stage, previousStageFiles[0]);
+
+        if (fileContent) {
+          const filename = previousStageFiles[0].split('/').pop() || `${document.id}_${job.stage.toLowerCase()}_input.md`;
+
+          return {
+            ...baseRequest,
+            file_content: fileContent,
+            use_file_upload: true,
+            metadata: {
+              ...baseRequest.metadata,
+              originalFile: filename,
+              contentType: 'text/markdown'
+            }
+          };
+        }
+      }
+
+      // For first stage (MARKDOWN_CONVERSION), no previous files are expected, use source URL
+      if (job.stage === 'MARKDOWN_CONVERSION') {
+        return {
+          ...baseRequest,
+          input_files: [content.sourceUrl]
+        };
+      }
+
+      // For other stages, if no previous stage files found, this is an error
+      throw new Error(`No output files found from previous stages for YouTube document ${document.id}, stage ${job.stage}`);
+    }
   }
 
   private getYouTubeStageConfig(stage: string): Record<string, any> {
@@ -631,6 +690,170 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
         };
       default:
         return {};
+    }
+  }
+
+  /**
+   * Get stage input requirements to determine how to handle file inputs
+   */
+  private getStageInputRequirements(stage: string): {
+    requiresSpecificFiles: boolean;
+    expectedFileTypes: string[];
+  } {
+    switch (stage) {
+      case 'FACT_GENERATOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.chunks.json']
+        };
+      case 'INGESTOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.facts.json']
+        };
+      case 'MARKDOWN_OPTIMIZER':
+      case 'CHUNKER':
+      default:
+        return {
+          requiresSpecificFiles: false,
+          expectedFileTypes: ['.md']
+        };
+    }
+  }
+
+  /**
+   * Get output file paths from the previous stage
+   */
+  private async getPreviousStageOutputFiles(documentId: string, currentStage: string): Promise<string[]> {
+    try {
+      const { prisma } = await import('../../database');
+
+      // Define stage order and what files each stage produces
+      const stageOutputMapping: Record<string, { produces: string; dependsOn: string[] }> = {
+        'MARKDOWN_CONVERSION': { produces: '.md', dependsOn: [] },
+        'MARKDOWN_OPTIMIZER': { produces: '.opt.md', dependsOn: ['MARKDOWN_CONVERSION'] },
+        'CHUNKER': { produces: '.chunks.json', dependsOn: ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER'] },
+        'FACT_GENERATOR': { produces: '.facts.json', dependsOn: ['CHUNKER'] },
+        'INGESTOR': { produces: '.ingested', dependsOn: ['FACT_GENERATOR'] }
+      };
+
+      const currentStageInfo = stageOutputMapping[currentStage];
+      if (!currentStageInfo || currentStageInfo.dependsOn.length === 0) {
+        return []; // No dependencies
+      }
+
+      // Find the most recent successful stage execution that this stage depends on
+      for (const dependentStage of currentStageInfo.dependsOn.reverse()) {
+        const stageExecution = await prisma.stageExecution.findFirst({
+          where: {
+            documentId,
+            stage: dependentStage as any,
+            status: 'COMPLETED'
+          },
+          orderBy: { completedAt: 'desc' }
+        });
+
+        if (stageExecution && stageExecution.outputFiles) {
+          const outputFiles = JSON.parse(stageExecution.outputFiles);
+          if (outputFiles && outputFiles.length > 0) {
+            // Normalize the file paths to the format the backend expects
+            const backendFilePaths = outputFiles.map((filePath: string) => {
+              // Remove leading ./ if present, as the backend seems to expect paths without it
+              let normalizedPath = filePath.startsWith('./') ? filePath.substring(2) : filePath;
+
+              // Ensure the path starts with output/ for proper backend resolution
+              // But don't add the documentId folder if it's just a filename
+              if (!normalizedPath.startsWith('output/') && !normalizedPath.startsWith('temp/')) {
+                normalizedPath = `output/${normalizedPath}`;
+              }
+
+              return normalizedPath;
+            });
+
+            console.log(`📁 [YouTubeDocumentHandler] Found ${backendFilePaths.length} output files from stage ${dependentStage}: ${backendFilePaths.join(', ')}`);
+            return backendFilePaths;
+          }
+        }
+      }
+
+      console.warn(`⚠️ [YouTubeDocumentHandler] No output files found from dependent stages for ${currentStage} on document ${documentId}`);
+      return [];
+    } catch (error) {
+      console.error(`❌ [YouTubeDocumentHandler] Error getting previous stage output files:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get file content from a previous stage output file
+   * Uses database files only - backend files are cleaned up automatically
+   */
+  private async getFileContentFromPreviousStage(documentId: string, _currentStage: string, filePath: string): Promise<string | null> {
+    try {
+      console.log(`📥 [YouTubeDocumentHandler] Getting file content from database for: ${filePath}`);
+
+      // Extract filename from path (remove any path prefixes)
+      const filename = filePath.split('/').pop() || '';
+      console.log(`🔍 [YouTubeDocumentHandler] Searching for file: ${filename} in document ${documentId}`);
+
+      // Look for the file in our database
+      const { prisma } = await import('../../database');
+
+      // First try exact filename match
+      let file = await prisma.documentFile.findFirst({
+        where: {
+          documentId,
+          filename: filename
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // If not found, try partial matches for common patterns
+      if (!file) {
+        const searchPatterns = [
+          filename.replace(/^.*\//, ''), // Remove any path prefix
+          filename.replace(/\.[^.]*$/, ''), // Remove extension
+          `${documentId}.md`, // Common pattern for markdown files
+          `${documentId}.opt.md`, // Optimized markdown
+          `${documentId}.chunks.json`, // Chunks file
+          `${documentId}.facts.json` // Facts file
+        ];
+
+        for (const pattern of searchPatterns) {
+          file = await prisma.documentFile.findFirst({
+            where: {
+              documentId,
+              OR: [
+                { filename: { contains: pattern } },
+                { originalName: { contains: pattern } }
+              ]
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+
+          if (file) {
+            console.log(`🔍 [YouTubeDocumentHandler] Found file using pattern "${pattern}": ${file.filename}`);
+            break;
+          }
+        }
+      }
+
+      if (file) {
+        console.log(`📥 [YouTubeDocumentHandler] Found file in database: ${file.filename}, has content: ${!!file.content}, content length: ${file.content?.length || 0}`);
+
+        if (file.content) {
+          console.log(`📥 [YouTubeDocumentHandler] Returning file content from database: ${file.filename} (${file.content.length} chars)`);
+          return file.content;
+        } else {
+          console.warn(`⚠️ [YouTubeDocumentHandler] File found but content is empty: ${file.filename}`);
+        }
+      }
+
+      console.warn(`⚠️ [YouTubeDocumentHandler] Could not find file content for: ${filePath}`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [YouTubeDocumentHandler] Error getting file content for ${filePath}:`, error);
+      return null;
     }
   }
 }
@@ -693,15 +916,12 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
-    // Build stage-specific configuration according to backend API guide
-    const stageConfig = this.getWebsiteStageConfig(job.stage);
-
-    return {
+    // Base request configuration
+    const baseRequest = {
       stage: job.stage.toLowerCase().replace('_', '-'),
-      input_files: [content.sourceUrl],
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
-      config: stageConfig,
+      config: this.getWebsiteStageConfig(job.stage),
       metadata: {
         jobId: job.id,
         documentName: document.name,
@@ -712,6 +932,84 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
         databaseServers: this.getDatabaseServers(document)
       }
     };
+
+    // For first stage (MARKDOWN_CONVERSION), use the source URL
+    if (job.stage === 'MARKDOWN_CONVERSION') {
+      return {
+        ...baseRequest,
+        input_files: [content.sourceUrl]
+      };
+    }
+
+    // For subsequent stages, we need to check what type of input they expect
+    const stageInputRequirements = this.getStageInputRequirements(job.stage);
+
+    if (stageInputRequirements.requiresSpecificFiles) {
+      // This stage requires specific output files from previous stages
+      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+      if (previousStageFiles.length > 0) {
+        // Try to get the file content and upload it directly instead of referencing file paths
+        const fileContent = await this.getFileContentFromPreviousStage(document.id, job.stage, previousStageFiles[0]);
+
+        if (fileContent) {
+          // Extract filename from the path
+          const filename = previousStageFiles[0].split('/').pop() || `${document.id}_${job.stage.toLowerCase()}_input`;
+
+          return {
+            ...baseRequest,
+            file_content: fileContent,
+            use_file_upload: true,
+            metadata: {
+              ...baseRequest.metadata,
+              originalFile: filename,
+              contentType: this.getContentTypeFromFilename(filename)
+            }
+          };
+        } else {
+          // Fallback to input_files if we can't get the content
+          return {
+            ...baseRequest,
+            input_files: previousStageFiles
+          };
+        }
+      } else {
+        throw new Error(`Stage ${job.stage} requires ${stageInputRequirements.expectedFileTypes.join(' or ')} files from previous stages, but none were found for document ${document.id}`);
+      }
+    } else {
+      // This stage can work with markdown content from previous stages
+      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+      if (previousStageFiles.length > 0) {
+        const fileContent = await this.getFileContentFromPreviousStage(document.id, job.stage, previousStageFiles[0]);
+
+        if (fileContent) {
+          const filename = previousStageFiles[0].split('/').pop() || `${document.id}_${job.stage.toLowerCase()}_input.md`;
+
+          return {
+            ...baseRequest,
+            file_content: fileContent,
+            use_file_upload: true,
+            metadata: {
+              ...baseRequest.metadata,
+              originalFile: filename,
+              contentType: 'text/markdown'
+            }
+          };
+        }
+      }
+
+      // For first stage (MARKDOWN_CONVERSION), no previous files are expected, use source URL
+      if (job.stage === 'MARKDOWN_CONVERSION') {
+        return {
+          ...baseRequest,
+          input_files: [content.sourceUrl]
+        };
+      }
+
+      // For other stages, if no previous stage files found, this is an error
+      throw new Error(`No output files found from previous stages for website document ${document.id}, stage ${job.stage}`);
+    }
   }
 
   private getWebsiteStageConfig(stage: string): Record<string, any> {
@@ -752,6 +1050,170 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
         };
       default:
         return {};
+    }
+  }
+
+  /**
+   * Get stage input requirements to determine how to handle file inputs
+   */
+  private getStageInputRequirements(stage: string): {
+    requiresSpecificFiles: boolean;
+    expectedFileTypes: string[];
+  } {
+    switch (stage) {
+      case 'FACT_GENERATOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.chunks.json']
+        };
+      case 'INGESTOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.facts.json']
+        };
+      case 'MARKDOWN_OPTIMIZER':
+      case 'CHUNKER':
+      default:
+        return {
+          requiresSpecificFiles: false,
+          expectedFileTypes: ['.md']
+        };
+    }
+  }
+
+  /**
+   * Get output file paths from the previous stage
+   */
+  private async getPreviousStageOutputFiles(documentId: string, currentStage: string): Promise<string[]> {
+    try {
+      const { prisma } = await import('../../database');
+
+      // Define stage order and what files each stage produces
+      const stageOutputMapping: Record<string, { produces: string; dependsOn: string[] }> = {
+        'MARKDOWN_CONVERSION': { produces: '.md', dependsOn: [] },
+        'MARKDOWN_OPTIMIZER': { produces: '.opt.md', dependsOn: ['MARKDOWN_CONVERSION'] },
+        'CHUNKER': { produces: '.chunks.json', dependsOn: ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER'] },
+        'FACT_GENERATOR': { produces: '.facts.json', dependsOn: ['CHUNKER'] },
+        'INGESTOR': { produces: '.ingested', dependsOn: ['FACT_GENERATOR'] }
+      };
+
+      const currentStageInfo = stageOutputMapping[currentStage];
+      if (!currentStageInfo || currentStageInfo.dependsOn.length === 0) {
+        return []; // No dependencies
+      }
+
+      // Find the most recent successful stage execution that this stage depends on
+      for (const dependentStage of currentStageInfo.dependsOn.reverse()) {
+        const stageExecution = await prisma.stageExecution.findFirst({
+          where: {
+            documentId,
+            stage: dependentStage as any,
+            status: 'COMPLETED'
+          },
+          orderBy: { completedAt: 'desc' }
+        });
+
+        if (stageExecution && stageExecution.outputFiles) {
+          const outputFiles = JSON.parse(stageExecution.outputFiles);
+          if (outputFiles && outputFiles.length > 0) {
+            // Normalize the file paths to the format the backend expects
+            const backendFilePaths = outputFiles.map((filePath: string) => {
+              // Remove leading ./ if present, as the backend seems to expect paths without it
+              let normalizedPath = filePath.startsWith('./') ? filePath.substring(2) : filePath;
+
+              // Ensure the path starts with output/ for proper backend resolution
+              // But don't add the documentId folder if it's just a filename
+              if (!normalizedPath.startsWith('output/') && !normalizedPath.startsWith('temp/')) {
+                normalizedPath = `output/${normalizedPath}`;
+              }
+
+              return normalizedPath;
+            });
+
+            console.log(`📁 [WebsiteDocumentHandler] Found ${backendFilePaths.length} output files from stage ${dependentStage}: ${backendFilePaths.join(', ')}`);
+            return backendFilePaths;
+          }
+        }
+      }
+
+      console.warn(`⚠️ [WebsiteDocumentHandler] No output files found from dependent stages for ${currentStage} on document ${documentId}`);
+      return [];
+    } catch (error) {
+      console.error(`❌ [WebsiteDocumentHandler] Error getting previous stage output files:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get file content from a previous stage output file
+   * Uses database files only - backend files are cleaned up automatically
+   */
+  private async getFileContentFromPreviousStage(documentId: string, _currentStage: string, filePath: string): Promise<string | null> {
+    try {
+      console.log(`📥 [WebsiteDocumentHandler] Getting file content from database for: ${filePath}`);
+
+      // Extract filename from path (remove any path prefixes)
+      const filename = filePath.split('/').pop() || '';
+      console.log(`🔍 [WebsiteDocumentHandler] Searching for file: ${filename} in document ${documentId}`);
+
+      // Look for the file in our database
+      const { prisma } = await import('../../database');
+
+      // First try exact filename match
+      let file = await prisma.documentFile.findFirst({
+        where: {
+          documentId,
+          filename: filename
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // If not found, try partial matches for common patterns
+      if (!file) {
+        const searchPatterns = [
+          filename.replace(/^.*\//, ''), // Remove any path prefix
+          filename.replace(/\.[^.]*$/, ''), // Remove extension
+          `${documentId}.md`, // Common pattern for markdown files
+          `${documentId}.opt.md`, // Optimized markdown
+          `${documentId}.chunks.json`, // Chunks file
+          `${documentId}.facts.json` // Facts file
+        ];
+
+        for (const pattern of searchPatterns) {
+          file = await prisma.documentFile.findFirst({
+            where: {
+              documentId,
+              OR: [
+                { filename: { contains: pattern } },
+                { originalName: { contains: pattern } }
+              ]
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+
+          if (file) {
+            console.log(`🔍 [WebsiteDocumentHandler] Found file using pattern "${pattern}": ${file.filename}`);
+            break;
+          }
+        }
+      }
+
+      if (file) {
+        console.log(`📥 [WebsiteDocumentHandler] Found file in database: ${file.filename}, has content: ${!!file.content}, content length: ${file.content?.length || 0}`);
+
+        if (file.content) {
+          console.log(`📥 [WebsiteDocumentHandler] Returning file content from database: ${file.filename} (${file.content.length} chars)`);
+          return file.content;
+        } else {
+          console.warn(`⚠️ [WebsiteDocumentHandler] File found but content is empty: ${file.filename}`);
+        }
+      }
+
+      console.warn(`⚠️ [WebsiteDocumentHandler] Could not find file content for: ${filePath}`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [WebsiteDocumentHandler] Error getting file content for ${filePath}:`, error);
+      return null;
     }
   }
 }
