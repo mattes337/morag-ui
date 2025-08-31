@@ -609,7 +609,7 @@ export class MoragService {
     console.log(`🔍 [MoRAG] Determining input files for stage ${request.stage}, hasFileContent: ${hasFileContent}, isUrlDocument: ${isUrlDocument}`);
 
     if (isUrlDocument && sourceUrl) {
-      // For URL documents, pass the URL in input_files array
+      // For URL documents, include URL in input_files for the request object
       inputFiles = [sourceUrl];
       console.log(`🌐 [MoRAG] Processing URL document: ${sourceUrl}`);
     } else {
@@ -640,8 +640,8 @@ export class MoragService {
       }
     }
 
-    const stageRequest = {
-      input_files: inputFiles,
+    // Build stage request - only include input_files if not sending URL as file
+    const stageRequest: any = {
       config: request.metadata || {},
       output_dir: `./output/${request.documentId}`,
       webhook_config: {
@@ -653,6 +653,11 @@ export class MoragService {
       skip_if_exists: false // Always process, don't skip
     };
 
+    // Add input_files for both URL documents and file-based documents
+    if (inputFiles.length > 0) {
+      stageRequest.input_files = inputFiles;
+    }
+
     // Add the request data
     formData.append('request', JSON.stringify(stageRequest));
 
@@ -661,10 +666,10 @@ export class MoragService {
       const blob = new Blob([request.document.content], { type: 'text/markdown' });
       formData.append('file', blob, `${request.document.title}.md`);
       console.log(`📄 [MoRAG] Uploading file: ${request.document.title}.md (${request.document.content.length} chars)`);
-    } else if (inputFiles.length > 0) {
-      // If no content, we rely on input_files array
+    } else if (!isUrlDocument && inputFiles.length > 0) {
+      // If no content and not URL document, we rely on input_files array
       console.log(`📁 [MoRAG] Using input_files: ${inputFiles.join(', ')}`);
-    } else {
+    } else if (!isUrlDocument) {
       console.warn(`⚠️ [MoRAG] No file content or input_files provided for ${request.document.title}`);
     }
 
@@ -890,31 +895,7 @@ export class MoragService {
     return await response.json();
   }
 
-  /**
-   * Execute YouTube transcription stage
-   */
-  async executeYouTubeTranscription(request: any): Promise<any> {
-    console.log(`🚀 [MoRAG] Executing YouTube transcription for URL: ${request.url}`);
 
-    const response = await fetch(`${this.baseUrl}/api/v1/stages/youtube-transcription/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': this.getHeaders().Authorization,
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ [MoRAG] YouTube transcription API error:`, errorText);
-      throw new Error(`MoRAG API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log(`✅ [MoRAG] YouTube transcription completed successfully`);
-    return result;
-  }
 
   /**
    * Execute a single stage using the stage-based API
@@ -928,6 +909,7 @@ export class MoragService {
     output_dir: string;
     webhook_url?: string;
     metadata?: Record<string, any>;
+    config?: Record<string, any>;
   }): Promise<{ task_id: string; immediateResult?: any }> {
     const canonicalStage = this.getCanonicalStageName(request.stage);
     const endpoint = `${this.baseUrl}/api/v1/stages/${canonicalStage}/execute`;
@@ -947,10 +929,14 @@ export class MoragService {
     // Handle file upload vs input_files according to backend API guide
     if (request.use_file_upload && request.file_content) {
       // For file uploads (first stage with file content)
-      const blob = new Blob([request.file_content], { type: 'application/octet-stream' });
-      // Use the original filename from metadata if available, otherwise fallback to 'document'
+      const contentType = request.metadata?.contentType || 'application/octet-stream';
       const filename = request.metadata?.originalFile || 'document';
+
+      // Create blob with proper content type
+      const blob = new Blob([request.file_content], { type: contentType });
       formData.append('file', blob, filename);
+
+      console.log(`📄 [MoragService] Uploading file: ${filename} (${contentType}, ${request.file_content.length} bytes)`);
     } else if (request.input_files && request.input_files.length > 0) {
       // For URL-based documents or subsequent stages
       // Fix URL corruption issues before sending to backend
@@ -970,10 +956,16 @@ export class MoragService {
 
       const inputFilesJson = JSON.stringify(correctedInputFiles);
       formData.append('input_files', inputFilesJson);
+      console.log(`🔗 [MoragService] Sending input_files: ${JSON.stringify(correctedInputFiles)}`);
     }
 
     // Build configuration object with stage-specific settings
     const config: Record<string, any> = {};
+
+    // Add any config from the request
+    if (request.config) {
+      Object.assign(config, request.config);
+    }
 
     // Extract stage-specific config from metadata
     if (request.metadata) {

@@ -29,7 +29,7 @@ export interface FileOutput {
   filepath: string;
   filesize: number;
   contentType: string;
-  content?: string;
+  content?: string | Buffer;
   metadata?: Record<string, any>;
   isPublic: boolean;
   accessLevel: FileAccessLevel;
@@ -131,7 +131,7 @@ export class UnifiedFileService {
         filepath,
         filesize: stats.size,
         contentType: input.contentType,
-        content: input.contentType.startsWith('text/') ? input.content.toString() : null,
+        content: (input.contentType.startsWith('text/') || input.contentType.includes('json')) ? input.content.toString() : null,
         metadata: input.metadata ? JSON.stringify(input.metadata) : null,
         isPublic: input.isPublic || false,
         accessLevel: input.accessLevel || 'REALM_MEMBERS',
@@ -148,20 +148,21 @@ export class UnifiedFileService {
     const file = await prisma.documentFile.findUnique({
       where: { id },
     });
-    
+
     if (!file) return null;
-    
+
     const output = this.mapToOutput(file);
-    
+
     if (includeContent && !file.content) {
       try {
-        const fileContent = await fs.readFile(file.filepath, 'utf8');
+        // Read binary files as Buffer to preserve data integrity
+        const fileContent = await fs.readFile(file.filepath);
         output.content = fileContent;
       } catch (error) {
         console.error(`Failed to read file content: ${error}`);
       }
     }
-    
+
     return output;
   }
 

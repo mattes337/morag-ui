@@ -23,13 +23,13 @@ export interface DocumentProcessingResult {
  */
 abstract class BaseDocumentHandler {
   abstract getDocumentContent(request: DocumentProcessingRequest): Promise<{
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }>;
 
   abstract buildBackendRequest(request: DocumentProcessingRequest, content: {
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }): Promise<any>;
@@ -164,7 +164,7 @@ abstract class BaseDocumentHandler {
   /**
    * Download a file from MoRAG backend
    */
-  private async downloadFileFromMorag(filePath: string): Promise<string | null> {
+  protected async downloadFileFromMorag(filePath: string): Promise<string | null> {
     try {
       const moragBaseUrl = process.env.MORAG_API_URL || 'http://localhost:8000';
       const moragApiKey = process.env.MORAG_API_KEY;
@@ -215,7 +215,7 @@ abstract class BaseDocumentHandler {
   /**
    * Get content type from filename
    */
-  private getContentTypeFromFilename(filename: string): string {
+  protected getContentTypeFromFilename(filename: string): string {
     const ext = filename.toLowerCase().split('.').pop();
     switch (ext) {
       case 'md':
@@ -274,7 +274,7 @@ abstract class BaseDocumentHandler {
               chunkIndex: i,
               content: chunk.content || chunk.text || '',
               metadata: chunk.metadata ? JSON.stringify(chunk.metadata) : null,
-              embedding: chunk.embedding || null,
+              embedding: chunk.embedding ? JSON.stringify(chunk.embedding) : null,
             }
           });
         } catch (chunkError) {
@@ -412,75 +412,7 @@ abstract class BaseDocumentHandler {
     }
   }
 
-  async updateDocumentWithYouTubeMetadata(documentId: string, youtubeResponse: any): Promise<void> {
-    try {
-      console.log(`📺 [${this.constructor.name}] Updating document ${documentId} with YouTube metadata`);
 
-      const metadata = youtubeResponse.metadata;
-      if (!metadata) {
-        console.warn(`⚠️ [${this.constructor.name}] No metadata in YouTube response`);
-        return;
-      }
-
-      // Update document name with video title if available
-      const updates: any = {};
-      if (metadata.title) {
-        updates.name = metadata.title;
-      }
-
-      // Update document metadata
-      const documentMetadata = {
-        youtubeVideoId: metadata.video_id,
-        youtubeTitle: metadata.title,
-        youtubeChannel: metadata.uploader,
-        youtubeDuration: metadata.duration,
-        youtubeViewCount: metadata.view_count,
-        youtubeLikeCount: metadata.like_count,
-        youtubeUploadDate: metadata.upload_date,
-        youtubeDescription: metadata.description,
-        youtubeTags: metadata.tags,
-        youtubeCategories: metadata.categories,
-        youtubeThumbnail: metadata.thumbnail_url,
-        youtubeChannelId: metadata.channel_id,
-        youtubeChannelUrl: metadata.channel_url,
-        processingTime: youtubeResponse.processing_time,
-        hasTranscript: youtubeResponse.transcript ? true : false,
-        transcriptSegments: youtubeResponse.transcript_segments?.length || 0
-      };
-
-      if (Object.keys(updates).length > 0) {
-        await prisma.document.update({
-          where: { id: documentId },
-          data: updates
-        });
-      }
-
-      // Store YouTube metadata in the original file's metadata
-      const originalFile = await prisma.documentFile.findFirst({
-        where: {
-          documentId,
-          fileType: 'ORIGINAL_DOCUMENT'
-        }
-      });
-
-      if (originalFile) {
-        await prisma.documentFile.update({
-          where: { id: originalFile.id },
-          data: {
-            metadata: {
-              ...originalFile.metadata as any,
-              ...documentMetadata
-            }
-          }
-        });
-      }
-
-      console.log(`✅ [${this.constructor.name}] Updated document ${documentId} with YouTube metadata`);
-    } catch (error) {
-      console.error(`❌ [${this.constructor.name}] Failed to update document with YouTube metadata:`, error);
-      throw error;
-    }
-  }
 
   async processDocument(request: DocumentProcessingRequest): Promise<DocumentProcessingResult> {
     try {
@@ -492,19 +424,8 @@ abstract class BaseDocumentHandler {
       // Build backend request
       const backendRequest = await this.buildBackendRequest(request, contentData);
 
-      // Call MoRAG backend - use YouTube transcription endpoint for YouTube documents
-      let response;
-      if (request.job.stage === 'MARKDOWN_CONVERSION' && request.document.type === 'youtube') {
-        response = await moragService.executeYouTubeTranscription(backendRequest);
-
-        // For YouTube responses, we need to handle the different response format
-        if (response.success && response.metadata) {
-          // Update document with YouTube metadata
-          await this.updateDocumentWithYouTubeMetadata(request.documentId, response);
-        }
-      } else {
-        response = await moragService.executeStage(backendRequest);
-      }
+      // Call MoRAG backend - use regular stage execution for all document types
+      const response = await moragService.executeStage(backendRequest);
 
       if (response.immediateResult) {
         // Handle immediate completion
@@ -622,20 +543,24 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
   }
 
   async buildBackendRequest(request: DocumentProcessingRequest, content: {
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }): Promise<any> {
     const { document, job } = request;
 
-    // For YouTube processing, use the youtube-transcription stage according to backend API guide
+    // For YouTube processing, use the markdown-conversion stage with YouTube URL
     if (job.stage === 'MARKDOWN_CONVERSION' && document.type === 'youtube') {
       return {
-        url: content.sourceUrl,
-        extract_metadata: true,
-        extract_transcript: true,
-        use_proxy: true,
+        stage: 'markdown-conversion',
+        input_files: [content.sourceUrl],
+        output_dir: `./output/${document.id}`,
         webhook_url: this.getWebhookUrl(),
+        config: {
+          extract_metadata: true,
+          extract_transcript: true,
+          use_proxy: true
+        },
         metadata: {
           jobId: job.id,
           documentName: document.name,
@@ -648,16 +573,16 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
       };
     }
 
-    // For other stages or non-YouTube documents, use standard stage execution
+    // For other stages, use standard stage execution with input files from previous stages
     const stageConfig = this.getYouTubeStageConfig(job.stage);
 
     return {
-      stage: job.stage,
+      stage: job.stage.toLowerCase().replace('_', '-'),
       input_files: [content.sourceUrl],
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
+      config: stageConfig,
       metadata: {
-        ...stageConfig,
         jobId: job.id,
         documentName: document.name,
         realmId: document.realmId,
@@ -762,7 +687,7 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
   }
 
   async buildBackendRequest(request: DocumentProcessingRequest, content: {
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }): Promise<any> {
@@ -772,12 +697,12 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
     const stageConfig = this.getWebsiteStageConfig(job.stage);
 
     return {
-      stage: job.stage,
+      stage: job.stage.toLowerCase().replace('_', '-'),
       input_files: [content.sourceUrl],
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
+      config: stageConfig,
       metadata: {
-        ...stageConfig,
         jobId: job.id,
         documentName: document.name,
         realmId: document.realmId,
@@ -836,7 +761,7 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
  */
 export class FileDocumentHandler extends BaseDocumentHandler {
   async getDocumentContent(request: DocumentProcessingRequest): Promise<{
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }> {
@@ -866,7 +791,7 @@ export class FileDocumentHandler extends BaseDocumentHandler {
         }
 
         return {
-          content: fileWithContent.content,
+          content: fileWithContent.content || Buffer.alloc(0),
           contentSource: 'original_file'
         };
       } catch (error) {
@@ -883,7 +808,7 @@ export class FileDocumentHandler extends BaseDocumentHandler {
   }
 
   async buildBackendRequest(request: DocumentProcessingRequest, content: {
-    content: string;
+    content: string | Buffer;
     contentSource: string;
     sourceUrl?: string;
   }): Promise<any> {
@@ -898,7 +823,7 @@ export class FileDocumentHandler extends BaseDocumentHandler {
     const isFileContent = content.contentSource === 'original_file';
 
     const baseRequest = {
-      stage: job.stage,
+      stage: job.stage.toLowerCase().replace('_', '-'),
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
       metadata: {
@@ -916,7 +841,8 @@ export class FileDocumentHandler extends BaseDocumentHandler {
 
     // According to backend API guide:
     // - For file uploads in first stage: use 'file' parameter (handled by moragService)
-    // - For URLs or subsequent stages: use 'input_files' array
+    // - For URLs: use 'input_files' parameter as JSON array
+    // - For subsequent stages: use 'input_files' array with file paths
     if (content.sourceUrl) {
       return {
         ...baseRequest,
@@ -925,31 +851,101 @@ export class FileDocumentHandler extends BaseDocumentHandler {
     } else if (isFirstStage && isFileContent) {
       // For first stage with file content, the file should be uploaded
       // This will be handled by the moragService using FormData
+      const originalFile = document.files?.[0];
       return {
         ...baseRequest,
         file_content: content.content,
-        use_file_upload: true
+        use_file_upload: true,
+        metadata: {
+          ...baseRequest.metadata,
+          originalFile: originalFile?.originalName || originalFile?.filename || 'document',
+          contentType: originalFile?.contentType || 'application/octet-stream'
+        }
       };
     } else {
-      // For subsequent stages, use input_files with previous stage outputs
-      // We need to get the output file paths from the previous stage
-      const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+      // For subsequent stages, we need to check what type of input they expect
+      const stageInputRequirements = this.getStageInputRequirements(job.stage);
 
-      if (previousStageFiles.length > 0) {
-        return {
-          ...baseRequest,
-          input_files: previousStageFiles
-        };
+      if (stageInputRequirements.requiresSpecificFiles) {
+        // This stage requires specific output files from previous stages
+        const previousStageFiles = await this.getPreviousStageOutputFiles(document.id, job.stage);
+
+        if (previousStageFiles.length > 0) {
+          // Try to get the file content and upload it directly instead of referencing file paths
+          // This is more reliable than expecting files to persist on the backend filesystem
+          const fileContent = await this.getFileContentFromPreviousStage(document.id, job.stage, previousStageFiles[0]);
+
+          if (fileContent) {
+            // Extract filename from the path
+            const filename = previousStageFiles[0].split('/').pop() || `${document.id}_${job.stage.toLowerCase()}_input`;
+
+            return {
+              ...baseRequest,
+              file_content: fileContent,
+              use_file_upload: true,
+              metadata: {
+                ...baseRequest.metadata,
+                originalFile: filename,
+                contentType: this.getContentTypeFromFilename(filename)
+              }
+            };
+          } else {
+            // Fallback to input_files if we can't get the content
+            return {
+              ...baseRequest,
+              input_files: previousStageFiles
+            };
+          }
+        } else {
+          throw new Error(`Stage ${job.stage} requires ${stageInputRequirements.expectedFileTypes.join(' or ')} files from previous stages, but none were found for document ${document.id}`);
+        }
       } else {
-        // Fallback: create a temporary file with the markdown content
-        const tempFileName = `${document.id}_${job.stage.toLowerCase()}_input.md`;
-        return {
-          ...baseRequest,
-          input_files: [`./temp/${tempFileName}`],
-          temp_file_content: content.content,
-          temp_file_name: tempFileName
-        };
+        // This stage can work with markdown content
+        if (content.content && (typeof content.content === 'string' || Buffer.isBuffer(content.content))) {
+          const markdownContent = Buffer.isBuffer(content.content) ? content.content.toString('utf-8') : content.content;
+
+          return {
+            ...baseRequest,
+            file_content: markdownContent,
+            use_file_upload: true,
+            metadata: {
+              ...baseRequest.metadata,
+              originalFile: `${document.id}_${job.stage.toLowerCase()}_input.md`,
+              contentType: 'text/markdown'
+            }
+          };
+        } else {
+          throw new Error(`No content available for subsequent stage ${job.stage} on document ${document.id}`);
+        }
       }
+    }
+  }
+
+  /**
+   * Get stage input requirements to determine how to handle file inputs
+   */
+  private getStageInputRequirements(stage: string): {
+    requiresSpecificFiles: boolean;
+    expectedFileTypes: string[];
+  } {
+    switch (stage) {
+      case 'FACT_GENERATOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.chunks.json']
+        };
+      case 'INGESTOR':
+        return {
+          requiresSpecificFiles: true,
+          expectedFileTypes: ['.facts.json']
+        };
+      case 'MARKDOWN_OPTIMIZER':
+      case 'CHUNKER':
+      default:
+        return {
+          requiresSpecificFiles: false,
+          expectedFileTypes: ['.md']
+        };
     }
   }
 
@@ -960,41 +956,154 @@ export class FileDocumentHandler extends BaseDocumentHandler {
     try {
       const { prisma } = await import('../../database');
 
-    // Define stage order
-    const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
-    const currentIndex = stageOrder.indexOf(currentStage);
+      // Define stage order and what files each stage produces
+      const stageOutputMapping: Record<string, { produces: string; dependsOn: string[] }> = {
+        'MARKDOWN_CONVERSION': { produces: '.md', dependsOn: [] },
+        'MARKDOWN_OPTIMIZER': { produces: '.opt.md', dependsOn: ['MARKDOWN_CONVERSION'] },
+        'CHUNKER': { produces: '.chunks.json', dependsOn: ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER'] },
+        'FACT_GENERATOR': { produces: '.facts.json', dependsOn: ['CHUNKER'] },
+        'INGESTOR': { produces: '.ingested', dependsOn: ['FACT_GENERATOR'] }
+      };
 
-    if (currentIndex <= 0) {
-      return []; // No previous stage
-    }
+      const currentStageInfo = stageOutputMapping[currentStage];
+      if (!currentStageInfo || currentStageInfo.dependsOn.length === 0) {
+        return []; // No dependencies
+      }
 
-      const previousStage = stageOrder[currentIndex - 1];
+      // Find the most recent successful stage execution that this stage depends on
+      for (const dependentStage of currentStageInfo.dependsOn.reverse()) {
+        const stageExecution = await prisma.stageExecution.findFirst({
+          where: {
+            documentId,
+            stage: dependentStage as any,
+            status: 'COMPLETED'
+          },
+          orderBy: { completedAt: 'desc' }
+        });
 
-      // Get files from the previous stage
-      const files = await prisma.documentFile.findMany({
-        where: {
-          documentId,
-          stage: previousStage as any
-        },
-        orderBy: {
-          createdAt: 'desc'
+        if (stageExecution && stageExecution.outputFiles) {
+          const outputFiles = JSON.parse(stageExecution.outputFiles);
+          if (outputFiles && outputFiles.length > 0) {
+            // Normalize the file paths to the format the backend expects
+            const backendFilePaths = outputFiles.map((filePath: string) => {
+              // Remove leading ./ if present, as the backend seems to expect paths without it
+              let normalizedPath = filePath.startsWith('./') ? filePath.substring(2) : filePath;
+
+              // Ensure the path starts with output/ for proper backend resolution
+              // But don't add the documentId folder if it's just a filename
+              if (!normalizedPath.startsWith('output/') && !normalizedPath.startsWith('temp/')) {
+                normalizedPath = `output/${normalizedPath}`;
+              }
+
+              return normalizedPath;
+            });
+
+            console.log(`📁 [FileDocumentHandler] Found output files from ${dependentStage}: ${backendFilePaths.join(', ')}`);
+            return backendFilePaths;
+          }
         }
-      });
+      }
 
-      // Return file paths that the backend can access
-      return files.map(file => {
-        // Try to get the backend file path from metadata
-        const metadata = file.metadata ? JSON.parse(file.metadata) : {};
-        if (metadata.originalPath) {
-          return metadata.originalPath;
-        }
-
-        // Fallback to constructing the path
-        return `./output/${documentId}/${file.filename}`;
-      });
+      console.log(`⚠️ [FileDocumentHandler] No output files found from dependent stages for ${currentStage}`);
+      return [];
     } catch (error) {
       console.error(`Failed to get previous stage files for ${documentId}, stage ${currentStage}:`, error);
       return [];
+    }
+  }
+
+  /**
+   * Get file content from previous stage output files
+   */
+  private async getFileContentFromPreviousStage(documentId: string, _currentStage: string, filePath: string): Promise<string | null> {
+    try {
+      // First, try to download the file from the backend
+      const fileContent = await this.downloadFileFromMorag(filePath);
+      if (fileContent) {
+        console.log(`📥 [FileDocumentHandler] Downloaded file content from backend: ${filePath} (${fileContent.length} chars)`);
+        return fileContent;
+      }
+
+      // If backend download fails, try to get it from our local database
+      console.log(`⚠️ [FileDocumentHandler] Backend file not found, trying local database for: ${filePath}`);
+
+      // Extract filename from path (remove any path prefixes)
+      const filename = filePath.split('/').pop() || '';
+      console.log(`🔍 [FileDocumentHandler] Searching for file: ${filename} in document ${documentId}`);
+
+      // Look for the file in our database
+      const { prisma } = await import('../../database');
+
+      // First try exact filename match
+      let file = await prisma.documentFile.findFirst({
+        where: {
+          documentId,
+          filename: filename
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      console.log(`🔍 [FileDocumentHandler] Exact match result: ${file ? `Found ${file.filename}` : 'Not found'}`);
+
+      // If not found, try partial match (remove extensions and search)
+      if (!file) {
+        const baseFilename = filename.replace('.chunks.json', '').replace('.facts.json', '');
+        console.log(`🔍 [FileDocumentHandler] Trying partial match for: ${baseFilename}`);
+
+        file = await prisma.documentFile.findFirst({
+          where: {
+            documentId,
+            filename: {
+              contains: baseFilename
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        console.log(`🔍 [FileDocumentHandler] Partial match result: ${file ? `Found ${file.filename}` : 'Not found'}`);
+      }
+
+      // If still not found, try searching by stage (for recently completed stages)
+      if (!file) {
+        console.log(`🔍 [FileDocumentHandler] Trying stage-based search for CHUNKER stage files`);
+
+        file = await prisma.documentFile.findFirst({
+          where: {
+            documentId,
+            stage: 'CHUNKER',
+            filename: {
+              endsWith: '.chunks.json'
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        console.log(`🔍 [FileDocumentHandler] Stage-based search result: ${file ? `Found ${file.filename}` : 'Not found'}`);
+      }
+
+      // If still not found, list all files for this document to debug
+      if (!file) {
+        const allFiles = await prisma.documentFile.findMany({
+          where: { documentId },
+          select: { filename: true, stage: true, createdAt: true },
+          orderBy: { createdAt: 'desc' }
+        });
+        console.log(`🔍 [FileDocumentHandler] Available files for document ${documentId}:`, allFiles.map(f => `${f.filename} (${f.stage})`));
+      }
+
+      if (file) {
+        console.log(`📥 [FileDocumentHandler] Found file in database: ${file.filename}, has content: ${!!file.content}, content length: ${file.content?.length || 0}`);
+
+        if (file.content) {
+          console.log(`📥 [FileDocumentHandler] Returning file content from database: ${file.filename} (${file.content.length} chars)`);
+          return file.content;
+        } else {
+          console.warn(`⚠️ [FileDocumentHandler] File found but content is empty: ${file.filename}`);
+        }
+      }
+
+      console.warn(`⚠️ [FileDocumentHandler] Could not find file content for: ${filePath}`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [FileDocumentHandler] Error getting file content for ${filePath}:`, error);
+      return null;
     }
   }
 
