@@ -351,11 +351,44 @@ export class DocumentProcessingService {
   }
 
   /**
+   * Get retry count for a specific stage and document
+   */
+  static async getStageRetryCount(documentId: string, stage: ProcessingStage): Promise<number> {
+    const retryCount = await prisma.processingJob.count({
+      where: {
+        documentId,
+        stage,
+        status: JobStatus.FAILED
+      }
+    });
+    return retryCount;
+  }
+
+  /**
+   * Check if a stage can be retried (hasn't exceeded max retries)
+   */
+  static async canRetryStage(documentId: string, stage: ProcessingStage, maxRetries: number = 3): Promise<boolean> {
+    const retryCount = await this.getStageRetryCount(documentId, stage);
+    return retryCount < maxRetries;
+  }
+
+  /**
    * Retry failed processing
    */
   static async retryProcessing(documentId: string, stage?: ProcessingStage): Promise<ProcessingResult> {
     try {
       if (stage) {
+        // Check if stage can be retried
+        const canRetry = await this.canRetryStage(documentId, stage);
+        if (!canRetry) {
+          const retryCount = await this.getStageRetryCount(documentId, stage);
+          return {
+            success: false,
+            message: `Stage ${stage} has already been retried ${retryCount} times (maximum 3 retries allowed)`,
+            error: 'MAX_RETRIES_EXCEEDED'
+          };
+        }
+
         // Retry specific stage
         const { jobManager } = await import('./jobs');
         const job = await jobManager.createJob({
@@ -381,6 +414,17 @@ export class DocumentProcessingService {
         });
 
         if (lastFailedJob) {
+          // Check if stage can be retried
+          const canRetry = await this.canRetryStage(documentId, lastFailedJob.stage);
+          if (!canRetry) {
+            const retryCount = await this.getStageRetryCount(documentId, lastFailedJob.stage);
+            return {
+              success: false,
+              message: `Stage ${lastFailedJob.stage} has already been retried ${retryCount} times (maximum 3 retries allowed)`,
+              error: 'MAX_RETRIES_EXCEEDED'
+            };
+          }
+
           const { jobManager } = await import('./jobs');
           const job = await jobManager.createJob({
             documentId,

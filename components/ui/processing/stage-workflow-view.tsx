@@ -18,6 +18,7 @@ interface StageWorkflowViewProps {
   onResetToStage?: (stage: ProcessingStage) => Promise<void>;
   isLoading?: boolean;
   processingMode?: 'MANUAL' | 'AUTOMATIC';
+  documentId?: string;
 }
 
 export function StageWorkflowView({
@@ -27,7 +28,8 @@ export function StageWorkflowView({
   onExecuteChain,
   onResetToStage,
   isLoading = false,
-  processingMode = 'MANUAL'
+  processingMode = 'MANUAL',
+  documentId
 }: StageWorkflowViewProps) {
   // Create a map of stages for quick lookup
   const stageMap = new Map(stages.map(stage => [stage.stage, stage]));
@@ -69,6 +71,7 @@ export function StageWorkflowView({
                     onResetToStage={onResetToStage}
                     isLoading={isLoading}
                     processingMode={processingMode}
+                    documentId={documentId}
                   />
                 ) : (
                   // Past/Future stages - compact vertical display (hidden on mobile)
@@ -150,6 +153,7 @@ export function StageWorkflowView({
                 onResetToStage={onResetToStage}
                 isLoading={isLoading}
                 processingMode={processingMode}
+                documentId={documentId}
               />
             </div>
           );

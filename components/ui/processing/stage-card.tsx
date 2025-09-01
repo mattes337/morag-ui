@@ -1,14 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../button';
 import { Badge } from '../badge';
-import { ChevronRight, Play, Settings } from 'lucide-react';
-import { 
-  ProcessingStage, 
-  StageInfo, 
-  STAGE_CONFIG, 
-  STATUS_CONFIG, 
+import { Alert, AlertDescription } from '../alert';
+import { ChevronRight, Play, Settings, RotateCcw, AlertCircle } from 'lucide-react';
+import {
+  ProcessingStage,
+  StageInfo,
+  STAGE_CONFIG,
+  STATUS_CONFIG,
   getEffectiveStageStatus,
   canExecuteStage,
   canExecuteChainFrom
@@ -24,6 +25,12 @@ interface StageCardProps {
   onResetToStage?: (stage: ProcessingStage) => Promise<void>;
   isLoading?: boolean;
   processingMode?: 'MANUAL' | 'AUTOMATIC';
+  documentId?: string;
+}
+
+interface RetryInfo {
+  retryCount: number;
+  canRetry: boolean;
 }
 
 export function StageCard({
@@ -35,20 +42,80 @@ export function StageCard({
   onExecuteChain,
   onResetToStage,
   isLoading = false,
-  processingMode = 'MANUAL'
+  processingMode = 'MANUAL',
+  documentId
 }: StageCardProps) {
+  const [retryInfo, setRetryInfo] = useState<RetryInfo>({ retryCount: 0, canRetry: true });
+
   const config = STAGE_CONFIG[stage];
   const effectiveStatus = getEffectiveStageStatus(stage, stageMap);
   const statusConfig = STATUS_CONFIG[effectiveStatus];
   const canExecute = canExecuteStage(stage, stageMap);
   const canExecuteChain = canExecuteChainFrom(stage, stageMap);
-  
+
   const IconComponent = config.icon;
   const StatusIcon = statusConfig.icon;
+
+  // Load retry information for failed stages
+  useEffect(() => {
+    if (documentId && effectiveStatus === 'FAILED') {
+      const loadRetryInfo = async () => {
+        try {
+          const response = await fetch(`/api/documents/${documentId}/retry-info?stage=${stage}`);
+          if (response.ok) {
+            const data = await response.json();
+            setRetryInfo({
+              retryCount: data.retryCount || 0,
+              canRetry: data.canRetry !== false
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load retry info:', error);
+        }
+      };
+      loadRetryInfo();
+    }
+  }, [documentId, stage, effectiveStatus]);
 
   const handleExecuteStage = async () => {
     if (onExecuteStage && canExecute && !isLoading) {
       await onExecuteStage(stage);
+      // Reload retry info after execution
+      if (documentId && effectiveStatus === 'FAILED') {
+        try {
+          const response = await fetch(`/api/documents/${documentId}/retry-info?stage=${stage}`);
+          if (response.ok) {
+            const data = await response.json();
+            setRetryInfo({
+              retryCount: data.retryCount || 0,
+              canRetry: data.canRetry !== false
+            });
+          }
+        } catch (error) {
+          console.error('Failed to reload retry info:', error);
+        }
+      }
+    }
+  };
+
+  const handleRetryStage = async () => {
+    if (onExecuteStage && retryInfo.canRetry && !isLoading) {
+      await onExecuteStage(stage);
+      // Reload retry info after retry
+      if (documentId) {
+        try {
+          const response = await fetch(`/api/documents/${documentId}/retry-info?stage=${stage}`);
+          if (response.ok) {
+            const data = await response.json();
+            setRetryInfo({
+              retryCount: data.retryCount || 0,
+              canRetry: data.canRetry !== false
+            });
+          }
+        } catch (error) {
+          console.error('Failed to reload retry info:', error);
+        }
+      }
     }
   };
 
@@ -124,9 +191,18 @@ export function StageCard({
 
       {/* Error Message */}
       {effectiveStatus === 'FAILED' && stageInfo?.errorMessage && (
-        <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-          {stageInfo.errorMessage}
-        </div>
+        <Alert variant="destructive" className="mb-3">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium">Stage Failed</div>
+            <div className="text-sm mt-1">{stageInfo.errorMessage}</div>
+            {retryInfo.retryCount > 0 && (
+              <div className="text-xs mt-2 opacity-75">
+                Retry attempts: {retryInfo.retryCount}/3
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Timing Information */}
@@ -152,6 +228,24 @@ export function StageCard({
           >
             <Play className="w-3 h-3" />
             <span>Execute</span>
+          </Button>
+        )}
+
+        {/* Retry button for failed stages */}
+        {effectiveStatus === 'FAILED' && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleRetryStage}
+            disabled={isLoading || isExecuting || !retryInfo.canRetry}
+            className="flex items-center space-x-1"
+            title={!retryInfo.canRetry ? `Maximum retries exceeded (${retryInfo.retryCount}/3)` : 'Retry stage'}
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>
+              {!retryInfo.canRetry ? 'Max Retries' : 'Retry'}
+              {retryInfo.retryCount > 0 && ` (${retryInfo.retryCount}/3)`}
+            </span>
           </Button>
         )}
 

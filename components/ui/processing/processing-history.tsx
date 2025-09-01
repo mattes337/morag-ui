@@ -40,15 +40,22 @@ interface ProcessingHistoryProps {
   onDownloadOutput?: (fileId: string) => void;
 }
 
-export function ProcessingHistory({ 
-  documentId, 
-  onExecuteStage, 
-  onViewOutput, 
-  onDownloadOutput 
+interface StageRetryInfo {
+  stage: string;
+  retryCount: number;
+  canRetry: boolean;
+}
+
+export function ProcessingHistory({
+  documentId,
+  onExecuteStage,
+  onViewOutput,
+  onDownloadOutput
 }: ProcessingHistoryProps) {
   const [history, setHistory] = useState<ProcessingHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState<string | null>(null);
+  const [retryInfo, setRetryInfo] = useState<Record<string, StageRetryInfo>>({});
 
   const loadProcessingHistory = useCallback(async () => {
     if (!documentId || documentId === 'undefined') {
@@ -140,17 +147,81 @@ export function ProcessingHistory({
     }
   }, [documentId]);
 
+  const loadRetryInfo = useCallback(async () => {
+    if (!documentId || documentId === 'undefined') {
+      return;
+    }
+
+    try {
+      // Get retry counts for each stage
+      const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+      const retryInfoMap: Record<string, StageRetryInfo> = {};
+
+      for (const stage of stages) {
+        const response = await fetch(`/api/documents/${documentId}/retry-info?stage=${stage}`);
+        if (response.ok) {
+          const data = await response.json();
+          retryInfoMap[stage] = {
+            stage,
+            retryCount: data.retryCount || 0,
+            canRetry: data.canRetry !== false
+          };
+        } else {
+          // Fallback: count failed jobs for this stage
+          const failedJobs = history.filter(h => h.stage === stage && h.status === 'FAILED');
+          retryInfoMap[stage] = {
+            stage,
+            retryCount: failedJobs.length,
+            canRetry: failedJobs.length < 3
+          };
+        }
+      }
+
+      setRetryInfo(retryInfoMap);
+    } catch (error) {
+      console.error('Failed to load retry info:', error);
+      // Fallback: calculate from history
+      const retryInfoMap: Record<string, StageRetryInfo> = {};
+      const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+
+      for (const stage of stages) {
+        const failedJobs = history.filter(h => h.stage === stage && h.status === 'FAILED');
+        retryInfoMap[stage] = {
+          stage,
+          retryCount: failedJobs.length,
+          canRetry: failedJobs.length < 3
+        };
+      }
+
+      setRetryInfo(retryInfoMap);
+    }
+  }, [documentId, history]);
+
   useEffect(() => {
     loadProcessingHistory();
   }, [loadProcessingHistory]);
 
+  useEffect(() => {
+    if (history.length > 0) {
+      loadRetryInfo();
+    }
+  }, [history, loadRetryInfo]);
+
   const handleExecuteStage = async (stage: string) => {
     if (!onExecuteStage) return;
-    
+
+    // Check retry limits before executing
+    const stageRetryInfo = retryInfo[stage];
+    if (stageRetryInfo && !stageRetryInfo.canRetry) {
+      console.warn(`Cannot retry stage ${stage}: maximum retries exceeded (${stageRetryInfo.retryCount}/3)`);
+      return;
+    }
+
     try {
       setIsExecuting(stage);
       await onExecuteStage(stage);
       await loadProcessingHistory(); // Refresh history
+      await loadRetryInfo(); // Refresh retry info
     } catch (error) {
       console.error('Failed to execute stage:', error);
     } finally {
@@ -243,18 +314,35 @@ export function ProcessingHistory({
                     {entry.status}
                   </Badge>
                   {onExecuteStage && entry.status !== 'RUNNING' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleExecuteStage(entry.stage)}
-                      disabled={isExecuting === entry.stage}
-                    >
-                      {isExecuting === entry.stage ? (
-                        <Clock className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <RotateCcw className="w-4 h-4" />
-                      )}
-                    </Button>
+                    (() => {
+                      const stageRetryInfo = retryInfo[entry.stage];
+                      const canRetry = stageRetryInfo?.canRetry !== false;
+                      const retryCount = stageRetryInfo?.retryCount || 0;
+                      const isDisabled = isExecuting === entry.stage || !canRetry;
+
+                      return (
+                        <div className="flex flex-col items-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExecuteStage(entry.stage)}
+                            disabled={isDisabled}
+                            title={!canRetry ? `Maximum retries exceeded (${retryCount}/3)` : 'Retry stage'}
+                          >
+                            {isExecuting === entry.stage ? (
+                              <Clock className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-4 h-4" />
+                            )}
+                          </Button>
+                          {retryCount > 0 && (
+                            <span className={`text-xs mt-1 ${!canRetry ? 'text-red-600' : 'text-gray-500'}`}>
+                              {retryCount}/3 retries
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               </div>

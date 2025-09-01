@@ -132,6 +132,7 @@ export function StageControlPanel({
         onResetToStage={handleResetToStage}
         isLoading={isLoading}
         processingMode={processingMode}
+        documentId={documentId}
       />
     </div>
   );
