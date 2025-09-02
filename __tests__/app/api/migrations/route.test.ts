@@ -17,6 +17,8 @@ jest.mock('../../../../lib/auth', () => ({
 }));
 
 const mockDocumentMigrationService = DocumentMigrationService as jest.Mocked<typeof DocumentMigrationService>;
+const { requireAuth } = require('../../../../lib/auth');
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 
 describe('/api/migrations', () => {
   beforeEach(() => {

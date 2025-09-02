@@ -3,17 +3,12 @@ import type { MockedFunction } from 'jest-mock';
 import { GET, POST, DELETE } from '../../app/api/processing-jobs/route';
 import { GET as getById, PUT, DELETE as deleteById } from '../../app/api/processing-jobs/[id]/route';
 import { backgroundJobService } from '../../lib/services/backgroundJobService';
+import { ProcessingStage, DocumentState } from '@prisma/client';
 import { PrismaClient, JobStatus } from '@prisma/client';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-jest.mock('../../lib/services/backgroundJobService', () => ({
-  backgroundJobService: {
-    createJob: jest.fn(),
-    cancelJob: jest.fn(),
-    getStats: jest.fn(),
-  }
-}));
+jest.mock('../../lib/services/backgroundJobService');
 jest.mock('../../lib/database');
 jest.mock('../../lib/auth', () => ({
   requireAuth: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
@@ -24,6 +19,13 @@ import { prisma } from '../../lib/database';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockBackgroundJobService = backgroundJobService as jest.Mocked<typeof backgroundJobService>;
+
+// Setup backgroundJobService mock methods
+mockBackgroundJobService.createJob = jest.fn();
+mockBackgroundJobService.cancelJob = jest.fn();
+mockBackgroundJobService.getStats = jest.fn();
+mockBackgroundJobService.getJobsByStatus = jest.fn();
+mockBackgroundJobService.getDocumentJobs = jest.fn();
 
 // Helper to create mock NextRequest
 function createMockRequest(method: string, url: string, body?: any): NextRequest {
@@ -59,20 +61,40 @@ describe('/api/processing-jobs', () => {
       {
         id: 'job-1',
         documentId: 'doc-1',
-        stage: 'MARKDOWN_CONVERSION',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
         status: JobStatus.PENDING,
         priority: 1,
         createdAt: new Date(),
-        scheduledAt: new Date()
+        updatedAt: new Date(),
+        scheduledAt: new Date(),
+        startedAt: null,
+        completedAt: null,
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: null,
+        metadata: null,
+        cleanedUp: false,
+        cleanedUpAt: null,
+        cleanupStats: null
       },
       {
         id: 'job-2',
         documentId: 'doc-2',
-        stage: 'CHUNKER',
+        stage: ProcessingStage.CHUNKER,
         status: JobStatus.PROCESSING,
         priority: 0,
         createdAt: new Date(),
-        scheduledAt: new Date()
+        updatedAt: new Date(),
+        scheduledAt: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: null,
+        metadata: null,
+        cleanedUp: false,
+        cleanedUpAt: null,
+        cleanupStats: null
       }
     ];
 
@@ -80,9 +102,9 @@ describe('/api/processing-jobs', () => {
       mockPrisma.processingJob.findMany.mockResolvedValue(mockJobs);
       mockPrisma.processingJob.count.mockResolvedValue(2);
       mockPrisma.processingJob.groupBy.mockResolvedValue([
-        { status: JobStatus.PENDING, _count: { id: 1 } },
-        { status: JobStatus.PROCESSING, _count: { id: 1 } }
-      ]);
+        { status: JobStatus.PENDING, _count: { id: 1 } } as any,
+        { status: JobStatus.PROCESSING, _count: { id: 1 } } as any
+      ] as any);
     });
 
     it('should return all processing jobs with pagination', async () => {
@@ -150,16 +172,45 @@ describe('/api/processing-jobs', () => {
     const mockDocument = {
       id: 'doc-1',
       name: 'test.pdf',
-      state: 'uploaded'
-    };
+      state: DocumentState.PENDING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      type: 'pdf',
+      version: 1,
+      userId: 'user-1',
+      realmId: 'realm-1',
+      scheduledAt: null,
+      chunks: 0,
+      quality: 0,
+      markdown: null,
+      uploadDate: new Date(),
+      processingMode: 'AUTOMATIC' as const,
+      isProcessingPaused: false,
+      currentStage: null,
+      stageStatus: null,
+      subType: null,
+      nextScheduledStage: null,
+      lastStageError: null
+    } as any;
 
     const mockJob = {
       id: 'job-1',
       documentId: 'doc-1',
-      stage: 'MARKDOWN_CONVERSION',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
       status: JobStatus.PENDING,
       priority: 1,
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      scheduledAt: new Date(),
+      startedAt: null,
+      completedAt: null,
+      retryCount: 0,
+      maxRetries: 3,
+      errorMessage: null,
+      metadata: null,
+      cleanedUp: false,
+      cleanedUpAt: null,
+      cleanupStats: null
     };
 
     beforeEach(() => {
@@ -170,7 +221,7 @@ describe('/api/processing-jobs', () => {
     it('should create a new processing job', async () => {
       const request = createMockRequest('POST', '/api/processing-jobs', {
         documentId: 'doc-1',
-        stage: 'MARKDOWN_CONVERSION',
+        stage: ProcessingStage.MARKDOWN_CONVERSION,
         priority: 1
       });
       const response = await POST(request);
@@ -277,11 +328,21 @@ describe('/api/processing-jobs/[id]', () => {
   const mockJob = {
     id: 'job-1',
     documentId: 'doc-1',
-    stage: 'MARKDOWN_CONVERSION',
+    stage: ProcessingStage.MARKDOWN_CONVERSION,
     status: JobStatus.PENDING,
     priority: 1,
     createdAt: new Date(),
-    scheduledAt: new Date()
+    updatedAt: new Date(),
+    scheduledAt: new Date(),
+    startedAt: null,
+    completedAt: null,
+    retryCount: 0,
+    maxRetries: 3,
+    errorMessage: null,
+    metadata: null,
+    cleanedUp: false,
+    cleanedUpAt: null,
+    cleanupStats: null
   };
 
   beforeEach(() => {

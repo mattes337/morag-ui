@@ -75,16 +75,16 @@ describe('Complete Document Processing Pipeline', () => {
         if (!isFirstStage && previousStage) {
           mockPrisma.stageExecution.findFirst.mockResolvedValue({
             id: `exec-${i}`,
-            outputFiles: JSON.stringify(stageFiles[previousStage]),
+            outputFiles: JSON.stringify((stageFiles as any)[previousStage]),
             status: 'COMPLETED'
-          });
+          } as any);
 
           // Mock database file retrieval
           mockPrisma.documentFile.findFirst.mockResolvedValue({
             id: `file-${i}`,
-            filename: stageFiles[previousStage][0].split('/').pop(),
-            content: stageOutputs[previousStage]
-          });
+            filename: (stageFiles as any)[previousStage][0].split('/').pop(),
+            content: (stageOutputs as any)[previousStage]
+          } as any);
         }
 
         const request = {
@@ -118,7 +118,7 @@ describe('Complete Document Processing Pipeline', () => {
           // Subsequent stages should use file_content from previous stage
           expect(backendRequest).toMatchObject({
             stage: stage.toLowerCase().replace('_', '-'),
-            file_content: stageOutputs[previousStage!],
+            file_content: (stageOutputs as any)[previousStage!],
             use_file_upload: true
           });
           expect(backendRequest).not.toHaveProperty('input_files');
@@ -159,16 +159,16 @@ describe('Complete Document Processing Pipeline', () => {
         if (!isFirstStage && previousStage) {
           mockPrisma.stageExecution.findFirst.mockResolvedValue({
             id: `exec-${i}`,
-            outputFiles: JSON.stringify(stageFiles[previousStage]),
+            outputFiles: JSON.stringify((stageFiles as any)[previousStage]),
             status: 'COMPLETED'
-          });
+          } as any);
 
           // Mock database file retrieval
           mockPrisma.documentFile.findFirst.mockResolvedValue({
             id: `file-${i}`,
-            filename: stageFiles[previousStage][0].split('/').pop(),
-            content: stageOutputs[previousStage]
-          });
+            filename: (stageFiles as any)[previousStage][0].split('/').pop(),
+            content: (stageOutputs as any)[previousStage]
+          } as any);
         }
 
         const request = {
@@ -202,7 +202,7 @@ describe('Complete Document Processing Pipeline', () => {
           // Subsequent stages should use file_content from previous stage
           expect(backendRequest).toMatchObject({
             stage: stage.toLowerCase().replace('_', '-'),
-            file_content: stageOutputs[previousStage!],
+            file_content: (stageOutputs as any)[previousStage!],
             use_file_upload: true
           });
           expect(backendRequest).not.toHaveProperty('input_files');
@@ -243,16 +243,16 @@ describe('Complete Document Processing Pipeline', () => {
         if (!isFirstStage && previousStage) {
           mockPrisma.stageExecution.findFirst.mockResolvedValue({
             id: `exec-${i}`,
-            outputFiles: JSON.stringify(stageFiles[previousStage]),
+            outputFiles: JSON.stringify((stageFiles as any)[previousStage]),
             status: 'COMPLETED'
-          });
+          } as any);
 
           // Mock database file retrieval
           mockPrisma.documentFile.findFirst.mockResolvedValue({
             id: `file-${i}`,
-            filename: stageFiles[previousStage][0].split('/').pop(),
-            content: stageOutputs[previousStage]
-          });
+            filename: (stageFiles as any)[previousStage][0].split('/').pop(),
+            content: (stageOutputs as any)[previousStage]
+          } as any);
         }
 
         const request = {
@@ -264,7 +264,7 @@ describe('Complete Document Processing Pipeline', () => {
             type: 'file',
             files: isFirstStage ? [{ id: 'file-123', filename: 'test.pdf', content: 'Original PDF content' }] : undefined,
             // For subsequent stages, FileDocumentHandler expects markdown content in document.markdown
-            markdown: !isFirstStage && previousStage ? stageOutputs[previousStage] : undefined
+            markdown: !isFirstStage && previousStage ? (stageOutputs as any)[previousStage] : undefined
           },
           job: {
             id: `job-${i}`,
@@ -279,7 +279,7 @@ describe('Complete Document Processing Pipeline', () => {
               contentSource: 'original_file'
             }
           : {
-              content: stageOutputs[previousStage!] || '',
+              content: (stageOutputs as any)[previousStage!] || '',
               contentSource: 'markdown_field'
             };
 
@@ -297,7 +297,7 @@ describe('Complete Document Processing Pipeline', () => {
           // Subsequent stages should use file_content from previous stage
           expect(backendRequest).toMatchObject({
             stage: stage.toLowerCase().replace('_', '-'),
-            file_content: stageOutputs[previousStage!],
+            file_content: (stageOutputs as any)[previousStage!],
             use_file_upload: true
           });
           expect(backendRequest).not.toHaveProperty('input_files');

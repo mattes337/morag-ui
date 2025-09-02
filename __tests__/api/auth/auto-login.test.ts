@@ -132,7 +132,7 @@ describe('/api/auth/auto-login', () => {
         mockAuthConfig.autoLoginEmail = 'admin@morag.local';
 
         mockUserService.getUserByEmail.mockResolvedValue(null);
-        mockUserService.createUser.mockResolvedValue(null);
+        mockUserService.createUser.mockRejectedValue(new Error('Database error'));
 
         const request = new NextRequest('http://localhost:3000/api/auth/auto-login', {
             method: 'POST',

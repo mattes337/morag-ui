@@ -23,6 +23,7 @@ jest.mock('../../../lib/database', () => ({
 import { POST } from '../../../app/api/webhooks/stages/route';
 import { stageExecutionService } from '../../../lib/services/stageExecutionService';
 import { prisma } from '../../../lib/database';
+import { ProcessingStage, StageStatus } from '@prisma/client';
 
 // Get the mocked functions
 const mockStageExecutionService = stageExecutionService as jest.Mocked<typeof stageExecutionService>;
@@ -38,13 +39,16 @@ describe('/api/webhooks/stages', () => {
     const mockExecution = {
       id: 'execution-1',
       documentId: 'doc-1',
-      stage: 'MARKDOWN_CONVERSION',
-      status: 'RUNNING',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
+      status: StageStatus.RUNNING,
+      startedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     mockStageExecutionService.getExecution.mockResolvedValue(mockExecution);
     mockStageExecutionService.completeExecution.mockResolvedValue(mockExecution);
-    mockPrisma.document.update.mockResolvedValue({});
+    (mockPrisma.document.update as jest.Mock).mockResolvedValue({});
 
     // Create webhook payload
     const payload = {
@@ -99,13 +103,16 @@ describe('/api/webhooks/stages', () => {
     const mockExecution = {
       id: 'execution-1',
       documentId: 'doc-1',
-      stage: 'MARKDOWN_CONVERSION',
-      status: 'RUNNING',
+      stage: ProcessingStage.MARKDOWN_CONVERSION,
+      status: StageStatus.RUNNING,
+      startedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     mockStageExecutionService.getExecution.mockResolvedValue(mockExecution);
     mockStageExecutionService.failExecution.mockResolvedValue(mockExecution);
-    mockPrisma.document.update.mockResolvedValue({});
+    (mockPrisma.document.update as jest.Mock).mockResolvedValue({});
 
     const payload = {
       event: 'stage_completed',

@@ -54,23 +54,18 @@ describe('/api/scheduler', () => {
     it('should return scheduler status', async () => {
       const mockStatus = {
         isRunning: true,
-        totalJobsProcessed: 10,
         pendingJobs: 2,
-        failedJobs: 0,
-        lastProcessedAt: new Date(),
-        uptime: 3600000,
-        averageProcessingTime: 2500
+        processingJobs: 1,
+        completedJobs: 10,
+        failedJobs: 0
       };
 
       const mockConfig = {
-        enabled: true,
-        processingIntervalMs: 30000,
-        maxConcurrentJobs: 5,
-        retryDelayMs: 60000,
-        healthCheckIntervalMs: 300000
+        isRunning: true,
+        intervalMs: 30000
       };
 
-      mockJobScheduler.getStats.mockReturnValue(mockStatus);
+      mockJobScheduler.getStats.mockResolvedValue(mockStatus);
       mockJobScheduler.getConfig.mockReturnValue(mockConfig);
 
       const request = createMockRequest('GET', '/api/scheduler');
@@ -88,12 +83,10 @@ describe('/api/scheduler', () => {
     it('should return scheduler statistics when stats=true', async () => {
       const mockStats = {
         isRunning: true,
-        totalJobsProcessed: 100,
         pendingJobs: 10,
-        failedJobs: 3,
-        lastProcessedAt: new Date(),
-        uptime: 7200000,
-        averageProcessingTime: 45000
+        processingJobs: 2,
+        completedJobs: 100,
+        failedJobs: 3
       };
 
       const mockConfig = {
@@ -104,7 +97,7 @@ describe('/api/scheduler', () => {
         healthCheckIntervalMs: 300000
       };
 
-      mockJobScheduler.getStats.mockReturnValue(mockStats);
+      mockJobScheduler.getStats.mockResolvedValue(mockStats);
       mockJobScheduler.getConfig.mockReturnValue(mockConfig);
 
       const request = createMockRequest('GET', '/api/scheduler?stats=true');
@@ -148,7 +141,7 @@ describe('/api/scheduler', () => {
       mockJobScheduler.start.mockResolvedValue({
         success: true
       });
-      mockJobScheduler.getStats.mockReturnValue(mockStats);
+      mockJobScheduler.getStats.mockResolvedValue(mockStats);
 
       const request = createMockRequest('POST', '/api/scheduler', { action: 'start' });
       const response = await POST(request);
@@ -164,18 +157,16 @@ describe('/api/scheduler', () => {
     it('should stop the scheduler', async () => {
       const mockStats = {
         isRunning: false,
-        totalJobsProcessed: 10,
         pendingJobs: 0,
-        failedJobs: 0,
-        lastProcessedAt: new Date(),
-        uptime: 3600000,
-        averageProcessingTime: 2500
+        processingJobs: 0,
+        completedJobs: 10,
+        failedJobs: 0
       };
 
       mockJobScheduler.stop.mockResolvedValue({
         success: true
       });
-      mockJobScheduler.getStats.mockReturnValue(mockStats);
+      mockJobScheduler.getStats.mockResolvedValue(mockStats);
 
       const request = createMockRequest('POST', '/api/scheduler', { action: 'stop' });
       const response = await POST(request);

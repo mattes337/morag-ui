@@ -4,6 +4,7 @@ import { backgroundJobService } from '../../lib/services/backgroundJobService';
 import { PrismaClient, JobStatus, ProcessingStage, DocumentState } from '@prisma/client';
 import { errorHandlingService } from '../../lib/services/errorHandlingService';
 import { moragService } from '../../lib/services/moragService';
+import { stageExecutionService } from '../../lib/services/stageExecutionService';
 
 // Mock dependencies
 jest.mock('../../lib/database', () => ({
@@ -35,6 +36,8 @@ import { prisma } from '../../lib/database';
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
 const mockMoragService = moragService as jest.Mocked<typeof moragService>;
+
+const mockStageExecutionService = stageExecutionService as jest.Mocked<typeof stageExecutionService>;
 
 const mockErrorHandlingService = errorHandlingService as {
   handleProcessingError: jest.MockedFunction<any>;
@@ -89,7 +92,10 @@ describe('BackgroundJobService', () => {
       retryCount: 0,
       maxRetries: 3,
       errorMessage: null,
-      metadata: null
+      metadata: null,
+      cleanedUp: false,
+      cleanedUpAt: null,
+      cleanupStats: null
     };
 
     beforeEach(() => {
@@ -481,7 +487,10 @@ describe('BackgroundJobService', () => {
       retryCount: 0,
       maxRetries: 3,
       errorMessage: null,
-      metadata: '{}'
+      metadata: '{}',
+      cleanedUp: false,
+      cleanedUpAt: null,
+      cleanupStats: null
     };
 
     const mockDocument = {
@@ -564,7 +573,7 @@ describe('BackgroundJobService', () => {
       expect(mockPrisma.processingJob.update).toHaveBeenCalledWith({
         where: { id: 'job-1' },
         data: {
-          status: JobStatus.COMPLETED,
+          status: JobStatus.FINISHED,
           percentage: 100,
           summary: 'markdown-conversion completed immediately',
           endDate: expect.any(Date),
@@ -665,7 +674,7 @@ describe('BackgroundJobService', () => {
       expect(mockPrisma.processingJob.update).toHaveBeenCalledWith({
         where: { id: 'job-1' },
         data: {
-          status: JobStatus.COMPLETED,
+          status: JobStatus.FINISHED,
           percentage: 100,
           summary: 'markdown-conversion completed immediately',
           endDate: expect.any(Date),

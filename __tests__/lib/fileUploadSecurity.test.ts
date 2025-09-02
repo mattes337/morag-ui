@@ -21,7 +21,12 @@ class MockFile implements File {
 
   arrayBuffer(): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();
-    return Promise.resolve(encoder.encode(this.content).buffer);
+    return Promise.resolve(encoder.encode(this.content).buffer as ArrayBuffer);
+  }
+
+  bytes(): Promise<Uint8Array> {
+    const encoder = new TextEncoder();
+    return Promise.resolve(encoder.encode(this.content));
   }
 
   slice(start?: number, end?: number, contentType?: string): Blob {
@@ -32,6 +37,10 @@ class MockFile implements File {
       arrayBuffer: () => {
         const encoder = new TextEncoder();
         return Promise.resolve(encoder.encode(slicedContent).buffer);
+      },
+      bytes: () => {
+        const encoder = new TextEncoder();
+        return Promise.resolve(encoder.encode(slicedContent));
       },
       slice: (s?: number, e?: number, ct?: string) => this.slice(s, e, ct),
       stream: () => { throw new Error('Method not implemented.'); },

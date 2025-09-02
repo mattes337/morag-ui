@@ -43,8 +43,8 @@ export default function RealmManagementPage() {
                         domain: contextRealm.domain,
                         userRole: contextRealm.userRole || 'VIEWER',
                         userCount: contextRealm.userCount || 0,
-                        createdAt: new Date(contextRealm.createdAt),
-                        updatedAt: new Date(contextRealm.updatedAt)
+                        createdAt: contextRealm.createdAt.toISOString(),
+                        updatedAt: contextRealm.updatedAt.toISOString()
                     });
                     setIsLoading(false);
                     return;

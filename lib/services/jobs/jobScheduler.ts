@@ -61,6 +61,113 @@ export class JobScheduler {
   }
 
   /**
+   * Get scheduler statistics
+   */
+  async getStats(): Promise<{
+    isRunning: boolean;
+    pendingJobs: number;
+    processingJobs: number;
+    completedJobs: number;
+    failedJobs: number;
+  }> {
+    const [pending, processing, completed, failed] = await Promise.all([
+      prisma.processingJob.count({ where: { status: JobStatus.PENDING } }),
+      prisma.processingJob.count({ where: { status: JobStatus.PROCESSING } }),
+      prisma.processingJob.count({ where: { status: JobStatus.FINISHED } }),
+      prisma.processingJob.count({ where: { status: JobStatus.FAILED } })
+    ]);
+
+    return {
+      isRunning: this.isRunning,
+      pendingJobs: pending,
+      processingJobs: processing,
+      completedJobs: completed,
+      failedJobs: failed
+    };
+  }
+
+  /**
+   * Get scheduler configuration
+   */
+  getConfig(): {
+    isRunning: boolean;
+    intervalMs: number;
+  } {
+    return {
+      isRunning: this.isRunning,
+      intervalMs: 30000 // Default interval
+    };
+  }
+
+  /**
+   * Update scheduler configuration
+   */
+  updateConfig(config: { intervalMs?: number }): void {
+    if (config.intervalMs && this.isRunning) {
+      // Restart with new interval
+      this.stop();
+      this.start(config.intervalMs);
+    }
+  }
+
+  /**
+   * Restart the scheduler
+   */
+  restart(): void {
+    this.stop();
+    this.start();
+  }
+
+  /**
+   * Trigger immediate processing
+   */
+  async triggerProcessing(): Promise<void> {
+    await this.scheduleJobs();
+  }
+
+  /**
+   * Schedule document processing
+   */
+  async scheduleDocumentProcessing(documentId: string, stages?: ProcessingStage[]): Promise<void> {
+    if (!stages || stages.length === 0) {
+      // Default processing stages
+      stages = [
+        ProcessingStage.MARKDOWN_CONVERSION,
+        ProcessingStage.MARKDOWN_OPTIMIZER,
+        ProcessingStage.CHUNKER,
+        ProcessingStage.FACT_GENERATOR,
+        ProcessingStage.INGESTOR
+      ];
+    }
+
+    for (const stage of stages) {
+      await jobManager.createJob({
+        documentId,
+        stage,
+        priority: 1
+      });
+    }
+  }
+
+  /**
+   * Cancel all jobs for a document
+   */
+  async cancelDocumentJobs(documentId: string): Promise<void> {
+    await prisma.processingJob.updateMany({
+      where: {
+        documentId,
+        status: {
+          in: [JobStatus.PENDING, JobStatus.PROCESSING]
+        }
+      },
+      data: {
+        status: JobStatus.CANCELLED,
+        errorMessage: 'Cancelled by user'
+      }
+    });
+  }
+
+  /**
    * Main scheduling logic - find documents that need jobs and create them
    */
   private async scheduleJobs(): Promise<void> {

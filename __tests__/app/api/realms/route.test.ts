@@ -31,11 +31,12 @@ jest.mock('../../../../lib/database', () => ({
 }));
 
 // Import after mocking
-import { requireUnifiedAuth } from '../../../../lib/middleware/unifiedAuth';
+import { requireUnifiedAuth, getUnifiedAuth } from '../../../../lib/middleware/unifiedAuth';
 import { RealmService } from '../../../../lib/services/realmService';
 import { GET, POST } from '../../../../app/api/realms/route';
 
 const mockRequireUnifiedAuth = jest.mocked(requireUnifiedAuth);
+const mockGetAuthUser = jest.mocked(getUnifiedAuth);
 const mockRealmService = RealmService as jest.Mocked<typeof RealmService>;
 
 describe('/api/realms', () => {
@@ -169,11 +170,12 @@ describe('/api/realms', () => {
 
         it('should return 400 for invalid data', async () => {
             const mockAuthUser = {
+                success: true,
                 userId: 'user1',
                 email: 'test@example.com',
                 role: 'USER',
                 name: 'Test User',
-                authMethod: 'jwt' as const,
+                authMethod: 'session' as const,
                 id: 'user1',
             };
 
@@ -195,11 +197,12 @@ describe('/api/realms', () => {
 
         it('should handle service errors', async () => {
             const mockAuthUser = {
+                success: true,
                 userId: 'user1',
                 email: 'test@example.com',
                 role: 'USER',
                 name: 'Test User',
-                authMethod: 'jwt' as const,
+                authMethod: 'session' as const,
                 id: 'user1',
             };
 
@@ -222,11 +225,12 @@ describe('/api/realms', () => {
 
         it('should handle malformed JSON', async () => {
             const mockAuthUser = {
+                success: true,
                 userId: 'user1',
                 email: 'test@example.com',
                 role: 'USER',
                 name: 'Test User',
-                authMethod: 'jwt' as const,
+                authMethod: 'session' as const,
                 id: 'user1',
             };
 

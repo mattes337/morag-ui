@@ -73,7 +73,7 @@ describe('Document Processing Workflow', () => {
       expect(fullyProcessed).toBeDefined();
       
       const markdownExecution = fullyProcessed.stageExecutions.find(
-        exec => exec.stage === 'MARKDOWN_CONVERSION'
+        (exec: any) => exec.stage === 'MARKDOWN_CONVERSION'
       );
       expect(markdownExecution).toBeDefined();
       expect(markdownExecution.status).toBe('COMPLETED');
@@ -84,7 +84,7 @@ describe('Document Processing Workflow', () => {
       expect(failedDoc).toBeDefined();
       
       const failedExecution = failedDoc.stageExecutions.find(
-        exec => exec.status === 'FAILED'
+        (exec: any) => exec.status === 'FAILED'
       );
       expect(failedExecution).toBeDefined();
       expect(failedExecution.errorMessage).toBeTruthy();
@@ -96,7 +96,7 @@ describe('Document Processing Workflow', () => {
       expect(runningDoc.stageStatus).toBe('RUNNING');
       
       const runningExecution = runningDoc.stageExecutions.find(
-        exec => exec.status === 'RUNNING'
+        (exec: any) => exec.status === 'RUNNING'
       );
       expect(runningExecution).toBeDefined();
     });
@@ -150,7 +150,7 @@ describe('Document Processing Workflow', () => {
       expect(fullyProcessed).toBeDefined();
       
       const completedStages = fullyProcessed.stageExecutions.filter(
-        exec => exec.status === 'COMPLETED'
+        (exec: any) => exec.status === 'COMPLETED'
       );
       
       // Should have all 4 stages completed (MARKDOWN_CONVERSION, CHUNKER, FACT_GENERATOR, INGESTOR)
@@ -162,7 +162,7 @@ describe('Document Processing Workflow', () => {
       expect(partialDoc).toBeDefined();
       
       const completedStages = partialDoc.stageExecutions.filter(
-        exec => exec.status === 'COMPLETED'
+        (exec: any) => exec.status === 'COMPLETED'
       );
       
       // Should have only 1 stage completed (MARKDOWN_CONVERSION)
