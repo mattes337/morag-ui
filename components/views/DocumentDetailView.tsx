@@ -611,9 +611,18 @@ export function DocumentDetailView({
     };
 
     const isDocumentFullyProcessed = (): boolean => {
+        // Check if document is fully processed based on stage status
+        if (document.stageStatus === 'COMPLETED' && document.currentStage === 'INGESTOR') {
+            return true;
+        }
+
+        // Fallback: check if all stages are completed
         const allStages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
         const completedStages = stageInfos.filter(stage => stage.status === 'COMPLETED').map(stage => stage.stage);
-        return allStages.every(stage => completedStages.includes(stage)) && document.state === 'ingested';
+        const allStagesCompleted = allStages.every(stage => completedStages.includes(stage));
+
+        // Document is fully processed if all stages are completed OR if state is ingested
+        return allStagesCompleted || document.state === 'ingested';
     };
 
     const getNextStage = (): string | null => {
@@ -777,13 +786,57 @@ export function DocumentDetailView({
             if (originalFile) {
                 // Use the actual uploaded PDF file with the view endpoint
                 const pdfUrl = `/api/files/${originalFile.id}/view`;
+
                 return (
-                    <div className="w-full h-96 sm:h-[500px] lg:h-[600px] border border-gray-300 rounded-lg overflow-hidden">
-                        <iframe
-                            src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(window.location.origin + pdfUrl)}`}
-                            className="w-full h-full"
-                            title={`PDF Viewer - ${document.name}`}
-                        />
+                    <div className="w-full h-96 sm:h-[500px] lg:h-[600px] border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="w-full h-full flex flex-col">
+                            {/* PDF Viewer Header */}
+                            <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
+                                <span className="text-sm font-medium truncate">{document.name}</span>
+                                <div className="flex items-center space-x-2">
+                                    <a
+                                        href={pdfUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded transition-colors"
+                                    >
+                                        Open in New Tab
+                                    </a>
+                                    <a
+                                        href={pdfUrl}
+                                        download={document.name}
+                                        className="text-xs bg-green-600 hover:bg-green-700 px-2 py-1 rounded transition-colors"
+                                    >
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* PDF Embed */}
+                            <div className="flex-1 relative">
+                                <iframe
+                                    src={pdfUrl}
+                                    className="w-full h-full border-0"
+                                    title={`PDF Viewer - ${document.name}`}
+                                    onError={() => {
+                                        console.error('Failed to load PDF:', pdfUrl);
+                                    }}
+                                />
+
+                                {/* Fallback overlay for PDF.js if needed */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <div className="bg-white bg-opacity-90 rounded-lg p-4 text-center hidden" id={`pdf-fallback-${originalFile.id}`}>
+                                            <div className="text-4xl mb-2">📄</div>
+                                            <p className="text-gray-700 font-medium">PDF Preview</p>
+                                            <p className="text-sm text-gray-600 mt-1">
+                                                If the PDF doesn't load, try opening it in a new tab
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 );
             } else {
@@ -965,16 +1018,31 @@ export function DocumentDetailView({
                     )}
                 </div>
 
-                {/* Stage Control Panel */}
-                <StageControlPanel
-                    key={`stages-${stageInfos.map(s => `${s.stage}-${s.status}`).join('-')}`}
-                    documentId={document.id}
-                    stages={stageInfos}
-                    processingMode={processingMode}
-                    onExecuteStage={handleExecuteStage}
-                    onExecuteChain={handleExecuteChain}
-                    isLoading={isProcessing}
-                />
+                {/* Stage Control Panel - Only show if document is not fully processed */}
+                {!isDocumentFullyProcessed() && (
+                    <StageControlPanel
+                        key={`stages-${stageInfos.map(s => `${s.stage}-${s.status}`).join('-')}`}
+                        documentId={document.id}
+                        stages={stageInfos}
+                        processingMode={processingMode}
+                        onExecuteStage={handleExecuteStage}
+                        onExecuteChain={handleExecuteChain}
+                        isLoading={isProcessing}
+                    />
+                )}
+
+                {/* Completed stages summary for fully processed documents */}
+                {isDocumentFullyProcessed() && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 text-green-700 mb-2">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="font-medium">All Processing Stages Completed</span>
+                        </div>
+                        <div className="text-sm text-green-600">
+                            This document has been fully processed through all stages and is ready for use.
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Main Content Tabs */}

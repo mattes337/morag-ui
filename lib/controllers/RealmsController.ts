@@ -13,6 +13,7 @@ interface RealmsActions {
   handleSelectRealm: (realm: any) => void;
   handlePromptRealm: (realm: any) => void;
   handleViewRealm: (realm: any) => void;
+  handleEditRealm: (realm: any) => void;
 }
 
 export function useRealmsController(): ControllerHook<RealmsState, RealmsActions> {
@@ -97,9 +98,17 @@ export function useRealmsController(): ControllerHook<RealmsState, RealmsActions
   }, [logger, setCurrentRealm, setSelectedDocument, navigationActions]);
 
   const handleViewRealm = useCallback((realm: any) => {
-    logger.trace('Viewing realm details', { 
-      realmId: realm.id, 
-      realmName: realm.name 
+    logger.trace('Viewing realm details', {
+      realmId: realm.id,
+      realmName: realm.name
+    });
+    navigationActions.navigateTo(`/realms/${realm.id}`);
+  }, [logger, navigationActions]);
+
+  const handleEditRealm = useCallback((realm: any) => {
+    logger.trace('Editing realm', {
+      realmId: realm.id,
+      realmName: realm.name
     });
     navigationActions.navigateTo(`/realms/${realm.id}`);
   }, [logger, navigationActions]);
@@ -107,7 +116,8 @@ export function useRealmsController(): ControllerHook<RealmsState, RealmsActions
   const actions: RealmsActions = {
     handleSelectRealm,
     handlePromptRealm,
-    handleViewRealm
+    handleViewRealm,
+    handleEditRealm
   };
 
   return {

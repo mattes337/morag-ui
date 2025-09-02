@@ -108,6 +108,19 @@ export function RealmsView({
                                         Default
                                     </span>
                                 )}
+                                {/* Edit pencil icon */}
+                                {onEditRealm && (realm.userRole === 'OWNER' || realm.userRole === 'ADMIN') && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditRealm(realm);
+                                        }}
+                                        className="p-1 hover:bg-blue-100 rounded transition-colors group/edit"
+                                        title="Edit realm"
+                                    >
+                                        <Edit className="w-4 h-4 text-gray-400 group-hover/edit:text-blue-600" />
+                                    </button>
+                                )}
                                 <button
                                     onClick={(e) => toggleExpanded(realm.id, e)}
                                     className="p-1 hover:bg-gray-100 rounded transition-colors"

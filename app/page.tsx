@@ -24,6 +24,7 @@ export default function RealmsPage() {
             onSelectRealm={actions.handleSelectRealm}
             onPromptRealm={actions.handlePromptRealm}
             onViewRealm={actions.handleViewRealm}
+            onEditRealm={actions.handleEditRealm}
             data-oid="bs7d6n9"
         />
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import { Realm, Document } from '../../types';
-import { FileText, Plus, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { FileText, Plus, CheckCircle, XCircle, Loader2, File, FileVideo, FileAudio, Globe, Youtube, FileImage, FileSpreadsheet, Presentation } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
 import { Badge } from '../ui/badge';
@@ -30,24 +30,121 @@ export function DocumentsView({
     ...props
 }: DocumentsViewProps) {
 
+    // Get file type icon based on document type and subtype
+    const getFileTypeIcon = (type: string, subType?: string) => {
+        const iconClass = "w-6 h-6"; // Increased from w-4 h-4 to w-6 h-6
 
-    const getStatusIcon = (state: string, hasFailedJobs?: boolean) => {
-        if (hasFailedJobs) {
-            return <XCircle className="w-4 h-4 text-red-500" />;
-        }
-
-        switch (state) {
-            case 'pending':
-                return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
-            case 'ingesting':
-                return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-            case 'ingested':
-                return <CheckCircle className="w-4 h-4 text-green-500" />;
-            case 'deleted':
-                return <XCircle className="w-4 h-4 text-red-500" />;
+        switch (type) {
+            case 'pdf':
+                return <File className={`${iconClass} text-red-600`} />;
+            case 'youtube':
+                return <FileVideo className={`${iconClass} text-red-500`} />;
+            case 'website':
+                return <Globe className={`${iconClass} text-blue-500`} />;
+            case 'markdown':
+                return <FileText className={`${iconClass} text-blue-600`} />;
+            case 'video':
+                return <FileVideo className={`${iconClass} text-purple-600`} />;
+            case 'audio':
+                return <FileAudio className={`${iconClass} text-green-600`} />;
+            case 'document':
+                switch (subType) {
+                    case 'pdf':
+                        return <File className={`${iconClass} text-red-600`} />;
+                    case 'word':
+                        return <FileText className={`${iconClass} text-blue-600`} />;
+                    case 'excel':
+                        return <FileSpreadsheet className={`${iconClass} text-green-600`} />;
+                    case 'powerpoint':
+                        return <Presentation className={`${iconClass} text-orange-600`} />;
+                    case 'markdown':
+                        return <FileText className={`${iconClass} text-blue-600`} />;
+                    case 'text':
+                        return <FileText className={`${iconClass} text-gray-600`} />;
+                    default:
+                        return <FileText className={`${iconClass} text-gray-600`} />;
+                }
             default:
-                return <FileText className="w-4 h-4 text-gray-500" />;
+                return <FileText className={`${iconClass} text-gray-600`} />;
         }
+    };
+
+    // Get compound icon with loading overlay for processing documents
+    const getDocumentIcon = (doc: Document) => {
+        const isProcessing = doc.state === 'ingesting' || doc.state === 'pending';
+        const hasFailedJobs = doc.processingJobs?.some(job => job.status === 'FAILED');
+
+        return (
+            <div className="relative">
+                {/* Base file type icon */}
+                <div className={isProcessing && !hasFailedJobs ? 'opacity-50' : ''}>
+                    {getFileTypeIcon(doc.type, doc.subType)}
+                </div>
+
+                {/* Processing overlay */}
+                {isProcessing && !hasFailedJobs && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                    </div>
+                )}
+
+                {/* Error overlay */}
+                {hasFailedJobs && (
+                    <div className="absolute -top-1 -right-1">
+                        <XCircle className="w-3 h-3 text-red-500" />
+                    </div>
+                )}
+
+                {/* Success overlay */}
+                {doc.state === 'ingested' && !hasFailedJobs && (
+                    <div className="absolute -top-1 -right-1">
+                        <CheckCircle className="w-3 h-3 text-green-500" />
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Get proper document state display
+    const getDocumentState = (doc: Document) => {
+        const hasFailedJobs = doc.processingJobs?.some(job => job.status === 'FAILED');
+
+        if (hasFailedJobs) {
+            return 'failed';
+        }
+
+        // Map current stage to proper state if document is still processing
+        if (doc.state === 'ingesting' && doc.currentStage) {
+            return doc.currentStage.toLowerCase();
+        }
+
+        return doc.state;
+    };
+
+    // Get content stats display
+    const getContentStats = (doc: Document) => {
+        const chunks = doc.chunks || 0;
+        const quality = Math.round((doc.quality || 0) * 100);
+
+        return (
+            <div className="text-sm text-gray-600">
+                <div>{chunks} chunks</div>
+                <div>{quality}% quality</div>
+            </div>
+        );
+    };
+
+    // Get document type display (single line)
+    const getDocumentTypeDisplay = (doc: Document) => {
+        const description = getDocumentTypeDescription(doc.type, doc.subType);
+        return (
+            <div className="text-sm text-gray-600">
+                {description}
+                {doc.subType && doc.subType !== doc.type && (
+                    <span className="text-xs text-gray-400 ml-1">({doc.subType})</span>
+                )}
+            </div>
+        );
     };
 
     // Show loading state while data is being fetched
@@ -147,7 +244,7 @@ export function DocumentsView({
                             <tr key={doc.id}>
                                 <td className="px-3 sm:px-6 py-4 min-w-0 w-1/4">
                                     <div className="flex items-center space-x-3">
-                                        {getStatusIcon(doc.state, doc.processingJobs?.some(job => job.status === 'FAILED'))}
+                                        {getDocumentIcon(doc)}
                                         <div className="text-sm font-medium min-w-0 flex-1">
                                             <button
                                                 onClick={(e) => {
@@ -166,12 +263,7 @@ export function DocumentsView({
                                     </div>
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden sm:table-cell">
-                                    <div>
-                                        <div className="font-medium">{getDocumentTypeDescription(doc.type, doc.subType)}</div>
-                                        {doc.subType && doc.subType !== 'unknown' && (
-                                            <div className="text-xs text-gray-500">{doc.subType}</div>
-                                        )}
-                                    </div>
+                                    {getDocumentTypeDisplay(doc)}
                                 </td>
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                     <div className="flex justify-center">
@@ -179,13 +271,9 @@ export function DocumentsView({
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 Completed
                                             </span>
-                                        ) : doc.currentStage ? (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {doc.currentStage.replace(/_/g, ' ').toLowerCase()}
-                                            </span>
                                         ) : (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                {doc.state}
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                                                {getDocumentState(doc).replace(/_/g, ' ')}
                                             </span>
                                         )}
                                     </div>
@@ -209,19 +297,8 @@ export function DocumentsView({
                                     </div>
                                 </td>
 
-                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-                                    <div>{doc.metadata?.chunk_count || doc.chunks} chunks</div>
-                                    <div className="text-gray-500">
-                                        {(
-                                            (doc.metadata?.extraction_quality || doc.quality) * 100
-                                        ).toFixed(0)}
-                                        % quality
-                                    </div>
-                                    {doc.metadata?.text_length && (
-                                        <div className="text-gray-500">
-                                            {(doc.metadata.text_length / 1000).toFixed(1)}k chars
-                                        </div>
-                                    )}
+                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
+                                    {getContentStats(doc)}
                                 </td>
 
                                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
