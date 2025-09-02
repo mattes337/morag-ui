@@ -41,10 +41,10 @@ export default function RealmManagementPage() {
                         name: contextRealm.name,
                         description: contextRealm.description,
                         domain: contextRealm.domain,
-                        userRole: contextRealm.userRole,
+                        userRole: contextRealm.userRole || 'VIEWER',
                         userCount: contextRealm.userCount || 0,
-                        createdAt: contextRealm.createdAt,
-                        updatedAt: contextRealm.updatedAt
+                        createdAt: new Date(contextRealm.createdAt),
+                        updatedAt: new Date(contextRealm.updatedAt)
                     });
                     setIsLoading(false);
                     return;

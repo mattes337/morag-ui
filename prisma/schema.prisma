@@ -50,10 +50,18 @@ model Realm {
   name             String
   description      String?
   domain           String?
+
+  // Legacy prompt fields (for backward compatibility)
   ingestionPrompt  String?
   systemPrompt     String?
   extractionPrompt String?
   domainPrompt     String?
+
+  // New configuration fields
+  llmModelConfig   String?             // JSON string for LLMModelConfig
+  stageConfigs     String?             // JSON string for StageConfigs
+  globalConfig     String?             // JSON string for global configuration
+
   documentCount    Int                 @default(0)
   isDefault        Boolean             @default(false)
   lastUpdated      DateTime            @default(now())

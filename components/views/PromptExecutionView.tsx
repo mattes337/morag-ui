@@ -4,18 +4,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Send, 
-  Search, 
-  Brain, 
-  FileText, 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Send,
+  Search,
+  Brain,
+  FileText,
   Clock,
   Copy,
   Download,
   Sparkles,
   History,
   Settings,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 
 interface SearchResult {
@@ -56,6 +58,7 @@ export function PromptExecutionView({ realmId, realmName }: PromptExecutionViewP
   const [includeContent, setIncludeContent] = useState(false);
   const [maxResults, setMaxResults] = useState(10);
   const [showSettings, setShowSettings] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -82,34 +85,38 @@ export function PromptExecutionView({ realmId, realmName }: PromptExecutionViewP
 
     try {
       setIsExecuting(true);
-      
-      const response = await fetch('/api/v1/search', {
+      setError(null); // Clear any previous errors
+
+      const response = await fetch('/api/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include session cookies
         body: JSON.stringify({
           query: query.trim(),
           type: searchType,
           limit: maxResults,
           includeContent,
           includeMetadata: true,
+          realmId: realmId, // Include realm ID for session-based auth
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to execute prompt');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       // Create prompt response
       const promptResponse: PromptResponse = {
         id: Date.now().toString(),
         query: query.trim(),
         response: generateResponse(data.results),
         searchResults: data.results || [],
-        executionTime: data.executionTime || 0,
+        executionTime: data.executionTime || data.searchTime || 0,
         timestamp: new Date().toISOString(),
         type: detectQueryType(query.trim()),
       };
@@ -118,7 +125,8 @@ export function PromptExecutionView({ realmId, realmName }: PromptExecutionViewP
       setQuery('');
     } catch (error) {
       console.error('Failed to execute prompt:', error);
-      alert('Failed to execute prompt. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to execute prompt. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsExecuting(false);
     }
@@ -291,7 +299,10 @@ export function PromptExecutionView({ realmId, realmName }: PromptExecutionViewP
                 <textarea
                   ref={textareaRef}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    if (error) setError(null); // Clear error when user starts typing
+                  }}
                   onKeyPress={handleKeyPress}
                   placeholder="What would you like to know? (Press Enter to search, Shift+Enter for new line)"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -312,7 +323,17 @@ export function PromptExecutionView({ realmId, realmName }: PromptExecutionViewP
                 </div>
               </div>
             </div>
-            
+
+            {/* Error Display */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Quick Suggestions */}
             <div className="flex flex-wrap gap-2">
               <span className="text-sm text-gray-600">Try:</span>

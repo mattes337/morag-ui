@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RealmPromptEditor } from '@/components/forms/RealmPromptEditor';
-import { RealmPromptConfig } from '@/lib/types/domain';
+import { RealmConfigEditor } from '@/components/forms/RealmConfigEditor';
+import { RealmPromptConfig, RealmConfig } from '@/lib/types/domain';
+import { DOMAIN_PROMPT_TEMPLATES, getDomainPromptTemplate } from '@/lib/constants/defaultPrompts';
 import { toast } from 'sonner';
 import {
   Settings,
@@ -67,6 +69,8 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<keyof RealmPromptConfig>('domain');
+  const [realmConfig, setRealmConfig] = useState<RealmConfig>({});
+  const [configMode, setConfigMode] = useState<'simple' | 'advanced'>('simple');
   const [editForm, setEditForm] = useState({
     name: realm.name,
     description: realm.description || '',
@@ -97,8 +101,16 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
         const usersData = await usersResponse.json();
         setUsers(usersData.users || []);
       }
+
+      // Load realm configuration
+      const configResponse = await fetch(`/api/realms/${realm.id}/config`);
+      if (configResponse.ok) {
+        const configData = await configResponse.json();
+        setRealmConfig(configData);
+      }
     } catch (error) {
       console.error('Failed to load realm data:', error);
+      toast.error('Failed to load realm data');
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +158,32 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
     } catch (error: any) {
       console.error('Failed to update realm:', error);
       toast.error(error.message || 'Failed to update realm');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveRealmConfig = async () => {
+    try {
+      setIsSaving(true);
+
+      const response = await fetch(`/api/realms/${realm.id}/config`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(realmConfig),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update realm configuration');
+      }
+
+      toast.success('Realm configuration updated successfully');
+    } catch (error: any) {
+      console.error('Error updating realm configuration:', error);
+      toast.error(error.message || 'Failed to update realm configuration');
     } finally {
       setIsSaving(false);
     }
@@ -286,11 +324,12 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="servers">Servers</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
+          <TabsTrigger value="config">Advanced Config</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -500,11 +539,36 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                     <h3 className="text-sm font-medium text-gray-900 mb-4">Select Prompt</h3>
                     <div className="space-y-2">
                       {[
-                        { key: 'domain' as keyof RealmPromptConfig, label: 'Domain', description: 'Domain specification' },
-                        { key: 'ingestionPrompt' as keyof RealmPromptConfig, label: 'Ingestion Prompt', description: 'Document processing instructions' },
-                        { key: 'systemPrompt' as keyof RealmPromptConfig, label: 'System Prompt', description: 'Query response instructions' },
-                        { key: 'extractionPrompt' as keyof RealmPromptConfig, label: 'Extraction Prompt', description: 'Entity extraction instructions' },
-                        { key: 'domainPrompt' as keyof RealmPromptConfig, label: 'Domain Context', description: 'Domain-specific context' }
+                        {
+                          key: 'domain' as keyof RealmPromptConfig,
+                          label: 'Domain',
+                          description: 'Domain context (medical, legal, technical, etc.)',
+                          stages: 'All stages'
+                        },
+                        {
+                          key: 'ingestionPrompt' as keyof RealmPromptConfig,
+                          label: 'Ingestion Prompt',
+                          description: 'Document conversion and optimization instructions',
+                          stages: 'Markdown conversion, Optimizer'
+                        },
+                        {
+                          key: 'systemPrompt' as keyof RealmPromptConfig,
+                          label: 'System Prompt',
+                          description: 'User query response instructions',
+                          stages: 'Query responses, Ingestor'
+                        },
+                        {
+                          key: 'extractionPrompt' as keyof RealmPromptConfig,
+                          label: 'Extraction Prompt',
+                          description: 'Fact and entity extraction instructions',
+                          stages: 'Fact generator'
+                        },
+                        {
+                          key: 'domainPrompt' as keyof RealmPromptConfig,
+                          label: 'Domain Context',
+                          description: 'Domain-specific context and guidelines',
+                          stages: 'All stages'
+                        }
                       ].map((prompt) => (
                         <button
                           key={prompt.key}
@@ -517,6 +581,9 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                         >
                           <div className="font-medium text-sm">{prompt.label}</div>
                           <div className="text-xs text-gray-500 mt-1">{prompt.description}</div>
+                          <div className="text-xs text-blue-600 mt-1 font-medium">
+                            Used in: {prompt.stages}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -534,13 +601,42 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                           { key: 'domainPrompt', label: 'Domain Context' }
                         ].find(p => p.key === selectedPrompt)?.label}
                       </h3>
-                      <Button
-                        onClick={handleSaveRealm}
-                        disabled={isSaving}
-                        size="sm"
-                      >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              const template = getDomainPromptTemplate(e.target.value);
+                              if (template) {
+                                setEditForm({
+                                  ...editForm,
+                                  prompts: {
+                                    domain: template.domain,
+                                    ingestionPrompt: template.ingestionPrompt,
+                                    systemPrompt: template.systemPrompt,
+                                    extractionPrompt: template.extractionPrompt,
+                                    domainPrompt: template.domainPrompt
+                                  }
+                                });
+                                toast.success(`Applied ${e.target.value} domain template`);
+                              }
+                            }
+                          }}
+                          className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          defaultValue=""
+                        >
+                          <option value="">Apply Template</option>
+                          <option value="medical">Medical</option>
+                          <option value="legal">Legal</option>
+                          <option value="technical">Technical</option>
+                        </select>
+                        <Button
+                          onClick={handleSaveRealm}
+                          disabled={isSaving}
+                          size="sm"
+                        >
+                          {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      </div>
                     </div>
                     <textarea
                       value={editForm.prompts[selectedPrompt] || ''}
@@ -553,27 +649,87 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                       })}
                       className="w-full h-80 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
                       placeholder={`Enter ${[
-                        { key: 'domain', placeholder: 'e.g., legal, medical, technical, academic' },
-                        { key: 'ingestionPrompt', placeholder: 'Instructions for processing documents during ingestion...' },
-                        { key: 'systemPrompt', placeholder: 'Instructions for responding to user queries...' },
-                        { key: 'extractionPrompt', placeholder: 'Instructions for extracting entities from content...' },
-                        { key: 'domainPrompt', placeholder: 'Domain-specific context and guidelines...' }
+                        { key: 'domain', placeholder: 'e.g., medical, legal, technical, academic, research, financial' },
+                        { key: 'ingestionPrompt', placeholder: 'Instructions for document conversion and optimization. Example: "Process medical documents focusing on clinical findings, diagnoses, and treatments. Preserve medical terminology and ICD codes."' },
+                        { key: 'systemPrompt', placeholder: 'Instructions for responding to user queries. Example: "Respond to medical queries with evidence-based information. Always cite sources and indicate confidence levels."' },
+                        { key: 'extractionPrompt', placeholder: 'Instructions for fact and entity extraction. Example: "Extract medical facts including symptoms, diagnoses, treatments, medications, and dosages. Include confidence scores for clinical assertions."' },
+                        { key: 'domainPrompt', placeholder: 'Domain-specific context applied to all stages. Example: "Medical domain context: Focus on clinical accuracy, patient safety, and evidence-based medicine principles."' }
                       ].find(p => p.key === selectedPrompt)?.placeholder || ''}`}
                       disabled={isSaving}
                     />
-                    <p className="text-xs text-gray-500 mt-2">
-                      {selectedPrompt === 'domain' && 'Specify the domain for specialized processing (optional)'}
-                      {selectedPrompt === 'ingestionPrompt' && 'Prompt used when processing documents for ingestion (optional - uses default if empty)'}
-                      {selectedPrompt === 'systemPrompt' && 'Prompt used when responding to user queries (optional - uses default if empty)'}
-                      {selectedPrompt === 'extractionPrompt' && 'Prompt used for entity extraction from documents (optional - uses default if empty)'}
-                      {selectedPrompt === 'domainPrompt' && 'Additional context specific to this domain (optional - uses default if empty)'}
-                    </p>
+                    <div className="text-xs text-gray-500 mt-2 space-y-1">
+                      {selectedPrompt === 'domain' && (
+                        <div>
+                          <p><strong>Domain Context:</strong> Specify the domain for specialized processing (e.g., medical, legal, technical).</p>
+                          <p><strong>Backend API:</strong> Passed as <code className="bg-gray-100 px-1 rounded">domain</code> parameter to all stages.</p>
+                          <p><strong>Valid values:</strong> general, medical, legal, technical, academic, research, financial, scientific</p>
+                        </div>
+                      )}
+                      {selectedPrompt === 'ingestionPrompt' && (
+                        <div>
+                          <p><strong>Document Processing:</strong> Instructions for converting and optimizing documents during ingestion.</p>
+                          <p><strong>Backend API:</strong> Passed as <code className="bg-gray-100 px-1 rounded">custom_instructions</code> to markdown-conversion and markdown-optimizer stages.</p>
+                          <p><strong>Use for:</strong> Document format handling, content preservation, domain-specific processing rules.</p>
+                        </div>
+                      )}
+                      {selectedPrompt === 'systemPrompt' && (
+                        <div>
+                          <p><strong>Query Responses:</strong> Instructions for how the AI should respond to user queries.</p>
+                          <p><strong>Backend API:</strong> Passed as <code className="bg-gray-100 px-1 rounded">custom_instructions</code> to ingestor stage and used for query processing.</p>
+                          <p><strong>Use for:</strong> Response style, citation requirements, confidence levels, domain expertise.</p>
+                        </div>
+                      )}
+                      {selectedPrompt === 'extractionPrompt' && (
+                        <div>
+                          <p><strong>Fact Extraction:</strong> Instructions for extracting facts, entities, and relationships from documents.</p>
+                          <p><strong>Backend API:</strong> Passed as <code className="bg-gray-100 px-1 rounded">custom_instructions</code> to fact-generator stage.</p>
+                          <p><strong>Use for:</strong> Entity types to extract, confidence thresholds, domain-specific extraction rules.</p>
+                        </div>
+                      )}
+                      {selectedPrompt === 'domainPrompt' && (
+                        <div>
+                          <p><strong>Domain Context:</strong> Domain-specific context and guidelines applied to all processing stages.</p>
+                          <p><strong>Backend API:</strong> Passed as <code className="bg-gray-100 px-1 rounded">domain_context</code> to all stages.</p>
+                          <p><strong>Use for:</strong> Domain principles, terminology, quality standards, compliance requirements.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
                     You need OWNER or ADMIN permissions to edit prompts.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="config" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="w-5 h-5" />
+                <span>Advanced Configuration</span>
+              </CardTitle>
+              <p className="text-sm text-gray-600">
+                Configure LLM models and processing stages according to the backend API specification.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {(realm.userRole === 'OWNER' || realm.userRole === 'ADMIN') ? (
+                <RealmConfigEditor
+                  config={realmConfig}
+                  onChange={setRealmConfig}
+                  onSave={handleSaveRealmConfig}
+                  isSaving={isSaving}
+                />
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    You need OWNER or ADMIN permissions to edit advanced configuration.
                   </p>
                 </div>
               )}

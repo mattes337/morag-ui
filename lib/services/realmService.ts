@@ -1,6 +1,6 @@
 import { prisma } from '../database';
 import { Realm, RealmRole, CreateRealmData } from '../../types';
-import { RealmPromptConfig } from '../types/domain';
+import { RealmPromptConfig, RealmConfig, LLMModelConfig, StageConfigs } from '../types/domain';
 import { UserRealm } from '@prisma/client';
 import { getEffectivePrompt } from '../constants/defaultPrompts';
 
@@ -22,6 +22,9 @@ export class RealmService {
             systemPrompt: prismaRealm.systemPrompt || undefined,
             extractionPrompt: prismaRealm.extractionPrompt || undefined,
             domainPrompt: prismaRealm.domainPrompt || undefined,
+            llmModelConfig: prismaRealm.llmModelConfig || undefined,
+            stageConfigs: prismaRealm.stageConfigs || undefined,
+            globalConfig: prismaRealm.globalConfig || undefined,
         };
     }
 
@@ -320,9 +323,145 @@ export class RealmService {
         };
     }
 
+    // New methods for complete realm configuration
+    static async getRealmConfig(realmId: string, userId: string): Promise<RealmConfig | null> {
+        const realm = await this.getRealmById(realmId, userId);
+        if (!realm) {
+            return null;
+        }
+
+        const config: RealmConfig = {};
+
+        // Parse LLM model config
+        if (realm.llmModelConfig) {
+            try {
+                config.llm_model_config = JSON.parse(realm.llmModelConfig);
+            } catch (error) {
+                console.error('Error parsing LLM model config:', error);
+            }
+        }
+
+        // Parse stage configs
+        if (realm.stageConfigs) {
+            try {
+                config.stage_configs = JSON.parse(realm.stageConfigs);
+            } catch (error) {
+                console.error('Error parsing stage configs:', error);
+            }
+        }
+
+        // Parse global config
+        if (realm.globalConfig) {
+            try {
+                config.global_config = JSON.parse(realm.globalConfig);
+            } catch (error) {
+                console.error('Error parsing global config:', error);
+            }
+        }
+
+        // If no new config exists, create from legacy prompts
+        if (!config.llm_model_config && !config.stage_configs && !config.global_config) {
+            config.global_config = {
+                domain: realm.domain || undefined,
+                language: 'en'
+            };
+
+            config.stage_configs = {};
+
+            // Map legacy prompts to stage configs
+            if (realm.ingestionPrompt) {
+                config.stage_configs['markdown-conversion'] = {
+                    custom_instructions: realm.ingestionPrompt,
+                    domain: realm.domain || undefined
+                };
+                config.stage_configs['markdown-optimizer'] = {
+                    custom_instructions: realm.ingestionPrompt,
+                    domain: realm.domain || undefined
+                };
+            }
+
+            if (realm.extractionPrompt) {
+                config.stage_configs['fact-generator'] = {
+                    custom_instructions: realm.extractionPrompt,
+                    domain: realm.domain || undefined
+                };
+            }
+
+            if (realm.systemPrompt) {
+                config.stage_configs['ingestor'] = {
+                    custom_instructions: realm.systemPrompt,
+                    domain: realm.domain || undefined
+                };
+            }
+
+            if (realm.domainPrompt) {
+                // Add domain context to all stages
+                Object.keys(config.stage_configs).forEach(stage => {
+                    if (config.stage_configs![stage]) {
+                        (config.stage_configs![stage] as any).domain_context = realm.domainPrompt;
+                    }
+                });
+            }
+        }
+
+        return config;
+    }
+
+    static async updateRealmConfig(realmId: string, userId: string, config: RealmConfig): Promise<Realm | null> {
+        // Check if user has permission to update
+        const userRealm = await this.db.userRealm.findFirst({
+            where: {
+                realmId,
+                userId,
+                role: { in: ['OWNER', 'ADMIN'] }
+            }
+        });
+
+        if (!userRealm) {
+            throw new Error('Insufficient permissions to update realm configuration');
+        }
+
+        const updateData: any = {};
+
+        // Serialize configurations
+        if (config.llm_model_config) {
+            updateData.llmModelConfig = JSON.stringify(config.llm_model_config);
+        }
+
+        if (config.stage_configs) {
+            updateData.stageConfigs = JSON.stringify(config.stage_configs);
+        }
+
+        if (config.global_config) {
+            updateData.globalConfig = JSON.stringify(config.global_config);
+            // Also update legacy domain field
+            if (config.global_config.domain) {
+                updateData.domain = config.global_config.domain;
+            }
+        }
+
+        const realm = await this.db.realm.update({
+            where: { id: realmId },
+            data: updateData
+        });
+
+        return this.convertPrismaRealm(realm);
+    }
+
     static validateRealmPrompts(prompts: RealmPromptConfig): string[] {
         const errors: string[] = [];
 
+        // Validate domain
+        if (prompts.domain) {
+            const validDomains = ['general', 'medical', 'legal', 'technical', 'academic', 'research', 'financial', 'scientific'];
+            if (prompts.domain.trim().length === 0) {
+                errors.push('Domain cannot be empty');
+            } else if (!validDomains.includes(prompts.domain.toLowerCase())) {
+                errors.push(`Domain must be one of: ${validDomains.join(', ')}`);
+            }
+        }
+
+        // Validate prompts are not empty if provided
         if (prompts.ingestionPrompt && prompts.ingestionPrompt.trim().length === 0) {
             errors.push('Ingestion prompt cannot be empty');
         }
@@ -337,6 +476,25 @@ export class RealmService {
 
         if (prompts.domainPrompt && prompts.domainPrompt.trim().length === 0) {
             errors.push('Domain prompt cannot be empty');
+        }
+
+        // Validate prompt lengths (reasonable limits for backend API)
+        const maxPromptLength = 4000; // Reasonable limit for most LLMs
+
+        if (prompts.ingestionPrompt && prompts.ingestionPrompt.length > maxPromptLength) {
+            errors.push(`Ingestion prompt too long (${prompts.ingestionPrompt.length} chars, max ${maxPromptLength})`);
+        }
+
+        if (prompts.systemPrompt && prompts.systemPrompt.length > maxPromptLength) {
+            errors.push(`System prompt too long (${prompts.systemPrompt.length} chars, max ${maxPromptLength})`);
+        }
+
+        if (prompts.extractionPrompt && prompts.extractionPrompt.length > maxPromptLength) {
+            errors.push(`Extraction prompt too long (${prompts.extractionPrompt.length} chars, max ${maxPromptLength})`);
+        }
+
+        if (prompts.domainPrompt && prompts.domainPrompt.length > maxPromptLength) {
+            errors.push(`Domain prompt too long (${prompts.domainPrompt.length} chars, max ${maxPromptLength})`);
         }
 
         return errors;

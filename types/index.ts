@@ -353,6 +353,9 @@ export interface Realm {
     systemPrompt?: string;    // Optional prompt for user queries
     extractionPrompt?: string; // Optional prompt for entity extraction
     domainPrompt?: string;    // Optional domain context prompt
+    llmModelConfig?: string;  // JSON string for LLM model configuration
+    stageConfigs?: string;    // JSON string for stage-specific configurations
+    globalConfig?: string;    // JSON string for global configuration
     documentCount?: number;
     lastUpdated?: string;
     servers?: Server[]; // Associated servers for this realm

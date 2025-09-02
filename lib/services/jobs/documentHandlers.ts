@@ -474,6 +474,141 @@ abstract class BaseDocumentHandler {
       collection: realmServer.server.collection,
     })) || [];
   }
+
+  protected getRealmConfig(document: any): any {
+    const realm = document.realm;
+    if (!realm) return {};
+
+    const config: any = {};
+
+    // Parse new configuration structure
+    if (realm.llmModelConfig) {
+      try {
+        config.llm_model_config = JSON.parse(realm.llmModelConfig);
+      } catch (error) {
+        console.error('Error parsing LLM model config:', error);
+      }
+    }
+
+    if (realm.stageConfigs) {
+      try {
+        config.stage_configs = JSON.parse(realm.stageConfigs);
+      } catch (error) {
+        console.error('Error parsing stage configs:', error);
+      }
+    }
+
+    if (realm.globalConfig) {
+      try {
+        config.global_config = JSON.parse(realm.globalConfig);
+      } catch (error) {
+        console.error('Error parsing global config:', error);
+      }
+    }
+
+    // Include legacy prompts for backward compatibility
+    config.domain = realm.domain || undefined;
+    config.ingestionPrompt = realm.ingestionPrompt || undefined;
+    config.systemPrompt = realm.systemPrompt || undefined;
+    config.extractionPrompt = realm.extractionPrompt || undefined;
+    config.domainPrompt = realm.domainPrompt || undefined;
+
+    return config;
+  }
+
+  // Keep legacy method for backward compatibility
+  protected getRealmPrompts(document: any): any {
+    return this.getRealmConfig(document);
+  }
+
+  protected getBaseStageConfig(stage: string, realmConfig?: any): Record<string, any> {
+    const config: Record<string, any> = {};
+
+    if (realmConfig) {
+      // If we have the new configuration structure, use it
+      if (realmConfig.stage_configs && realmConfig.stage_configs[stage.toLowerCase().replace('_', '-')]) {
+        const stageConfig = realmConfig.stage_configs[stage.toLowerCase().replace('_', '-')];
+        return { ...stageConfig };
+      }
+
+      // If we have global config, apply it
+      if (realmConfig.global_config) {
+        if (realmConfig.global_config.domain) {
+          config.domain = realmConfig.global_config.domain;
+        }
+        if (realmConfig.global_config.language) {
+          config.language = realmConfig.global_config.language;
+        }
+      }
+
+      // Fallback to legacy prompt mapping for backward compatibility
+      if (realmConfig.domain) {
+        config.domain = realmConfig.domain;
+      }
+
+      // Add stage-specific prompts according to backend API documentation
+      switch (stage) {
+        case 'MARKDOWN_CONVERSION':
+          if (realmConfig.ingestionPrompt) {
+            config.custom_instructions = realmConfig.ingestionPrompt;
+          }
+          if (realmConfig.domainPrompt) {
+            config.domain_context = realmConfig.domainPrompt;
+          }
+          config.include_examples = true;
+          config.include_context = true;
+          break;
+
+        case 'MARKDOWN_OPTIMIZER':
+          if (realmConfig.ingestionPrompt) {
+            config.custom_instructions = realmConfig.ingestionPrompt;
+          }
+          if (realmConfig.domainPrompt) {
+            config.domain_context = realmConfig.domainPrompt;
+          }
+          config.include_examples = true;
+          config.include_context = true;
+          break;
+
+        case 'FACT_GENERATOR':
+          if (realmConfig.extractionPrompt) {
+            config.custom_instructions = realmConfig.extractionPrompt;
+          }
+          if (realmConfig.domainPrompt) {
+            config.domain_context = realmConfig.domainPrompt;
+          }
+          config.include_examples = true;
+          config.include_context = true;
+          config.extract_entities = true;
+          config.extract_relations = true;
+          config.min_confidence = 0.7;
+          break;
+
+        case 'CHUNKER':
+          if (realmConfig.domainPrompt) {
+            config.domain_context = realmConfig.domainPrompt;
+          }
+          config.include_context = true;
+          break;
+
+        case 'INGESTOR':
+          if (realmConfig.systemPrompt) {
+            config.custom_instructions = realmConfig.systemPrompt;
+          }
+          if (realmConfig.domainPrompt) {
+            config.domain_context = realmConfig.domainPrompt;
+          }
+          break;
+      }
+
+      // Add default language if not set
+      if (!config.language) {
+        config.language = 'en';
+      }
+    }
+
+    return config;
+  }
 }
 
 /**
@@ -549,12 +684,15 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
+    // Get realm configuration
+    const realmConfig = this.getRealmConfig(document);
+
     // Base request configuration
     const baseRequest = {
       stage: job.stage.toLowerCase().replace('_', '-'),
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
-      config: this.getYouTubeStageConfig(job.stage),
+      config: this.getYouTubeStageConfig(job.stage, realmConfig),
       metadata: {
         jobId: job.id,
         documentName: document.name,
@@ -562,9 +700,15 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
         sourceUrl: content.sourceUrl,
         isUrlDocument: true,
         hasFileContent: false,
-        databaseServers: this.getDatabaseServers(document)
+        databaseServers: this.getDatabaseServers(document),
+        realmPrompts: this.getRealmPrompts(document)
       }
     };
+
+    // Add LLM model configuration if available
+    if (realmConfig.llm_model_config) {
+      (baseRequest as any).llm_model_config = realmConfig.llm_model_config;
+    }
 
     // For YouTube processing, use the markdown-conversion stage with YouTube URL
     if (job.stage === 'MARKDOWN_CONVERSION' && document.type === 'youtube') {
@@ -653,10 +797,13 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
     }
   }
 
-  private getYouTubeStageConfig(stage: string): Record<string, any> {
+  private getYouTubeStageConfig(stage: string, realmPrompts?: any): Record<string, any> {
+    const baseConfig = this.getBaseStageConfig(stage, realmPrompts);
+
     switch (stage) {
       case 'MARKDOWN_CONVERSION':
         return {
+          ...baseConfig,
           include_timestamps: true,
           speaker_diarization: true,
           topic_segmentation: true,
@@ -667,29 +814,33 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
         };
       case 'MARKDOWN_OPTIMIZER':
         return {
+          ...baseConfig,
           fix_transcription_errors: true,
           improve_readability: true,
           preserve_timestamps: true
         };
       case 'CHUNKER':
         return {
+          ...baseConfig,
           chunk_strategy: 'topic',
           chunk_size: 4000,
           generate_summary: true
         };
       case 'FACT_GENERATOR':
         return {
+          ...baseConfig,
           extract_entities: true,
           extract_relations: true,
-          domain: 'general'
+          domain: realmPrompts?.domain || 'general'
         };
       case 'INGESTOR':
         return {
+          ...baseConfig,
           databases: ['qdrant', 'neo4j'],
           collection_name: 'youtube_videos'
         };
       default:
-        return {};
+        return baseConfig;
     }
   }
 
@@ -916,12 +1067,15 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
+    // Get realm configuration
+    const realmConfig = this.getRealmConfig(document);
+
     // Base request configuration
     const baseRequest = {
       stage: job.stage.toLowerCase().replace('_', '-'),
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
-      config: this.getWebsiteStageConfig(job.stage),
+      config: this.getWebsiteStageConfig(job.stage, realmConfig),
       metadata: {
         jobId: job.id,
         documentName: document.name,
@@ -929,9 +1083,15 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
         sourceUrl: content.sourceUrl,
         isUrlDocument: true,
         hasFileContent: false,
-        databaseServers: this.getDatabaseServers(document)
+        databaseServers: this.getDatabaseServers(document),
+        realmPrompts: this.getRealmPrompts(document)
       }
     };
+
+    // Add LLM model configuration if available
+    if (realmConfig.llm_model_config) {
+      (baseRequest as any).llm_model_config = realmConfig.llm_model_config;
+    }
 
     // For first stage (MARKDOWN_CONVERSION), use the source URL
     if (job.stage === 'MARKDOWN_CONVERSION') {
@@ -1012,10 +1172,13 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
     }
   }
 
-  private getWebsiteStageConfig(stage: string): Record<string, any> {
+  private getWebsiteStageConfig(stage: string, realmPrompts?: any): Record<string, any> {
+    const baseConfig = this.getBaseStageConfig(stage, realmPrompts);
+
     switch (stage) {
       case 'MARKDOWN_CONVERSION':
         return {
+          ...baseConfig,
           follow_links: false,
           max_depth: 1,
           extract_metadata: true,
@@ -1026,30 +1189,34 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
         };
       case 'MARKDOWN_OPTIMIZER':
         return {
+          ...baseConfig,
           improve_readability: true,
           normalize_formatting: true,
           enhance_structure: true
         };
       case 'CHUNKER':
         return {
+          ...baseConfig,
           chunk_strategy: 'semantic',
           chunk_size: 3000,
           generate_summary: true
         };
       case 'FACT_GENERATOR':
         return {
+          ...baseConfig,
           extract_entities: true,
           extract_relations: true,
           extract_keywords: true,
-          domain: 'general'
+          domain: realmPrompts?.domain || 'general'
         };
       case 'INGESTOR':
         return {
+          ...baseConfig,
           databases: ['qdrant', 'neo4j'],
           collection_name: 'web_articles'
         };
       default:
-        return {};
+        return baseConfig;
     }
   }
 
@@ -1276,8 +1443,11 @@ export class FileDocumentHandler extends BaseDocumentHandler {
   }): Promise<any> {
     const { document, job } = request;
 
+    // Get realm configuration
+    const realmConfig = this.getRealmConfig(document);
+
     // Build stage-specific configuration according to backend API guide
-    const stageConfig = this.getFileStageConfig(job.stage, content.contentSource);
+    const stageConfig = this.getFileStageConfig(job.stage, content.contentSource, realmConfig);
 
     // For file-based documents in first stage, we should use file upload
     // For URL-based or subsequent stages, use input_files
@@ -1288,8 +1458,8 @@ export class FileDocumentHandler extends BaseDocumentHandler {
       stage: job.stage.toLowerCase().replace('_', '-'),
       output_dir: `./output/${document.id}`,
       webhook_url: this.getWebhookUrl(),
+      config: stageConfig,
       metadata: {
-        ...stageConfig,
         jobId: job.id,
         documentName: document.name,
         realmId: document.realmId,
@@ -1297,9 +1467,15 @@ export class FileDocumentHandler extends BaseDocumentHandler {
         sourceUrl: content.sourceUrl,
         isUrlDocument: !!content.sourceUrl,
         hasFileContent: isFileContent,
-        databaseServers: this.getDatabaseServers(document)
+        databaseServers: this.getDatabaseServers(document),
+        realmPrompts: this.getRealmPrompts(document)
       }
     };
+
+    // Add LLM model configuration if available
+    if (realmConfig.llm_model_config) {
+      (baseRequest as any).llm_model_config = realmConfig.llm_model_config;
+    }
 
     // According to backend API guide:
     // - For file uploads in first stage: use 'file' parameter (handled by moragService)
@@ -1569,25 +1745,30 @@ export class FileDocumentHandler extends BaseDocumentHandler {
     }
   }
 
-  private getFileStageConfig(stage: string, contentSource: string): Record<string, any> {
+  private getFileStageConfig(stage: string, contentSource: string, realmPrompts?: any): Record<string, any> {
+    const baseConfig = this.getBaseStageConfig(stage, realmPrompts);
+
     switch (stage) {
       case 'MARKDOWN_CONVERSION':
         if (contentSource === 'original_file') {
           return {
+            ...baseConfig,
             preserve_formatting: true,
             extract_images: false,
             quality_threshold: 0.8
           };
         }
-        return {};
+        return baseConfig;
       case 'MARKDOWN_OPTIMIZER':
         return {
+          ...baseConfig,
           improve_readability: true,
           normalize_formatting: true,
           enhance_structure: true
         };
       case 'CHUNKER':
         return {
+          ...baseConfig,
           chunk_strategy: 'semantic',
           chunk_size: 4000,
           generate_summary: true,
@@ -1595,18 +1776,20 @@ export class FileDocumentHandler extends BaseDocumentHandler {
         };
       case 'FACT_GENERATOR':
         return {
+          ...baseConfig,
           extract_entities: true,
           extract_relations: true,
           extract_keywords: true,
-          domain: 'general'
+          domain: realmPrompts?.domain || 'general'
         };
       case 'INGESTOR':
         return {
+          ...baseConfig,
           databases: ['qdrant', 'neo4j'],
           collection_name: 'documents'
         };
       default:
-        return {};
+        return baseConfig;
     }
   }
 }
