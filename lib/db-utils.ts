@@ -46,7 +46,11 @@ export function convertPrismaDatabaseToApp(prismaDatabase: any) {
         description: prismaDatabase.description,
         documentCount: prismaDatabase.documentCount,
         lastUpdated: prismaDatabase.lastUpdated
-            ? prismaDatabase.lastUpdated.toISOString().split('T')[0]
+            ? (prismaDatabase.lastUpdated instanceof Date
+                ? prismaDatabase.lastUpdated.toISOString().split('T')[0]
+                : typeof prismaDatabase.lastUpdated === 'string'
+                    ? prismaDatabase.lastUpdated.split('T')[0]
+                    : '')
             : '',
     };
 }
@@ -61,7 +65,11 @@ export function convertPrismaDocumentToApp(prismaDocument: any) {
         chunks: prismaDocument.chunks,
         quality: prismaDocument.quality,
         uploadDate: prismaDocument.uploadDate
-            ? prismaDocument.uploadDate.toISOString().split('T')[0]
+            ? (prismaDocument.uploadDate instanceof Date
+                ? prismaDocument.uploadDate.toISOString().split('T')[0]
+                : typeof prismaDocument.uploadDate === 'string'
+                    ? prismaDocument.uploadDate.split('T')[0]
+                    : '')
             : '',
     };
 }
@@ -71,8 +79,18 @@ export function convertPrismaApiKeyToApp(prismaApiKey: any) {
         id: prismaApiKey.id,
         name: prismaApiKey.name,
         key: prismaApiKey.key,
-        created: prismaApiKey.created.toISOString().split('T')[0],
-        lastUsed: prismaApiKey.lastUsed?.toISOString().split('T')[0] || null,
+        created: prismaApiKey.created instanceof Date
+            ? prismaApiKey.created.toISOString().split('T')[0]
+            : typeof prismaApiKey.created === 'string'
+                ? prismaApiKey.created.split('T')[0]
+                : new Date().toISOString().split('T')[0],
+        lastUsed: prismaApiKey.lastUsed
+            ? (prismaApiKey.lastUsed instanceof Date
+                ? prismaApiKey.lastUsed.toISOString().split('T')[0]
+                : typeof prismaApiKey.lastUsed === 'string'
+                    ? prismaApiKey.lastUsed.split('T')[0]
+                    : null)
+            : null,
     };
 }
 
@@ -89,8 +107,18 @@ export function convertPrismaServerToApp(prismaServer: any) {
         database: prismaServer.database,
         collection: prismaServer.collection,
         isActive: prismaServer.isActive,
-        createdAt: prismaServer.createdAt.toISOString(),
-        lastConnected: prismaServer.lastConnected?.toISOString(),
+        createdAt: prismaServer.createdAt instanceof Date
+            ? prismaServer.createdAt.toISOString()
+            : typeof prismaServer.createdAt === 'string'
+                ? prismaServer.createdAt
+                : new Date().toISOString(),
+        lastConnected: prismaServer.lastConnected
+            ? (prismaServer.lastConnected instanceof Date
+                ? prismaServer.lastConnected.toISOString()
+                : typeof prismaServer.lastConnected === 'string'
+                    ? prismaServer.lastConnected
+                    : null)
+            : null,
     };
 }
 
@@ -101,10 +129,18 @@ export function convertPrismaJobToApp(prismaJob: any) {
         documentName: prismaJob.documentName,
         documentType: prismaJob.documentType,
         startDate: prismaJob.startDate
-            ? prismaJob.startDate.toISOString()
+            ? (prismaJob.startDate instanceof Date
+                ? prismaJob.startDate.toISOString()
+                : typeof prismaJob.startDate === 'string'
+                    ? prismaJob.startDate
+                    : '')
             : '',
         endDate: prismaJob.endDate
-            ? prismaJob.endDate.toISOString()
+            ? (prismaJob.endDate instanceof Date
+                ? prismaJob.endDate.toISOString()
+                : typeof prismaJob.endDate === 'string'
+                    ? prismaJob.endDate
+                    : '')
             : '',
         status: prismaJob.status.toLowerCase().replace('_', '-'),
         progress: {
@@ -112,10 +148,18 @@ export function convertPrismaJobToApp(prismaJob: any) {
             summary: prismaJob.summary,
         },
         createdAt: prismaJob.createdAt
-            ? prismaJob.createdAt.toISOString()
+            ? (prismaJob.createdAt instanceof Date
+                ? prismaJob.createdAt.toISOString()
+                : typeof prismaJob.createdAt === 'string'
+                    ? prismaJob.createdAt
+                    : '')
             : '',
         updatedAt: prismaJob.updatedAt
-            ? prismaJob.updatedAt.toISOString()
+            ? (prismaJob.updatedAt instanceof Date
+                ? prismaJob.updatedAt.toISOString()
+                : typeof prismaJob.updatedAt === 'string'
+                    ? prismaJob.updatedAt
+                    : '')
             : '',
     };
 }

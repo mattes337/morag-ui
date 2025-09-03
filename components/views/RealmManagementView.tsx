@@ -49,6 +49,17 @@ interface RealmServer {
   lastConnected?: string;
 }
 
+interface UserServer {
+  id: string;
+  name: string;
+  type: string;
+  host: string;
+  port: number;
+  isActive: boolean;
+  lastConnected?: string;
+  isLinkedToRealm?: boolean;
+}
+
 interface RealmUser {
   id: string;
   name: string;
@@ -65,12 +76,16 @@ interface RealmManagementViewProps {
 export function RealmManagementView({ realm, onClose }: RealmManagementViewProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [servers, setServers] = useState<RealmServer[]>([]);
+  const [userServers, setUserServers] = useState<UserServer[]>([]);
   const [users, setUsers] = useState<RealmUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<keyof RealmPromptConfig>('domain');
   const [realmConfig, setRealmConfig] = useState<RealmConfig>({});
   const [configMode, setConfigMode] = useState<'simple' | 'advanced'>('simple');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'ADMIN' | 'USER' | 'VIEWER'>('USER');
   const [editForm, setEditForm] = useState({
     name: realm.name,
     description: realm.description || '',
@@ -87,14 +102,27 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
   const loadRealmData = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      // Load servers
+
+      // Load realm servers
       const serversResponse = await fetch(`/api/realms/${realm.id}/servers`);
       if (serversResponse.ok) {
         const serversData = await serversResponse.json();
         setServers(serversData.servers || []);
       }
-      
+
+      // Load all user servers
+      const userServersResponse = await fetch('/api/servers');
+      if (userServersResponse.ok) {
+        const userServersData = await userServersResponse.json();
+        // Mark which servers are linked to this realm
+        const realmServerIds = new Set((serversResponse.ok ? (await serversResponse.json()).servers : []).map((s: any) => s.id));
+        const userServersWithStatus = userServersData.map((server: any) => ({
+          ...server,
+          isLinkedToRealm: realmServerIds.has(server.id)
+        }));
+        setUserServers(userServersWithStatus);
+      }
+
       // Load users
       const usersResponse = await fetch(`/api/realms/${realm.id}/users`);
       if (usersResponse.ok) {
@@ -217,37 +245,78 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
     }
   };
 
-  const handleAddServer = async (serverData: Partial<RealmServer>) => {
+  const handleToggleServerLink = async (serverId: string, isCurrentlyLinked: boolean) => {
     try {
-      if (!serverData.name?.trim() || !serverData.host?.trim() || !serverData.port) {
-        toast.error('Name, host, and port are required');
+      if (isCurrentlyLinked) {
+        // Unlink server from realm
+        const response = await fetch(`/api/realms/${realm.id}/servers/${serverId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to unlink server');
+        }
+
+        toast.success('Server unlinked from realm');
+      } else {
+        // Link server to realm
+        const response = await fetch(`/api/realms/${realm.id}/servers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serverId: serverId
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to link server');
+        }
+
+        toast.success('Server linked to realm');
+      }
+
+      await loadRealmData();
+    } catch (error: any) {
+      console.error('Failed to toggle server link:', error);
+      toast.error(error.message || 'Failed to update server link');
+    }
+  };
+
+  const handleInviteUser = async () => {
+    try {
+      if (!inviteEmail.trim()) {
+        toast.error('Email is required');
         return;
       }
 
-      const response = await fetch(`/api/realms/${realm.id}/servers`, {
+      const response = await fetch(`/api/realms/${realm.id}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: serverData.name.trim(),
-          type: serverData.type || 'VECTOR_DB',
-          host: serverData.host.trim(),
-          port: serverData.port,
-          isActive: serverData.isActive !== false
+          email: inviteEmail.trim(),
+          role: inviteRole,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add server');
+        throw new Error(errorData.error || 'Failed to invite user');
       }
 
-      toast.success('Server added successfully');
+      toast.success('User invited successfully');
+      setShowInviteDialog(false);
+      setInviteEmail('');
+      setInviteRole('USER');
       await loadRealmData();
     } catch (error: any) {
-      console.error('Failed to add server:', error);
-      toast.error(error.message || 'Failed to add server');
+      console.error('Failed to invite user:', error);
+      toast.error(error.message || 'Failed to invite user');
     }
   };
 
@@ -409,16 +478,13 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
         <TabsContent value="servers" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Server className="w-5 h-5" />
-                  <span>Database Servers</span>
-                </div>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Server
-                </Button>
+              <CardTitle className="flex items-center space-x-2">
+                <Server className="w-5 h-5" />
+                <span>Database Servers</span>
               </CardTitle>
+              <p className="text-sm text-gray-600">
+                Select servers from your available servers to link them to this realm.
+              </p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -430,8 +496,16 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {servers.map((server) => (
-                    <div key={server.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  {userServers.map((server) => (
+                    <div
+                      key={server.id}
+                      className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                        server.isLinkedToRealm
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => handleToggleServerLink(server.id, server.isLinkedToRealm || false)}
+                    >
                       <div className="flex items-center space-x-3">
                         <span className="text-2xl">{getServerTypeIcon(server.type)}</span>
                         <div>
@@ -445,17 +519,16 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                         <Badge variant={server.isActive ? 'default' : 'secondary'}>
                           {server.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Badge variant={server.isLinkedToRealm ? 'default' : 'outline'}>
+                          {server.isLinkedToRealm ? 'Linked' : 'Available'}
+                        </Badge>
                       </div>
                     </div>
                   ))}
-                  {servers.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">No servers configured</p>
+                  {userServers.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      No servers available. Create servers in the Servers section first.
+                    </p>
                   )}
                 </div>
               )}
@@ -472,7 +545,7 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
                   <span>Realm Users</span>
                 </div>
                 {(realm.userRole === 'OWNER' || realm.userRole === 'ADMIN') && (
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => setShowInviteDialog(true)}>
                     <Plus className="w-4 h-4 mr-1" />
                     Invite User
                   </Button>
@@ -818,6 +891,69 @@ export function RealmManagementView({ realm, onClose }: RealmManagementViewProps
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Invite User Dialog */}
+      {showInviteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Invite User to Realm</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowInviteDialog(false)}
+              >
+                ×
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as 'ADMIN' | 'USER' | 'VIEWER')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="VIEWER">Viewer</option>
+                  <option value="USER">User</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleInviteUser}
+                disabled={!inviteEmail.trim()}
+              >
+                Send Invitation
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

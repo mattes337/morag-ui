@@ -32,7 +32,7 @@ export function DocumentsView({
 
     // Get file type icon based on document type and subtype
     const getFileTypeIcon = (type: string, subType?: string) => {
-        const iconClass = "w-6 h-6"; // Increased from w-4 h-4 to w-6 h-6
+        const iconClass = "w-8 h-8"; // Increased file type icon size for better visibility
 
         switch (type) {
             case 'pdf':
@@ -111,6 +111,11 @@ export function DocumentsView({
 
         if (hasFailedJobs) {
             return 'failed';
+        }
+
+        // Check if document is actually completed based on stage status
+        if (doc.stageStatus === 'COMPLETED' || doc.state === 'ingested') {
+            return 'ingested';
         }
 
         // Map current stage to proper state if document is still processing

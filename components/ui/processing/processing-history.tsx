@@ -77,10 +77,15 @@ export function ProcessingHistory({
 
       // Convert API response to ProcessingHistoryEntry format
       const historyEntries: ProcessingHistoryEntry[] = [];
+      const seenEntries = new Set<string>(); // Track unique entries to prevent duplicates
 
       // Add job history from both sources
       const jobsToProcess = data.jobs || (processingData && processingData.jobs) || [];
       for (const job of jobsToProcess) {
+        const entryKey = `${job.stage}-${job.startedAt || job.startDate}-${job.status}`;
+        if (seenEntries.has(entryKey)) continue; // Skip duplicates
+        seenEntries.add(entryKey);
+
         historyEntries.push({
           id: job.id,
           stage: job.stage,
@@ -99,9 +104,13 @@ export function ProcessingHistory({
         });
       }
 
-      // Add execution history
+      // Add execution history (only if not already added from jobs)
       if (processingData && processingData.executions) {
         for (const execution of processingData.executions) {
+          const entryKey = `${execution.stage}-${execution.startedAt}-${execution.status}`;
+          if (seenEntries.has(entryKey)) continue; // Skip duplicates
+          seenEntries.add(entryKey);
+
           // Get output files for this execution - ensure it's an array
           const outputFiles = Array.isArray(execution.outputFiles) ? execution.outputFiles.map((filename: string) => ({
             id: `${execution.id}-${filename}`,
