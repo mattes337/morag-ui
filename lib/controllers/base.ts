@@ -71,9 +71,10 @@ export function useBaseController<TState extends BaseControllerState>(
 
   // Cleanup on unmount
   useEffect(() => {
+    const currentLogger = logger.current;
     return () => {
       isCleanedUp.current = true;
-      logger.current.trace('Controller cleanup');
+      currentLogger.trace('Controller cleanup');
     };
   }, []);
 

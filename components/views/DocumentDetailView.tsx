@@ -124,7 +124,68 @@ export function DocumentDetailView({
             });
             setIsProcessing(isCurrentlyProcessing);
         }
-    }, [document?.id, document?.processingMode, document?.stageStatus]);
+    }, [document?.id, document?.processingMode, document?.stageStatus, document?.state]);
+
+    // Fallback function to generate stage info from document state
+    const generateStageInfoFromDocumentState = useCallback(() => {
+        if (!document) return;
+
+        console.log('🔄 [DocumentDetailView] Generating stage info from document state:', {
+            documentState: document.state,
+            currentStage: document.currentStage,
+            stageStatus: document.stageStatus
+        });
+
+        const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+        const stageInfos = stages.map(stage => {
+            const isCurrent = document.currentStage === stage;
+
+            let status = 'PENDING';
+            if (document.state === 'ingested') {
+                status = 'COMPLETED';
+            } else if (document.state === 'ingesting') {
+                const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                const currentIndex = stageOrder.indexOf(document.currentStage || '');
+                const thisIndex = stageOrder.indexOf(stage);
+
+                if (thisIndex < currentIndex) {
+                    status = 'COMPLETED';
+                } else if (thisIndex === currentIndex) {
+                    status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
+                } else {
+                    status = 'PENDING';
+                }
+            } else if (document.state === 'pending') {
+                // For pending documents, check if we have any processing history
+                // If currentStage is set, it means some processing has started
+                if (document.currentStage) {
+                    const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
+                    const currentIndex = stageOrder.indexOf(document.currentStage);
+                    const thisIndex = stageOrder.indexOf(stage);
+
+                    if (thisIndex < currentIndex) {
+                        status = 'COMPLETED';
+                    } else if (thisIndex === currentIndex) {
+                        status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
+                    } else {
+                        status = 'PENDING';
+                    }
+                }
+            }
+
+            return {
+                stage,
+                status,
+                progress: status === 'COMPLETED' ? 100 : (status === 'RUNNING' ? 50 : 0),
+                startedAt: undefined,
+                completedAt: undefined,
+                errorMessage: isCurrent ? document.lastStageError : undefined
+            };
+        });
+
+        console.log('🎯 [DocumentDetailView] Generated stage infos from document state:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
+        setStageInfos(stageInfos);
+    }, [document]);
 
     // Load document data with proper stages API call
     const loadDocumentData = useCallback(async () => {
@@ -226,68 +287,8 @@ export function DocumentDetailView({
         } finally {
             setIsLoadingFiles(false);
         }
-    }, [document?.id]);
+    }, [document?.id, generateStageInfoFromDocumentState]);
 
-    // Fallback function to generate stage info from document state
-    const generateStageInfoFromDocumentState = useCallback(() => {
-        if (!document) return;
-
-        console.log('🔄 [DocumentDetailView] Generating stage info from document state:', {
-            documentState: document.state,
-            currentStage: document.currentStage,
-            stageStatus: document.stageStatus
-        });
-
-        const stages = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
-        const stageInfos = stages.map(stage => {
-            const isCurrent = document.currentStage === stage;
-
-            let status = 'PENDING';
-            if (document.state === 'ingested') {
-                status = 'COMPLETED';
-            } else if (document.state === 'ingesting') {
-                const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
-                const currentIndex = stageOrder.indexOf(document.currentStage || '');
-                const thisIndex = stageOrder.indexOf(stage);
-
-                if (thisIndex < currentIndex) {
-                    status = 'COMPLETED';
-                } else if (thisIndex === currentIndex) {
-                    status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
-                } else {
-                    status = 'PENDING';
-                }
-            } else if (document.state === 'pending') {
-                // For pending documents, check if we have any processing history
-                // If currentStage is set, it means some processing has started
-                if (document.currentStage) {
-                    const stageOrder = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
-                    const currentIndex = stageOrder.indexOf(document.currentStage);
-                    const thisIndex = stageOrder.indexOf(stage);
-
-                    if (thisIndex < currentIndex) {
-                        status = 'COMPLETED';
-                    } else if (thisIndex === currentIndex) {
-                        status = document.stageStatus === 'RUNNING' ? 'RUNNING' : 'PENDING';
-                    } else {
-                        status = 'PENDING';
-                    }
-                }
-            }
-
-            return {
-                stage,
-                status,
-                progress: status === 'COMPLETED' ? 100 : (status === 'RUNNING' ? 50 : 0),
-                startedAt: undefined,
-                completedAt: undefined,
-                errorMessage: isCurrent ? document.lastStageError : undefined
-            };
-        });
-
-        console.log('🎯 [DocumentDetailView] Generated stage infos from document state:', stageInfos.map(s => ({ stage: s.stage, status: s.status })));
-        setStageInfos(stageInfos);
-    }, [document]);
 
     // Detect stage completions and refresh files when stages complete
     useEffect(() => {
@@ -418,7 +419,7 @@ export function DocumentDetailView({
 
     // Memoize files to prevent unnecessary re-renders of MarkdownPreview
     const fileIds = useMemo(() => files.map(f => f.id).join(','), [files]);
-    const stableFiles = useMemo(() => files, [files.length, fileIds]);
+    const stableFiles = useMemo(() => files, [fileIds]);
 
     // Early validation to prevent undefined document ID issues
     if (!document || !document.id) {
@@ -830,7 +831,7 @@ export function DocumentDetailView({
                                             <div className="text-4xl mb-2">📄</div>
                                             <p className="text-gray-700 font-medium">PDF Preview</p>
                                             <p className="text-sm text-gray-600 mt-1">
-                                                If the PDF doesn't load, try opening it in a new tab
+                                                If the PDF doesn&apos;t load, try opening it in a new tab
                                             </p>
                                         </div>
                                     </div>

@@ -173,7 +173,7 @@ export function useDocumentDetailController(
     } finally {
       commonActions.setLoading(false);
     }
-  }, [logger, commonActions, loadDocumentFromAPI, safeSetState]);
+  }, [logger, commonActions, loadDocumentFromAPI, isCleanedUp, setState]);
 
   const refreshDocument = useCallback(async () => {
     try {

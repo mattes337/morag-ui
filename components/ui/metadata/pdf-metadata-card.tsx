@@ -122,7 +122,7 @@ export function PDFMetadataCard({
             <div className="flex flex-wrap gap-2">
               {metadata.has_images && (
                 <Badge variant="outline" className="flex items-center space-x-1">
-                  <Image className="w-3 h-3" />
+                  <Image className="w-3 h-3" aria-hidden="true" />
                   <span>Contains Images</span>
                 </Badge>
               )}

@@ -73,7 +73,7 @@ export class BackgroundJobService {
       updateData.startedAt = new Date();
     }
 
-    if (updates.status && [JobStatus.FINISHED, JobStatus.FAILED, JobStatus.CANCELLED].includes(updates.status) && !updateData.completedAt) {
+    if (updates.status && ['FINISHED', 'FAILED', 'CANCELLED'].includes(updates.status) && !updateData.completedAt) {
       updateData.completedAt = new Date();
     }
 

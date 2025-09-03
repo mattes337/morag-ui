@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { extractYouTubeVideoId, extractYouTubeVideoInfo, YouTubeVideoInfo } from '../../../lib/utils/youtubeUtils';
 
 interface YouTubeVideoInfoExtractorProps {
@@ -16,19 +16,7 @@ export function YouTubeVideoInfoExtractor({
 }: YouTubeVideoInfoExtractorProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!url) return;
-
-    const videoId = extractYouTubeVideoId(url);
-    if (!videoId) {
-      onError('Invalid YouTube URL');
-      return;
-    }
-
-    extractVideoInfo(url);
-  }, [url, onError]);
-
-  const extractVideoInfo = async (videoUrl: string) => {
+  const extractVideoInfo = useCallback(async (videoUrl: string) => {
     setIsLoading(true);
     
     try {
@@ -46,7 +34,19 @@ export function YouTubeVideoInfoExtractor({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onVideoInfoExtracted, onError]);
+
+  useEffect(() => {
+    if (!url) return;
+
+    const videoId = extractYouTubeVideoId(url);
+    if (!videoId) {
+      onError('Invalid YouTube URL');
+      return;
+    }
+
+    extractVideoInfo(url);
+  }, [url, onError, extractVideoInfo]);
 
   return (
     <div className="hidden">
