@@ -1,0 +1,522 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id @default(uuid())
+  name              String
+  email             String              @unique
+  avatar            String?
+  password          String?
+  role              UserRole            @default(USER)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  apiKeys           ApiKey[]
+  createdMigrations DocumentMigration[]
+  documents         Document[]
+  jobs              Job[]
+  realms            Realm[]
+  servers           Server[]
+  userRealms        UserRealm[]
+  userSettings      UserSettings?
+
+  @@map("users")
+}
+
+model UserSettings {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  theme           Theme    @default(LIGHT)
+  language        String   @default("en")
+  notifications   Boolean  @default(true)
+  autoSave        Boolean  @default(true)
+  defaultDatabase String?
+  currentRealmId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Realm {
+  id               String              @id @default(uuid())
+  name             String
+  description      String?
+  domain           String?
+  ingestionPrompt  String?
+  systemPrompt     String?
+  extractionPrompt String?
+  domainPrompt     String?
+  documentCount    Int                 @default(0)
+  isDefault        Boolean             @default(false)
+  lastUpdated      DateTime            @default(now())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  ownerId          String
+  globalConfig     String?
+  llmModelConfig   String?
+  stageConfigs     String?
+  apiKeys          ApiKey[]
+  sourceMigrations DocumentMigration[] @relation("SourceMigrations")
+  targetMigrations DocumentMigration[] @relation("TargetMigrations")
+  documents        Document[]
+  jobs             Job[]
+  servers          RealmServerLink[]
+  owner            User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  userRealms       UserRealm[]
+
+  @@unique([name, ownerId])
+  @@index([ownerId], map: "realms_ownerId_fkey")
+  @@map("realms")
+}
+
+model UserRealm {
+  id        String    @id @default(uuid())
+  userId    String
+  realmId   String
+  role      RealmRole @default(MEMBER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, realmId])
+  @@index([realmId], map: "user_realms_realmId_fkey")
+  @@map("user_realms")
+}
+
+model Document {
+  id                   String                  @id @default(uuid())
+  name                 String
+  type                 String
+  state                DocumentState           @default(PENDING)
+  version              Int                     @default(1)
+  chunks               Int                     @default(0)
+  quality              Float                   @default(0)
+  markdown             String?                 @db.LongText
+  uploadDate           DateTime                @default(now())
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  userId               String
+  realmId              String
+  subType              String?
+  currentStage         ProcessingStage?        @default(MARKDOWN_CONVERSION)
+  stageStatus          StageStatus             @default(PENDING)
+  lastStageError       String?                 @db.Text
+  processingMode       ProcessingMode          @default(AUTOMATIC)
+  isProcessingPaused   Boolean                 @default(false)
+  nextScheduledStage   ProcessingStage?
+  scheduledAt          DateTime?
+  documentChunks       DocumentChunk[]
+  entities             DocumentEntity[]
+  files                DocumentFile[]
+  sourceMigrationItems DocumentMigrationItem[] @relation("SourceMigrationItems")
+  targetMigrationItems DocumentMigrationItem[] @relation("TargetMigrationItems")
+  realm                Realm                   @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facts                Fact[]
+  jobs                 Job[]
+  processingErrors     ProcessingError[]
+  processingJobs       ProcessingJob[]
+  stageExecutions      StageExecution[]
+
+  @@index([realmId], map: "documents_realmId_fkey")
+  @@index([userId], map: "documents_userId_fkey")
+  @@map("documents")
+}
+
+model Entity {
+  id          String           @id @default(uuid())
+  name        String
+  type        String
+  description String?
+  metadata    String?          @db.LongText
+  isOrphaned  Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  documents   DocumentEntity[]
+  facts       Fact[]
+
+  @@unique([name, type])
+  @@map("entities")
+}
+
+model Fact {
+  id         String         @id @default(uuid())
+  subject    String
+  predicate  String
+  object     String
+  confidence Float          @default(1)
+  source     String
+  metadata   String?        @db.LongText
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  entityId   String?
+  documentId String
+  chunkId    String?
+  chunk      DocumentChunk? @relation(fields: [chunkId], references: [id])
+  document   Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entity     Entity?        @relation(fields: [entityId], references: [id])
+
+  @@index([chunkId], map: "facts_chunkId_fkey")
+  @@index([documentId], map: "facts_documentId_fkey")
+  @@index([entityId], map: "facts_entityId_fkey")
+  @@map("facts")
+}
+
+model DocumentEntity {
+  id         String   @id @default(uuid())
+  documentId String
+  entityId   String
+  relevance  Float    @default(1)
+  mentions   Int      @default(1)
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  entity     Entity   @relation(fields: [entityId], references: [id])
+
+  @@unique([documentId, entityId])
+  @@index([entityId], map: "document_entities_entityId_fkey")
+  @@map("document_entities")
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String
+  content    String   @db.LongText
+  chunkIndex Int
+  embedding  String?  @db.LongText
+  metadata   String?  @db.LongText
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  facts      Fact[]
+
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
+}
+
+model DocumentFile {
+  id           String           @id @default(uuid())
+  documentId   String
+  fileType     FileType         @default(STAGE_OUTPUT)
+  stage        ProcessingStage?
+  filename     String
+  originalName String?
+  filepath     String           @db.VarChar(1000)
+  filesize     Int
+  contentType  String
+  content      String?          @db.LongText
+  metadata     String?          @db.LongText
+  isPublic     Boolean          @default(false)
+  accessLevel  FileAccessLevel  @default(REALM_MEMBERS)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  document     Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, fileType, stage, filename])
+  @@index([documentId], map: "document_files_documentId_fkey")
+  @@index([fileType])
+  @@map("document_files")
+}
+
+model StageExecution {
+  id           String          @id @default(uuid())
+  documentId   String
+  stage        ProcessingStage
+  status       StageStatus
+  startedAt    DateTime        @default(now())
+  completedAt  DateTime?
+  errorMessage String?         @db.Text
+  inputFiles   String?         @db.Text
+  outputFiles  String?         @db.Text
+  metadata     String?         @db.LongText
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], map: "stage_executions_documentId_fkey")
+  @@index([stage])
+  @@index([status])
+  @@map("stage_executions")
+}
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  name      String
+  key       String    @unique
+  created   DateTime  @default(now())
+  lastUsed  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String
+  realmId   String?
+  isGeneric Boolean   @default(false)
+  realm     Realm?    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([realmId], map: "api_keys_realmId_fkey")
+  @@index([userId], map: "api_keys_userId_fkey")
+  @@index([isGeneric])
+  @@map("api_keys")
+}
+
+model Server {
+  id            String            @id @default(uuid())
+  name          String
+  type          DatabaseType
+  host          String
+  port          Int
+  username      String?
+  password      String?
+  apiKey        String?
+  database      String?
+  collection    String?
+  isActive      Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  lastConnected DateTime?
+  updatedAt     DateTime          @updatedAt
+  userId        String
+  realmServers  RealmServerLink[]
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "servers_userId_fkey")
+  @@map("servers")
+}
+
+model Job {
+  id           String    @id @default(uuid())
+  documentName String
+  documentType String
+  taskId       String?
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  status       JobStatus @default(PENDING)
+  percentage   Int       @default(0)
+  summary      String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  documentId   String
+  userId       String
+  realmId      String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  realm        Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], map: "jobs_documentId_fkey")
+  @@index([realmId], map: "jobs_realmId_fkey")
+  @@index([userId], map: "jobs_userId_fkey")
+  @@map("jobs")
+}
+
+model RealmServerLink {
+  id        String   @id @default(uuid())
+  realmId   String
+  serverId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  realm     Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([realmId, serverId])
+  @@index([serverId], map: "realm_server_links_serverId_fkey")
+  @@map("realm_server_links")
+}
+
+model DocumentMigration {
+  id                 String                  @id @default(uuid())
+  sourceRealmId      String
+  targetRealmId      String
+  status             MigrationStatus         @default(PENDING)
+  totalDocuments     Int                     @default(0)
+  processedDocuments Int                     @default(0)
+  failedDocuments    Int                     @default(0)
+  migrationOptions   String?                 @db.LongText
+  startedAt          DateTime                @default(now())
+  completedAt        DateTime?
+  errorMessage       String?                 @db.Text
+  createdBy          String
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  migrationItems     DocumentMigrationItem[]
+  createdByUser      User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  sourceRealm        Realm                   @relation("SourceMigrations", fields: [sourceRealmId], references: [id], onDelete: Cascade)
+  targetRealm        Realm                   @relation("TargetMigrations", fields: [targetRealmId], references: [id], onDelete: Cascade)
+
+  @@index([sourceRealmId], map: "document_migrations_sourceRealmId_fkey")
+  @@index([targetRealmId], map: "document_migrations_targetRealmId_fkey")
+  @@index([createdBy], map: "document_migrations_createdBy_fkey")
+  @@index([status])
+  @@map("document_migrations")
+}
+
+model DocumentMigrationItem {
+  id               String            @id @default(uuid())
+  migrationId      String
+  sourceDocumentId String
+  targetDocumentId String?
+  status           MigrationStatus   @default(PENDING)
+  errorMessage     String?           @db.Text
+  migratedStages   String?           @db.Text
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  migration        DocumentMigration @relation(fields: [migrationId], references: [id], onDelete: Cascade)
+  sourceDocument   Document          @relation("SourceMigrationItems", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  targetDocument   Document?         @relation("TargetMigrationItems", fields: [targetDocumentId], references: [id])
+
+  @@index([migrationId], map: "document_migration_items_migrationId_fkey")
+  @@index([sourceDocumentId], map: "document_migration_items_sourceDocumentId_fkey")
+  @@index([targetDocumentId], map: "document_migration_items_targetDocumentId_fkey")
+  @@index([status])
+  @@map("document_migration_items")
+}
+
+model ProcessingJob {
+  id           String            @id @default(uuid())
+  documentId   String
+  stage        ProcessingStage
+  status       JobStatus         @default(PENDING)
+  priority     Int               @default(0)
+  scheduledAt  DateTime          @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  retryCount   Int               @default(0)
+  maxRetries   Int               @default(3)
+  errorMessage String?           @db.Text
+  metadata     String?           @db.LongText
+  cleanedUp    Boolean           @default(false)
+  cleanedUpAt  DateTime?
+  cleanupStats String?           @db.Text
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  errors       ProcessingError[]
+  document     Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], map: "processing_jobs_documentId_fkey")
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([stage])
+  @@index([cleanedUp])
+  @@index([status, cleanedUp])
+  @@map("processing_jobs")
+}
+
+model ProcessingError {
+  id           String          @id @default(uuid())
+  jobId        String
+  documentId   String
+  stage        ProcessingStage
+  errorType    String
+  errorMessage String          @db.Text
+  errorStack   String?         @db.LongText
+  attempt      Int
+  isRetryable  Boolean         @default(true)
+  retryAt      DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  job          ProcessingJob   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId], map: "processing_errors_jobId_fkey")
+  @@index([documentId], map: "processing_errors_documentId_fkey")
+  @@index([stage])
+  @@index([createdAt])
+  @@map("processing_errors")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum RealmRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum DocumentState {
+  PENDING
+  INGESTING
+  INGESTED
+  DEPRECATED
+  DELETED
+}
+
+enum DatabaseType {
+  QDRANT
+  NEO4J
+  PINECONE
+  WEAVIATE
+  CHROMA
+}
+
+enum JobStatus {
+  PENDING
+  WAITING_FOR_REMOTE_WORKER
+  PROCESSING
+  FINISHED
+  FAILED
+  CANCELLED
+}
+
+enum ProcessingStage {
+  MARKDOWN_CONVERSION
+  MARKDOWN_OPTIMIZER
+  CHUNKER
+  FACT_GENERATOR
+  INGESTOR
+}
+
+enum StageStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+  DEPENDENCY_RESOLUTION
+}
+
+enum MigrationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ProcessingMode {
+  MANUAL
+  AUTOMATIC
+}
+
+enum FileType {
+  ORIGINAL_DOCUMENT
+  STAGE_OUTPUT
+  ARTIFACT
+  THUMBNAIL
+  PREVIEW
+}
+
+enum FileAccessLevel {
+  PUBLIC
+  REALM_MEMBERS
+  DOCUMENT_OWNER
+  ADMIN_ONLY
+}
