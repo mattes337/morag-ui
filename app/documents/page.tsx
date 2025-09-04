@@ -13,6 +13,7 @@ export default function DocumentsPage() {
             isLoading={state.isLoading}
             onBackToRealms={actions.handleBackToRealms}
             onAddDocument={actions.handleAddDocument}
+            onImportDocument={actions.handleImportDocument}
             onPromptDocument={actions.handlePromptDocument}
             onViewDocumentDetail={actions.handleViewDocumentDetail}
             data-oid="f__.a_s"

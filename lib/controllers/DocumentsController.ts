@@ -14,6 +14,7 @@ interface DocumentsActions {
   handlePromptDocument: (document: Document) => void;
   handleViewDocumentDetail: (document: Document) => void;
   handleAddDocument: () => void;
+  handleImportDocument: () => void;
 }
 
 export function useDocumentsController(): ControllerHook<DocumentsState, DocumentsActions> {
@@ -22,7 +23,8 @@ export function useDocumentsController(): ControllerHook<DocumentsState, Documen
     currentRealm,
     isDataLoading,
     setSelectedDocument,
-    setShowAddDocumentDialog
+    setShowAddDocumentDialog,
+    setShowImportDocumentDialog
   } = useApp();
 
   const initialState: DocumentsState = {
@@ -77,11 +79,17 @@ export function useDocumentsController(): ControllerHook<DocumentsState, Documen
     setShowAddDocumentDialog(true);
   }, [logger, setShowAddDocumentDialog]);
 
+  const handleImportDocument = useCallback(() => {
+    logger.trace('Opening import document dialog');
+    setShowImportDocumentDialog(true);
+  }, [logger, setShowImportDocumentDialog]);
+
   const actions: DocumentsActions = {
     handleBackToRealms,
     handlePromptDocument,
     handleViewDocumentDetail,
-    handleAddDocument
+    handleAddDocument,
+    handleImportDocument
   };
 
   return {

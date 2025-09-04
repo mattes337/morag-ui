@@ -1,4 +1,5 @@
 import { jobManager } from './jobManager';
+import { stageExecutionCleanupService } from './stageExecutionCleanup';
 
 /**
  * Background worker responsible for cleaning up old completed jobs
@@ -59,14 +60,23 @@ export class CleanupWorker {
   }
 
   /**
-   * Perform cleanup of old completed jobs
+   * Perform cleanup of old completed jobs and stuck stage executions
    */
   private async cleanup(): Promise<void> {
     try {
+      // Clean up old completed jobs
       const deletedCount = await jobManager.cleanupCompletedJobs(7); // Keep jobs for 7 days
 
       if (deletedCount > 0) {
         console.log(`🧹 [CleanupWorker] Cleaned up ${deletedCount} old completed jobs`);
+      }
+
+      // Clean up stuck stage executions and orphaned jobs
+      const cleanupResult = await stageExecutionCleanupService.performFullCleanup(30); // 30 minute timeout
+
+      const totalStageCleanup = cleanupResult.stuckExecutions.cleanedCount + cleanupResult.orphanedJobs.cleanedCount;
+      if (totalStageCleanup > 0) {
+        console.log(`🧹 [CleanupWorker] Stage cleanup: ${cleanupResult.stuckExecutions.cleanedCount} stuck executions + ${cleanupResult.orphanedJobs.cleanedCount} orphaned jobs`);
       }
     } catch (error) {
       console.error('❌ [CleanupWorker] Cleanup failed:', error);

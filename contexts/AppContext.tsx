@@ -76,6 +76,8 @@ interface AppContextType {
     // Dialog states
     showAddDocumentDialog: boolean;
     setShowAddDocumentDialog: (show: boolean) => void;
+    showImportDocumentDialog: boolean;
+    setShowImportDocumentDialog: (show: boolean) => void;
     showSupersedeDocumentDialog: boolean;
     setShowSupersedeDocumentDialog: (show: boolean) => void;
     documentToSupersede: Document | null;
@@ -162,6 +164,7 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
 
     // Dialog states
     const [showAddDocumentDialog, setShowAddDocumentDialog] = useState(false);
+    const [showImportDocumentDialog, setShowImportDocumentDialog] = useState(false);
     const [showSupersedeDocumentDialog, setShowSupersedeDocumentDialog] = useState(false);
     const [documentToSupersede, setDocumentToSupersede] = useState<Document | null>(null);
     const [showCreateRealmDialog, setShowCreateRealmDialog] = useState(false);
@@ -897,6 +900,8 @@ export function AppProvider({ children, ...htmlProps }: AppProviderProps) {
         setSelectedDocument,
         showAddDocumentDialog,
         setShowAddDocumentDialog,
+        showImportDocumentDialog,
+        setShowImportDocumentDialog,
         showSupersedeDocumentDialog,
         setShowSupersedeDocumentDialog,
         documentToSupersede,

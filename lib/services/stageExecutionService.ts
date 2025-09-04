@@ -64,7 +64,26 @@ class StageExecutionService {
     });
 
     if (anyRunningExecution) {
-      throw new Error(`Cannot start stage ${input.stage} - stage ${anyRunningExecution.stage} is already running for document ${input.documentId}`);
+      // Check if the running execution is stuck (older than 30 minutes)
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+      if (anyRunningExecution.startedAt < thirtyMinutesAgo) {
+        console.warn(`⚠️ [StageExecution] Found stuck execution for ${anyRunningExecution.stage} (started ${Math.floor((Date.now() - anyRunningExecution.startedAt.getTime()) / (1000 * 60))} minutes ago), cleaning up...`);
+
+        // Clean up the stuck execution
+        await prisma.stageExecution.update({
+          where: { id: anyRunningExecution.id },
+          data: {
+            status: 'FAILED',
+            completedAt: new Date(),
+            errorMessage: 'Execution timed out and was automatically cleaned up to allow new stage to start'
+          }
+        });
+
+        console.log(`✅ [StageExecution] Cleaned up stuck execution ${anyRunningExecution.id}, proceeding with new stage`);
+      } else {
+        throw new Error(`Cannot start stage ${input.stage} - stage ${anyRunningExecution.stage} is already running for document ${input.documentId}`);
+      }
     }
 
     const execution = await prisma.stageExecution.create({

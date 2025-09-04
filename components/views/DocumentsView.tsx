@@ -1,7 +1,7 @@
 'use client';
 
 import { Realm, Document } from '../../types';
-import { FileText, Plus, CheckCircle, XCircle, Loader2, File, FileVideo, FileAudio, Globe, Youtube, FileImage, FileSpreadsheet, Presentation } from 'lucide-react';
+import { FileText, Plus, Upload, CheckCircle, XCircle, Loader2, File, FileVideo, FileAudio, Globe, FileSpreadsheet, Presentation } from 'lucide-react';
 import { getDocumentTypeDescription } from '../../lib/utils/documentTypeDetection';
 import { ProcessingStatusDisplay } from '../ui/processing/processing-status-display';
 import { Badge } from '../ui/badge';
@@ -13,6 +13,7 @@ interface DocumentsViewProps {
     isLoading?: boolean;
     onBackToRealms: () => void;
     onAddDocument: () => void;
+    onImportDocument?: () => void;
     onPromptDocument: (document: Document) => void;
     onViewDocumentDetail: (document: Document) => void;
     'data-oid'?: string;
@@ -25,6 +26,7 @@ export function DocumentsView({
     isLoading = false,
     onBackToRealms,
     onAddDocument,
+    onImportDocument,
     onPromptDocument,
     onViewDocumentDetail,
     ...props
@@ -186,13 +188,24 @@ export function DocumentsView({
                     Start building your knowledge base by adding your first document. Upload PDFs,
                     text files, or other documents to enable AI-powered search and analysis.
                 </p>
-                <button
-                    onClick={onAddDocument}
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Your First Document
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={onAddDocument}
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add Document
+                    </button>
+                    {onImportDocument && (
+                        <button
+                            onClick={onImportDocument}
+                            className="inline-flex items-center px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                        >
+                            <Upload className="w-5 h-5 mr-2" />
+                            Import Document
+                        </button>
+                    )}
+                </div>
             </div>
         );
     }
@@ -211,12 +224,24 @@ export function DocumentsView({
                         ← Back to Realms
                     </button>
                 </div>
-                <button
-                    onClick={onAddDocument}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Add Document
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onAddDocument}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Document
+                    </button>
+                    {onImportDocument && (
+                        <button
+                            onClick={onImportDocument}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        >
+                            <Upload className="w-4 h-4" />
+                            Import
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

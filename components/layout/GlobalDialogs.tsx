@@ -2,6 +2,7 @@
 
 import { useApp } from '../../contexts/AppContext';
 import { AddDocumentDialog } from '../dialogs/AddDocumentDialog';
+import { ImportDocumentDialog } from '../dialogs/ImportDocumentDialog';
 
 import { ApiKeyDialog } from '../dialogs/ApiKeyDialog';
 import { ReingestConfirmDialog } from '../dialogs/ReingestConfirmDialog';
@@ -14,6 +15,8 @@ export function GlobalDialogs() {
     const {
         showAddDocumentDialog,
         setShowAddDocumentDialog,
+        showImportDocumentDialog,
+        setShowImportDocumentDialog,
         showSupersedeDocumentDialog,
         setShowSupersedeDocumentDialog,
         documentToSupersede,
@@ -45,6 +48,11 @@ export function GlobalDialogs() {
                 isOpen={showAddDocumentDialog}
                 onClose={() => setShowAddDocumentDialog(false)}
                 data-oid="8h_nnnb"
+            />
+
+            <ImportDocumentDialog
+                isOpen={showImportDocumentDialog}
+                onClose={() => setShowImportDocumentDialog(false)}
             />
 
             <AddDocumentDialog

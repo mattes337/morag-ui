@@ -444,7 +444,7 @@ export class MoragService {
   }
 
   /**
-   * Get output files from the most recent completed dependency stage
+   * Get output files from the most recent completed dependency stage using database stage field
    */
   private async getPreviousStageOutputFiles(documentId: string, stage: string): Promise<string[]> {
     console.log(`🔍 [MoRAG] Getting previous stage output files for ${stage} on document ${documentId}`);
@@ -465,78 +465,87 @@ export class MoragService {
 
     console.log(`📋 [MoRAG] Checking dependencies in order: ${dependencies.join(', ')}`);
 
-    // Import here to avoid circular dependency
-    const { stageExecutionService } = await import('./stageExecutionService');
+    // Import prisma here to avoid circular dependency
+    const { prisma } = await import('../database');
 
     // Check dependencies in order of preference
     for (const depStage of dependencies) {
       console.log(`🔎 [MoRAG] Checking ${depStage} for output files...`);
-      const execution = await stageExecutionService.getLatestExecution(documentId, depStage as any);
 
-      if (execution) {
-        console.log(`📊 [MoRAG] Execution found for ${depStage}: status=${execution.status}, outputFiles=${execution.outputFiles?.length || 0}`);
-        if (execution.status === 'COMPLETED' && execution.outputFiles && execution.outputFiles.length > 0) {
-          // For chunker stage, prioritize optimized markdown files over regular markdown
-          if (stage === 'CHUNKER' && execution.outputFiles.length > 1) {
-            const optimizedFiles = execution.outputFiles.filter(file => file.includes('.opt.md'));
-            const regularFiles = execution.outputFiles.filter(file => file.includes('.md') && !file.includes('.opt.md'));
+      // Get files from the database using the stage field instead of file endings
+      const stageFiles = await prisma.documentFile.findMany({
+        where: {
+          documentId,
+          stage: depStage as any,
+          fileType: 'STAGE_OUTPUT'
+        },
+        orderBy: { createdAt: 'desc' }
+      });
 
-            if (optimizedFiles.length > 0) {
-              console.log(`✅ [MoRAG] Found optimized markdown files from ${depStage}: ${optimizedFiles.join(', ')}`);
-              return optimizedFiles;
-            } else if (regularFiles.length > 0) {
-              console.log(`✅ [MoRAG] Found regular markdown files from ${depStage}: ${regularFiles.join(', ')}`);
-              return regularFiles;
-            }
+      if (stageFiles.length > 0) {
+        console.log(`📊 [MoRAG] Found ${stageFiles.length} files for stage ${depStage}`);
+
+        // For chunker stage, prioritize optimized markdown files over regular markdown
+        if (stage === 'CHUNKER' && stageFiles.length > 1) {
+          const optimizedFiles = stageFiles.filter(file => file.filename.includes('.opt.md'));
+          const regularFiles = stageFiles.filter(file => file.filename.includes('.md') && !file.filename.includes('.opt.md'));
+
+          if (optimizedFiles.length > 0) {
+            console.log(`✅ [MoRAG] Found optimized markdown files from ${depStage}: ${optimizedFiles.map(f => f.filename).join(', ')}`);
+            return optimizedFiles.map(f => f.filepath);
+          } else if (regularFiles.length > 0) {
+            console.log(`✅ [MoRAG] Found regular markdown files from ${depStage}: ${regularFiles.map(f => f.filename).join(', ')}`);
+            return regularFiles.map(f => f.filepath);
           }
-
-          // For fact-generator stage, only accept chunk files (.chunks.json)
-          if (stage === 'FACT_GENERATOR') {
-            const chunkFiles = execution.outputFiles.filter(file => file.includes('.chunks.json'));
-
-            console.log(`🔍 [MoRAG] Fact-generator dependency check for ${depStage}:`);
-            console.log(`   - Execution ID: ${execution.id}`);
-            console.log(`   - All output files: ${execution.outputFiles.join(', ')}`);
-            console.log(`   - Chunk files found: ${chunkFiles.join(', ')}`);
-
-            if (chunkFiles.length > 0) {
-              console.log(`✅ [MoRAG] Found chunk files from ${depStage}: ${chunkFiles.join(', ')}`);
-              return chunkFiles;
-            } else {
-              console.warn(`⚠️ [MoRAG] No chunk files found from ${depStage} for fact-generator. Available files: ${execution.outputFiles.join(', ')}`);
-              continue; // Skip this dependency and check the next one
-            }
-          }
-
-          // For ingestor stage, require both chunk files and fact files
-          if (stage === 'INGESTOR') {
-            const factFiles = execution.outputFiles.filter(file => file.includes('.facts.json'));
-
-            if (factFiles.length > 0) {
-              console.log(`✅ [MoRAG] Found fact files from ${depStage}: ${factFiles.join(', ')}`);
-              return factFiles;
-            } else {
-              console.warn(`⚠️ [MoRAG] No fact files found from ${depStage} for ingestor. Available files: ${execution.outputFiles.join(', ')}`);
-              continue; // Skip this dependency and check the next one
-            }
-          }
-
-          console.log(`✅ [MoRAG] Found output files from ${depStage}: ${execution.outputFiles.join(', ')}`);
-          return execution.outputFiles;
         }
+
+        // For fact-generator stage, only accept chunk files
+        if (stage === 'FACT_GENERATOR') {
+          const chunkFiles = stageFiles.filter(file => file.filename.includes('.chunks.json'));
+
+          console.log(`🔍 [MoRAG] Fact-generator dependency check for ${depStage}:`);
+          console.log(`   - Total files found: ${stageFiles.length}`);
+          console.log(`   - All files: ${stageFiles.map(f => f.filename).join(', ')}`);
+          console.log(`   - Chunk files found: ${chunkFiles.map(f => f.filename).join(', ')}`);
+
+          if (chunkFiles.length > 0) {
+            console.log(`✅ [MoRAG] Found chunk files from ${depStage}: ${chunkFiles.map(f => f.filename).join(', ')}`);
+            return chunkFiles.map(f => f.filepath);
+          } else {
+            console.warn(`⚠️ [MoRAG] No chunk files found from ${depStage} for fact-generator. Available files: ${stageFiles.map(f => f.filename).join(', ')}`);
+            continue; // Skip this dependency and check the next one
+          }
+        }
+
+        // For ingestor stage, require fact files
+        if (stage === 'INGESTOR') {
+          const factFiles = stageFiles.filter(file => file.filename.includes('.facts.json'));
+
+          if (factFiles.length > 0) {
+            console.log(`✅ [MoRAG] Found fact files from ${depStage}: ${factFiles.map(f => f.filename).join(', ')}`);
+            return factFiles.map(f => f.filepath);
+          } else {
+            console.warn(`⚠️ [MoRAG] No fact files found from ${depStage} for ingestor. Available files: ${stageFiles.map(f => f.filename).join(', ')}`);
+            continue; // Skip this dependency and check the next one
+          }
+        }
+
+        // For other stages, return all files
+        console.log(`✅ [MoRAG] Found output files from ${depStage}: ${stageFiles.map(f => f.filename).join(', ')}`);
+        return stageFiles.map(f => f.filepath);
       } else {
-        console.log(`❌ [MoRAG] No execution found for ${depStage}`);
+        console.log(`❌ [MoRAG] No files found for dependency stage: ${depStage}`);
       }
     }
 
     // Special handling for stages that require specific file types
     if (stage === 'FACT_GENERATOR') {
-      console.error(`❌ [MoRAG] No chunk files (.chunks.json) found for fact-generator stage. This stage requires chunker output.`);
+      console.error(`❌ [MoRAG] No chunk files found for fact-generator stage. This stage requires chunker output.`);
       throw new Error('MISSING_CHUNK_FILES: Fact-generator requires chunk files from chunker stage');
     }
 
     if (stage === 'INGESTOR') {
-      console.error(`❌ [MoRAG] No fact files (.facts.json) found for ingestor stage. This stage requires fact-generator output.`);
+      console.error(`❌ [MoRAG] No fact files found for ingestor stage. This stage requires fact-generator output.`);
       throw new Error('MISSING_FACT_FILES: Ingestor requires fact files from fact-generator stage');
     }
 

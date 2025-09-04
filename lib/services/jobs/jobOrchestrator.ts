@@ -2,6 +2,7 @@ import { jobScheduler } from './jobScheduler';
 import { jobProcessor } from './jobProcessor';
 import { statusPoller } from './statusPoller';
 import { cleanupWorker } from './cleanupWorker';
+import { stageExecutionCleanupService } from './stageExecutionCleanup';
 
 export interface JobOrchestratorConfig {
   schedulerIntervalMs?: number;
