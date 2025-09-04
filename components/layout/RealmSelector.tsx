@@ -62,13 +62,13 @@ export function RealmSelector() {
             if (response.ok) {
                 const data = await response.json();
                 setCurrentRealm(data.currentRealm);
-                
-                // Store in localStorage for persistence
-                localStorage.setItem('currentRealmId', realmId);
-                
+
+                // Cookie is set by the server, no need for localStorage
+                // The server-side cookie will persist the realm selection
+
                 toast.success(`Switched to realm: ${data.currentRealm.name}`);
                 setIsOpen(false);
-                
+
                 // The useEffect in AppContext will automatically reload data when currentRealm changes
                 // No need for window.location.reload() which breaks the layout
             } else {

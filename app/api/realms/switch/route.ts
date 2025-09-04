@@ -27,15 +27,30 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Update user's current realm
-        await UserService.updateUserSettings(user.userId, {
-            currentRealmId: realmId
-        });
-
-        return NextResponse.json({
+        // Set current realm in session cookie (primary method)
+        const response = NextResponse.json({
             success: true,
             currentRealm: realm
         });
+
+        // Store current realm in cookie for immediate session use
+        response.cookies.set('current-realm', realmId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 86400 * 30, // 30 days
+            path: '/'
+        });
+
+        // Also update user settings as a backup/preference storage
+        // This runs in background and doesn't block the response
+        UserService.updateUserSettings(user.userId, {
+            currentRealmId: realmId
+        }).catch(error => {
+            console.warn('Failed to update user settings for realm switch:', error);
+        });
+
+        return response;
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(

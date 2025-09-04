@@ -70,7 +70,15 @@ export async function authenticateUnified(request: NextRequest): Promise<Unified
           currentRealm = await RealmService.getRealmById(realmIdFromHeader, sessionUser.userId);
         }
 
-        // If no header realm, get from user settings
+        // If no header realm, check cookies (for UI session realm switching)
+        if (!currentRealm) {
+          const realmIdFromCookie = request.cookies.get('current-realm')?.value;
+          if (realmIdFromCookie) {
+            currentRealm = await RealmService.getRealmById(realmIdFromCookie, sessionUser.userId);
+          }
+        }
+
+        // If no cookie realm, fall back to user settings
         if (!currentRealm) {
           const userSettings = await UserService.getUserSettings(sessionUser.userId);
           if (userSettings?.currentRealmId) {
