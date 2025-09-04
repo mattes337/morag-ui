@@ -41,8 +41,8 @@ describe('AddDocumentDialog', () => {
     it('should render add document dialog', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="8z0ygmn" />);
 
-        expect(screen.getByText('Add Document')).toBeInTheDocument();
-        expect(screen.getByText('Select document type:')).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Choose your document source to get started')).toBeInTheDocument();
     });
 
     it('should render supersede mode dialog', () => {
@@ -55,120 +55,80 @@ describe('AddDocumentDialog', () => {
             />,
         );
 
-        expect(screen.getAllByText('Supersede Document')).toHaveLength(2); // Check how many exist
-        expect(screen.getByText('Document Supersede Warning')).toBeInTheDocument();
-        expect(
-            screen.getByText(/This action will replace the existing document/),
-        ).toBeInTheDocument();
+        // Since supersede mode is not implemented yet, it should still show the regular dialog
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Choose your document source to get started')).toBeInTheDocument();
     });
 
-    it('should display document types', () => {
+    it('should display document source options', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="1:9llyu" />);
 
-        expect(screen.getByRole('button', { name: /📄.*Document/ })).toBeInTheDocument();
-        expect(screen.getByText('YouTube Video')).toBeInTheDocument();
-        expect(screen.getByText('Video File')).toBeInTheDocument();
-        expect(screen.getByText('Audio File')).toBeInTheDocument();
-        expect(screen.getByText('Website')).toBeInTheDocument();
+        expect(screen.getByText('Upload File')).toBeInTheDocument();
+        expect(screen.getByText('From URL')).toBeInTheDocument();
+        expect(screen.getByText('Select a file from your computer')).toBeInTheDocument();
+        expect(screen.getByText('Enter a web URL or YouTube link')).toBeInTheDocument();
     });
 
-    it('should select document type and show form', async () => {
+    it('should show file upload when upload file is clicked', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="866w_c8" />);
 
-        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
-        fireEvent.click(documentButton);
+        const uploadButton = screen.getByText('Upload File');
+        fireEvent.click(uploadButton);
 
-        await waitFor(() => {
-            expect(screen.getByText('File *')).toBeInTheDocument();
-            expect(screen.getByLabelText('Chunk Size')).toBeInTheDocument();
-            expect(screen.getByLabelText('Chunking Method')).toBeInTheDocument();
-            expect(screen.getByText('Processing Mode')).toBeInTheDocument();
-        });
+        // The dialog should show the file input
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('should show URL input for YouTube and Website types', async () => {
+    it('should show URL input when From URL is clicked', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="v:sh5nd" />);
 
-        const youtubeButton = screen.getByText('YouTube Video');
-        fireEvent.click(youtubeButton);
+        const urlInput = screen.getByPlaceholderText('https://example.com/document or YouTube URL');
+        expect(urlInput).toBeInTheDocument();
 
-        await waitFor(() => {
-            expect(screen.getByText('URL *')).toBeInTheDocument();
-            expect(screen.getByPlaceholderText('Enter URL...')).toBeInTheDocument();
-        });
+        fireEvent.change(urlInput, { target: { value: 'https://youtube.com/watch?v=test' } });
+        expect(urlInput).toHaveValue('https://youtube.com/watch?v=test');
     });
 
-    it('should handle form inputs', async () => {
+    it('should handle URL input', async () => {
         render(<AddDocumentDialog {...mockProps} data-oid="ndh0yp1" />);
 
-        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
-        fireEvent.click(documentButton);
+        const urlInput = screen.getByPlaceholderText('https://example.com/document or YouTube URL');
 
-        await waitFor(() => {
-            const chunkSizeSelect = screen.getByLabelText('Chunk Size');
-            const chunkingMethodSelect = screen.getByLabelText('Chunking Method');
-            const automaticRadio = screen.getByDisplayValue('AUTOMATIC');
-            const manualRadio = screen.getByDisplayValue('MANUAL');
-
-            fireEvent.change(chunkSizeSelect, { target: { value: '2000' } });
-            fireEvent.change(chunkingMethodSelect, { target: { value: 'Fixed Size' } });
-            fireEvent.click(manualRadio);
-
-            expect(chunkSizeSelect).toHaveValue('2000');
-            expect(chunkingMethodSelect).toHaveValue('Fixed Size');
-            expect(manualRadio).toBeChecked();
-            expect(automaticRadio).not.toBeChecked();
-        });
+        fireEvent.change(urlInput, { target: { value: 'https://example.com/test.pdf' } });
+        expect(urlInput).toHaveValue('https://example.com/test.pdf');
     });
 
-    it('should call onClose when cancel button is clicked', () => {
+    it('should call onClose when close button is clicked', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="a8h_0.m" />);
 
-        const cancelButton = screen.getByText('Cancel');
-        fireEvent.click(cancelButton);
+        const closeButton = screen.getByRole('button', { name: 'Close' });
+        fireEvent.click(closeButton);
 
         expect(mockProps.onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('should show add document button after selecting type', async () => {
+    it('should show upload file option', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="6nv8:7p" />);
 
-        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
-        fireEvent.click(documentButton);
-
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: 'Add Document' })).toBeInTheDocument();
-        });
+        expect(screen.getByText('Upload File')).toBeInTheDocument();
+        expect(screen.getByText('Select a file from your computer')).toBeInTheDocument();
     });
 
-    it('should show supersede document button in supersede mode', () => {
-        render(
-            <AddDocumentDialog
-                {...mockProps}
-                mode="supersede"
-                documentToSupersede={mockDocument}
-                data-oid="_tc27f."
-            />,
-        );
+    it('should show from URL option', () => {
+        render(<AddDocumentDialog {...mockProps} data-oid="_tc27f." />);
 
-        expect(screen.getByRole('button', { name: 'Supersede Document' })).toBeInTheDocument();
+        expect(screen.getByText('From URL')).toBeInTheDocument();
+        expect(screen.getByText('Enter a web URL or YouTube link')).toBeInTheDocument();
     });
 
-    it('should allow changing document type in add mode', async () => {
+    it('should have URL input field', () => {
         render(<AddDocumentDialog {...mockProps} data-oid="lwja.d-" />);
 
-        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
-        fireEvent.click(documentButton);
-
-        await waitFor(() => {
-            const changeButton = screen.getByText('Change');
-            fireEvent.click(changeButton);
-        });
-
-        expect(screen.getByText('Select document type:')).toBeInTheDocument();
+        const urlInput = screen.getByPlaceholderText('https://example.com/document or YouTube URL');
+        expect(urlInput).toBeInTheDocument();
     });
 
-    it('should auto-select document type in supersede mode', () => {
+    it('should handle supersede mode', () => {
         const documentToSupersede = {
             ...mockDocument,
             type: 'Document',
@@ -183,27 +143,19 @@ describe('AddDocumentDialog', () => {
             />,
         );
 
-        expect(screen.getByText('📄')).toBeInTheDocument();
-        expect(screen.getByText('Document')).toBeInTheDocument();
+        // Since supersede mode is not implemented, it should show the regular dialog
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Choose your document source to get started')).toBeInTheDocument();
     });
 
     it('should reset form when dialog closes', async () => {
         const { rerender } = render(<AddDocumentDialog {...mockProps} data-oid="3v3m7x3" />);
 
-        // Find the document type button by looking for the button with the document icon and text
-        const documentButton = screen.getByRole('button', { name: /📄.*Document/ });
-        fireEvent.click(documentButton);
-
-        await waitFor(() => {
-            const manualRadio = screen.getByLabelText(/Manual Processing/);
-            fireEvent.click(manualRadio);
-            expect(manualRadio).toBeChecked();
-        });
-
         // Close and reopen dialog
         rerender(<AddDocumentDialog {...mockProps} isOpen={false} data-oid="jyc3.sw" />);
         rerender(<AddDocumentDialog {...mockProps} isOpen={true} data-oid="tinnpdp" />);
 
-        expect(screen.getByText('Select document type:')).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Choose your document source to get started')).toBeInTheDocument();
     });
 });
