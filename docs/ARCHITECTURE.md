@@ -59,30 +59,164 @@ MoRAG is built as a modern, cloud-native application following microservices-rea
 
 ## Architecture Principles
 
-### 1. Domain-Driven Design (DDD)
+### 1. 4-Layer DAG Architecture
+The system follows a strict Directed Acyclic Graph (DAG) architecture with unidirectional dependencies:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Layer 1: Business Logic                       │
+│  • Domain Models & Entities                                      │
+│  • Business Rules & Validations                                  │
+│  • Processing Pipeline Logic                                     │
+│  • No dependencies on other layers                               │
+└───────────────────────────────────┬─────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  Layer 2: API/Integration                        │
+│  • Service Interfaces & Implementations                          │
+│  • External API Adapters (Vector DBs, LLMs)                     │
+│  • Repository Pattern Implementations                            │
+│  • Depends only on Business Logic layer                          │
+└───────────────────────────────────┬─────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 Layer 3: UI/Presentation                         │
+│  • React Components & Views                                      │
+│  • API Routes & Controllers                                      │
+│  • GraphQL Resolvers                                            │
+│  • Depends on API/Integration & Business Logic layers           │
+└───────────────────────────────────┬─────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Layer 4: Shared/Utility                        │
+│  • Common Types & Interfaces                                     │
+│  • Utility Functions & Helpers                                   │
+│  • Constants & Configurations                                    │
+│  • No business logic, used by all layers                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Dependency Rules:
+- **Downward Only**: Higher layers can only depend on lower layers
+- **Skip Allowed**: Layers can skip intermediate layers (e.g., UI can access Business Logic directly)
+- **No Upward**: Lower layers cannot depend on higher layers
+- **No Circular**: No circular dependencies between or within layers
+
+### 2. Test Driven Development (TDD)
+Every layer is designed with testability as a first-class concern:
+
+#### Testing Strategy by Layer:
+
+**Layer 1: Business Logic Testing**
+```typescript
+// Example: Document Processing Logic Test
+describe('DocumentProcessor', () => {
+  it('should validate document before processing', () => {
+    const processor = new DocumentProcessor()
+    const invalidDoc = { /* missing required fields */ }
+    
+    expect(() => processor.process(invalidDoc)).toThrow(ValidationError)
+  })
+  
+  it('should transform document through pipeline stages', async () => {
+    const processor = new DocumentProcessor()
+    const document = createTestDocument()
+    
+    const result = await processor.process(document)
+    
+    expect(result.stages).toEqual(['markdown', 'chunking', 'embedding'])
+    expect(result.status).toBe('completed')
+  })
+})
+```
+
+**Layer 2: API/Integration Testing**
+```typescript
+// Example: Service Integration Test
+describe('DocumentService', () => {
+  let service: DocumentService
+  let mockRepo: MockRepository
+  let mockVectorDB: MockVectorDatabase
+  
+  beforeEach(() => {
+    mockRepo = new MockRepository()
+    mockVectorDB = new MockVectorDatabase()
+    service = new DocumentService(mockRepo, mockVectorDB)
+  })
+  
+  it('should store document and embeddings', async () => {
+    const document = createTestDocument()
+    
+    await service.ingestDocument(document)
+    
+    expect(mockRepo.save).toHaveBeenCalledWith(document)
+    expect(mockVectorDB.store).toHaveBeenCalledWith(expect.any(Array))
+  })
+})
+```
+
+**Layer 3: UI/Presentation Testing**
+```typescript
+// Example: React Component Test
+describe('DocumentUploadForm', () => {
+  it('should validate file type before upload', () => {
+    const { getByTestId } = render(<DocumentUploadForm />)
+    const fileInput = getByTestId('file-input')
+    
+    const invalidFile = new File([''], 'test.exe', { type: 'application/exe' })
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } })
+    
+    expect(screen.getByText('Invalid file type')).toBeInTheDocument()
+  })
+})
+
+// Example: API Route Test
+describe('POST /api/documents', () => {
+  it('should require authentication', async () => {
+    const response = await request(app)
+      .post('/api/documents')
+      .send({ title: 'Test' })
+    
+    expect(response.status).toBe(401)
+  })
+})
+```
+
+**Layer 4: Shared/Utility Testing**
+```typescript
+// Example: Utility Function Test
+describe('parseDocumentMetadata', () => {
+  it('should extract metadata from various formats', () => {
+    const pdfMeta = parseDocumentMetadata(pdfBuffer)
+    expect(pdfMeta).toHaveProperty('pageCount')
+    expect(pdfMeta).toHaveProperty('author')
+  })
+})
+```
+
+### 3. Domain-Driven Design (DDD)
 - Clear domain boundaries with realms as aggregate roots
 - Ubiquitous language throughout the codebase
 - Rich domain models with business logic encapsulation
+- Domain events for cross-aggregate communication
 
-### 2. Separation of Concerns
-- Presentation layer (React components)
-- Application layer (Controllers, Services)
-- Domain layer (Business logic, Entities)
-- Infrastructure layer (Database, External APIs)
-
-### 3. SOLID Principles
+### 4. SOLID Principles
 - **Single Responsibility**: Each component/service has one reason to change
 - **Open/Closed**: Extensible through interfaces, closed for modification
 - **Liskov Substitution**: Derived classes substitutable for base classes
 - **Interface Segregation**: Specific interfaces rather than general-purpose
 - **Dependency Inversion**: Depend on abstractions, not concretions
 
-### 4. Event-Driven Architecture
+### 5. Event-Driven Architecture
 - Asynchronous processing for long-running tasks
 - Event sourcing for audit trails
 - CQRS for read/write optimization
+- Domain events for decoupling
 
-### 5. Security by Design
+### 6. Security by Design
 - Zero-trust architecture
 - Defense in depth
 - Principle of least privilege
@@ -145,59 +279,437 @@ MoRAG is built as a modern, cloud-native application following microservices-rea
 7. **Data Layer** → Database/Cache
 8. **Response** → Client (with caching headers)
 
-## Component Architecture
+## Component Architecture (4-Layer DAG)
 
-### Frontend Components
-
-#### 1. Page Components (`/app`)
+### Layer 1: Business Logic (`/lib/domain`)
 ```
-app/
+lib/domain/
+├── models/               # Pure domain models
+│   ├── Document.ts      # Document entity & business rules
+│   ├── Realm.ts         # Realm aggregate root
+│   ├── User.ts          # User domain model
+│   └── ProcessingPipeline.ts
+├── services/            # Domain services
+│   ├── DocumentProcessor.ts
+│   ├── ChunkingStrategy.ts
+│   ├── ValidationService.ts
+│   └── FactExtractor.ts
+├── events/              # Domain events
+│   ├── DocumentEvents.ts
+│   └── RealmEvents.ts
+└── errors/              # Domain-specific errors
+    ├── ValidationError.ts
+    └── ProcessingError.ts
+```
+
+### Layer 2: API/Integration (`/lib/integration`)
+```
+lib/integration/
+├── repositories/        # Data access layer
+│   ├── DocumentRepository.ts
+│   ├── RealmRepository.ts
+│   └── UserRepository.ts
+├── adapters/           # External service adapters
+│   ├── vector-db/
+│   │   ├── QdrantAdapter.ts
+│   │   ├── PineconeAdapter.ts
+│   │   └── VectorDBInterface.ts
+│   └── llm/
+│       ├── OpenAIAdapter.ts
+│       ├── AnthropicAdapter.ts
+│       └── LLMInterface.ts
+├── services/           # Application services
+│   ├── DocumentService.ts
+│   ├── AuthenticationService.ts
+│   └── JobQueueService.ts
+└── mappers/           # DTO/Entity mappers
+    ├── DocumentMapper.ts
+    └── RealmMapper.ts
+```
+
+### Layer 3: UI/Presentation
+```
+app/                    # Next.js App Router
 ├── (auth)/
 │   └── login/
 ├── (dashboard)/
 │   ├── layout.tsx
-│   ├── page.tsx (Realms)
+│   ├── page.tsx
 │   ├── documents/
 │   ├── jobs/
-│   ├── users/
 │   └── settings/
-└── api/
-```
-
-#### 2. UI Components (`/components`)
-```
+├── api/               # API Routes
+│   ├── v1/
+│   │   ├── documents/
+│   │   ├── realms/
+│   │   └── auth/
+│   └── webhooks/
 components/
-├── ui/                    # Atomic UI components
+├── ui/                # Atomic UI components
 │   ├── button.tsx
 │   ├── card.tsx
-│   ├── dialog.tsx
-│   └── ...
-├── views/                 # Page-specific views
-│   ├── DocumentsView.tsx
-│   ├── RealmsView.tsx
-│   └── ...
-├── dialogs/              # Modal dialogs
-│   ├── CreateRealmDialog.tsx
-│   └── ...
-└── layout/               # Layout components
-    ├── Header.tsx
-    ├── Sidebar.tsx
-    └── Footer.tsx
+│   └── dialog.tsx
+├── features/          # Feature-specific components
+│   ├── documents/
+│   │   ├── DocumentList.tsx
+│   │   └── DocumentUpload.tsx
+│   └── realms/
+│       ├── RealmSelector.tsx
+│       └── RealmSettings.tsx
+└── layouts/           # Layout components
+    ├── DashboardLayout.tsx
+    └── AuthLayout.tsx
 ```
 
-#### 3. Context Architecture
+### Layer 4: Shared/Utility (`/lib/shared`)
 ```
-contexts/
-├── AppContext.tsx        # Global app state
-├── AuthContext.tsx       # Authentication state
-├── RealmContext.tsx      # Current realm state
-└── ThemeContext.tsx      # Theme preferences
+lib/shared/
+├── types/              # Shared TypeScript types
+│   ├── api.ts
+│   ├── database.ts
+│   └── common.ts
+├── utils/              # Utility functions
+│   ├── date.ts
+│   ├── string.ts
+│   └── validation.ts
+├── constants/          # Application constants
+│   ├── config.ts
+│   ├── routes.ts
+│   └── messages.ts
+└── hooks/              # Shared React hooks
+    ├── useDebounce.ts
+    └── usePagination.ts
+```
+
+## Test Driven Development Architecture
+
+### TDD Principles
+1. **Red-Green-Refactor Cycle**: Write failing test → Make it pass → Improve code
+2. **Test First**: Tests are written before implementation
+3. **Fast Feedback**: Tests run quickly for rapid iteration
+4. **Isolated Testing**: Each layer tested independently
+5. **Mock Dependencies**: Use test doubles for external dependencies
+
+### Testing Pyramid by Layer
+
+```
+         ┌─────────────┐
+         │    E2E      │  5%
+         │   Tests     │
+         └──────┬──────┘
+        ┌───────▼────────┐
+        │  Integration   │  20%
+        │     Tests      │
+        └───────┬────────┘
+       ┌────────▼─────────┐
+       │     Unit         │  75%
+       │     Tests        │
+       └──────────────────┘
+```
+
+### Layer-Specific Testing Strategies
+
+#### Layer 1: Business Logic Testing (Pure Unit Tests)
+```typescript
+// test/domain/DocumentProcessor.test.ts
+describe('DocumentProcessor', () => {
+  let processor: DocumentProcessor
+  
+  beforeEach(() => {
+    processor = new DocumentProcessor()
+  })
+  
+  describe('validation', () => {
+    it('should reject documents without content', () => {
+      const doc = new Document({ title: 'Test', content: '' })
+      const result = processor.validate(doc)
+      
+      expect(result.isValid).toBe(false)
+      expect(result.errors).toContain('Content is required')
+    })
+    
+    it('should accept valid documents', () => {
+      const doc = new Document({ 
+        title: 'Valid Doc', 
+        content: 'Some content',
+        type: DocumentType.PDF 
+      })
+      
+      const result = processor.validate(doc)
+      expect(result.isValid).toBe(true)
+    })
+  })
+  
+  describe('chunking', () => {
+    it('should split document into semantic chunks', () => {
+      const doc = new Document({ content: longTextContent })
+      const chunks = processor.createChunks(doc, { 
+        strategy: 'semantic',
+        maxChunkSize: 500 
+      })
+      
+      expect(chunks).toHaveLength(expectedChunkCount)
+      expect(chunks[0].size).toBeLessThanOrEqual(500)
+    })
+  })
+})
+```
+
+#### Layer 2: API/Integration Testing (Integration Tests)
+```typescript
+// test/integration/DocumentService.test.ts
+describe('DocumentService Integration', () => {
+  let service: DocumentService
+  let mockDB: MockDatabase
+  let mockVectorDB: MockVectorDatabase
+  let mockLLM: MockLLMService
+  
+  beforeEach(() => {
+    mockDB = createMockDatabase()
+    mockVectorDB = createMockVectorDB()
+    mockLLM = createMockLLM()
+    
+    service = new DocumentService({
+      repository: new DocumentRepository(mockDB),
+      vectorDB: mockVectorDB,
+      llm: mockLLM
+    })
+  })
+  
+  describe('document ingestion', () => {
+    it('should process document through complete pipeline', async () => {
+      const document = createTestDocument()
+      mockLLM.generateEmbedding.mockResolvedValue([0.1, 0.2, 0.3])
+      
+      const result = await service.ingestDocument(document)
+      
+      expect(mockDB.documents.save).toHaveBeenCalled()
+      expect(mockVectorDB.store).toHaveBeenCalledWith(
+        expect.objectContaining({ embeddings: expect.any(Array) })
+      )
+      expect(result.status).toBe('ingested')
+    })
+    
+    it('should handle vector database failures gracefully', async () => {
+      mockVectorDB.store.mockRejectedValue(new Error('Connection failed'))
+      
+      const result = await service.ingestDocument(testDocument)
+      
+      expect(result.status).toBe('partial_success')
+      expect(result.errors).toContain('Vector storage failed')
+    })
+  })
+})
+```
+
+#### Layer 3: UI/Presentation Testing (Component & API Tests)
+```typescript
+// test/components/DocumentUpload.test.tsx
+describe('DocumentUpload Component', () => {
+  const mockOnUpload = jest.fn()
+  
+  beforeEach(() => {
+    mockOnUpload.mockClear()
+  })
+  
+  it('should validate file types', async () => {
+    const { getByTestId } = render(
+      <DocumentUpload onUpload={mockOnUpload} />
+    )
+    
+    const file = new File(['content'], 'test.exe', { 
+      type: 'application/x-executable' 
+    })
+    const input = getByTestId('file-input')
+    
+    await userEvent.upload(input, file)
+    
+    expect(screen.getByText('Invalid file type')).toBeInTheDocument()
+    expect(mockOnUpload).not.toHaveBeenCalled()
+  })
+  
+  it('should upload valid files', async () => {
+    const { getByTestId } = render(
+      <DocumentUpload onUpload={mockOnUpload} />
+    )
+    
+    const file = new File(['content'], 'test.pdf', { 
+      type: 'application/pdf' 
+    })
+    const input = getByTestId('file-input')
+    
+    await userEvent.upload(input, file)
+    
+    expect(mockOnUpload).toHaveBeenCalledWith(file)
+  })
+})
+
+// test/api/documents.test.ts
+describe('Documents API', () => {
+  let app: NextApp
+  
+  beforeAll(() => {
+    app = createTestApp()
+  })
+  
+  describe('POST /api/v1/documents', () => {
+    it('should require authentication', async () => {
+      const response = await request(app)
+        .post('/api/v1/documents')
+        .send({ title: 'Test Document' })
+      
+      expect(response.status).toBe(401)
+      expect(response.body.error).toBe('Unauthorized')
+    })
+    
+    it('should create document with valid auth', async () => {
+      const token = generateTestToken()
+      
+      const response = await request(app)
+        .post('/api/v1/documents')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: 'Test Document',
+          content: 'Document content',
+          realmId: 'test-realm'
+        })
+      
+      expect(response.status).toBe(201)
+      expect(response.body.id).toBeDefined()
+    })
+  })
+})
+```
+
+#### Layer 4: Shared/Utility Testing (Pure Functions)
+```typescript
+// test/shared/utils.test.ts
+describe('Utility Functions', () => {
+  describe('parseDocumentMetadata', () => {
+    it('should extract PDF metadata', () => {
+      const pdfBuffer = readFileSync('test-fixtures/sample.pdf')
+      const metadata = parseDocumentMetadata(pdfBuffer)
+      
+      expect(metadata).toEqual({
+        pageCount: 10,
+        author: 'Test Author',
+        createdAt: expect.any(Date),
+        format: 'pdf'
+      })
+    })
+    
+    it('should handle corrupted files', () => {
+      const corruptBuffer = Buffer.from('invalid pdf content')
+      
+      expect(() => parseDocumentMetadata(corruptBuffer))
+        .toThrow('Invalid document format')
+    })
+  })
+  
+  describe('chunkText', () => {
+    it('should respect word boundaries', () => {
+      const text = 'This is a sample text for chunking'
+      const chunks = chunkText(text, { maxSize: 10 })
+      
+      expect(chunks[0]).toBe('This is a')
+      expect(chunks[1]).toBe('sample')
+    })
+  })
+})
+```
+
+### Test Configuration
+
+#### Jest Configuration
+```javascript
+// jest.config.js
+module.exports = {
+  projects: [
+    {
+      displayName: 'domain',
+      testMatch: ['<rootDir>/test/domain/**/*.test.ts'],
+      testEnvironment: 'node',
+    },
+    {
+      displayName: 'integration',
+      testMatch: ['<rootDir>/test/integration/**/*.test.ts'],
+      testEnvironment: 'node',
+      setupFilesAfterEnv: ['<rootDir>/test/integration/setup.ts'],
+    },
+    {
+      displayName: 'ui',
+      testMatch: ['<rootDir>/test/components/**/*.test.tsx'],
+      testEnvironment: 'jsdom',
+      setupFilesAfterEnv: ['<rootDir>/test/ui/setup.ts'],
+    },
+    {
+      displayName: 'api',
+      testMatch: ['<rootDir>/test/api/**/*.test.ts'],
+      testEnvironment: 'node',
+      setupFilesAfterEnv: ['<rootDir>/test/api/setup.ts'],
+    },
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+}
+```
+
+### Continuous Testing
+
+#### Pre-commit Hooks
+```json
+// package.json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run test:affected && npm run lint",
+      "pre-push": "npm run test:all"
+    }
+  }
+}
+```
+
+#### CI/CD Test Pipeline
+```yaml
+# .github/workflows/test.yml
+name: Test Pipeline
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ${{ matrix.test-type }} tests
+        run: npm run test:${{ matrix.test-type }}
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./coverage/lcov.info
+          flags: ${{ matrix.test-type }}
 ```
 
 ### Backend Services
 
-#### 1. Core Services
+#### 1. Core Services (with TDD Interfaces)
 ```typescript
+// All services designed for testability
 interface IDocumentService {
   createDocument(data: CreateDocumentDTO): Promise<Document>
   getDocument(id: string): Promise<Document>
@@ -206,18 +718,20 @@ interface IDocumentService {
   processDocument(id: string): Promise<Job>
 }
 
-interface IRealmService {
-  createRealm(data: CreateRealmDTO): Promise<Realm>
-  switchRealm(userId: string, realmId: string): Promise<void>
-  getRealms(userId: string): Promise<Realm[]>
-  updateRealmConfig(id: string, config: RealmConfig): Promise<Realm>
-}
-
-interface IJobService {
-  createJob(data: CreateJobDTO): Promise<Job>
-  updateJobStatus(id: string, status: JobStatus): Promise<Job>
-  getActiveJobs(): Promise<Job[]>
-  processNextJob(): Promise<void>
+// Testable implementation with dependency injection
+class DocumentService implements IDocumentService {
+  constructor(
+    private repository: IDocumentRepository,
+    private vectorDB: IVectorDatabase,
+    private eventBus: IEventBus
+  ) {}
+  
+  async createDocument(data: CreateDocumentDTO): Promise<Document> {
+    // Implementation with clear separation of concerns
+    const document = await this.repository.create(data)
+    await this.eventBus.publish(new DocumentCreatedEvent(document))
+    return document
+  }
 }
 ```
 
