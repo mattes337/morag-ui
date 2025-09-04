@@ -3,6 +3,7 @@ import { DocumentService } from '../../../lib/services/documentService';
 import { requireUnifiedAuth } from '../../../lib/middleware/unifiedAuth';
 import { unifiedFileService } from '../../../lib/services/unifiedFileService';
 import { detectDocumentType } from '../../../lib/utils/documentTypeDetection';
+import { prisma } from '../../../lib/database';
 
 /**
  * GET /api/documents
@@ -229,6 +230,27 @@ export async function POST(request: NextRequest) {
                     { error: 'realmId is required when not using API key authentication' },
                     { status: 400 }
                 );
+            }
+
+            // Validate user has access to the specified realm
+            if (!auth.isGenericApiKey) {
+                const realmExists = await prisma.realm.findFirst({
+                    where: {
+                        id: targetRealmId,
+                        userRealms: {
+                            some: {
+                                userId: auth.user!.userId
+                            }
+                        }
+                    }
+                });
+
+                if (!realmExists) {
+                    return NextResponse.json(
+                        { error: 'Realm not found or access denied' },
+                        { status: 403 }
+                    );
+                }
             }
 
             // Auto-detect type and subType if not provided

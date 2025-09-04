@@ -89,7 +89,23 @@ export function ExpertModeDocumentDialog({
     if (file) {
       setSelectedFile(file);
       setDocumentUrl(''); // Clear URL if file is selected
-      setDocumentName(file.name.replace(/\.[^/.]+$/, ''));
+
+      // Auto-set document name from filename if not already set
+      if (!documentName.trim()) {
+        // Extract filename without extension and clean it up
+        let cleanName = file.name.replace(/\.[^/.]+$/, '');
+
+        // For video files with metadata patterns like "Title_hls.mp4", extract the title
+        if (cleanName.includes('_hls') || cleanName.includes('_dash')) {
+          cleanName = cleanName.replace(/_hls$|_dash$/, '');
+        }
+
+        // Replace underscores and hyphens with spaces for better readability
+        cleanName = cleanName.replace(/[_-]/g, ' ').trim();
+
+        setDocumentName(cleanName);
+      }
+
       setCurrentStep('configure');
     }
   };
@@ -278,6 +294,10 @@ export function ExpertModeDocumentDialog({
         formData.append('expertConfig', JSON.stringify(documentData.expertConfig));
         formData.append('type', getFileType(selectedFile.name));
 
+        // Add extracted file metadata
+        const fileMetadata = extractFileMetadata(selectedFile);
+        formData.append('fileMetadata', JSON.stringify(fileMetadata));
+
         const response = await fetch('/api/documents/upload', {
           method: 'POST',
           body: formData,
@@ -346,19 +366,68 @@ export function ExpertModeDocumentDialog({
     const extension = filename.split('.').pop()?.toLowerCase();
     const typeMap: { [key: string]: string } = {
       'pdf': 'pdf',
-      'docx': 'docx',
-      'doc': 'docx',
-      'txt': 'txt',
+      'docx': 'document',
+      'doc': 'document',
+      'txt': 'document',
       'md': 'markdown',
       'mp3': 'audio',
       'wav': 'audio',
       'mp4': 'video',
       'avi': 'video',
+      'mov': 'video',
+      'mkv': 'video',
+      'webm': 'video',
       'jpg': 'image',
       'jpeg': 'image',
-      'png': 'image'
+      'png': 'image',
+      'gif': 'image',
+      'webp': 'image'
     };
     return typeMap[extension || ''] || 'document';
+  };
+
+  const extractFileMetadata = (file: File) => {
+    const metadata: any = {
+      originalFilename: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      lastModified: new Date(file.lastModified).toISOString(),
+      uploadedAt: new Date().toISOString()
+    };
+
+    // Extract additional metadata from filename patterns
+    const filename = file.name;
+
+    // Video analysis pattern: "Title_hls.mp4" or similar
+    if (filename.includes('_hls') || filename.includes('_dash')) {
+      const titleMatch = filename.match(/^(.+?)_(?:hls|dash)\./);
+      if (titleMatch) {
+        metadata.originalTitle = titleMatch[1].replace(/[_-]/g, ' ').trim();
+        metadata.videoFormat = filename.includes('_hls') ? 'HLS' : 'DASH';
+      }
+    }
+
+    // Extract video information from common patterns
+    const videoPatterns = [
+      /(\d+)x(\d+)/, // Resolution like 1920x1080
+      /(\d+)fps/, // Frame rate like 30fps
+      /(\d{2}):(\d{2}):(\d{2})/, // Duration like 01:02:11
+    ];
+
+    videoPatterns.forEach(pattern => {
+      const match = filename.match(pattern);
+      if (match) {
+        if (pattern.source.includes('x')) {
+          metadata.resolution = `${match[1]}x${match[2]}`;
+        } else if (pattern.source.includes('fps')) {
+          metadata.frameRate = `${match[1]}fps`;
+        } else if (pattern.source.includes(':')) {
+          metadata.duration = `${match[1]}:${match[2]}:${match[3]}`;
+        }
+      }
+    });
+
+    return metadata;
   };
 
 

@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
     const inputFilesStr = formData.get('input_files') as string;
     const configStr = formData.get('config') as string;
 
+    // File metadata
+    const fileMetadataStr = formData.get('fileMetadata') as string;
+
     console.log('Upload form data (UPDATED):', {
       processingMode,
       type,
@@ -53,6 +56,7 @@ export async function POST(request: NextRequest) {
     let expertConfig = null;
     let inputFiles = null;
     let youtubeConfig = null;
+    let extractedFileMetadata = null;
 
     if (templateConfigStr) {
       try {
@@ -100,6 +104,16 @@ export async function POST(request: NextRequest) {
           { error: 'Invalid YouTube configuration' },
           { status: 400 }
         );
+      }
+    }
+
+    // Parse extracted file metadata
+    if (fileMetadataStr) {
+      try {
+        extractedFileMetadata = JSON.parse(fileMetadataStr);
+      } catch (error) {
+        console.error('Failed to parse file metadata:', error);
+        // Don't fail the upload for metadata parsing errors, just log it
       }
     }
 
@@ -185,28 +199,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (!realmExists) {
-        console.warn(`Realm ${realmId} not found or user has no access, falling back to default realm`);
-        validRealmId = undefined;
-      }
-    }
-
-    // If no valid realm, get user's default realm
-    if (!validRealmId) {
-      const defaultRealm = await prisma.userRealm.findFirst({
-        where: {
-          userId: user.userId,
-          realm: { isDefault: true }
-        },
-        include: { realm: true }
-      });
-
-      if (defaultRealm) {
-        validRealmId = defaultRealm.realmId;
-        console.log(`Using default realm: ${validRealmId}`);
-      } else {
+        console.error(`Realm ${realmId} not found or user has no access`);
         return NextResponse.json(
-          { error: 'No valid realm found. Please create a realm first.' },
-          { status: 400 }
+          { error: `Realm not found or access denied. Please select a valid realm.` },
+          { status: 403 }
         );
       }
     }
@@ -228,6 +224,7 @@ export async function POST(request: NextRequest) {
       ...(expertConfig && { expertConfig }),
       ...(inputFiles && { inputFiles }),
       ...(youtubeConfig && { youtubeConfig }),
+      ...(extractedFileMetadata && extractedFileMetadata), // Merge extracted metadata
       uploadedAt: new Date().toISOString(),
       uploadedBy: user.userId,
       originalSize: file.size,
