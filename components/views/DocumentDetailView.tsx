@@ -10,6 +10,7 @@ import { StageControlPanel } from '../ui/processing/stage-control-panel';
 import { MarkdownPreview } from '../ui/MarkdownPreview';
 import { ProcessingHistory } from '../ui/processing/processing-history';
 import { DocumentStatistics } from '../ui/documents/document-statistics';
+import { DocumentFacts } from '../ui/documents/document-facts';
 import { ToastService } from '../../lib/services/toastService';
 import {
   PDFMetadataCard,
@@ -1048,11 +1049,12 @@ export function DocumentDetailView({
 
             {/* Main Content Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="metadata">Metadata</TabsTrigger>
                     <TabsTrigger value="processing">Processing</TabsTrigger>
                     <TabsTrigger value="files">Files</TabsTrigger>
+                    <TabsTrigger value="facts">Facts</TabsTrigger>
                     <TabsTrigger value="preview">Preview</TabsTrigger>
                 </TabsList>
 
@@ -1557,6 +1559,10 @@ export function DocumentDetailView({
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="facts" className="space-y-6">
+                    <DocumentFacts documentId={document.id} />
                 </TabsContent>
 
                 <TabsContent value="preview" className="space-y-6">

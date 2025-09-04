@@ -300,11 +300,19 @@ class StageExecutionService {
       throw new Error('Document not found');
     }
 
-    const executions = await prisma.stageExecution.findMany({
-      where: { documentId },
-      select: { stage: true, status: true },
-      orderBy: { startedAt: 'desc' },
-    });
+    // Get both stage executions and processing jobs for a more robust check
+    const [executions, jobs] = await Promise.all([
+      prisma.stageExecution.findMany({
+        where: { documentId },
+        select: { stage: true, status: true },
+        orderBy: { startedAt: 'desc' },
+      }),
+      prisma.processingJob.findMany({
+        where: { documentId },
+        select: { stage: true, status: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    ]);
 
     const stages: ProcessingStage[] = ['MARKDOWN_CONVERSION', 'MARKDOWN_OPTIMIZER', 'CHUNKER', 'FACT_GENERATOR', 'INGESTOR'];
     const completedStages: ProcessingStage[] = [];
@@ -318,12 +326,22 @@ class StageExecutionService {
       }
     });
 
-    // Categorize stages
+    // Also check processing jobs as a fallback
+    const latestJobs = new Map<ProcessingStage, string>();
+    jobs.forEach(job => {
+      if (!latestJobs.has(job.stage)) {
+        latestJobs.set(job.stage, job.status);
+      }
+    });
+
+    // Categorize stages - prefer stage execution status, fallback to job status
     stages.forEach(stage => {
-      const status = latestExecutions.get(stage);
-      if (status === 'COMPLETED') {
+      const executionStatus = latestExecutions.get(stage);
+      const jobStatus = latestJobs.get(stage);
+
+      if (executionStatus === 'COMPLETED' || jobStatus === 'FINISHED') {
         completedStages.push(stage);
-      } else if (status === 'FAILED') {
+      } else if (executionStatus === 'FAILED' || jobStatus === 'FAILED') {
         failedStages.push(stage);
       }
     });

@@ -167,6 +167,21 @@ export class JobProcessor {
             immediateCompletion: true,
             completedAt: new Date().toISOString()
           });
+
+          // Also complete the corresponding stage execution
+          try {
+            await stageExecutionService.completeExecution(
+              execution.id,
+              [],
+              {
+                immediateCompletion: true,
+                completedAt: new Date().toISOString()
+              }
+            );
+            console.log(`✅ [JobProcessor] Completed stage execution ${execution.id} for immediate completion job ${job.id}`);
+          } catch (executionError) {
+            console.error(`❌ [JobProcessor] Failed to complete stage execution ${execution.id}:`, executionError);
+          }
         } else {
           // For async processing, job will be polled by status poller
           console.log(`✅ [JobProcessor] Job ${job.id} submitted to backend, task ID: ${result.taskId}`);

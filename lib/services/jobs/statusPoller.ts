@@ -114,6 +114,24 @@ export class StatusPoller {
         immediateCompletion: true,
         completedAt: new Date().toISOString()
       });
+
+      // Also complete the corresponding stage execution
+      if (metadata.executionId) {
+        try {
+          await stageExecutionService.completeExecution(
+            metadata.executionId,
+            [],
+            {
+              immediateCompletion: true,
+              completedAt: new Date().toISOString()
+            }
+          );
+          console.log(`✅ [StatusPoller] Completed stage execution ${metadata.executionId} for immediate completion job ${job.id}`);
+        } catch (executionError) {
+          console.error(`❌ [StatusPoller] Failed to complete stage execution ${metadata.executionId}:`, executionError);
+        }
+      }
+
       return true; // Job was handled
     }
 
@@ -125,7 +143,19 @@ export class StatusPoller {
         await this.handleJobCompletion(job, taskStatus);
         return true;
       } else if (taskStatus.status === 'failed') {
-        await jobManager.failJob(job.id, taskStatus.error?.message || 'Task failed on MoRAG backend');
+        const errorMessage = taskStatus.error?.message || 'Task failed on MoRAG backend';
+        await jobManager.failJob(job.id, errorMessage);
+
+        // Also fail the corresponding stage execution
+        if (metadata.executionId) {
+          try {
+            await stageExecutionService.failExecution(metadata.executionId, errorMessage);
+            console.log(`❌ [StatusPoller] Failed stage execution ${metadata.executionId} for job ${job.id}`);
+          } catch (executionError) {
+            console.error(`❌ [StatusPoller] Failed to fail stage execution ${metadata.executionId}:`, executionError);
+          }
+        }
+
         return true;
       } else if (taskStatus.status === 'in_progress') {
         // Update progress if available
@@ -177,6 +207,25 @@ export class StatusPoller {
         downloadedFiles: filesResult.downloadedCount,
         downloadErrors: filesResult.errors
       });
+
+      // Also complete the corresponding stage execution
+      if (metadata.executionId) {
+        try {
+          await stageExecutionService.completeExecution(
+            metadata.executionId,
+            [], // Output files will be handled by the file download process
+            {
+              taskResult: taskStatus.result,
+              downloadedFiles: filesResult.downloadedCount,
+              downloadErrors: filesResult.errors,
+              statusPollerCompletion: true
+            }
+          );
+          console.log(`✅ [StatusPoller] Completed stage execution ${metadata.executionId} for job ${job.id}`);
+        } catch (executionError) {
+          console.error(`❌ [StatusPoller] Failed to complete stage execution ${metadata.executionId}:`, executionError);
+        }
+      }
 
       // Schedule next stage if this is automatic processing
       if (job.document.processingMode === ProcessingMode.AUTOMATIC) {
