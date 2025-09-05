@@ -46,7 +46,8 @@ const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
 >(({ className, size, variant, label, description, error, id, ...props }, ref) => {
-  const checkboxId = id || `checkbox-${React.useId()}`;
+  const generatedId = React.useId();
+  const checkboxId = id || `checkbox-${generatedId}`;
   const hasError = !!error;
 
   const checkboxElement = (
