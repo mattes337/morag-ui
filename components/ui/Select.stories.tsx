@@ -218,24 +218,24 @@ export const CountrySelector: Story = {
       <SelectContent>
         <SelectGroup>
           <SelectLabel>North America</SelectLabel>
-          <SelectItem value="us">🇺🇸 United States</SelectItem>
-          <SelectItem value="ca">🇨🇦 Canada</SelectItem>
-          <SelectItem value="mx">🇲🇽 Mexico</SelectItem>
+          <SelectItem value="us"><span role="img" aria-label="United States flag">🇺🇸</span> United States</SelectItem>
+          <SelectItem value="ca"><span role="img" aria-label="Canada flag">🇨🇦</span> Canada</SelectItem>
+          <SelectItem value="mx"><span role="img" aria-label="Mexico flag">🇲🇽</span> Mexico</SelectItem>
         </SelectGroup>
         <SelectSeparator />
         <SelectGroup>
           <SelectLabel>Europe</SelectLabel>
-          <SelectItem value="uk">🇬🇧 United Kingdom</SelectItem>
-          <SelectItem value="de">🇩🇪 Germany</SelectItem>
-          <SelectItem value="fr">🇫🇷 France</SelectItem>
-          <SelectItem value="es">🇪🇸 Spain</SelectItem>
+          <SelectItem value="uk"><span role="img" aria-label="United Kingdom flag">🇬🇧</span> United Kingdom</SelectItem>
+          <SelectItem value="de"><span role="img" aria-label="Germany flag">🇩🇪</span> Germany</SelectItem>
+          <SelectItem value="fr"><span role="img" aria-label="France flag">🇫🇷</span> France</SelectItem>
+          <SelectItem value="es"><span role="img" aria-label="Spain flag">🇪🇸</span> Spain</SelectItem>
         </SelectGroup>
         <SelectSeparator />
         <SelectGroup>
           <SelectLabel>Asia Pacific</SelectLabel>
-          <SelectItem value="jp">🇯🇵 Japan</SelectItem>
-          <SelectItem value="au">🇦🇺 Australia</SelectItem>
-          <SelectItem value="sg">🇸🇬 Singapore</SelectItem>
+          <SelectItem value="jp"><span role="img" aria-label="Japan flag">🇯🇵</span> Japan</SelectItem>
+          <SelectItem value="au"><span role="img" aria-label="Australia flag">🇦🇺</span> Australia</SelectItem>
+          <SelectItem value="sg"><span role="img" aria-label="Singapore flag">🇸🇬</span> Singapore</SelectItem>
         </SelectGroup>
       </SelectContent>
     </Select>

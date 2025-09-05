@@ -75,14 +75,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         data-testid="dashboard-layout"
       >
         {/* Sidebar - Desktop */}
-        <aside
+        <nav
           className={cn(
             'hidden lg:flex flex-col transition-all duration-200 ease-in-out border-r border-border',
             state.sidebarState === 'expanded' && 'w-60',
             state.sidebarState === 'collapsed' && 'w-16 collapsed',
             state.sidebarState === 'hidden' && 'w-0 hidden'
           )}
-          role="navigation"
           aria-label="Main navigation"
           data-testid="sidebar"
         >
@@ -91,7 +90,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             currentPath="/"
             className="h-full"
           />
-        </aside>
+        </nav>
 
         {/* Main Content Area */}
         <div className="flex flex-1 flex-col overflow-hidden">

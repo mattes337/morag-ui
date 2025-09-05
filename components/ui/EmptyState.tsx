@@ -120,10 +120,9 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
     ref
   ) => {
     return (
-      <div
+      <section
         ref={ref}
         className={cn(emptyStateVariants({ variant, size, compact }), className)}
-        role="region"
         aria-label="Empty state"
         {...props}
       >
@@ -174,7 +173,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             )}
           </div>
         ) : null}
-      </div>
+      </section>
     );
   }
 );

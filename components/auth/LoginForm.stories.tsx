@@ -222,7 +222,7 @@ export const PasswordVisibility: Story = {
 };
 
 export const LoadingState: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Demo:</strong> Login form in loading state with disabled fields and loading spinner.
@@ -282,7 +282,7 @@ export const LoadingState: Story = {
 };
 
 export const ErrorStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-4">General Error</h3>
@@ -444,7 +444,7 @@ export const AccessibilityFeatures: Story = {
 };
 
 export const AllFormStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">LoginForm States Overview</h2>
       

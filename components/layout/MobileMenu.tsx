@@ -18,9 +18,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+      <button 
+        className="fixed inset-0 bg-black/50 z-40 lg:hidden border-0 p-0"
         onClick={onClose}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+        aria-label="Close mobile menu"
         data-testid="mobile-menu-backdrop"
       />
       

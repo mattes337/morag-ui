@@ -116,7 +116,7 @@ export function ThemeSelector({
   const currentTheme = themes.find(t => t.value === theme);
   
   return (
-    <Select value={theme} onValueChange={setTheme}>
+    <Select value={theme || ''} onValueChange={setTheme}>
       <SelectTrigger className={cn('w-32', className)}>
         {trigger || (
           <div className="flex items-center gap-2">

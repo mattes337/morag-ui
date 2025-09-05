@@ -35,9 +35,11 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-50"
+      <button 
+        className="fixed inset-0 bg-black/50 z-50 border-0 p-0"
         onClick={onClose}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+        aria-label="Close search overlay"
         data-testid="search-overlay-backdrop"
       />
       
@@ -57,7 +59,6 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1"
-              autoFocus
               data-testid="search-input"
             />
             <Button 

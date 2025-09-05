@@ -27,7 +27,7 @@ export class KeyboardNavigationTester {
 
     // Start from first element or current focus
     if (focusableElements.length > 0) {
-      focusableElements[0].focus();
+      focusableElements[0]?.focus();
     }
 
     // Test forward navigation
@@ -56,7 +56,7 @@ export class KeyboardNavigationTester {
 
     // Start from last element
     const lastIndex = focusableElements.length - 1;
-    focusableElements[lastIndex].focus();
+    focusableElements[lastIndex]?.focus();
 
     // Test backward navigation
     for (let i = lastIndex - 1; i >= 0; i--) {
@@ -119,7 +119,7 @@ export class KeyboardNavigationTester {
     
     if (expectedBehavior === 'click') {
       expect(clickSpy).toHaveBeenCalled();
-    } else if (expectedBehavior === 'toggle' && element.type === 'checkbox') {
+    } else if (expectedBehavior === 'toggle' && (element as HTMLInputElement).type === 'checkbox') {
       expect((element as HTMLInputElement).checked).toBe(!initialChecked);
     }
     
@@ -151,7 +151,7 @@ export class KeyboardNavigationTester {
    * Test Arrow key navigation for composite widgets (menus, tabs, radio groups)
    */
   async testArrowKeyNavigation(
-    container: HTMLElement,
+    _container: HTMLElement,
     direction: 'horizontal' | 'vertical' | 'both',
     expectedElements: HTMLElement[],
     options: { shouldLoop?: boolean; shouldActivate?: boolean } = {}
@@ -159,7 +159,7 @@ export class KeyboardNavigationTester {
     if (expectedElements.length === 0) return;
 
     // Start with first element focused
-    expectedElements[0].focus();
+    expectedElements[0]?.focus();
     expect(document.activeElement).toBe(expectedElements[0]);
 
     const keyMaps = {
@@ -172,29 +172,29 @@ export class KeyboardNavigationTester {
 
     // Test forward navigation
     for (let i = 1; i < expectedElements.length; i++) {
-      await this.user.keyboard(forwardKey);
+      if (forwardKey) await this.user.keyboard(forwardKey);
       expect(document.activeElement).toBe(expectedElements[i]);
       
       if (options.shouldActivate) {
         // Check if element was activated (depends on component implementation)
-        const ariaSelected = expectedElements[i].getAttribute('aria-selected');
+        const ariaSelected = expectedElements[i]!.getAttribute('aria-selected');
         expect(ariaSelected).toBe('true');
       }
     }
 
     // Test loop behavior
-    if (options.shouldLoop) {
+    if (options.shouldLoop && forwardKey) {
       await this.user.keyboard(forwardKey);
       expect(document.activeElement).toBe(expectedElements[0]);
     }
 
     // Test backward navigation
     for (let i = expectedElements.length - 2; i >= 0; i--) {
-      await this.user.keyboard(backwardKey);
+      if (backwardKey) await this.user.keyboard(backwardKey);
       expect(document.activeElement).toBe(expectedElements[i]);
     }
 
-    if (options.shouldLoop) {
+    if (options.shouldLoop && backwardKey) {
       await this.user.keyboard(backwardKey);
       expect(document.activeElement).toBe(expectedElements[expectedElements.length - 1]);
     }
@@ -304,7 +304,7 @@ export class KeyboardNavigationTester {
 
     // Arrow keys should move tabindex="0" and focus
     for (let i = 1; i < navigableElements.length; i++) {
-      await this.user.keyboard(forwardKey);
+      if (forwardKey) await this.user.keyboard(forwardKey);
       
       // Check that exactly one element has tabindex="0"
       const currentTabbable = navigableElements.filter(el => el.tabIndex === 0);
@@ -547,7 +547,7 @@ export const KeyboardPatterns = {
     _onChange?: jest.Mock,
     options: { min?: number; max?: number; step?: number } = {}
   ) => {
-    const _tester = new KeyboardNavigationTester();
+    // const _tester = new KeyboardNavigationTester();
     const user = userEvent.setup();
     
     // Slider should be focusable

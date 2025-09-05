@@ -97,8 +97,6 @@ describe('Dialog', () => {
   });
 
   it('should close dialog when overlay is clicked', async () => {
-    const user = userEvent.setup();
-    
     render(
       <Dialog defaultOpen>
         <DialogContent>
@@ -531,7 +529,7 @@ describe('Dialog Composition', () => {
       );
 
       const content = screen.getByTestId(`dialog-content-${size}`);
-      expect(content).toHaveClass(expectedClasses[index]);
+      expect(content).toHaveClass(expectedClasses[index]!);
       
       unmount();
     });

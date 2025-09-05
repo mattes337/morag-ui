@@ -148,7 +148,6 @@ describe('Label', () => {
       <Label
         data-testid="label"
         id="test-label"
-        role="label"
         aria-label="Accessible label"
         title="Label tooltip"
       >

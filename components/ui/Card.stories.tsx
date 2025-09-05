@@ -201,7 +201,7 @@ export const StatsCard: Story = {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-        <span className="text-2xl">💰</span>
+        <span className="text-2xl"><span role="img" aria-label="money bag">💰</span></span>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">$45,231.89</div>

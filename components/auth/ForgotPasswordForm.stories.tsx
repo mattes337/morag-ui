@@ -186,7 +186,7 @@ export const LoadingState: Story = {
 };
 
 export const SuccessState: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Demo:</strong> Success state after password reset request has been sent.
@@ -245,7 +245,7 @@ export const SuccessState: Story = {
 };
 
 export const ErrorStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-4">General Error</h3>
@@ -447,7 +447,7 @@ export const AccessibilityFeatures: Story = {
 };
 
 export const AllFormStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">ForgotPasswordForm States Overview</h2>
       

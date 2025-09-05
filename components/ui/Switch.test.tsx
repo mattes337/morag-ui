@@ -319,7 +319,7 @@ describe('Switch', () => {
   });
 
   it('should render without wrapper when no label, description, or error', () => {
-    const { container } = render(<Switch data-testid="switch" />);
+    render(<Switch data-testid="switch" />);
     
     const switchElement = screen.getByRole('switch');
     // Should not have wrapper div with space-x-3
@@ -327,7 +327,7 @@ describe('Switch', () => {
   });
 
   it('should render with wrapper when label is provided', () => {
-    const { container } = render(<Switch label="Test label" data-testid="switch" />);
+    render(<Switch label="Test label" data-testid="switch" />);
     
     const switchElement = screen.getByRole('switch');
     // Should have wrapper div with space-x-3

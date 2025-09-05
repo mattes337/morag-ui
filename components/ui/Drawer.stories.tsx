@@ -248,27 +248,27 @@ export const BottomSide: Story = {
         <DrawerBody>
           <div className="grid grid-cols-3 gap-4">
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">📄</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="document">📄</span></span>
               <span className="text-xs">New Document</span>
             </Button>
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">📁</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="folder">📁</span></span>
               <span className="text-xs">New Folder</span>
             </Button>
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">📷</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="camera">📷</span></span>
               <span className="text-xs">Upload Photo</span>
             </Button>
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">📊</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="bar chart">📊</span></span>
               <span className="text-xs">Create Chart</span>
             </Button>
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">📅</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="calendar">📅</span></span>
               <span className="text-xs">Schedule Event</span>
             </Button>
             <Button variant="outline" className="h-16 flex-col">
-              <span className="text-lg mb-1">👥</span>
+              <span className="text-lg mb-1"><span role="img" aria-label="people">👥</span></span>
               <span className="text-xs">Invite User</span>
             </Button>
           </div>

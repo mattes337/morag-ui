@@ -262,7 +262,7 @@ export const MobileView: Story = {
 };
 
 export const AllVariations: Story = {
-  render: () => (
+  render: (_args) => (
     <div className="space-y-8 p-4">
       <h2 className="text-2xl font-bold text-center mb-8">AuthLayout Variations</h2>
       

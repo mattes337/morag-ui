@@ -163,7 +163,7 @@ export const AllVariants: Story = {
           <Button size="sm">Small</Button>
           <Button size="default">Default</Button>
           <Button size="lg">Large</Button>
-          <Button size="icon" aria-label="Fire icon button">🔥</Button>
+          <Button size="icon" aria-label="Fire icon button"><span role="img" aria-label="fire">🔥</span></Button>
         </div>
       </div>
       <div className="space-y-2">
@@ -217,7 +217,7 @@ export const ScreenReaderSupport: Story = {
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Screen Reader Support</h3>
         <div className="flex flex-wrap gap-2">
-          <Button aria-label="Save document">💾</Button>
+          <Button aria-label="Save document"><span role="img" aria-label="floppy disk">💾</span></Button>
           <Button aria-describedby="delete-help">
             Delete
           </Button>

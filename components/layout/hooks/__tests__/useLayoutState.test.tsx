@@ -4,9 +4,30 @@ import { useLayoutState } from '../useLayoutState'
 import { SidebarState, Theme } from '../../types'
 
 describe('useLayoutState', () => {
+  // Create a real localStorage implementation for tests
+  let localStorageData: { [key: string]: string } = {}
+
   beforeEach(() => {
-    // Clear localStorage before each test
-    localStorage.clear()
+    // Reset localStorage data
+    localStorageData = {}
+    
+    // Mock localStorage with actual storage behavior
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: (key: string) => localStorageData[key] || null,
+        setItem: (key: string, value: string) => {
+          localStorageData[key] = value
+        },
+        removeItem: (key: string) => {
+          delete localStorageData[key]
+        },
+        clear: () => {
+          localStorageData = {}
+        },
+      },
+      writable: true,
+    })
+    
     // Mock matchMedia for theme detection
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -24,7 +45,7 @@ describe('useLayoutState', () => {
   })
 
   afterEach(() => {
-    localStorage.clear()
+    localStorageData = {}
   })
 
   it('should initialize with default state', () => {

@@ -3,7 +3,7 @@
  * Defines theme structure, semantic color mappings, and theme variants
  */
 
-import { designTokens, colors } from './tokens';
+import { /* designTokens, */ colors } from './tokens';
 
 // Theme modes
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -257,7 +257,7 @@ export type ThemeName = keyof typeof themes;
 
 // Theme configuration
 export interface ThemeConfig {
-  defaultTheme: ThemeName;
+  defaultTheme: ThemeMode;
   enableSystemTheme: boolean;
   disableTransitionOnChange: boolean;
   storageKey: string;
@@ -265,7 +265,7 @@ export interface ThemeConfig {
 }
 
 export const defaultThemeConfig: ThemeConfig = {
-  defaultTheme: 'light',
+  defaultTheme: 'system',
   enableSystemTheme: true,
   disableTransitionOnChange: false,
   storageKey: 'morag-ui-theme',
@@ -337,9 +337,9 @@ export function hslToHex(hsl: string): string {
   const matches = hsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
   if (!matches) return '#000000';
   
-  const h = parseInt(matches[1]) / 360;
-  const s = parseInt(matches[2]) / 100;
-  const l = parseInt(matches[3]) / 100;
+  const h = parseInt(matches[1]!) / 360;
+  const s = parseInt(matches[2]!) / 100;
+  const l = parseInt(matches[3]!) / 100;
   
   const hue2rgb = (p: number, q: number, t: number) => {
     if (t < 0) t += 1;

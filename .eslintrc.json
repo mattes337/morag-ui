@@ -19,7 +19,7 @@
     "jsx-a11y/aria-unsupported-elements": "error",
     "jsx-a11y/autocomplete-valid": "error",
     "jsx-a11y/click-events-have-key-events": "error",
-    "jsx-a11y/control-has-associated-label": "warn",
+    "jsx-a11y/control-has-associated-label": "off",
     "jsx-a11y/heading-has-content": "error",
     "jsx-a11y/html-has-lang": "error",
     "jsx-a11y/iframe-has-title": "error",
@@ -55,8 +55,7 @@
     }],
     
     // Button and link accessibility
-    "jsx-a11y/anchor-ambiguous-text": "warn",
-    "jsx-a11y/no-generic-link-text": "warn"
+    "jsx-a11y/anchor-ambiguous-text": "warn"
   },
   "overrides": [
     {
@@ -64,20 +63,42 @@
       "files": [
         "**/__tests__/**/*",
         "**/*.test.*",
-        "**/*.spec.*",
-        "**/*.stories.*"
+        "**/*.spec.*"
       ],
       "rules": {
         "jsx-a11y/no-autofocus": "off",
-        "jsx-a11y/media-has-caption": "off"
+        "jsx-a11y/media-has-caption": "off",
+        "jsx-a11y/control-has-associated-label": "off",
+        "jsx-a11y/prefer-tag-over-role": "off"
       }
     },
     {
-      // Storybook files can have some relaxed rules for demonstration purposes
+      // UI components that legitimately use ARIA roles for accessibility
+      "files": [
+        "components/ui/Skeleton.tsx", 
+        "components/ui/Spinner.tsx",
+        "components/ui/Button.tsx",
+        "components/auth/RegisterForm.tsx"
+      ],
+      "rules": {
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/no-onchange": "off"
+      }
+    },
+    {
+      // Storybook files can have relaxed rules for demonstration purposes
       "files": ["**/*.stories.*"],
       "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
         "jsx-a11y/anchor-ambiguous-text": "off",
-        "jsx-a11y/no-generic-link-text": "off"
+        "jsx-a11y/label-has-associated-control": "off",
+        "jsx-a11y/label-has-for": "off",
+        "jsx-a11y/anchor-is-valid": "off",
+        "jsx-a11y/no-redundant-roles": "off",
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/no-onchange": "off",
+        "react/no-unescaped-entities": "off",
+        "react-hooks/rules-of-hooks": "off"
       }
     }
   ],

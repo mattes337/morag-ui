@@ -302,7 +302,7 @@ export function createStateVariants(states: {
 
 // Utility for creating component-specific theme classes
 export function createComponentTheme<T extends Record<string, any>>(
-  componentName: string,
+  _componentName: string,
   variants: T
 ): T {
   // This would typically be used with a more sophisticated theme system

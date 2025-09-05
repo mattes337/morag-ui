@@ -337,7 +337,7 @@ describe('Checkbox', () => {
   });
 
   it('should render without wrapper when no label, description, or error', () => {
-    const { container } = render(<Checkbox data-testid="checkbox" />);
+    render(<Checkbox data-testid="checkbox" />);
     
     const checkbox = screen.getByRole('checkbox');
     // Should not have wrapper div with space-x-2
@@ -345,7 +345,7 @@ describe('Checkbox', () => {
   });
 
   it('should render with wrapper when label is provided', () => {
-    const { container } = render(<Checkbox label="Test label" data-testid="checkbox" />);
+    render(<Checkbox label="Test label" data-testid="checkbox" />);
     
     const checkbox = screen.getByRole('checkbox');
     // Should have wrapper div with space-x-2

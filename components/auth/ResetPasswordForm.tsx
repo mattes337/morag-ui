@@ -115,15 +115,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   submitButtonText = 'Reset Password',
   className,
 }) => {
-  // Mock resetPassword function for now
-  const resetPassword = async (data: ResetPasswordData) => {
-    console.log('Resetting password with data:', data)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    return { success: true }
-  }
-
-  const { isLoading, error, clearError } = useAuth()
+  const { isLoading, error, clearError, resetPassword } = useAuth()
 
   // Form state
   const [formData, setFormData] = useState<ResetPasswordData>({
@@ -214,8 +206,8 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       <form 
         onSubmit={handleSubmit}
         aria-label="Reset password form"
-        role="form"
         className="space-y-4"
+        noValidate
       >
         {/* General error message */}
         {generalError && (
@@ -344,7 +336,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       {/* Security info */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          Make sure to choose a strong password that you haven't used before.
+          Make sure to choose a strong password that you haven&apos;t used before.
         </p>
       </div>
     </div>

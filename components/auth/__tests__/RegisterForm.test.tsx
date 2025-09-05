@@ -95,15 +95,30 @@ describe('RegisterForm', () => {
     it('should show validation errors for empty fields', async () => {
       render(<RegisterForm onSuccess={jest.fn()} />)
 
+      // Wait for the realms to load and the button to be enabled
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: 'Create Account' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
       const submitButton = screen.getByRole('button', { name: 'Create Account' })
+      
+      // Ensure register is not called for invalid data
+      mockRegister.mockResolvedValue({ success: false, error: 'Validation should prevent this' })
+      
       await user.click(submitButton)
 
+      // Wait for validation errors to appear
       await waitFor(() => {
         expect(screen.getByText('Name is required')).toBeInTheDocument()
-        expect(screen.getByText('Email address is required')).toBeInTheDocument()
-        expect(screen.getByText(/Password requirements not met/)).toBeInTheDocument()
-        expect(screen.getByText('Please confirm your password')).toBeInTheDocument()
       })
+      
+      expect(screen.getByText('Email address is required')).toBeInTheDocument()
+      expect(screen.getByText(/Password requirements not met/)).toBeInTheDocument()
+      expect(screen.getByText('Please confirm your password')).toBeInTheDocument()
+      
+      // Ensure register was not called due to validation failure
+      expect(mockRegister).not.toHaveBeenCalled()
     })
 
     it('should validate email format', async () => {
@@ -328,6 +343,12 @@ describe('RegisterForm', () => {
 
     it('should announce errors to screen readers', async () => {
       render(<RegisterForm onSuccess={jest.fn()} />)
+
+      // Wait for the realms to load and the button to be enabled
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: 'Create Account' })
+        expect(submitButton).not.toBeDisabled()
+      })
 
       const submitButton = screen.getByRole('button', { name: 'Create Account' })
       await user.click(submitButton)

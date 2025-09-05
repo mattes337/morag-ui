@@ -20,6 +20,10 @@ declare global {
       toBeRequired(): R
       toBeInvalid(): R
       toBeValid(): R
+      // Custom accessibility matchers
+      toHaveAccessibleColors(): R
+      toBeInTheTabSequence(): R
+      toHaveRole(role: string): R
     }
   }
 }

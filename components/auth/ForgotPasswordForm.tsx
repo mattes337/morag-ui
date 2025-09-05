@@ -143,8 +143,8 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       <form 
         onSubmit={handleSubmit}
         aria-label="Forgot password form"
-        role="form"
         className="space-y-4"
+        noValidate
       >
         {/* General error message */}
         {generalError && (
@@ -207,7 +207,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       {/* Success info */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          We'll send a password reset link to your email if an account exists.
+          We&apos;ll send a password reset link to your email if an account exists.
         </p>
       </div>
     </div>

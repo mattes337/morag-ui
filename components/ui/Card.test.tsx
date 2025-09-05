@@ -90,7 +90,6 @@ describe('Card', () => {
       <Card 
         data-testid="card"
         id="test-card"
-        role="article"
         aria-label="Test card"
       >
         Content
@@ -99,7 +98,6 @@ describe('Card', () => {
     
     const card = screen.getByTestId('card');
     expect(card).toHaveAttribute('id', 'test-card');
-    expect(card).toHaveAttribute('role', 'article');
     expect(card).toHaveAttribute('aria-label', 'Test card');
   });
 

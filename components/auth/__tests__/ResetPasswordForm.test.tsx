@@ -180,7 +180,7 @@ describe('ResetPasswordForm', () => {
       render(<ResetPasswordForm token="" onSuccess={jest.fn()} />)
 
       // Component should handle missing token gracefully
-      expect(screen.getByRole('button')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Reset Password' })).toBeInTheDocument()
 
       consoleSpy.mockRestore()
     })

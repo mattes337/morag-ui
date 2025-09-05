@@ -28,21 +28,21 @@ describe('PasswordStrengthIndicator', () => {
       render(<PasswordStrengthIndicator password="123" />)
       
       expect(screen.getByText('Weak')).toBeInTheDocument()
-      expect(screen.getByTestId('strength-bar')).toHaveClass('bg-red-500')
+      expect(screen.getByTestId('strength-bar')).toHaveClass('[&::-webkit-progress-value]:bg-red-500')
     })
 
     it('should show medium strength for medium password', () => {
       render(<PasswordStrengthIndicator password="Abcdef123" />)
       
       expect(screen.getByText('Medium')).toBeInTheDocument()
-      expect(screen.getByTestId('strength-bar')).toHaveClass('bg-yellow-500')
+      expect(screen.getByTestId('strength-bar')).toHaveClass('[&::-webkit-progress-value]:bg-yellow-500')
     })
 
     it('should show strong strength for strong password', () => {
       render(<PasswordStrengthIndicator password="MySecur3P@ssw0rd!" />)
       
       expect(screen.getByText('Strong')).toBeInTheDocument()
-      expect(screen.getByTestId('strength-bar')).toHaveClass('bg-green-500')
+      expect(screen.getByTestId('strength-bar')).toHaveClass('[&::-webkit-progress-value]:bg-green-500')
     })
   })
 
@@ -134,17 +134,19 @@ describe('PasswordStrengthIndicator', () => {
     it('should have proper aria labels', () => {
       render(<PasswordStrengthIndicator password="Test123!" />)
       
+      const progressBar = screen.getByTestId('strength-bar')
+      expect(progressBar).toHaveAttribute('aria-label', expect.stringContaining('Password strength'))
+      
       const indicator = screen.getByTestId('password-strength-indicator')
-      expect(indicator).toHaveAttribute('role', 'progressbar')
       expect(indicator).toHaveAttribute('aria-label', expect.stringContaining('Password strength'))
     })
 
     it('should have proper aria-valuenow for progress', () => {
       render(<PasswordStrengthIndicator password="MySecur3P@ssw0rd!" />)
       
-      const indicator = screen.getByTestId('password-strength-indicator')
-      const ariaValueNow = indicator.getAttribute('aria-valuenow')
-      expect(parseInt(ariaValueNow!)).toBeGreaterThanOrEqual(80)
+      const progressBar = screen.getByTestId('strength-bar')
+      const value = progressBar.getAttribute('value')
+      expect(parseInt(value!)).toBeGreaterThanOrEqual(80)
     })
 
     it('should announce strength changes to screen readers', () => {
@@ -207,7 +209,8 @@ describe('PasswordStrengthIndicator', () => {
       render(<PasswordStrengthIndicator password="" />)
       
       expect(screen.getByText('Weak')).toBeInTheDocument()
-      expect(screen.getByTestId('strength-bar')).toHaveStyle({ width: '0%' })
+      const progressBar = screen.getByTestId('strength-bar')
+      expect(progressBar).toHaveAttribute('value', '0')
     })
   })
 

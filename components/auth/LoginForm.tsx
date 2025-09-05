@@ -231,7 +231,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       <form 
         onSubmit={handleSubmit}
         aria-label="Sign in form"
-        role="form"
         className="space-y-4"
       >
         {/* General error message */}

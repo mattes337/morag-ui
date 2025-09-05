@@ -12,8 +12,7 @@ import {
 } from '@/lib/accessibility/keyboard-test-utils';
 import { Button } from './Button';
 
-// Setup accessibility testing
-import '@/lib/accessibility/jest-setup';
+// Accessibility testing setup is handled in jest.setup.js
 
 describe('Button Accessibility', () => {
   describe('Basic Accessibility', () => {
@@ -61,7 +60,7 @@ describe('Button Accessibility', () => {
       // This functionality is tested in Storybook and manual testing
       render(
         <Button asChild>
-          <a href="/test">Link Button</a>
+          <a href="/test" aria-label="Test Link">Link Button</a>
         </Button>
       );
       const link = screen.getByRole('link');

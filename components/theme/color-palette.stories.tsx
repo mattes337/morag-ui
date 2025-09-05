@@ -305,7 +305,7 @@ export const UsageGuidelines: Story = {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-success">✅ Do</CardTitle>
+            <CardTitle className="text-success"><span role="img" aria-label="checkmark">✅</span> Do</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-3">
@@ -325,7 +325,7 @@ export const UsageGuidelines: Story = {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-destructive">❌ Don't</CardTitle>
+            <CardTitle className="text-destructive"><span role="img" aria-label="cross mark">❌</span> Don&apos;t</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-3">

@@ -1,10 +1,9 @@
-import { axe, toHaveNoViolations } from 'jest-axe';
+import { axe } from 'jest-axe';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 
-// Extend Jest matchers to include axe-core
-expect.extend(toHaveNoViolations);
+// Note: toHaveNoViolations is already extended in jest.setup.js
 
 /**
  * WCAG 2.1 AA compliance levels
@@ -24,14 +23,14 @@ export const AccessibilityTestConfigs = {
    * Basic WCAG 2.1 AA compliance test
    */
   wcag2aa: {
-    tags: [WCAGLevels.A, WCAGLevels.AA, WCAGLevels.WCAG21AA],
+    tags: ['wcag2a', 'wcag2aa', 'wcag21aa'],
   },
   
   /**
    * Enhanced WCAG 2.1 AA test with best practices
    */
   enhanced: {
-    tags: [WCAGLevels.A, WCAGLevels.AA, WCAGLevels.WCAG21AA, 'best-practice'],
+    tags: ['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice'],
   },
   
   /**
@@ -48,7 +47,16 @@ export const AccessibilityTestConfigs = {
       'html-lang-valid': { enabled: false },
     },
   },
-} as const;
+};
+
+/**
+ * Axe configuration type (axe-core AxeOptions)
+ */
+interface AxeConfig {
+  tags?: string[];
+  rules?: Record<string, { enabled: boolean } | boolean>;
+  [key: string]: any;
+}
 
 /**
  * Custom render function with accessibility testing setup
@@ -57,7 +65,7 @@ export interface AccessibilityRenderOptions extends RenderOptions {
   /**
    * Accessibility test configuration to use
    */
-  a11yConfig?: keyof typeof AccessibilityTestConfigs | object;
+  a11yConfig?: keyof typeof AccessibilityTestConfigs | AxeConfig;
   /**
    * Whether to automatically run accessibility tests
    */
@@ -65,7 +73,7 @@ export interface AccessibilityRenderOptions extends RenderOptions {
   /**
    * Custom axe configuration
    */
-  axeOptions?: object;
+  axeOptions?: AxeConfig;
 }
 
 export interface AccessibilityRenderResult extends RenderResult {
@@ -80,7 +88,7 @@ export interface AccessibilityRenderResult extends RenderResult {
   /**
    * Get accessibility violations without throwing
    */
-  getAccessibilityViolations: (config?: object) => Promise<any>;
+  getAccessibilityViolations: (config?: AxeConfig) => Promise<any>;
 }
 
 /**
@@ -99,11 +107,11 @@ export const renderWithA11y = (
 
   const result = render(ui, renderOptions);
 
-  const getAxeConfig = () => {
+  const getAxeConfig = (): AxeConfig => {
     if (typeof a11yConfig === 'string' && a11yConfig in AccessibilityTestConfigs) {
       return AccessibilityTestConfigs[a11yConfig];
     }
-    return a11yConfig as object;
+    return a11yConfig as AxeConfig || {};
   };
 
   const testAccessibility = async () => {
@@ -115,7 +123,7 @@ export const renderWithA11y = (
     expect(axeResult).toHaveNoViolations();
   };
 
-  const testAccessibilityWithConfig = async (customConfig: object) => {
+  const testAccessibilityWithConfig = async (customConfig: AxeConfig) => {
     const axeResult = await axe(result.container, {
       ...customConfig,
       ...axeOptions,
@@ -123,7 +131,7 @@ export const renderWithA11y = (
     expect(axeResult).toHaveNoViolations();
   };
 
-  const getAccessibilityViolations = async (customConfig?: object) => {
+  const getAccessibilityViolations = async (customConfig?: AxeConfig) => {
     const config = customConfig || getAxeConfig();
     return await axe(result.container, {
       ...config,
@@ -445,7 +453,11 @@ export class AccessibilityTestSuite {
   async runFullSuite(config: keyof typeof AccessibilityTestConfigs = 'component') {
     // Run axe-core tests
     const axeConfig = AccessibilityTestConfigs[config];
-    const results = await axe(this.container, axeConfig);
+    const runOptions: any = { runOnly: axeConfig.tags };
+    if ('rules' in axeConfig) {
+      runOptions.rules = axeConfig.rules;
+    }
+    const results = await axe(this.container, runOptions);
     expect(results).toHaveNoViolations();
 
     // Test keyboard navigation

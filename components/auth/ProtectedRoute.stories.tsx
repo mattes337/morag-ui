@@ -387,7 +387,7 @@ export const CustomLoadingComponent: Story = {
 };
 
 export const RoleBasedContent: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold mb-4">Role-Based Content Examples</h3>
       
@@ -488,7 +488,7 @@ export const WithCustomFallback: Story = {
 };
 
 export const AllAuthStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">ProtectedRoute States Overview</h2>
       

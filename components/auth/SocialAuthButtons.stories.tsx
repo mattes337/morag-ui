@@ -227,7 +227,7 @@ export const DisabledState: Story = {
 };
 
 export const LoadingIndividualProvider: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Demo:</strong> Individual provider loading states. In real usage, only the clicked provider would show loading.
@@ -471,7 +471,7 @@ export const AccessibilityFeatures: Story = {
 };
 
 export const AllVariations: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">SocialAuthButtons Variations</h2>
       

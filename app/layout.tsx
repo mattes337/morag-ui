@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme/theme-provider';
@@ -20,10 +20,11 @@ export const metadata: Metadata = {
   description: 'Modular Retrieval-Augmented Generation Platform',
   keywords: ['RAG', 'AI', 'Document Processing', 'Vector Database'],
   authors: [{ name: 'MoRAG Team' }],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'hsl(0 0% 100%)' },
     { media: '(prefers-color-scheme: dark)', color: 'hsl(229 84% 2%)' },

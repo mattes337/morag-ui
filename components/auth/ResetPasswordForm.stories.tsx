@@ -89,7 +89,7 @@ export const InvalidToken: Story = {
   args: {
     token: '',
   },
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-md">
         <div className="flex items-center">
@@ -121,13 +121,13 @@ export const InvalidToken: Story = {
 };
 
 export const FilledForm: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 mb-4">
           <strong>Demo:</strong> Form with sample passwords showing password strength indicator.
         </p>
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
         <script dangerouslySetInnerHTML={{
           __html: `
             setTimeout(() => {
@@ -161,14 +161,14 @@ export const FilledForm: Story = {
 };
 
 export const PasswordStrengthDemo: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 mb-4">
           <strong>Demo:</strong> Type in the password field to see real-time strength analysis.
           Try: "weak", "Password1", "MyStr0ngP@ssw0rd!" to see different levels.
         </p>
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
       </div>
     </MockAuthProvider>
   ),
@@ -183,13 +183,13 @@ export const PasswordStrengthDemo: Story = {
 };
 
 export const PasswordVisibilityDemo: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 mb-4">
           <strong>Demo:</strong> Click the eye icons to toggle password visibility for both fields.
         </p>
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
         <script dangerouslySetInnerHTML={{
           __html: `
             setTimeout(() => {
@@ -215,13 +215,13 @@ export const PasswordVisibilityDemo: Story = {
 };
 
 export const ValidationDemo: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 mb-4">
           <strong>Demo:</strong> Try submitting with mismatched passwords, weak passwords, or empty fields to see validation errors.
         </p>
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
       </div>
     </MockAuthProvider>
   ),
@@ -236,7 +236,7 @@ export const ValidationDemo: Story = {
 };
 
 export const LoadingState: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Demo:</strong> Form in loading state while processing the password reset.
@@ -321,7 +321,7 @@ export const LoadingState: Story = {
 };
 
 export const SuccessState: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Demo:</strong> Success state after password has been successfully reset.
@@ -362,7 +362,7 @@ export const SuccessState: Story = {
 };
 
 export const ErrorStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-4">General Error</h3>
@@ -486,7 +486,7 @@ export const ErrorStates: Story = {
 };
 
 export const PasswordStrengthLevels: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">Password Strength Examples</h3>
       
@@ -566,10 +566,10 @@ export const PasswordStrengthLevels: Story = {
 };
 
 export const SecurityBestPractices: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
           <h4 className="text-sm font-medium text-blue-800 mb-2">Password Security Tips</h4>
           <ul className="text-sm text-blue-700 space-y-1">
@@ -594,14 +594,14 @@ export const SecurityBestPractices: Story = {
 };
 
 export const AccessibilityFeatures: Story = {
-  render: (args) => (
+  render: (_args) => (
     <MockAuthProvider>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 mb-4">
           <strong>Accessibility Features:</strong> This form includes comprehensive accessibility support
           with ARIA attributes, keyboard navigation, and screen reader compatibility.
         </p>
-        <ResetPasswordForm {...args} />
+        <ResetPasswordForm {..._args} />
         <div className="text-xs text-gray-500 space-y-1 p-3 bg-gray-50 rounded">
           <p><strong>ARIA Features:</strong></p>
           <ul className="list-disc list-inside space-y-1">
@@ -628,7 +628,7 @@ export const AccessibilityFeatures: Story = {
 };
 
 export const AllFormStates: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">ResetPasswordForm States Overview</h2>
       

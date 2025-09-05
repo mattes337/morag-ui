@@ -169,35 +169,28 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   // Load available realms
   useEffect(() => {
-    const loadRealms = async () => {
-      try {
-        // Mock realms for now - would fetch from API
-        const mockRealms = [
-          { id: '1', name: 'Default Realm', slug: 'default' },
-          { id: '2', name: 'Test Realm', slug: 'test' },
-        ]
-        
-        setRealms(mockRealms)
-        // Set default realm
-        if (mockRealms.length > 0 && !formData.realmId) {
-          setFormData(prev => ({ ...prev, realmId: mockRealms[0]?.id || '' }))
-        }
-      } catch (err) {
-        console.error('Failed to load realms:', err)
-      } finally {
-        setLoadingRealms(false)
-      }
-    }
+    // Mock realms for now - would fetch from API
+    const mockRealms = [
+      { id: '1', name: 'Default Realm', slug: 'default' },
+      { id: '2', name: 'Test Realm', slug: 'test' },
+    ]
+    
+    setRealms(mockRealms)
+    
+    // Set default realm only if no realm is selected yet
+    setFormData(prev => ({
+      ...prev,
+      realmId: prev.realmId || (mockRealms.length > 0 ? mockRealms[0]?.id || '' : '')
+    }))
+    
+    setLoadingRealms(false)
+  }, [])
 
-    loadRealms()
-  }, [formData.realmId])
-
-  // Clear errors when form data changes
+  // Clear auth errors when form data changes, but keep validation errors until next validation
   useEffect(() => {
     if (error) {
       clearError()
     }
-    setValidationErrors([])
   }, [formData, error, clearError])
 
   const handleInputChange = (field: keyof ExtendedRegisterData, value: string | boolean) => {
@@ -205,6 +198,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       ...prev,
       [field]: field === 'email' && typeof value === 'string' ? value.trim() : value,
     }))
+    
+    // Clear validation error for this specific field when user starts typing
+    setValidationErrors(prev => prev.filter(err => err.field !== field))
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -221,6 +217,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       setValidationErrors(validation.errors)
       return
     }
+    
+    // Clear validation errors if form is valid
+    setValidationErrors([])
 
     try {
       setIsSubmitting(true)
@@ -259,6 +258,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const getFieldError = (fieldName: string) => {
     return validationErrors.find(err => err.field === fieldName)?.message
   }
+  
 
   // Determine if auth errors are field-specific
   const isEmailAuthError = error && (
@@ -276,8 +276,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       <form 
         onSubmit={handleSubmit}
         aria-label="Registration form"
-        role="form"
         className="space-y-4"
+        noValidate
       >
         {/* General error message */}
         {generalError && (

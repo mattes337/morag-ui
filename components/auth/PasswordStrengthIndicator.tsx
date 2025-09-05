@@ -116,27 +116,24 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
     <div
       className={cn('w-full space-y-3', className)}
       data-testid="password-strength-indicator"
-      role="progressbar"
       aria-label={`Password strength: ${strengthText}`}
-      aria-valuenow={progressPercentage}
-      aria-valuemin={0}
-      aria-valuemax={100}
     >
       {/* Progress Bar and Strength Text */}
       {(showProgress || showStrengthText) && (
         <div className="space-y-2">
           {showProgress && (
-            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  'h-full transition-all duration-300 ease-in-out',
-                  strengthBgColor
-                )}
-                style={{ width: `${progressPercentage}%` }}
-                data-testid="strength-bar"
-                aria-hidden="true"
-              />
-            </div>
+            <progress
+              className={cn(
+                'w-full h-2 appearance-none',
+                '[&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-bar]:rounded-full',
+                '[&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-300',
+                strengthBgColor.replace('bg-', '[&::-webkit-progress-value]:bg-')
+              )}
+              value={progressPercentage}
+              max={100}
+              data-testid="strength-bar"
+              aria-label={`Password strength: ${strengthText}`}
+            />
           )}
 
           {showStrengthText && (

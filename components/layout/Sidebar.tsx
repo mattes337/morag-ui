@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       <div className="flex-1 px-2 py-4">
-        <ul className="space-y-1" role="list">
+        <ul className="space-y-1">
           {navigation.map((item) => (
             <li key={item.id} data-testid={`nav-item-${item.id}`}>
               <a

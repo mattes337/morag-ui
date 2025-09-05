@@ -180,7 +180,7 @@ export const HideWhenEmpty: Story = {
     password: '',
     showEmpty: false,
   },
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
         The indicator is hidden when password is empty and showEmpty is false.
@@ -217,7 +217,7 @@ export const HideWhenEmpty: Story = {
         }}
       />
       <div>
-        <PasswordStrengthIndicator {...args} />
+        <PasswordStrengthIndicator {..._args} />
       </div>
     </div>
   ),
@@ -288,7 +288,7 @@ export const InteractiveDemo: Story = {
 
 
 export const ProgressionExample: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">Password Strength Progression</h3>
       
@@ -331,7 +331,7 @@ export const ProgressionExample: Story = {
 };
 
 export const RequirementsBreakdown: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">Password Requirements Breakdown</h3>
       
@@ -377,7 +377,7 @@ export const RequirementsBreakdown: Story = {
 };
 
 export const ComponentVariations: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-8">
       <h3 className="text-lg font-semibold">Component Display Variations</h3>
       
@@ -438,13 +438,13 @@ export const AccessibilityFeatures: Story = {
   args: {
     password: 'Password123!',
   },
-  render: (args) => (
+  render: (_args) => (
     <div className="space-y-4">
       <p className="text-sm text-gray-600 mb-4">
         <strong>Accessibility Features:</strong> This component includes comprehensive accessibility support
         with ARIA attributes, semantic HTML, and screen reader announcements.
       </p>
-      <PasswordStrengthIndicator {...args} />
+      <PasswordStrengthIndicator {..._args} />
       <div className="text-xs text-gray-500 space-y-1 p-3 bg-gray-50 rounded">
         <p><strong>ARIA Features:</strong></p>
         <ul className="list-disc list-inside space-y-1">

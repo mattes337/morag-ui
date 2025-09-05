@@ -6,7 +6,7 @@
 'use client';
 
 import * as React from 'react';
-import { ThemeProvider as NextThemeProvider } from 'next-themes';
+import { ThemeProvider as NextThemeProvider, useTheme } from 'next-themes';
 
 import { defaultThemeConfig, type ThemeConfig } from './config';
 
@@ -31,7 +31,7 @@ export interface ThemeContextValue {
 }
 
 // Create theme context
-const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
+// const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
 
 // Theme provider component
 export function ThemeProvider({
@@ -43,7 +43,7 @@ export function ThemeProvider({
   
   return (
     <NextThemeProvider
-      attribute="class"
+      attribute={"class" as any}
       defaultTheme={mergedConfig.defaultTheme}
       enableSystem={mergedConfig.enableSystemTheme}
       disableTransitionOnChange={mergedConfig.disableTransitionOnChange}
@@ -56,22 +56,8 @@ export function ThemeProvider({
   );
 }
 
-// Hook to use theme context
-export function useTheme() {
-  const context = React.useContext(ThemeContext);
-  
-  if (context === undefined) {
-    // Fallback to next-themes directly if context is not available
-    try {
-      const { useTheme: useNextTheme } = require('next-themes');
-      return useNextTheme();
-    } catch {
-      throw new Error('useTheme must be used within a ThemeProvider');
-    }
-  }
-  
-  return context;
-}
+// Re-export next-themes useTheme hook directly
+export { useTheme };
 
 // Higher-order component for theme-aware components
 export function withTheme<P extends object>(
@@ -85,16 +71,16 @@ export function withTheme<P extends object>(
     
     return (
       <Component
-        {...props}
-        theme={props.theme || resolvedTheme}
+        {...(props as any)}
+        theme={props.theme || (resolvedTheme as string | undefined)}
         ref={ref}
       />
     );
-  }) as React.ComponentType<P & { theme?: string }>;
+  });
   
   ThemedComponent.displayName = `withTheme(${Component.displayName || Component.name})`;
   
-  return ThemedComponent;
+  return ThemedComponent as any;
 }
 
 // Hook for accessing theme-specific values
