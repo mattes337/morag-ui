@@ -17,19 +17,26 @@ import {
   AvatarImage,
   AvatarFallback,
 } from '@/components/ui';
+import { ThemeToggle, ThemeSelector } from '@/components/theme/theme-toggle';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Header Section */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight gradient-text">
-            MoRAG UI Component Library
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A comprehensive collection of accessible, production-ready React components built with Radix UI and Tailwind CSS.
-          </p>
+        <div className="flex items-start justify-between">
+          <div className="text-center space-y-4 flex-1">
+            <h1 className="text-4xl font-bold tracking-tight gradient-text">
+              MoRAG UI Component Library
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              A comprehensive collection of accessible, production-ready React components with advanced theme system support.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeSelector />
+            <ThemeToggle />
+          </div>
         </div>
 
         <Separator />

@@ -84,6 +84,36 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
+// Mock scrollTo and scroll methods
+window.scrollTo = jest.fn();
+window.scroll = jest.fn();
+
+// Mock Element.scrollIntoView
+Element.prototype.scrollIntoView = jest.fn();
+
+// Mock getComputedStyle
+const originalGetComputedStyle = window.getComputedStyle;
+window.getComputedStyle = jest.fn().mockImplementation((element) => {
+  const style = originalGetComputedStyle ? originalGetComputedStyle(element) : {};
+  return {
+    ...style,
+    getPropertyValue: jest.fn((property) => {
+      switch (property) {
+        case 'color':
+          return 'rgb(0, 0, 0)';
+        case 'background-color':
+          return 'rgb(255, 255, 255)';
+        case 'display':
+          return 'block';
+        case 'visibility':
+          return 'visible';
+        default:
+          return style.getPropertyValue?.(property) || '';
+      }
+    }),
+  };
+});
+
 // Reset mocks before each test
 beforeEach(() => {
   localStorageMock.getItem.mockClear()

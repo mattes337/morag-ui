@@ -26,7 +26,7 @@ const checkboxVariants = cva(
 );
 
 export interface CheckboxProps
-  extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>,
+  extends Omit<React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>, 'checked'>,
     VariantProps<typeof checkboxVariants> {
   /**
    * Label text for the checkbox
@@ -40,14 +40,21 @@ export interface CheckboxProps
    * Error message to display
    */
   error?: string;
+  /**
+   * Indeterminate state (for partial selections)
+   */
+  indeterminate?: boolean;
+  /**
+   * Checked state
+   */
+  checked?: boolean | 'indeterminate';
 }
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, size, variant, label, description, error, id, ...props }, ref) => {
-  const generatedId = React.useId();
-  const checkboxId = id || `checkbox-${generatedId}`;
+>(({ className, size, variant, label, description, error, id, indeterminate, checked, ...props }, ref) => {
+  const checkboxId = id || `checkbox-${React.useId()}`;
   const hasError = !!error;
 
   const checkboxElement = (
@@ -58,6 +65,7 @@ const Checkbox = React.forwardRef<
         checkboxVariants({ size, variant: hasError ? 'destructive' : variant }),
         className
       )}
+      checked={indeterminate ? 'indeterminate' : (checked ?? false)}
       {...props}
     >
       <CheckboxPrimitive.Indicator className={cn('flex items-center justify-center text-current')}>

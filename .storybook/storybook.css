@@ -1,39 +1,29 @@
-/* Storybook-specific styles */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&display=swap');
+/* Storybook-specific styles with enhanced theme support */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 
 /* Ensure proper font rendering in Storybook */
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   font-variation-settings: 'opsz' 32;
 }
 
 code, pre {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-jetbrains-mono, 'JetBrains Mono'), ui-monospace, SFMono-Regular, monospace;
+  font-feature-settings: 'liga', 'calt';
 }
 
 /* Storybook canvas adjustments */
 .sb-show-main.sb-main-padded #storybook-root {
-  padding: 1rem;
+  padding: 0;
   min-height: 100vh;
 }
 
-/* Dark mode adjustments for Storybook UI */
-.dark .sb-show-main {
-  background-color: hsl(222.2 84% 4.9%);
-  color: hsl(210 40% 98%);
-}
-
-/* Fix for Storybook controls panel in dark mode */
-.dark .docblock-argstable td,
-.dark .docblock-argstable th {
-  border-color: hsl(217.2 32.6% 17.5%);
-}
-
-/* Ensure component previews render correctly */
-#storybook-root > * {
+/* Story wrapper for better component isolation */
+.storybook-story-wrapper {
   width: 100%;
+  position: relative;
 }
 
 /* Override Storybook's default styles to match our theme */
@@ -41,24 +31,187 @@ code, pre {
   background: transparent !important;
 }
 
-/* Responsive preview adjustments */
-@media (max-width: 768px) {
-  .sb-show-main.sb-main-padded #storybook-root {
-    padding: 0.5rem;
-  }
+/* Ensure proper theme context */
+#storybook-root {
+  width: 100%;
+  min-height: 100%;
 }
 
-/* Component isolation styles */
-.sb-story > div {
-  isolation: isolate;
+/* Enhanced dark mode support for Storybook UI */
+.dark .sb-show-main {
+  background-color: hsl(var(--background, 229 84% 2%));
+  color: hsl(var(--foreground, 210 40% 98%));
 }
 
-/* Accessibility improvements */
+/* Fix for Storybook controls panel in dark mode */
+.dark .docblock-argstable td,
+.dark .docblock-argstable th {
+  border-color: hsl(var(--border, 215 28% 17%));
+  background-color: hsl(var(--card, 224 71% 4%));
+  color: hsl(var(--foreground, 210 40% 98%));
+}
+
+.dark .docblock-argstable th {
+  background-color: hsl(var(--muted, 222 84% 5%));
+}
+
+/* Enhanced accessibility features */
 .sb-story [data-testid] {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
 
 .sb-story [data-testid]:focus-visible {
-  outline-color: hsl(var(--ring, 215 16% 47%));
+  outline-color: hsl(var(--ring, 217 91% 60%));
+}
+
+/* Color blindness simulation */
+.protanopia {
+  filter: url('#protanopia-filter');
+}
+
+.deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+.tritanopia {
+  filter: url('#tritanopia-filter');
+}
+
+.achromatopsia {
+  filter: grayscale(100%);
+}
+
+/* RTL support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sb-show-main.sb-main-padded #storybook-root {
+    padding: 0;
+  }
+  
+  .storybook-story-wrapper {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .storybook-story-wrapper {
+    padding: 0.25rem;
+  }
+}
+
+/* Component showcase specific styles */
+.sb-story .component-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.sb-story .component-showcase > * {
+  flex-shrink: 0;
+}
+
+/* Enhanced focus indicators for better accessibility testing */
+.enhanced-focus *:focus-visible {
+  outline: 3px solid hsl(var(--ring, 217 91% 60%));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px hsl(var(--ring, 217 91% 60%) / 0.2);
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .sb-story {
+    --border: 0 0% 0%;
+    --ring: 0 0% 0%;
+  }
+  
+  .dark .sb-story {
+    --border: 0 0% 100%;
+    --ring: 0 0% 100%;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sb-story *,
+  .sb-story *::before,
+  .sb-story *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print styles for documentation */
+@media print {
+  .sb-story {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .sb-story * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+
+/* SVG filters for color blindness simulation */
+svg.accessibility-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom scrollbar for story content */
+.storybook-story-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground, 220 14% 46%)) hsl(var(--muted, 210 40% 96%));
+}
+
+.storybook-story-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.storybook-story-wrapper::-webkit-scrollbar-track {
+  background: hsl(var(--muted, 210 40% 96%));
+  border-radius: 4px;
+}
+
+.storybook-story-wrapper::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground, 220 14% 46%));
+  border-radius: 4px;
+}
+
+.storybook-story-wrapper::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground, 224 71% 4%));
+}
+
+/* Dark theme scrollbar adjustments */
+.dark .storybook-story-wrapper {
+  scrollbar-color: hsl(var(--muted-foreground, 215 20% 65%)) hsl(var(--muted, 222 84% 5%));
+}
+
+.dark .storybook-story-wrapper::-webkit-scrollbar-track {
+  background: hsl(var(--muted, 222 84% 5%));
+}
+
+.dark .storybook-story-wrapper::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground, 215 20% 65%));
+}
+
+.dark .storybook-story-wrapper::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground, 210 40% 98%));
 }
