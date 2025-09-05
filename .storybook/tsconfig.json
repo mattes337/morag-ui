@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "../stories/**/*",
+    "../components/**/*",
+    "../app/**/*",
+    "../lib/**/*",
+    "../**/*.stories.*"
+  ],
+  "exclude": [
+    "../node_modules"
+  ]
+}
