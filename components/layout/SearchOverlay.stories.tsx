@@ -16,7 +16,6 @@ const meta: Meta<typeof SearchOverlay> = {
     isOpen: true,
     onClose: () => {},
     onSearch: () => {},
-    placeholder: 'Search documents...',
   },
   argTypes: {
     onClose: { action: 'closed' },
@@ -54,10 +53,7 @@ export const Closed: Story = {
   )],
 }
 
-export const CustomPlaceholder: Story = {
-  args: {
-    placeholder: 'Type to search across all your documents and knowledge base...',
-  },
+export const WithBackground: Story = {
   decorators: [(Story) => (
     <div className="h-screen bg-background relative">
       <div className="p-6">

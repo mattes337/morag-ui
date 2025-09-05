@@ -42,14 +42,15 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@tailwindcss/postcss": "^4.1.13",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "next": "^14.2.22",
+    "playwright": "^1.55.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7"
   },
   "engines": {
@@ -67,6 +68,7 @@
   "license": "ISC",
   "devDependencies": {
     "@storybook/addon-a11y": "^9.1.4",
+    "@storybook/addon-docs": "^9.1.4",
     "@storybook/nextjs": "^9.1.4",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.1",
@@ -86,7 +88,6 @@
     "stream-browserify": "^3.0.0",
     "style-loader": "^4.0.0",
     "typescript": "^5.9.2",
-    "util": "^0.12.5",
-    "@storybook/addon-docs": "^9.1.4"
+    "util": "^0.12.5"
   }
 }
