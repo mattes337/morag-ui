@@ -181,6 +181,7 @@ morag-ui-claude/
 5. **Error Handling**: All API responses include `success` field - always check before using result
 6. **Database Transactions**: Use Prisma transactions for multi-table operations
 7. **Background Jobs**: Use ProcessingJob model for queue management
+8. **Storybook Files**: All `.stories.tsx` files must be stored alongside their corresponding component file, not in a separate `/stories/` directory
 
 ## Security Considerations
 
