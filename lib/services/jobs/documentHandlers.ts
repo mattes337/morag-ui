@@ -80,6 +80,7 @@ abstract class BaseDocumentHandler {
               const storedFile = await unifiedFileService.storeFile({
                 documentId: request.documentId,
                 fileType: 'STAGE_OUTPUT',
+                stage: request.stage as any, // Set the stage field directly
                 filename,
                 originalName: filename,
                 content: Buffer.from(fileContent, 'utf-8'),
@@ -925,6 +926,46 @@ export class YouTubeDocumentHandler extends BaseDocumentHandler {
             return backendFilePaths;
           }
         }
+
+        // Fallback: If stage execution has no output files, check documentFile table
+        if (stageExecution) {
+          console.log(`🔍 [YouTubeDocumentHandler] Stage execution found but no output files, checking documentFile table for ${dependentStage}`);
+
+          const dependentConfig = stageOutputMapping[dependentStage];
+          const stageFiles = await prisma.documentFile.findMany({
+            where: {
+              documentId,
+              stage: dependentStage as any,
+              filename: {
+                endsWith: dependentConfig.produces
+              }
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+
+          if (stageFiles.length > 0) {
+            console.log(`📁 [YouTubeDocumentHandler] Found ${stageFiles.length} files from ${dependentStage} in documentFile table`);
+
+            // For fact generator stage, require chunk files
+            if (currentStage === 'FACT_GENERATOR') {
+              const chunkFiles = stageFiles.filter(file => file.filename.includes('.chunks.json'));
+
+              if (chunkFiles.length > 0) {
+                console.log(`✅ [YouTubeDocumentHandler] Found chunk files from ${dependentStage}: ${chunkFiles.map(f => f.filename).join(', ')}`);
+                return chunkFiles.map(f => f.filepath);
+              } else {
+                console.warn(`⚠️ [YouTubeDocumentHandler] No chunk files found from ${dependentStage} for fact-generator. Available files: ${stageFiles.map(f => f.filename).join(', ')}`);
+                continue; // Skip this dependency and check the next one
+              }
+            }
+
+            // For other stages, return all files
+            console.log(`✅ [YouTubeDocumentHandler] Found output files from ${dependentStage}: ${stageFiles.map(f => f.filename).join(', ')}`);
+            return stageFiles.map(f => f.filepath);
+          } else {
+            console.log(`❌ [YouTubeDocumentHandler] No files found for dependency stage: ${dependentStage}`);
+          }
+        }
       }
 
       console.warn(`⚠️ [YouTubeDocumentHandler] No output files found from dependent stages for ${currentStage} on document ${documentId}`);
@@ -1301,6 +1342,46 @@ export class WebsiteDocumentHandler extends BaseDocumentHandler {
             return backendFilePaths;
           }
         }
+
+        // Fallback: If stage execution has no output files, check documentFile table
+        if (stageExecution) {
+          console.log(`🔍 [WebsiteDocumentHandler] Stage execution found but no output files, checking documentFile table for ${dependentStage}`);
+
+          const dependentConfig = stageOutputMapping[dependentStage];
+          const stageFiles = await prisma.documentFile.findMany({
+            where: {
+              documentId,
+              stage: dependentStage as any,
+              filename: {
+                endsWith: dependentConfig.produces
+              }
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+
+          if (stageFiles.length > 0) {
+            console.log(`📁 [WebsiteDocumentHandler] Found ${stageFiles.length} files from ${dependentStage} in documentFile table`);
+
+            // For fact generator stage, require chunk files
+            if (currentStage === 'FACT_GENERATOR') {
+              const chunkFiles = stageFiles.filter(file => file.filename.includes('.chunks.json'));
+
+              if (chunkFiles.length > 0) {
+                console.log(`✅ [WebsiteDocumentHandler] Found chunk files from ${dependentStage}: ${chunkFiles.map(f => f.filename).join(', ')}`);
+                return chunkFiles.map(f => f.filepath);
+              } else {
+                console.warn(`⚠️ [WebsiteDocumentHandler] No chunk files found from ${dependentStage} for fact-generator. Available files: ${stageFiles.map(f => f.filename).join(', ')}`);
+                continue; // Skip this dependency and check the next one
+              }
+            }
+
+            // For other stages, return all files
+            console.log(`✅ [WebsiteDocumentHandler] Found output files from ${dependentStage}: ${stageFiles.map(f => f.filename).join(', ')}`);
+            return stageFiles.map(f => f.filepath);
+          } else {
+            console.log(`❌ [WebsiteDocumentHandler] No files found for dependency stage: ${dependentStage}`);
+          }
+        }
       }
 
       console.warn(`⚠️ [WebsiteDocumentHandler] No output files found from dependent stages for ${currentStage} on document ${documentId}`);
@@ -1638,6 +1719,46 @@ export class FileDocumentHandler extends BaseDocumentHandler {
 
             console.log(`📁 [FileDocumentHandler] Found output files from ${dependentStage}: ${backendFilePaths.join(', ')}`);
             return backendFilePaths;
+          }
+        }
+
+        // Fallback: If stage execution has no output files, check documentFile table
+        if (stageExecution) {
+          console.log(`🔍 [FileDocumentHandler] Stage execution found but no output files, checking documentFile table for ${dependentStage}`);
+
+          const dependentConfig = stageOutputMapping[dependentStage];
+          const stageFiles = await prisma.documentFile.findMany({
+            where: {
+              documentId,
+              stage: dependentStage as any,
+              filename: {
+                endsWith: dependentConfig.produces
+              }
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+
+          if (stageFiles.length > 0) {
+            console.log(`📁 [FileDocumentHandler] Found ${stageFiles.length} files from ${dependentStage} in documentFile table`);
+
+            // For fact generator stage, require chunk files
+            if (currentStage === 'FACT_GENERATOR') {
+              const chunkFiles = stageFiles.filter(file => file.filename.includes('.chunks.json'));
+
+              if (chunkFiles.length > 0) {
+                console.log(`✅ [FileDocumentHandler] Found chunk files from ${dependentStage}: ${chunkFiles.map(f => f.filename).join(', ')}`);
+                return chunkFiles.map(f => f.filepath);
+              } else {
+                console.warn(`⚠️ [FileDocumentHandler] No chunk files found from ${dependentStage} for fact-generator. Available files: ${stageFiles.map(f => f.filename).join(', ')}`);
+                continue; // Skip this dependency and check the next one
+              }
+            }
+
+            // For other stages, return all files
+            console.log(`✅ [FileDocumentHandler] Found output files from ${dependentStage}: ${stageFiles.map(f => f.filename).join(', ')}`);
+            return stageFiles.map(f => f.filepath);
+          } else {
+            console.log(`❌ [FileDocumentHandler] No files found for dependency stage: ${dependentStage}`);
           }
         }
       }
