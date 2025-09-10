@@ -1,5 +1,10 @@
-// Mock data for layout components
+// Mock data for layout components - Updated to use centralized mock data
 import { NavigationItem, Realm, User, Notification, BreadcrumbItem } from './types'
+import { 
+  currentUser, 
+  mockRealms as centralizedRealms, 
+  currentRealm as centralizedCurrentRealm 
+} from '@/lib/mockData'
 
 export const mockNavigation: NavigationItem[] = [
   {
@@ -56,51 +61,25 @@ export const mockNavigation: NavigationItem[] = [
   },
 ]
 
-export const mockRealms: Realm[] = [
-  {
-    id: '1',
-    name: 'Marketing Realm',
-    role: 'admin',
-    description: 'Marketing team workspace with full access',
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Sales Realm',
-    role: 'user',
-    description: 'Sales team collaboration space',
-    isActive: false,
-  },
-  {
-    id: '3',
-    name: 'Engineering Realm',
-    role: 'viewer',
-    description: 'Engineering documentation and resources',
-    isActive: false,
-  },
-  {
-    id: '4',
-    name: 'Executive Realm',
-    role: 'admin',
-    description: 'Executive team strategic planning',
-    isActive: false,
-  },
-  {
-    id: '5',
-    name: 'Customer Support',
-    role: 'user',
-    description: 'Support team knowledge base',
-    isActive: false,
-  },
-]
+// Convert centralized realm data to legacy format for backward compatibility
+export const mockRealms: Realm[] = centralizedRealms.map((realm, index) => ({
+  id: realm.id,
+  name: realm.name,
+  role: realm.memberships.find(m => m.userId === currentUser.id)?.role || 'viewer',
+  description: realm.description,
+  isActive: index === 0, // First realm is active by default
+}))
 
+// Convert centralized user data to legacy format for backward compatibility
 export const mockUser: User = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john.doe@company.com',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
-  role: 'System Administrator',
-  realms: mockRealms.slice(0, 4), // First 4 realms
+  id: currentUser.id,
+  name: currentUser.name,
+  email: currentUser.email,
+  avatar: currentUser.avatar,
+  role: currentUser.role === 'system-admin' ? 'System Administrator' : 
+        currentUser.role === 'realm-admin' ? 'Realm Administrator' :
+        currentUser.role === 'user' ? 'User' : 'Viewer',
+  realms: mockRealms.slice(0, 4), // First 4 realms for compatibility
 }
 
 export const mockNotifications: Notification[] = [
@@ -176,7 +155,14 @@ export const mockNotifications: Notification[] = [
   },
 ]
 
-export const mockCurrentRealm: Realm = mockRealms[0]!
+// Use centralized current realm data
+export const mockCurrentRealm: Realm = {
+  id: centralizedCurrentRealm.id,
+  name: centralizedCurrentRealm.name,
+  role: centralizedCurrentRealm.memberships.find(m => m.userId === currentUser.id)?.role || 'viewer',
+  description: centralizedCurrentRealm.description,
+  isActive: true,
+}
 
 // Helper functions for mock data
 export const getUnreadNotifications = (): Notification[] => {

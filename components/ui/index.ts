@@ -181,3 +181,15 @@ export type {
   DrawerTitleProps,
   DrawerDescriptionProps,
 } from './Drawer';
+
+export {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+  collapsibleVariants,
+} from './Collapsible';
+export type {
+  CollapsibleProps,
+  CollapsibleTriggerProps,
+  CollapsibleContentProps,
+} from './Collapsible';

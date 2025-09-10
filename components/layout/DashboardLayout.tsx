@@ -130,17 +130,57 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         )}
 
-        {/* Search Overlay */}
+        {/* Search Overlay with Error Boundary */}
         {state.isSearchOpen && (
           <div data-testid="search-overlay">
-            <SearchOverlay
-              isOpen={state.isSearchOpen}
-              onClose={toggleSearch}
-              onSearch={(query) => {
-                console.log('Search query:', query)
-                // TODO: Implement search functionality
+            <ErrorBoundary
+              fallback={({ error, onRetry }) => (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-card border rounded-lg shadow-lg z-50 p-6">
+                  <div className="text-center space-y-4">
+                    <h3 className="text-lg font-semibold text-destructive">Search Error</h3>
+                    <p className="text-sm text-muted-foreground">
+                      There was a problem with the search overlay. Please try again.
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={onRetry}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                      >
+                        Retry Search
+                      </button>
+                      <button
+                        onClick={toggleSearch}
+                        className="px-4 py-2 bg-muted text-muted-foreground rounded hover:bg-muted/80 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              onError={(error, errorInfo) => {
+                console.error('Search overlay error:', error, errorInfo)
+                // Could send to analytics/error reporting service
               }}
-            />
+            >
+              <SearchOverlay
+                isOpen={state.isSearchOpen}
+                onClose={toggleSearch}
+                onSearch={(query) => {
+                  // Search analytics tracking
+                  if (typeof window !== 'undefined' && window.gtag) {
+                    window.gtag('event', 'search', {
+                      event_category: 'engagement',
+                      event_label: 'dashboard_search_overlay',
+                      search_term: query
+                    })
+                  }
+                  
+                  // The SearchOverlay now handles navigation internally
+                  console.log('Search performed:', query)
+                }}
+              />
+            </ErrorBoundary>
           </div>
         )}
       </div>

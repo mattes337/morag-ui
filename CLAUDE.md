@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MoRAG (Modular Retrieval-Augmented Generation) is a comprehensive enterprise-grade platform for managing vector databases, document processing, and AI-powered content analysis. It uses a stage-based processing pipeline to transform unstructured data into actionable knowledge.
 
+## Implemented milestones (*ALWAYS KEEP UPDATED*)
+- 1a
+- 2a, 2b, 2c
+
 ## Key Architecture
 
 ### Tech Stack

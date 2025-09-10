@@ -2,6 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme/theme-provider';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { GlobalErrorHandler } from '@/components/error/GlobalErrorHandler';
+import { ErrorFallback } from '@/components/error/ErrorFallback';
+import { createErrorBoundaryReporter } from '@/lib/error/errorReporting';
+import { ApiProvider } from '@/contexts/api/ApiProvider';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -40,21 +45,38 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider
-          config={{
-            defaultTheme: 'system',
-            enableSystemTheme: true,
-            disableTransitionOnChange: false,
-            storageKey: 'morag-ui-theme',
-            themes: ['light', 'dark'],
+        <GlobalErrorHandler 
+          showNotifications={true}
+          enableReporting={process.env.NODE_ENV === 'production'}
+          enableConsoleLogging={process.env.NODE_ENV === 'development'}
+        />
+        <ErrorBoundary
+          fallback={ErrorFallback}
+          onError={(error, errorInfo) => {
+            const reporter = createErrorBoundaryReporter('RootLayout');
+            reporter(error, {
+              componentStack: errorInfo.componentStack || null
+            });
           }}
         >
-          <div className="relative flex min-h-screen flex-col">
-            <div className="flex-1">
-              {children}
-            </div>
-          </div>
-        </ThemeProvider>
+          <ApiProvider>
+            <ThemeProvider
+              config={{
+                defaultTheme: 'system',
+                enableSystemTheme: true,
+                disableTransitionOnChange: false,
+                storageKey: 'morag-ui-theme',
+                themes: ['light', 'dark'],
+              }}
+            >
+              <div className="relative flex min-h-screen flex-col">
+                <div className="flex-1">
+                  {children}
+                </div>
+              </div>
+            </ThemeProvider>
+          </ApiProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
