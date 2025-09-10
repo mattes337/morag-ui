@@ -9,11 +9,6 @@ import { ForgotPasswordForm } from '../../../components/auth/ForgotPasswordForm'
  * Forgot password page component for password reset requests
  */
 export default function ForgotPasswordPage() {
-  const handleResetRequest = () => {
-    // Could show success message or redirect
-    console.log('Password reset requested')
-  }
-
   return (
     <AuthLayout
       title="Reset your password"
@@ -22,7 +17,7 @@ export default function ForgotPasswordPage() {
       backText="← Back to sign in"
     >
       <div className="space-y-6">
-        <ForgotPasswordForm onSuccess={handleResetRequest} />
+        <ForgotPasswordForm />
         
         <div className="text-center">
           <p className="text-sm text-gray-600">

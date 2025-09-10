@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme/theme-provider';
-import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { RootErrorBoundary } from '@/components/error/RootErrorBoundary';
 import { GlobalErrorHandler } from '@/components/error/GlobalErrorHandler';
-import { ErrorFallback } from '@/components/error/ErrorFallback';
-import { createErrorBoundaryReporter } from '@/lib/error/errorReporting';
 import { ApiProvider } from '@/contexts/api/ApiProvider';
 
 const inter = Inter({ 
@@ -50,15 +48,7 @@ export default function RootLayout({
           enableReporting={process.env.NODE_ENV === 'production'}
           enableConsoleLogging={process.env.NODE_ENV === 'development'}
         />
-        <ErrorBoundary
-          fallback={ErrorFallback}
-          onError={(error, errorInfo) => {
-            const reporter = createErrorBoundaryReporter('RootLayout');
-            reporter(error, {
-              componentStack: errorInfo.componentStack || null
-            });
-          }}
-        >
+        <RootErrorBoundary>
           <ApiProvider>
             <ThemeProvider
               config={{
@@ -76,7 +66,7 @@ export default function RootLayout({
               </div>
             </ThemeProvider>
           </ApiProvider>
-        </ErrorBoundary>
+        </RootErrorBoundary>
       </body>
     </html>
   );

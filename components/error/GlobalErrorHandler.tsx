@@ -55,6 +55,8 @@ export function GlobalErrorHandler({
         timestamp: new Date().toISOString(),
         url: window.location.href,
         userAgent: navigator.userAgent,
+        userId: undefined,
+        sessionId: undefined,
         additional: {
           promise: event.promise.toString(),
           reason: String(event.reason),
@@ -97,6 +99,11 @@ export function GlobalErrorHandler({
 
     // Handle uncaught JavaScript errors
     const handleError = (event: ErrorEvent) => {
+      // Skip this handler if it's a resource loading error (has HTML element target)
+      if (event.target instanceof HTMLElement) {
+        return;
+      }
+      
       const error = event.error instanceof Error ? event.error : new Error(event.message);
 
       if (enableConsoleLogging) {
@@ -117,6 +124,8 @@ export function GlobalErrorHandler({
         timestamp: new Date().toISOString(),
         url: window.location.href,
         userAgent: navigator.userAgent,
+        userId: undefined,
+        sessionId: undefined,
         additional: {
           filename: event.filename,
           lineno: event.lineno,
@@ -160,7 +169,7 @@ export function GlobalErrorHandler({
     // Handle resource loading errors (images, scripts, etc.)
     const handleResourceError = (event: Event) => {
       if (event.target instanceof HTMLElement) {
-        const error = new Error(`Failed to load resource: ${event.target.tagName}`);
+        const error = new Error(`Failed to load ${event.target.tagName.toLowerCase()}`);
         
         if (enableConsoleLogging) {
           console.group('🚨 Resource Loading Error');
@@ -178,6 +187,8 @@ export function GlobalErrorHandler({
           timestamp: new Date().toISOString(),
           url: window.location.href,
           userAgent: navigator.userAgent,
+          userId: undefined,
+          sessionId: undefined,
           additional: {
             tagName: event.target.tagName,
             src: (event.target as any).src || (event.target as any).href,
@@ -235,6 +246,8 @@ export function reportManualError(error: Error, context?: string) {
     timestamp: new Date().toISOString(),
     url: window.location.href,
     userAgent: navigator.userAgent,
+    userId: undefined,
+    sessionId: undefined,
     additional: {
       manual: true,
     },

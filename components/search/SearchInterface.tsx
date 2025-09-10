@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Input,
   Button,
@@ -15,15 +15,44 @@ import { Search, Settings, Keyboard, ChevronDown } from 'lucide-react';
 import { SearchFilters } from './SearchFilters';
 import { useSearch } from './hooks/useSearch';
 
+/**
+ * Props for the SearchInterface component
+ * 
+ * Provides a comprehensive search interface with query input, advanced filters,
+ * keyboard shortcuts, and accessibility features.
+ * 
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <SearchInterface
+ *   onSearch={(query) => console.log('Searching for:', query)}
+ *   onFilter={(filters) => console.log('Applying filters:', filters)}
+ * />
+ * 
+ * // With custom styling and auto-focus
+ * <SearchInterface
+ *   onSearch={handleSearch}
+ *   onFilter={handleFilter}
+ *   className="my-4"
+ *   placeholder="Search documents, knowledge base, and more..."
+ *   autoFocus={true}
+ * />
+ * ```
+ */
 export interface SearchInterfaceProps {
+  /** Callback fired when search query changes or search is executed */
   onSearch: (query: string) => void;
+  /** Callback fired when filter options are changed */
   onFilter: (filters: any) => void;
+  /** Additional CSS classes to apply to the root element */
   className?: string;
+  /** Placeholder text for the search input */
   placeholder?: string;
+  /** Whether to automatically focus the search input on mount */
   autoFocus?: boolean;
 }
 
-export const SearchInterface: React.FC<SearchInterfaceProps> = ({
+export const SearchInterface: React.FC<SearchInterfaceProps> = React.memo(({
   onSearch,
   onFilter,
   className = '',
@@ -75,8 +104,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     }
   };
 
-  // Handle search input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Memoized search input change handler to prevent re-renders
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
     
@@ -87,13 +116,40 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     } else if (newQuery.trim().length === 0) {
       onSearch('');
     }
-  };
+  }, [setQuery, searchDebounced, onSearch]);
 
-  // Handle filter changes
-  const handleFiltersChange = (newFilters: any) => {
+  // Memoized filter change handler to prevent re-renders
+  const handleFiltersChange = useCallback((newFilters: any) => {
     updateFilters(newFilters);
     onFilter(newFilters);
-  };
+  }, [updateFilters, onFilter]);
+
+  // Memoized filter handlers to prevent function recreation on every render
+  const handlePdfFilter = useCallback(() => {
+    handleFiltersChange({ ...filters, documentType: 'pdf' });
+  }, [handleFiltersChange, filters]);
+  
+  const handleLastWeekFilter = useCallback(() => {
+    handleFiltersChange({ ...filters, dateRange: 'last-week' });
+  }, [handleFiltersChange, filters]);
+  
+  const handleNewestFirstFilter = useCallback(() => {
+    handleFiltersChange({ ...filters, sortBy: 'date-desc' });
+  }, [handleFiltersChange, filters]);
+  
+  const handleClearAllFilters = useCallback(() => {
+    handleFiltersChange({ 
+      documentType: 'all',
+      dateRange: 'all',
+      sortBy: 'relevance'
+    });
+  }, [handleFiltersChange]);
+  
+  // Memoized active filters check to prevent recalculation on every render
+  const hasActiveFilters = useMemo(() => {
+    const defaults = ['all', 'all', 'relevance'];
+    return Object.values(filters).some((filter, index) => filter !== defaults[index]);
+  }, [filters]);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -173,10 +229,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               </div>
               
               {/* Active filters indicator */}
-              {Object.values(filters).some((filter, index) => {
-                const defaults = ['all', 'all', 'relevance'];
-                return filter !== defaults[index];
-              }) && (
+              {hasActiveFilters && (
                 <Badge variant="secondary" className="text-xs">
                   Filters active
                 </Badge>
@@ -204,7 +257,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                   <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                     <h4 className="text-sm font-medium">Search Tips:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <div>• Use quotes for exact phrases: "machine learning"</div>
+                      <div>• Use quotes for exact phrases: &quot;machine learning&quot;</div>
                       <div>• Exclude terms with minus: -draft</div>
                       <div>• Wildcard matching: develop*</div>
                       <div>• Filter by author: author:john</div>
@@ -233,7 +286,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleFiltersChange({ ...filters, documentType: 'pdf' })}
+          onClick={handlePdfFilter}
           className={`h-7 text-xs ${filters.documentType === 'pdf' ? 'bg-primary text-primary-foreground' : ''}`}
         >
           PDF Documents
@@ -242,7 +295,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleFiltersChange({ ...filters, dateRange: 'last-week' })}
+          onClick={handleLastWeekFilter}
           className={`h-7 text-xs ${filters.dateRange === 'last-week' ? 'bg-primary text-primary-foreground' : ''}`}
         >
           Last Week
@@ -251,7 +304,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleFiltersChange({ ...filters, sortBy: 'date-desc' })}
+          onClick={handleNewestFirstFilter}
           className={`h-7 text-xs ${filters.sortBy === 'date-desc' ? 'bg-primary text-primary-foreground' : ''}`}
         >
           Newest First
@@ -260,11 +313,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleFiltersChange({ 
-            documentType: 'all',
-            dateRange: 'all',
-            sortBy: 'relevance'
-          })}
+          onClick={handleClearAllFilters}
           className="h-7 text-xs border-dashed border"
         >
           Clear All
@@ -272,6 +321,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
       </div>
     </div>
   );
-};
+});
+
+SearchInterface.displayName = 'SearchInterface';
 
 export default SearchInterface;

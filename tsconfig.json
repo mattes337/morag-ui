@@ -37,6 +37,7 @@
       ]
     },
     "target": "ES2017",
+    "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

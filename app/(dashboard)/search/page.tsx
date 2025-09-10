@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SearchInterface } from '@/components/search/SearchInterface';
 import { SearchResults } from '@/components/search/SearchResults';
@@ -8,7 +8,7 @@ import { useSearch } from '@/components/search/hooks/useSearch';
 import { SearchResult } from '@/lib/mockData/searchMockData';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const urlQuery = searchParams?.get('q') || '';
   
@@ -70,7 +70,7 @@ export default function SearchPage() {
 
         {/* Search Interface with Error Boundary */}
         <ErrorBoundary
-          fallback={({ error, onRetry }) => (
+          fallback={({ onRetry }) => (
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center space-y-4">
               <h3 className="text-lg font-semibold text-destructive">Search Interface Error</h3>
               <p className="text-sm text-muted-foreground">
@@ -136,8 +136,8 @@ export default function SearchPage() {
                   </div>
                 </div>
               )}
-              onError={(_error, errorInfo) => {
-                console.error('Search results error:', _error, errorInfo)
+              onError={(searchError, errorInfo) => {
+                console.error('Search results error:', searchError, errorInfo)
               }}
             >
               <SearchResults
@@ -181,7 +181,7 @@ export default function SearchPage() {
               <div className="bg-muted/50 rounded-lg p-4 text-left">
                 <h4 className="text-sm font-medium mb-2">Search Tips:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Use quotes for exact phrases: "machine learning"</li>
+                  <li>• Use quotes for exact phrases: &quot;machine learning&quot;</li>
                   <li>• Exclude terms with minus: -draft</li>
                   <li>• Use Ctrl+K to quickly focus the search input</li>
                   <li>• Filter by document type, date, or sort by relevance</li>
@@ -192,5 +192,22 @@ export default function SearchPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex-1 overflow-y-auto bg-background">
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <div className="text-center space-y-4">
+            <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-gray-600">Loading search...</p>
+          </div>
+        </div>
+      </main>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }

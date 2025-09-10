@@ -145,9 +145,11 @@ export function ErrorFallback({
         actionText="Try Again"
         onAction={onRetry}
         actionVariant="default"
-        secondaryActionText={showDetails && error ? (showErrorDetails ? "Hide Details" : "Show Details") : undefined}
-        onSecondaryAction={showDetails && error ? () => setShowErrorDetails(!showErrorDetails) : undefined}
-        secondaryActionVariant="outline"
+        {...(showDetails && error ? {
+          secondaryActionText: showErrorDetails ? "Hide Details" : "Show Details",
+          onSecondaryAction: () => setShowErrorDetails(!showErrorDetails),
+          secondaryActionVariant: "outline" as const
+        } : {})}
       />
 
       {showDetails && showErrorDetails && error && (

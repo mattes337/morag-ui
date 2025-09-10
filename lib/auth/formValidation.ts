@@ -1,6 +1,6 @@
 /**
  * Form validation utilities for authentication forms
- * Provides comprehensive validation with detailed error messages
+ * Provides comprehensive validation with detailed error messages and input sanitization
  */
 
 import type {
@@ -11,7 +11,10 @@ import type {
   ForgotPasswordData,
   ResetPasswordData,
 } from './types'
+
+export type { ValidationResult, FormError }
 import { validatePassword } from './passwordValidator'
+import DOMPurify from 'dompurify'
 
 /**
  * Email validation regex
@@ -46,10 +49,19 @@ export const validateEmail = (email: string): ValidationResult => {
     email = ''
   }
   
-  const trimmedEmail = email.trim()
+  let sanitizedEmail: string
+  try {
+    sanitizedEmail = sanitizeEmail(email)
+  } catch (error) {
+    errors.push({
+      field: 'email',
+      message: 'Email contains invalid or potentially unsafe content',
+    })
+    return { isValid: false, errors }
+  }
   
   // Required check
-  if (!trimmedEmail) {
+  if (!sanitizedEmail) {
     errors.push({
       field: 'email',
       message: 'Email address is required',
@@ -58,7 +70,7 @@ export const validateEmail = (email: string): ValidationResult => {
   }
   
   // Length check
-  if (trimmedEmail.length > 254) {
+  if (sanitizedEmail.length > 254) {
     errors.push({
       field: 'email',
       message: 'Email address is too long (maximum 254 characters)',
@@ -66,7 +78,7 @@ export const validateEmail = (email: string): ValidationResult => {
   }
   
   // Format check
-  if (!isValidEmail(trimmedEmail)) {
+  if (!isValidEmail(sanitizedEmail)) {
     errors.push({
       field: 'email',
       message: 'Please enter a valid email address',
@@ -90,6 +102,7 @@ export const validateName = (name: string): ValidationResult => {
     name = ''
   }
   
+  // Basic trim to handle whitespace
   const trimmedName = name.trim()
   
   // Required check
@@ -116,9 +129,18 @@ export const validateName = (name: string): ValidationResult => {
     })
   }
   
-  // Character validation - allow letters, spaces, hyphens, and apostrophes
-  const nameRegex = /^[a-zA-ZÀ-ÿ\u0100-\u017F\u0180-\u024F\u0386-\u03FF\u0400-\u04FF\s'-]+$/
+  // Character validation - allow only letters, spaces, hyphens, and apostrophes
+  // This regex excludes numbers and special characters like @, &, <, >, etc.
+  const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]+$/
   if (!nameRegex.test(trimmedName)) {
+    errors.push({
+      field: 'name',
+      message: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+    })
+  }
+  
+  // Check for potentially dangerous characters explicitly
+  if (/[0-9@&<>{}[\]#$%^*+=|\\/"`;:.,?!~`]/.test(trimmedName)) {
     errors.push({
       field: 'name',
       message: 'Name can only contain letters, spaces, hyphens, and apostrophes',
@@ -316,9 +338,91 @@ export const createFormError = (field: string, message: string): FormError => ({
 })
 
 /**
- * Sanitize input string by trimming and normalizing
+ * Comprehensive input sanitization to prevent XSS and injection attacks
  */
 export const sanitizeInput = (input: string | null | undefined): string => {
   if (input == null) return ''
-  return input.trim()
+  
+  // Basic trim and normalize
+  let sanitized = input.trim()
+  
+  // Remove null bytes and control characters (except newlines, tabs, and carriage returns)
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  
+  // Use DOMPurify to sanitize HTML content
+  sanitized = DOMPurify.sanitize(sanitized, {
+    ALLOWED_TAGS: [], // No HTML tags allowed
+    ALLOWED_ATTR: [], // No attributes allowed
+    KEEP_CONTENT: true, // Keep text content but remove tags
+  })
+  
+  // Additional protection against script injection
+  const suspiciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /data:text\/html/i,
+    /vbscript:/i,
+    /livescript:/i,
+  ]
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(sanitized)) {
+      throw new Error('Input contains potentially malicious content')
+    }
+  }
+  
+  return sanitized
+}
+
+/**
+ * Sanitizes and validates email input with additional security checks
+ */
+export const sanitizeEmail = (email: string | null | undefined): string => {
+  const sanitized = sanitizeInput(email)
+  
+  // Additional email-specific validation
+  if (sanitized.includes('<') || sanitized.includes('>')) {
+    throw new Error('Email contains invalid characters')
+  }
+  
+  // Check for SQL injection patterns
+  const sqlPatterns = [
+    /['";]/,
+    /union\s+select/i,
+    /insert\s+into/i,
+    /delete\s+from/i,
+    /drop\s+table/i,
+    /update\s+set/i,
+  ]
+  
+  for (const pattern of sqlPatterns) {
+    if (pattern.test(sanitized)) {
+      throw new Error('Email contains potentially malicious content')
+    }
+  }
+  
+  return sanitized
+}
+
+/**
+ * Sanitizes name input with additional checks for special characters
+ */
+export const sanitizeName = (name: string | null | undefined): string => {
+  const sanitized = sanitizeInput(name)
+  
+  // Names should not contain HTML entities or special characters beyond basic punctuation
+  const dangerousPatterns = [
+    /&[#\w]+;/, // HTML entities
+    /[<>{}[\]]/,  // Brackets and braces
+    /[\x00-\x1F\x7F-\x9F]/, // Control characters
+  ]
+  
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(sanitized)) {
+      throw new Error('Name contains invalid characters')
+    }
+  }
+  
+  return sanitized
 }

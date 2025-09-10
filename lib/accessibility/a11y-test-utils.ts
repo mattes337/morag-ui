@@ -379,7 +379,7 @@ export class ScreenReaderTestUtils {
    * Get role for input elements based on type
    */
   private getInputRole(input: HTMLInputElement): string {
-    const type = input.type.toLowerCase();
+    const type = input.type?.toLowerCase() || 'text';
     const roleMap: Record<string, string> = {
       button: 'button',
       submit: 'button',

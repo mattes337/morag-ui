@@ -68,12 +68,49 @@ export interface BreadcrumbItem {
 }
 
 // Component prop interfaces
+
+/**
+ * Props for the DashboardLayout component
+ * 
+ * Provides the main dashboard layout with sidebar navigation, header,
+ * user management, realm switching, and responsive design.
+ * 
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <DashboardLayout
+ *   user={currentUser}
+ *   navigation={navItems}
+ *   currentRealm={activeRealm}
+ *   onRealmChange={(realm) => switchToRealm(realm)}
+ * >
+ *   <PageContent />
+ * </DashboardLayout>
+ * 
+ * // With custom styling
+ * <DashboardLayout
+ *   user={user}
+ *   navigation={navigation}
+ *   currentRealm={realm}
+ *   onRealmChange={handleRealmChange}
+ *   className="custom-layout"
+ * >
+ *   <CustomDashboard />
+ * </DashboardLayout>
+ * ```
+ */
 export interface DashboardLayoutProps {
+  /** Page content to render in the main area */
   children: React.ReactNode
+  /** Current authenticated user */
   user: User
+  /** Navigation menu items */
   navigation: NavigationItem[]
+  /** Currently selected realm/workspace */
   currentRealm: Realm | null
+  /** Callback when user switches realms */
   onRealmChange: (realm: Realm) => void
+  /** Additional CSS classes */
   className?: string
 }
 
@@ -112,10 +149,44 @@ export interface NotificationBellProps {
   className?: string
 }
 
+/**
+ * Props for the SearchOverlay component
+ * 
+ * Provides a full-screen search overlay with advanced search capabilities,
+ * suggestions, and keyboard navigation support.
+ * 
+ * @example
+ * ```tsx
+ * // Basic search overlay
+ * <SearchOverlay
+ *   isOpen={isSearchOpen}
+ *   onClose={() => setIsSearchOpen(false)}
+ *   onSearch={(query) => {
+ *     console.log('Searching for:', query);
+ *     navigate(`/search?q=${encodeURIComponent(query)}`);
+ *   }}
+ * />
+ * 
+ * // With analytics tracking
+ * <SearchOverlay
+ *   isOpen={showSearch}
+ *   onClose={closeSearch}
+ *   onSearch={(query) => {
+ *     trackEvent('search', { query, source: 'overlay' });
+ *     performSearch(query);
+ *   }}
+ *   className="custom-search-overlay"
+ * />
+ * ```
+ */
 export interface SearchOverlayProps {
+  /** Whether the overlay is visible */
   isOpen: boolean
+  /** Callback to close the overlay */
   onClose: () => void
+  /** Callback when search is executed */
   onSearch: (query: string) => void
+  /** Additional CSS classes */
   className?: string
 }
 
@@ -137,11 +208,75 @@ export interface ThemeToggleProps {
 }
 
 // Layout context types
+
+/**
+ * Layout context interface for managing global layout state
+ * 
+ * Provides centralized state management for layout-related functionality
+ * including sidebar, mobile menu, search overlay, and theme management.
+ * 
+ * @example
+ * ```tsx
+ * // Using in a component
+ * const MyComponent = () => {
+ *   const {
+ *     state,
+ *     toggleSidebar,
+ *     toggleSearch,
+ *     setTheme
+ *   } = useLayoutContext();
+ * 
+ *   return (
+ *     <div>
+ *       <button onClick={toggleSidebar}>
+ *         {state.sidebarState === 'expanded' ? 'Collapse' : 'Expand'} Sidebar
+ *       </button>
+ *       <button onClick={toggleSearch}>
+ *         Search
+ *       </button>
+ *       <button onClick={() => setTheme('dark')}>
+ *         Dark Theme
+ *       </button>
+ *     </div>
+ *   );
+ * };
+ * 
+ * // Custom sidebar control
+ * const SidebarControl = () => {
+ *   const { state, setSidebarState } = useLayoutContext();
+ * 
+ *   const handleSidebarMode = (mode: SidebarState) => {
+ *     setSidebarState(mode);
+ *     localStorage.setItem('sidebarState', mode);
+ *   };
+ * 
+ *   return (
+ *     <div>
+ *       {(['expanded', 'collapsed', 'hidden'] as SidebarState[]).map(mode => (
+ *         <button
+ *           key={mode}
+ *           onClick={() => handleSidebarMode(mode)}
+ *           className={state.sidebarState === mode ? 'active' : ''}
+ *         >
+ *           {mode}
+ *         </button>
+ *       ))}
+ *     </div>
+ *   );
+ * };
+ * ```
+ */
 export interface LayoutContextType {
+  /** Current layout state */
   state: LayoutState
+  /** Toggle sidebar between expanded/collapsed states */
   toggleSidebar: () => void
+  /** Set specific sidebar state */
   setSidebarState: (state: SidebarState) => void
+  /** Toggle mobile menu open/closed */
   toggleMobileMenu: () => void
+  /** Toggle search overlay open/closed */
   toggleSearch: () => void
+  /** Set application theme */
   setTheme: (theme: Theme) => void
 }

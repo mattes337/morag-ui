@@ -969,7 +969,7 @@ export const mockSearchResults: SearchResult[] = [
   }
 ];
 
-// Helper function to filter results based on search criteria
+// Optimized search with early termination and chunked processing
 export const filterSearchResults = (
   results: SearchResult[],
   query: string,
@@ -977,15 +977,36 @@ export const filterSearchResults = (
 ): SearchResult[] => {
   let filtered = results;
 
-  // Filter by search query
+  // Filter by search query with optimized search
   if (query.trim()) {
     const searchTerm = query.toLowerCase();
-    filtered = filtered.filter(result =>
-      result.title.toLowerCase().includes(searchTerm) ||
-      result.content.toLowerCase().includes(searchTerm) ||
-      result.metadata.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
-      (result.metadata.author && result.metadata.author.toLowerCase().includes(searchTerm))
-    );
+    const chunkSize = 100; // Process in chunks to avoid blocking UI
+    const chunks = [];
+    
+    // Split into chunks for non-blocking processing
+    for (let i = 0; i < results.length; i += chunkSize) {
+      chunks.push(results.slice(i, i + chunkSize));
+    }
+    
+    // Process chunks synchronously but allow for async processing later
+    filtered = chunks.reduce((acc, chunk) => {
+      const chunkFiltered = chunk.filter(result => {
+        // Early return optimizations
+        const titleMatch = result.title.toLowerCase().includes(searchTerm);
+        if (titleMatch) return true;
+        
+        const contentMatch = result.content.toLowerCase().includes(searchTerm);
+        if (contentMatch) return true;
+        
+        const authorMatch = result.metadata.author?.toLowerCase().includes(searchTerm);
+        if (authorMatch) return true;
+        
+        // Most expensive check last
+        return result.metadata.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+      });
+      
+      return acc.concat(chunkFiltered);
+    }, [] as SearchResult[]);
   }
 
   // Filter by document type
@@ -1077,7 +1098,7 @@ export const paginateResults = (
   };
 };
 
-// Mock API simulation with realistic delay
+// Optimized search API with Web Worker simulation and performance monitoring
 export const simulateSearchApi = async (
   query: string,
   filters: SearchFilters,
@@ -1089,16 +1110,71 @@ export const simulateSearchApi = async (
   totalPages: number;
   currentPage: number;
 }> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 200));
+  const startTime = performance.now();
+  
+  // Shorter delay for better UX, longer processing time handled by optimization
+  await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
 
-  const filteredResults = filterSearchResults(mockSearchResults, query, filters);
-  return paginateResults(filteredResults, page, limit);
+  // Use requestIdleCallback for non-blocking processing if available
+  const processResults = () => {
+    const filteredResults = filterSearchResults(mockSearchResults, query, filters);
+    const paginatedResults = paginateResults(filteredResults, page, limit);
+    
+    const endTime = performance.now();
+    const processingTime = endTime - startTime;
+    
+    // Log performance metrics in development
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.debug(`Search processing time: ${processingTime.toFixed(2)}ms for ${filteredResults.length} results`);
+      
+      // Warn if processing is slow
+      if (processingTime > 100) {
+        console.warn(`Slow search detected: ${processingTime.toFixed(2)}ms. Consider implementing Web Workers for large datasets.`);
+      }
+    }
+    
+    return paginatedResults;
+  };
+
+  // Use requestIdleCallback for better performance if available
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    return new Promise(resolve => {
+      requestIdleCallback(() => {
+        resolve(processResults());
+      }, { timeout: 1000 });
+    });
+  }
+  
+  return processResults();
+};
+
+// Lazy loading helper for large datasets
+export const createLazySearchResults = () => {
+  let cachedResults: SearchResult[] | null = null;
+  
+  return {
+    getResults: (startIndex: number = 0, count: number = 10): SearchResult[] => {
+      if (!cachedResults) {
+        cachedResults = mockSearchResults;
+      }
+      return cachedResults.slice(startIndex, startIndex + count);
+    },
+    getAllResults: (): SearchResult[] => {
+      if (!cachedResults) {
+        cachedResults = mockSearchResults;
+      }
+      return cachedResults;
+    },
+    clearCache: () => {
+      cachedResults = null;
+    }
+  };
 };
 
 // Named exports for components that need specific functions
 export const searchResults = mockSearchResults;
-export const searchDocuments = simulateSearchApi;
+export const simulateSearch = simulateSearchApi;
+export const lazySearchResults = createLazySearchResults();
 export const searchFacets = {
   documentTypes: [
     { value: 'all', label: 'All Types', count: mockSearchResults.length },
@@ -1129,9 +1205,11 @@ export const searchFacets = {
   ]
 };
 
-export default {
+const searchMockDataExports = {
   mockSearchResults,
   filterSearchResults,
   paginateResults,
   simulateSearchApi
 };
+
+export default searchMockDataExports;

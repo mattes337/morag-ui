@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AuthLayout } from '../../../components/auth/AuthLayout'
 import { useAuth } from '../../../contexts/auth/AuthContext'
 
 /**
- * Email verification page component
+ * Email verification page component content
  */
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -148,5 +148,26 @@ export default function VerifyEmailPage() {
     >
       {renderContent()}
     </AuthLayout>
+  )
+}
+
+/**
+ * Email verification page component with Suspense wrapper
+ */
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <AuthLayout
+        title="Verify your email"
+        subtitle="Loading verification details..."
+      >
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </AuthLayout>
+    }>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }

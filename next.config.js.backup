@@ -1,0 +1,81 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [],
+    formats: ['image/webp', 'image/avif'],
+  },
+  compress: true,
+  poweredByHeader: false,
+  
+  // Bundle optimization
+  experimental: {
+    optimizePackageImports: [
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-collapsible',
+      'lucide-react',
+    ],
+  },
+  
+  // Webpack optimization for UI components
+  webpack: (config, { dev, isServer }) => {
+    // Optimize for production builds
+    if (!dev && !isServer) {
+      // Configure chunk splitting for UI components
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks.cacheGroups,
+            // Radix UI components
+            radixUI: {
+              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+              name: 'radix-ui',
+              chunks: 'all',
+              priority: 10,
+            },
+            // UI core components (always needed)
+            uiCore: {
+              test: /[\\/]components[\\/]ui[\\/](Button|Input|Label|Card|Badge|Spinner|Skeleton|Separator|Progress|Avatar)\.tsx?$/,
+              name: 'ui-core',
+              chunks: 'all',
+              priority: 15,
+            },
+            // UI heavy components (lazy loaded)
+            uiHeavy: {
+              test: /[\\/]components[\\/]ui[\\/](Table|Select|Tabs|Drawer|Toast|EmptyState|Collapsible)\.tsx?$/,
+              name: 'ui-heavy',
+              chunks: 'async',
+              priority: 12,
+            },
+            // Lucide icons
+            lucideIcons: {
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+              name: 'lucide-icons',
+              chunks: 'all',
+              priority: 8,
+            },
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
+};
+
+module.exports = withBundleAnalyzer(nextConfig);

@@ -37,7 +37,7 @@ export interface UserStatistics {
 export interface UserPermission {
   resource: string
   actions: string[]
-  realmId?: string
+  realmId: string | undefined
 }
 
 export interface MockUser {
@@ -108,13 +108,18 @@ const generateRecentActivity = (userId: string, count: number = 10): UserActivit
         break
     }
     
-    activities.push({
+    const activity: UserActivity = {
       id: `activity-${userId}-${i}`,
       type,
       description,
       timestamp: new Date(Date.now() - hoursAgo * 60 * 60 * 1000),
-      ...(Object.keys(metadata).length > 0 && { metadata }),
-    })
+    };
+    
+    if (Object.keys(metadata).length > 0) {
+      activity.metadata = metadata;
+    }
+    
+    activities.push(activity)
   }
   
   return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -142,19 +147,19 @@ const generateUserStatistics = (): UserStatistics => {
 // Generate user permissions based on role
 const generateUserPermissions = (role: UserRole, realmIds: string[]): UserPermission[] => {
   const basePermissions: UserPermission[] = [
-    { resource: 'dashboard', actions: ['read'] },
-    { resource: 'search', actions: ['read', 'execute'] },
-    { resource: 'profile', actions: ['read', 'update'] },
+    { resource: 'dashboard', actions: ['read'], realmId: undefined },
+    { resource: 'search', actions: ['read', 'execute'], realmId: undefined },
+    { resource: 'profile', actions: ['read', 'update'], realmId: undefined },
   ]
   
   if (role === 'system-admin') {
     return [
       ...basePermissions,
-      { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'realms', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'system', actions: ['read', 'update', 'configure'] },
-      { resource: 'analytics', actions: ['read', 'export'] },
-      { resource: 'jobs', actions: ['read', 'cancel', 'retry'] },
+      { resource: 'users', actions: ['create', 'read', 'update', 'delete'], realmId: undefined },
+      { resource: 'realms', actions: ['create', 'read', 'update', 'delete'], realmId: undefined },
+      { resource: 'system', actions: ['read', 'update', 'configure'], realmId: undefined },
+      { resource: 'analytics', actions: ['read', 'export'], realmId: undefined },
+      { resource: 'jobs', actions: ['read', 'cancel', 'retry'], realmId: undefined },
     ]
   }
   
@@ -192,7 +197,7 @@ export const mockUsers: MockUser[] = [
     id: '1',
     name: 'John Doe',
     email: 'john.doe@company.com',
-    avatar: avatars[0],
+    avatar: avatars[0]!,
     role: 'system-admin',
     status: 'active',
     createdAt: new Date('2023-01-15T10:00:00Z'),
@@ -224,7 +229,6 @@ export const mockUsers: MockUser[] = [
     recentActivity: generateRecentActivity('1', 15),
     tags: ['admin', 'technical', 'analytics'],
     department: 'Information Technology',
-    manager: undefined,
     bio: 'System Administrator with 8+ years of experience in enterprise platforms and data management.',
   },
   {
@@ -344,7 +348,6 @@ export const mockUsers: MockUser[] = [
     recentActivity: generateRecentActivity('5', 6),
     tags: ['executive', 'strategy', 'reports'],
     department: 'Executive',
-    manager: undefined,
     bio: 'Executive team member focused on strategic planning and high-level analytics.',
   },
   {

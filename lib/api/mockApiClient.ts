@@ -107,7 +107,7 @@ class MockApiClient implements ApiClient {
     }
 
     // Generate mock response based on endpoint
-    const responseData = this.generateMockResponse<T>(method, endpoint, data);
+    const responseData = await this.generateMockResponse<T>(method, endpoint, data);
 
     // Cache GET responses
     if (method === 'GET' && config?.cache !== false) {
@@ -168,12 +168,12 @@ class MockApiClient implements ApiClient {
     return errors[Math.floor(Math.random() * errors.length)];
   }
 
-  private generateMockResponse<T>(method: string, endpoint: string, data?: any): T {
+  private async generateMockResponse<T>(method: string, endpoint: string, data?: any): Promise<T> {
     // Route to specific mock data generators based on endpoint
     
     // Search endpoints
     if (endpoint.includes('/search')) {
-      return this.generateSearchResponse(endpoint, data) as T;
+      return await this.generateSearchResponse(endpoint, data) as T;
     }
     
     // Document management endpoints
@@ -216,7 +216,7 @@ class MockApiClient implements ApiClient {
     return this.generateDefaultResponse(endpoint, method, data) as T;
   }
 
-  private generateSearchResponse(endpoint: string, data?: any): any {
+  private async generateSearchResponse(endpoint: string, data?: any): Promise<any> {
     // Extract search parameters from endpoint or data
     const searchQuery = data?.query || data?.q || '';
     const limit = data?.limit || 10;
@@ -227,11 +227,8 @@ class MockApiClient implements ApiClient {
     
     // Apply search filtering if query provided
     if (searchQuery) {
-      results = searchMockData.searchDocuments(searchQuery, {
-        limit,
-        offset,
-        filters: data?.filters || {}
-      });
+      const searchResult = await searchMockData.simulateSearch(searchQuery, data?.filters || {}, Math.floor(offset / limit) + 1, limit);
+      results = searchResult.results;
     }
     
     // Get facets data

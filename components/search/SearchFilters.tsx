@@ -10,8 +10,6 @@ import {
   Button,
   Label,
   Input,
-  Card,
-  CardContent,
   Badge
 } from '@/components/ui';
 import { Filter, X, Calendar } from 'lucide-react';
@@ -120,9 +118,20 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
         </Button>
 
         {isDrawerOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setIsDrawerOpen(false)}>
-            <Card className="fixed bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-lg border-t" onClick={e => e.stopPropagation()}>
-              <CardContent className="p-6 space-y-4">
+          <div 
+            className="fixed inset-0 bg-black/50 z-50" 
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsDrawerOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setIsDrawerOpen(false);
+              }
+            }}
+            aria-label="Close filter panel"
+          >
+            <div className="fixed bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-lg border-t bg-card shadow-lg">
+              <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Filters</h3>
                   <Button
@@ -157,8 +166,8 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
                     Apply
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
       </div>

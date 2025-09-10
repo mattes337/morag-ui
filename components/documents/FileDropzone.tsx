@@ -35,7 +35,7 @@ export function FileDropzone({
   children
 }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = React.useState(false);
-  const [dragCounter, setDragCounter] = React.useState(0);
+  const [, setDragCounter] = React.useState(0);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dropzoneRef = React.useRef<HTMLDivElement>(null);
 
@@ -151,10 +151,11 @@ export function FileDropzone({
       />
 
       {/* Dropzone */}
-      <Card
+      <div
         ref={dropzoneRef}
+        role="button"
         className={cn(
-          'relative border-2 border-dashed transition-all duration-200 cursor-pointer',
+          'relative border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
           'hover:border-primary/50 hover:bg-primary/5',
           'focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2',
           {
@@ -173,7 +174,7 @@ export function FileDropzone({
         tabIndex={disabled ? -1 : 0}
         aria-label={`Upload files. ${selectedFiles.length} of ${maxFiles} files selected.`}
       >
-        <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
           {children || (
             <>
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full">
@@ -230,8 +231,8 @@ export function FileDropzone({
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Selected Files Preview */}
       {selectedFiles.length > 0 && (

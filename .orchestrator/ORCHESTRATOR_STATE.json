@@ -2,8 +2,14 @@
   "current_phase": "parallel_spawning",
   "active_agents": [],
   "iteration": 1,
-  "start_time": "2025-01-10T15:30:00Z",
+  "start_time": "2025-01-10T12:15:00Z",
   "errors_encountered": [],
-  "spawn_start_time": null,
-  "monitoring_start_time": null
+  "phase_history": [
+    {
+      "phase": "initialization",
+      "start_time": "2025-01-10T12:15:00Z",
+      "end_time": "2025-01-10T12:16:00Z",
+      "status": "completed"
+    }
+  ]
 }

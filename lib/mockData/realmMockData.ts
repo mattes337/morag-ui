@@ -122,12 +122,12 @@ export interface MockRealm {
   recentActivity: RealmActivity[]
   tags: string[]
   customFields: Record<string, any>
-  billingInfo?: {
+  billingInfo: {
     planId: string
     billingCycle: 'monthly' | 'annual'
     nextBillingDate: Date
     estimatedCost: number
-  }
+  } | undefined
 }
 
 // Helper function to generate realm activity
@@ -139,7 +139,7 @@ const generateRealmActivity = (realmId: string, count: number = 10): RealmActivi
   for (let i = 0; i < count; i++) {
     const type = types[Math.floor(Math.random() * types.length)]!
     const hoursAgo = Math.floor(Math.random() * 168) // Last week
-    const userId = userIds[Math.floor(Math.random() * userIds.length)]
+    const userId = userIds[Math.floor(Math.random() * userIds.length)]!
     
     let description = ''
     let metadata = {}
@@ -167,26 +167,34 @@ const generateRealmActivity = (realmId: string, count: number = 10): RealmActivi
         break
     }
     
-    activities.push({
+    const activity: RealmActivity = {
       id: `activity-${realmId}-${i}`,
       type,
       description,
       timestamp: new Date(Date.now() - hoursAgo * 60 * 60 * 1000),
-      userId: type !== 'processing_completed' ? userId : undefined,
-      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-    })
+    };
+    
+    if (type !== 'processing_completed') {
+      activity.userId = userId;
+    }
+    
+    if (metadata) {
+      activity.metadata = metadata;
+    }
+    
+    activities.push(activity);
   }
   
   return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 }
 
 // Generate realm memberships
-const generateMemberships = (realmId: string, userIds: string[]): RealmMembership[] => {
+const generateMemberships = (userIds: string[]): RealmMembership[] => {
   return userIds.map((userId, index) => {
     const roles: RealmMembership['role'][] = ['admin', 'user', 'viewer']
     const role = index === 0 ? 'admin' : roles[Math.floor(Math.random() * roles.length)]!
     
-    return {
+    const membership: RealmMembership = {
       userId,
       role,
       joinedAt: new Date(Date.now() - Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000)), // Random date in last year
@@ -196,9 +204,15 @@ const generateMemberships = (realmId: string, userIds: string[]): RealmMembershi
         : role === 'user'
         ? ['read', 'write']
         : ['read'],
-      invitedBy: index === 0 ? undefined : userIds[0],
       status: Math.random() > 0.1 ? 'active' : 'pending',
+    };
+    
+    // Only add invitedBy if it's not the first user (admin)
+    if (index > 0) {
+      membership.invitedBy = userIds[0]!;
     }
+    
+    return membership;
   })
 }
 
@@ -333,7 +347,7 @@ export const mockRealms: MockRealm[] = [
       retentionDays: 730,
     },
     usage: generateUsageStats(),
-    memberships: generateMemberships('1', ['1', '2', '3', '6']),
+    memberships: generateMemberships(['1', '2', '3', '6']),
     integrations: generateIntegrations('1'),
     recentActivity: generateRealmActivity('1', 15),
     tags: ['marketing', 'campaigns', 'content', 'analytics'],
@@ -412,7 +426,7 @@ export const mockRealms: MockRealm[] = [
       retentionDays: 365,
     },
     usage: generateUsageStats(),
-    memberships: generateMemberships('2', ['2', '3', '7']),
+    memberships: generateMemberships(['2', '3', '7']),
     integrations: generateIntegrations('2').filter(i => i.type !== 'webhook'),
     recentActivity: generateRealmActivity('2', 12),
     tags: ['sales', 'crm', 'proposals', 'customer-data'],
@@ -492,7 +506,7 @@ export const mockRealms: MockRealm[] = [
       retentionDays: 1095,
     },
     usage: generateUsageStats(),
-    memberships: generateMemberships('3', ['1', '4', '8']),
+    memberships: generateMemberships(['1', '4', '8']),
     integrations: generateIntegrations('3'),
     recentActivity: generateRealmActivity('3', 20),
     tags: ['engineering', 'documentation', 'apis', 'technical', 'architecture'],
@@ -573,7 +587,7 @@ export const mockRealms: MockRealm[] = [
       retentionDays: 2190,
     },
     usage: generateUsageStats(),
-    memberships: generateMemberships('4', ['1', '5']),
+    memberships: generateMemberships(['1', '5']),
     integrations: generateIntegrations('4').filter(i => i.type === 'sso'),
     recentActivity: generateRealmActivity('4', 8),
     tags: ['executive', 'strategy', 'confidential', 'board'],
@@ -652,7 +666,7 @@ export const mockRealms: MockRealm[] = [
       retentionDays: 180,
     },
     usage: generateUsageStats(),
-    memberships: generateMemberships('5', ['6', '8']),
+    memberships: generateMemberships(['6', '8']),
     integrations: [],
     recentActivity: generateRealmActivity('5', 6),
     tags: ['support', 'customer-service', 'knowledge-base'],

@@ -270,17 +270,31 @@ const generateJobSteps = (jobId: string, jobType: JobType): JobStep[] => {
       ? new Date((startedAt?.getTime() || Date.now()) + Math.floor(Math.random() * 30 * 60 * 1000))
       : undefined
     
-    return {
+    const step: JobStep = {
       id: `step-${jobId}-${index}`,
       name,
       status,
-      startedAt,
-      completedAt,
-      duration: completedAt && startedAt ? completedAt.getTime() - startedAt.getTime() : undefined,
       progress: isCompleted ? 100 : isFailed ? 0 : isRunning ? Math.floor(Math.random() * 80) + 10 : 0,
       logs: [],
-      error: isFailed ? `Error in step: ${name}` : undefined,
+    };
+
+    if (startedAt) {
+      step.startedAt = startedAt;
     }
+    
+    if (completedAt) {
+      step.completedAt = completedAt;
+    }
+    
+    if (completedAt && startedAt) {
+      step.duration = completedAt.getTime() - startedAt.getTime();
+    }
+    
+    if (isFailed) {
+      step.error = `Error in step: ${name}`;
+    }
+
+    return step;
   })
 }
 
@@ -327,14 +341,19 @@ const generateJobErrors = (jobId: string, hasErrors: boolean): JobError[] => {
   for (let i = 0; i < errorCount; i++) {
     const template = errorTemplates[Math.floor(Math.random() * errorTemplates.length)]!
     
-    errors.push({
+    const error: JobError = {
       code: template.code,
       message: template.message,
       details: `Error occurred during job execution. Job ID: ${jobId}`,
       timestamp: new Date(Date.now() - Math.floor(Math.random() * 60 * 60 * 1000)),
-      stackTrace: template.retryable ? undefined : 'Stack trace would be here...',
       retryable: template.retryable,
-    })
+    };
+    
+    if (!template.retryable) {
+      error.stackTrace = 'Stack trace would be here...';
+    }
+    
+    errors.push(error);
   }
   
   return errors
@@ -357,7 +376,6 @@ export const mockJobs: MockJob[] = [
     estimatedDuration: 2400000, // 40 minutes
     realmId: '1',
     userId: '2',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [],
     configuration: {
@@ -415,11 +433,9 @@ export const mockJobs: MockJob[] = [
     progress: 65,
     createdAt: new Date('2024-01-10T14:30:00Z'),
     startedAt: new Date('2024-01-10T14:35:00Z'),
-    duration: undefined,
     estimatedDuration: 5400000, // 90 minutes
     realmId: '3',
     userId: '8',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [],
     configuration: {
@@ -493,7 +509,6 @@ export const mockJobs: MockJob[] = [
     duration: 6300000, // 105 minutes
     estimatedDuration: 6000000, // 100 minutes
     userId: 'system',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [],
     configuration: {
@@ -555,7 +570,6 @@ export const mockJobs: MockJob[] = [
     estimatedDuration: 7200000, // 120 minutes
     realmId: '2',
     userId: '3',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [],
     configuration: {
@@ -628,7 +642,6 @@ export const mockJobs: MockJob[] = [
     scheduledAt: new Date('2024-01-11T08:00:00Z'),
     estimatedDuration: 1800000, // 30 minutes
     userId: 'system',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [
       {
@@ -695,7 +708,6 @@ export const mockJobs: MockJob[] = [
     startedAt: new Date('2024-01-10T10:05:00Z'),
     estimatedDuration: 2700000, // 45 minutes
     userId: '1',
-    parentJobId: undefined,
     childJobIds: [],
     dependencies: [],
     configuration: {
@@ -913,7 +925,9 @@ export const jobQueue = {
         if (job.progress >= 100) {
           job.status = 'completed'
           job.completedAt = new Date()
-          job.duration = job.startedAt ? Date.now() - job.startedAt.getTime() : undefined
+          if (job.startedAt) {
+            job.duration = Date.now() - job.startedAt.getTime();
+          }
         }
       }
     })

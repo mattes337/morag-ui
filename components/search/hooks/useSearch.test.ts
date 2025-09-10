@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSearch } from './useSearch';
 
-jest.mock('@/lib/api/search', () => ({
+jest.mock('@/lib/api/searchApi', () => ({
   searchApi: {
     searchDocuments: jest.fn()
   }
@@ -9,15 +9,29 @@ jest.mock('@/lib/api/search', () => ({
 
 // Mock debounce
 jest.mock('lodash.debounce', () => {
-  return jest.fn((fn) => {
-    fn.flush = jest.fn();
-    fn.cancel = jest.fn();
-    return fn;
+  return jest.fn((fn, delay) => {
+    const debouncedFn = jest.fn((...args) => {
+      clearTimeout(debouncedFn._timeout);
+      debouncedFn._timeout = setTimeout(() => fn(...args), delay);
+    });
+    debouncedFn.flush = jest.fn(() => {
+      if (debouncedFn._timeout) {
+        clearTimeout(debouncedFn._timeout);
+        fn();
+      }
+    });
+    debouncedFn.cancel = jest.fn(() => {
+      if (debouncedFn._timeout) {
+        clearTimeout(debouncedFn._timeout);
+        debouncedFn._timeout = null;
+      }
+    });
+    return debouncedFn;
   });
 });
 
 describe('useSearch', () => {
-  const mockSearchApi = require('@/lib/api/search').searchApi;
+  const mockSearchApi = require('@/lib/api/searchApi').searchApi;
   
   beforeEach(() => {
     jest.clearAllMocks();
@@ -204,11 +218,17 @@ describe('useSearch', () => {
     it('resets to page 1 when filters change', async () => {
       mockSearchApi.searchDocuments.mockResolvedValue({
         results: [],
-        totalResults: 0,
-        totalPages: 1
+        totalResults: 20,
+        totalPages: 3,
+        currentPage: 1
       });
 
       const { result } = renderHook(() => useSearch({ initialQuery: 'test' }));
+
+      // Wait for initial search to complete and set totalPages
+      await waitFor(() => {
+        expect(result.current.totalPages).toBe(3);
+      });
 
       // Navigate to page 2
       act(() => {
@@ -227,8 +247,20 @@ describe('useSearch', () => {
   });
 
   describe('Pagination', () => {
-    it('updates current page', () => {
-      const { result } = renderHook(() => useSearch());
+    it('updates current page', async () => {
+      mockSearchApi.searchDocuments.mockResolvedValue({
+        results: [],
+        totalResults: 30,
+        totalPages: 5,
+        currentPage: 1
+      });
+
+      const { result } = renderHook(() => useSearch({ initialQuery: 'test' }));
+
+      // Wait for initial search to complete and set totalPages
+      await waitFor(() => {
+        expect(result.current.totalPages).toBe(5);
+      });
 
       act(() => {
         result.current.goToPage(3);
@@ -240,11 +272,28 @@ describe('useSearch', () => {
     it('triggers search when page changes', async () => {
       mockSearchApi.searchDocuments.mockResolvedValue({
         results: [],
-        totalResults: 0,
-        totalPages: 1
+        totalResults: 20,
+        totalPages: 3,
+        currentPage: 1
       });
 
       const { result } = renderHook(() => useSearch({ initialQuery: 'test' }));
+
+      // Wait for initial search to complete and set totalPages  
+      await waitFor(() => {
+        expect(result.current.totalPages).toBe(3);
+      });
+
+      // Clear previous calls
+      mockSearchApi.searchDocuments.mockClear();
+      
+      // Update mock for page 2 search
+      mockSearchApi.searchDocuments.mockResolvedValue({
+        results: [],
+        totalResults: 20,
+        totalPages: 3,
+        currentPage: 2
+      });
 
       act(() => {
         result.current.goToPage(2);
@@ -268,7 +317,8 @@ describe('useSearch', () => {
       mockSearchApi.searchDocuments.mockResolvedValue({
         results: [],
         totalResults: 30,
-        totalPages: 3
+        totalPages: 3,
+        currentPage: 1
       });
 
       const { result } = renderHook(() => useSearch({ initialQuery: 'test' }));
@@ -277,11 +327,23 @@ describe('useSearch', () => {
         expect(result.current.totalPages).toBe(3);
       });
 
+      // Clear previous calls and set up mock for nextPage call
+      mockSearchApi.searchDocuments.mockClear();
+      mockSearchApi.searchDocuments.mockResolvedValue({
+        results: [],
+        totalResults: 30,
+        totalPages: 3,
+        currentPage: 2
+      });
+
       act(() => {
         result.current.nextPage();
       });
 
-      expect(result.current.currentPage).toBe(2);
+      // Wait for the search to complete and update currentPage
+      await waitFor(() => {
+        expect(result.current.currentPage).toBe(2);
+      });
     });
 
     it('provides previous page function', async () => {
@@ -450,7 +512,8 @@ describe('useSearch', () => {
       mockSearchApi.searchDocuments.mockResolvedValueOnce({
         results: mockResults,
         totalResults: 2,
-        totalPages: 1
+        totalPages: 1,
+        currentPage: 1
       });
 
       const { result } = renderHook(() => useSearch());
@@ -467,11 +530,17 @@ describe('useSearch', () => {
       mockSearchApi.searchDocuments.mockResolvedValueOnce({
         results: [],
         totalResults: 0,
-        totalPages: 1
+        totalPages: 1,
+        currentPage: 1
       });
 
       act(() => {
-        result.current.setQuery('second query');
+        result.current.searchNow('second query');
+      });
+
+      // Wait for loading to start, then results should be cleared
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
       });
 
       // Results should be cleared during loading
@@ -486,7 +555,7 @@ describe('useSearch', () => {
       const { result } = renderHook(() => useSearch());
 
       act(() => {
-        result.current.setQuery('test query');
+        result.current.searchNow('test query');
       });
 
       await waitFor(() => {
@@ -591,13 +660,22 @@ describe('useSearch', () => {
       mockSearchApi.searchDocuments.mockResolvedValue({
         results: [],
         totalResults: 0,
-        totalPages: 1
+        totalPages: 1,
+        currentPage: 1
       });
 
       const { result } = renderHook(() => useSearch());
 
+      // Set the query first without triggering search
       act(() => {
-        result.current.searchNow('immediate');
+        result.current.setQuery('immediate');
+      });
+
+      // Clear any calls from the setQuery above
+      mockSearchApi.searchDocuments.mockClear();
+
+      act(() => {
+        result.current.searchNow(); // Use current query
       });
 
       // Should call API immediately, not wait for debounce

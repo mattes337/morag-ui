@@ -1,43 +1,17 @@
-// Core UI Components - Comprehensive Radix UI + Tailwind CSS Library
-// Export all UI components for easy importing
+/**
+ * UI Components Library - Simplified Export System
+ */
 
-// Button
+// Core UI components
 export { Button, buttonVariants } from './Button';
 export type { ButtonProps } from './Button';
 
-// Form Components
 export { Input, inputVariants } from './Input';
 export type { InputProps } from './Input';
 
 export { Label, labelVariants } from './Label';
 export type { LabelProps } from './Label';
 
-export { Checkbox, checkboxVariants } from './Checkbox';
-export type { CheckboxProps } from './Checkbox';
-
-export { Textarea, textareaVariants } from './Textarea';
-export type { TextareaProps } from './Textarea';
-
-export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
-  SelectScrollUpButton,
-  SelectScrollDownButton,
-  selectTriggerVariants,
-} from './Select';
-export type { SelectProps, SelectTriggerProps, SelectContentProps } from './Select';
-
-// Toggle Components
-export { Switch, switchVariants } from './Switch';
-export type { SwitchProps } from './Switch';
-
-// Layout Components
 export {
   Card,
   CardHeader,
@@ -49,21 +23,32 @@ export {
 } from './Card';
 export type { CardProps } from './Card';
 
+export { Badge, badgeVariants } from './Badge';
+export type { BadgeProps } from './Badge';
+
+export { Spinner, spinnerVariants } from './Spinner';
+export type { SpinnerProps } from './Spinner';
+
+export { Skeleton } from './Skeleton';
+export type { SkeletonProps } from './Skeleton';
+
 export { Separator, separatorVariants } from './Separator';
 export type { SeparatorProps } from './Separator';
 
-// Navigation Components
-export {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  tabsListVariants,
-  tabsTriggerVariants,
-} from './Tabs';
-export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './Tabs';
+// Form components
+export { Checkbox, checkboxVariants } from './Checkbox';
+export type { CheckboxProps } from './Checkbox';
 
-// Overlay Components
+export { Textarea, textareaVariants } from './Textarea';
+export type { TextareaProps } from './Textarea';
+
+export { Switch, switchVariants } from './Switch';
+export type { SwitchProps } from './Switch';
+
+export { RadioGroup, RadioGroupItem, radioGroupVariants, radioGroupItemVariants } from './RadioGroup';
+export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
+
+// Dialog components
 export {
   Dialog,
   DialogPortal,
@@ -86,45 +71,28 @@ export {
   TooltipProvider,
 } from './Tooltip';
 
-// Feedback Components
-export {
-  ToastProvider,
-  ToastViewport,
-  Toast,
-  ToastTitle,
-  ToastDescription,
-  ToastClose,
-  ToastAction,
-  toastVariants,
-} from './Toast';
-export type {
-  ToastProps,
-  ToastActionProps,
-  ToastCloseProps,
-  ToastTitleProps,
-  ToastDescriptionProps,
-} from './Toast';
-
-// Progress Components
 export { Progress, progressVariants } from './Progress';
 export type { ProgressProps } from './Progress';
 
-// Display Components
 export { Avatar, AvatarImage, AvatarFallback, avatarVariants } from './Avatar';
 export type { AvatarProps, AvatarImageProps, AvatarFallbackProps } from './Avatar';
 
-export { Badge, badgeVariants } from './Badge';
-export type { BadgeProps } from './Badge';
+// Complex components - direct exports only
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+  selectTriggerVariants,
+} from './Select';
+export type { SelectProps, SelectTriggerProps, SelectContentProps } from './Select';
 
-export { Skeleton } from './Skeleton';
-export type { SkeletonProps } from './Skeleton';
-
-export { Spinner, spinnerVariants } from './Spinner';
-export type { SpinnerProps } from './Spinner';
-
-// Re-export utility functions for external use
-export { cn } from '@/lib/utils';
-// Data Display Components
 export {
   Table,
   TableHeader,
@@ -150,14 +118,37 @@ export type {
   TableCaptionProps,
 } from './Table';
 
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  tabsListVariants,
+  tabsTriggerVariants,
+} from './Tabs';
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './Tabs';
+
+export {
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+  toastVariants,
+} from './Toast';
+export type {
+  ToastProps,
+  ToastActionProps,
+  ToastCloseProps,
+  ToastTitleProps,
+  ToastDescriptionProps,
+} from './Toast';
+
 export { EmptyState, emptyStateVariants } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
-// Form Components (Additional)
-export { RadioGroup, RadioGroupItem, radioGroupVariants, radioGroupItemVariants } from './RadioGroup';
-export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
-
-// Layout Components (Additional)
 export {
   Drawer,
   DrawerPortal,
@@ -193,3 +184,6 @@ export type {
   CollapsibleTriggerProps,
   CollapsibleContentProps,
 } from './Collapsible';
+
+// Utilities
+export { cn } from '@/lib/utils';

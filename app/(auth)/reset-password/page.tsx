@@ -1,14 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthLayout } from '../../../components/auth/AuthLayout'
 import { ResetPasswordForm } from '../../../components/auth/ResetPasswordForm'
 
 /**
- * Reset password page component for setting new password
+ * Reset password page content component
  */
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -47,5 +47,28 @@ export default function ResetPasswordPage() {
         onSuccess={handlePasswordReset}
       />
     </AuthLayout>
+  )
+}
+
+/**
+ * Reset password page component with Suspense wrapper
+ */
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <AuthLayout
+        title="Set new password"
+        subtitle="Loading..."
+        backHref="/login"
+        backText="← Back to sign in"
+      >
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </AuthLayout>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

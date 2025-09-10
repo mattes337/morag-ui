@@ -33,6 +33,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
       <div className="w-full max-w-2xl">
         <ErrorFallback
           error={error}
+          errorInfo={null}
           onRetry={reset}
           title="Application Error"
           description={

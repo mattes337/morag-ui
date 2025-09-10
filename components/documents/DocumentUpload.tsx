@@ -42,6 +42,17 @@ export function DocumentUpload({
 
   // API hooks for upload simulation
   const { execute: uploadDocument, error: apiError } = useApi('POST', '/api/documents/upload', {
+    enabled: undefined,
+    onSuccess: undefined,
+    onError: undefined,
+    headers: undefined,
+    params: undefined,
+    body: undefined,
+    timeout: undefined,
+    retries: undefined,
+    cache: undefined,
+    cacheTTL: undefined,
+    signal: undefined,
     retry: { attempts: 3, delay: 1000, backoff: 'exponential' }
   });
 
@@ -130,7 +141,15 @@ export function DocumentUpload({
 
         // Use API client for upload simulation  
         const response = await uploadDocument({
+          method: undefined,
           headers: { 'Content-Type': 'multipart/form-data' },
+          params: undefined,
+          body: undefined,
+          timeout: undefined,
+          retries: undefined,
+          cache: undefined,
+          cacheTTL: undefined,
+          signal: undefined,
           // In a real implementation, you'd pass the FormData to the POST method
           // For our mock, we'll simulate the file upload
         });
@@ -354,7 +373,7 @@ export function DocumentUpload({
             {uploadedDocuments.map((doc) => (
               <ErrorBoundary
                 key={doc.id}
-                fallback={({ error, onRetry }) => (
+                fallback={({ onRetry }) => (
                   <div className="border border-destructive/20 bg-destructive/5 rounded-lg p-4 text-center space-y-2">
                     <AlertCircle className="h-5 w-5 text-destructive mx-auto" />
                     <div className="text-sm text-destructive">

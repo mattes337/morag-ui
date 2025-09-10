@@ -52,25 +52,90 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error details and update state with error info
+    // Sanitize error information for production
+    const sanitizedError = this.sanitizeError(error);
+    const sanitizedErrorInfo = this.sanitizeErrorInfo(errorInfo);
+
+    // Log error details and update state with sanitized error info
     this.setState({
-      errorInfo,
+      errorInfo: sanitizedErrorInfo,
     });
 
     // Call the onError callback if provided
     if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+      this.props.onError(sanitizedError, sanitizedErrorInfo);
     }
 
-    // In development, also log to console
+    // In development, also log to console with full details
     if (process.env.NODE_ENV === 'development') {
-      console.group('🚨 React Error Boundary Caught an Error');
+      console.group('React Error Boundary Caught an Error');
       console.error('Error:', error);
       console.error('Error Info:', errorInfo);
       console.error('Component Stack:', errorInfo.componentStack);
       console.groupEnd();
+    } else {
+      // In production, log minimal error information without sensitive details
+      console.error('Application Error:', {
+        message: sanitizedError.message,
+        timestamp: new Date().toISOString(),
+        errorId: this.generateErrorId(),
+      });
     }
   }
+
+  /**
+   * Sanitizes error object for production to prevent information disclosure
+   */
+  private sanitizeError = (error: Error): Error => {
+    if (process.env.NODE_ENV === 'development') {
+      return error;
+    }
+
+    // Create a new sanitized error with minimal information
+    const sanitizedError = new Error('An unexpected error occurred');
+    
+    // Only include safe error messages (no stack traces or sensitive paths)
+    const safeMessages = [
+      'Network Error',
+      'Validation Error',
+      'Authentication Error',
+      'Authorization Error',
+      'Not Found',
+      'Service Unavailable'
+    ];
+
+    // Check if the error message is safe to expose
+    const isSafeMessage = safeMessages.some(safeMsg => 
+      error.message.toLowerCase().includes(safeMsg.toLowerCase())
+    );
+
+    if (isSafeMessage) {
+      sanitizedError.message = error.message;
+    }
+
+    return sanitizedError;
+  };
+
+  /**
+   * Sanitizes error info for production
+   */
+  private sanitizeErrorInfo = (errorInfo: ErrorInfo): ErrorInfo => {
+    if (process.env.NODE_ENV === 'development') {
+      return errorInfo;
+    }
+
+    // Return minimal error info for production
+    return {
+      componentStack: 'Error occurred in component tree',
+    };
+  };
+
+  /**
+   * Generates a unique error ID for tracking
+   */
+  private generateErrorId = (): string => {
+    return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
     const { resetKeys, resetOnPropsChange } = this.props;
@@ -125,14 +190,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         );
       }
 
-      // Default fallback UI for development
+      // Default fallback UI for development - shows full error details
       if (process.env.NODE_ENV === 'development') {
         return (
           <div className="min-h-[400px] flex flex-col items-center justify-center p-8 bg-destructive/5 border border-destructive/20 rounded-lg">
             <div className="max-w-2xl w-full space-y-4">
               <div className="text-center">
                 <h2 className="text-lg font-semibold text-destructive mb-2">
-                  🚨 Development Error
+                  <span role="img" aria-label="Warning">🚨</span> Development Error
                 </h2>
                 <p className="text-sm text-muted-foreground mb-4">
                   An error occurred in the component tree. This detailed error information is only shown in development.

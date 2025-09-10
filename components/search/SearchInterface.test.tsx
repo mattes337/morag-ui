@@ -15,7 +15,7 @@ jest.mock('lodash.debounce', () => {
 });
 
 // Mock the search API
-jest.mock('@/lib/api/search', () => ({
+jest.mock('@/lib/api/searchApi', () => ({
   searchApi: {
     searchDocuments: jest.fn().mockResolvedValue({
       results: [],

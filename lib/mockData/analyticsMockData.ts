@@ -736,7 +736,7 @@ export const getMetricsByRealm = (realmId: string): MetricCard[] => {
   return analytics ? analytics.metrics : []
 }
 
-export const getUsageTrendsByRealm = (realmId: string, period: UsageTrend['period']): UsageTrend | null => {
+export const getUsageTrendsByRealm = (realmId: string, _period: UsageTrend['period']): UsageTrend | null => {
   const analytics = getAnalyticsByRealm(realmId)
   if (!analytics) return null
   

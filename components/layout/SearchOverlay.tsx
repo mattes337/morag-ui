@@ -99,7 +99,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
         )}
         data-testid="search-overlay-dialog"
       >
-        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
+        <form onSubmit={handleSubmit}>
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,7 +174,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
               </div>
             ) : (
               <div className="text-center py-8 text-sm text-muted-foreground">
-                No results found for "{query}"
+                No results found for &quot;{query}&quot;
               </div>
             )}
           </div>

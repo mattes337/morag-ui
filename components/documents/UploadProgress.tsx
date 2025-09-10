@@ -82,20 +82,6 @@ export function UploadProgress({
     }
   };
 
-  const getProgressColor = (status: UploadFileProgress['status']): string => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'failed':
-      case 'cancelled':
-        return 'bg-red-500';
-      case 'uploading':
-      case 'processing':
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-300';
-    }
-  };
 
   if (files.length === 0) {
     return null;

@@ -9,14 +9,14 @@ import { ApiResponse, ApiError, ApiRequestConfig, ApiState } from '../api/types'
 import { mockApiClient } from '../api/mockApiClient';
 
 interface UseApiOptions extends Omit<ApiRequestConfig, 'method'> {
-  enabled?: boolean;
-  onSuccess?: (data: any) => void;
-  onError?: (error: ApiError) => void;
-  retry?: {
-    attempts?: number;
-    delay?: number;
-    backoff?: 'linear' | 'exponential';
-  };
+  enabled: boolean | undefined;
+  onSuccess: ((data: any) => void) | undefined;
+  onError: ((error: ApiError) => void) | undefined;
+  retry: {
+    attempts: number | undefined;
+    delay: number | undefined;
+    backoff: 'linear' | 'exponential' | undefined;
+  } | undefined;
 }
 
 interface UseApiReturn<T> extends ApiState<T> {

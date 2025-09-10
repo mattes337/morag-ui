@@ -321,7 +321,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             <div className="flex flex-wrap gap-2 mt-4">
               {searchQuery && (
                 <Badge variant="secondary" className="text-xs">
-                  Search: "{searchQuery}"
+                  Search: &quot;{searchQuery}&quot;
                   <button
                     onClick={() => setSearchQuery('')}
                     className="ml-1 hover:text-destructive"

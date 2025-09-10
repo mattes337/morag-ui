@@ -32,20 +32,20 @@ export interface BaseEntity {
 
 export interface ApiResponse<T> {
   success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
+  data: T | undefined;
+  error: string | undefined;
+  message: string | undefined;
 }
 
 export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  cursor?: string;
+  page: number | undefined;
+  limit: number | undefined;
+  cursor: string | undefined;
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   hasMore: boolean;
-  nextCursor?: string;
+  nextCursor: string | undefined;
 }

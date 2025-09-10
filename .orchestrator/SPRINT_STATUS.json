@@ -1,192 +1,196 @@
 {
-  "phase": "parallel_spawning",
+  "sprint_metadata": {
+    "total_parallel_tasks": 6,
+    "total_integration_tasks": 4,
+    "start_time": "2025-01-10T12:15:00Z",
+    "parallel_phase_status": "pending",
+    "integration_phase_status": "waiting",
+    "current_iteration": 1
+  },
   "parallel_tasks": {
-    "task_a1": {
+    "task_a1_search": {
+      "id": "task_a1_search",
       "name": "Search Functionality Implementation",
-      "status": "pending",
       "priority": "HIGH",
       "complexity": "MEDIUM",
-      "assigned_agent": "react-expert",
+      "assigned_agent": "tdd-development-agent",
+      "status": "pending",
       "files_to_create": [
         "components/search/SearchInterface.tsx",
         "components/search/SearchResults.tsx", 
         "components/search/SearchFilters.tsx",
-        "components/search/hooks/useSearch.ts",
-        "lib/mockData/searchMockData.ts"
+        "lib/api/searchApi.ts",
+        "lib/mockData/searchData.ts",
+        "lib/hooks/useSearch.ts"
       ],
       "files_to_modify": [
-        "app/(dashboard)/search/page.tsx",
-        "components/layout/DashboardLayout.tsx"
+        "app/(dashboard)/search/page.tsx"
       ],
       "success_criteria": [
-        "Search input works with debouncing",
+        "Search input works with live results",
         "Filters apply correctly to results",
-        "Pagination works properly", 
-        "TODO comment removed from DashboardLayout",
-        "Full responsive design",
-        "All tests pass"
+        "Pagination works with URL state",
+        "Loading and empty states display properly",
+        "All tests pass with >90% coverage",
+        "Remove TODO from DashboardLayout.tsx:141"
       ]
     },
-    "task_a2": {
+    "task_a2_error_boundaries": {
+      "id": "task_a2_error_boundaries", 
       "name": "Error Boundary Infrastructure",
-      "status": "pending",
       "priority": "HIGH",
       "complexity": "SIMPLE",
       "assigned_agent": "react-expert",
+      "status": "pending",
       "files_to_create": [
         "components/error/ErrorBoundary.tsx",
-        "components/error/GlobalErrorHandler.tsx",
         "components/error/ErrorFallback.tsx",
+        "components/error/GlobalErrorHandler.tsx", 
+        "lib/utils/errorReporting.ts",
         "app/error.tsx",
-        "lib/error/errorReporting.ts"
-      ],
-      "files_to_modify": [
-        "app/layout.tsx"
+        "app/global-error.tsx"
       ],
       "success_criteria": [
-        "Global error boundary catches React errors",
-        "Unhandled errors show user-friendly messages",
-        "Error reporting works in development",
-        "Reset functionality works properly",
-        "No breaking changes to existing components"
+        "Error boundaries catch React errors gracefully",
+        "Users see friendly error messages, not stack traces",
+        "Retry functionality works for recoverable errors",
+        "Error reporting captures useful debugging info",
+        "Global error pages handle all unhandled errors"
       ]
     },
-    "task_a3": {
+    "task_b1_document_upload": {
+      "id": "task_b1_document_upload",
       "name": "Document Upload Interface", 
-      "status": "pending",
       "priority": "MEDIUM",
       "complexity": "MEDIUM",
-      "assigned_agent": "react-expert",
+      "assigned_agent": "tdd-development-agent",
+      "status": "pending",
       "files_to_create": [
-        "components/documents/DocumentUpload.tsx",
-        "components/documents/FileDropzone.tsx",
-        "components/documents/UploadProgress.tsx",
-        "components/documents/FileTypeValidator.tsx",
-        "lib/mockData/documentMockData.ts",
-        "lib/utils/fileValidation.ts"
-      ],
-      "files_to_modify": [
-        "app/(dashboard)/documents/page.tsx"
+        "components/upload/DocumentUpload.tsx",
+        "components/upload/DropZone.tsx",
+        "components/upload/FilePreview.tsx",
+        "components/upload/UploadProgress.tsx",
+        "lib/utils/fileValidation.ts",
+        "lib/api/uploadApi.ts"
       ],
       "success_criteria": [
-        "Drag and drop works correctly",
-        "File validation prevents invalid uploads",
-        "Progress indicators update properly", 
-        "Multiple files can be uploaded",
-        "Documents page shows upload interface"
+        "Drag and drop works across all browsers",
+        "File validation prevents invalid uploads", 
+        "Progress indicators show accurate status",
+        "Error handling for failed uploads",
+        "Multiple file uploads work simultaneously"
       ]
     },
-    "task_b1": {
+    "task_b2_pipeline_viz": {
+      "id": "task_b2_pipeline_viz",
       "name": "Processing Pipeline Visualization",
-      "status": "pending", 
-      "priority": "MEDIUM",
-      "complexity": "SIMPLE",
-      "assigned_agent": "react-expert",
+      "priority": "MEDIUM", 
+      "complexity": "MEDIUM",
+      "assigned_agent": "ui-designer",
+      "status": "pending",
       "files_to_create": [
-        "components/pipeline/ProcessingPipeline.tsx",
+        "components/pipeline/PipelineVisualization.tsx",
         "components/pipeline/StageIndicator.tsx",
-        "components/pipeline/ProgressFlow.tsx",
-        "components/pipeline/hooks/usePipelineState.ts",
-        "lib/mockData/pipelineMockData.ts"
-      ],
-      "files_to_modify": [],
-      "success_criteria": [
-        "Pipeline displays all 5 stages correctly",
-        "Animations work smoothly",
-        "Status indicators show proper states",
-        "Responsive design works on mobile",
-        "Mock data provides realistic scenarios"
-      ]
-    },
-    "task_b2": {
-      "name": "Enhanced Mock Data System",
-      "status": "pending",
-      "priority": "LOW", 
-      "complexity": "SIMPLE",
-      "assigned_agent": "typescript-expert",
-      "files_to_create": [
-        "lib/mockData/userMockData.ts",
-        "lib/mockData/realmMockData.ts",
-        "lib/mockData/analyticsMockData.ts",
-        "lib/mockData/jobMockData.ts"
-      ],
-      "files_to_modify": [
-        "lib/mockData/index.ts",
-        "components/layout/mockData.ts"
+        "components/pipeline/ProcessingStatus.tsx",
+        "lib/utils/pipelineHelpers.ts",
+        "lib/mockData/pipelineData.ts"
       ],
       "success_criteria": [
-        "All mock data is realistic and comprehensive",
-        "Mock data is properly typed with TypeScript",
-        "Existing components use centralized mock data",
-        "Mock data supports all current features",
-        "Easy to extend for new features"
+        "Pipeline stages display in correct order",
+        "Status animations work smoothly",
+        "Error states show actionable information", 
+        "Real-time updates reflect processing progress",
+        "Responsive design works on mobile"
       ]
     },
-    "task_c1": {
-      "name": "Data Fetching Infrastructure",
-      "status": "pending",
+    "task_c1_mock_data": {
+      "id": "task_c1_mock_data",
+      "name": "Comprehensive Mock Data Enhancement",
       "priority": "MEDIUM",
+      "complexity": "SIMPLE", 
+      "assigned_agent": "general-purpose",
+      "status": "pending",
+      "files_to_enhance": [
+        "lib/mockData/documentsData.ts",
+        "lib/mockData/jobsData.ts"
+      ],
+      "files_to_create": [
+        "lib/mockData/searchData.ts",
+        "lib/mockData/realmsData.ts", 
+        "lib/mockData/analyticsData.ts"
+      ],
+      "success_criteria": [
+        "Mock data provides realistic user experience",
+        "All API endpoints return consistent data types",
+        "Data relationships maintain referential integrity",
+        "Search results feel natural and relevant",
+        "Performance metrics are believable"
+      ]
+    },
+    "task_c2_data_hooks": {
+      "id": "task_c2_data_hooks",
+      "name": "Data Fetching Hooks Enhancement",
+      "priority": "LOW",
       "complexity": "SIMPLE",
       "assigned_agent": "react-expert",
+      "status": "pending", 
       "files_to_create": [
-        "lib/hooks/useApi.ts",
-        "lib/hooks/useAsyncData.ts",
-        "lib/api/mockApiClient.ts",
-        "lib/api/types.ts",
-        "contexts/api/ApiContext.tsx"
+        "lib/hooks/useDocuments.ts",
+        "lib/hooks/useRealms.ts",
+        "lib/hooks/useJobs.ts",
+        "lib/hooks/useAnalytics.ts",
+        "lib/utils/queryKeys.ts"
       ],
-      "files_to_modify": [],
       "success_criteria": [
-        "API hooks provide consistent interface",
-        "Loading states work correctly",
-        "Error handling is comprehensive",
-        "Mock API simulates realistic behavior",
-        "TypeScript types are complete"
+        "All hooks follow consistent API patterns",
+        "Cache invalidation works correctly",
+        "Loading states are properly managed", 
+        "Error handling is consistent across hooks",
+        "TypeScript types are comprehensive"
       ]
     }
   },
   "integration_tasks": {
-    "integration_1": {
-      "name": "Search Integration with Layout",
+    "integration_1_search_dashboard": {
+      "id": "integration_1_search_dashboard",
+      "name": "Search Integration with Dashboard",
+      "dependencies": ["task_a1_search", "task_b1_document_upload", "task_c1_mock_data"],
       "status": "waiting",
-      "dependencies": ["task_a1", "task_a2"],
       "files_to_modify": [
-        "components/layout/SearchOverlay.tsx",
-        "components/layout/DashboardLayout.tsx",
-        "app/(dashboard)/search/page.tsx"
+        "components/layout/DashboardLayout.tsx", 
+        "app/(dashboard)/layout.tsx",
+        "app/(dashboard)/page.tsx"
       ]
     },
-    "integration_2": {
-      "name": "Document Management Integration", 
+    "integration_2_error_deployment": {
+      "id": "integration_2_error_deployment",
+      "name": "Error Boundary Deployment",
+      "dependencies": ["task_a2_error_boundaries"],
       "status": "waiting",
-      "dependencies": ["task_a3", "task_b1", "task_c1"],
       "files_to_modify": [
-        "app/(dashboard)/documents/page.tsx",
-        "components/documents/DocumentUpload.tsx"
-      ],
+        "app/layout.tsx",
+        "app/(dashboard)/layout.tsx",
+        "components/layout/DashboardLayout.tsx"
+      ]
+    },
+    "integration_3_upload_pipeline": {
+      "id": "integration_3_upload_pipeline", 
+      "name": "Upload and Pipeline Integration",
+      "dependencies": ["task_b1_document_upload", "task_b2_pipeline_viz", "task_c1_mock_data"],
+      "status": "waiting",
       "files_to_create": [
-        "components/documents/DocumentList.tsx"
-      ]
-    },
-    "integration_3": {
-      "name": "Mock Data and API Integration",
-      "status": "waiting", 
-      "dependencies": ["task_b2", "task_c1"],
+        "app/(dashboard)/documents/page.tsx"
+      ],
       "files_to_modify": [
-        "lib/api/mockApiClient.ts",
-        "components/layout/mockData.ts"
+        "components/upload/DocumentUpload.tsx",
+        "lib/api/uploadApi.ts"
       ]
     },
-    "integration_4": {
-      "name": "Final Validation and Testing",
-      "status": "waiting",
-      "dependencies": ["integration_1", "integration_2", "integration_3"],
-      "validation_steps": [
-        "npm test",
-        "npm run typecheck", 
-        "npm run lint",
-        "npm run build"
-      ]
+    "integration_4_validation": {
+      "id": "integration_4_validation",
+      "name": "Final System Validation", 
+      "dependencies": ["integration_1_search_dashboard", "integration_2_error_deployment", "integration_3_upload_pipeline"],
+      "status": "waiting"
     }
   }
 }

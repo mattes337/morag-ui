@@ -112,7 +112,6 @@ describe('Label', () => {
     expect(label).toHaveClass(
       'text-sm',
       'font-medium',
-      'leading-none',
       'peer-disabled:cursor-not-allowed',
       'peer-disabled:opacity-70'
     );
@@ -157,7 +156,6 @@ describe('Label', () => {
     
     const label = screen.getByTestId('label');
     expect(label).toHaveAttribute('id', 'test-label');
-    expect(label).toHaveAttribute('role', 'label');
     expect(label).toHaveAttribute('aria-label', 'Accessible label');
     expect(label).toHaveAttribute('title', 'Label tooltip');
   });

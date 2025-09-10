@@ -72,10 +72,14 @@ function createStage(
   } = {}
 ): PipelineStage {
   const stageDef = STAGE_DEFINITIONS[index];
+  if (!stageDef) {
+    throw new Error(`Invalid stage index: ${index}`);
+  }
+  
   const now = new Date();
   const startTime = new Date(now.getTime() - (options.duration || 0));
   
-  const stage = {
+  const stage: Partial<PipelineStage> = {
     id: stageDef.id,
     name: stageDef.id,
     displayName: stageDef.displayName,
@@ -84,7 +88,7 @@ function createStage(
     progress,
     canRetry: options.canRetry ?? status === 'failed',
     canSkip: options.canSkip ?? (status === 'failed' && stageDef.id === 'markdown-optimizer'),
-  } as any;
+  };
 
   if (options.duration !== undefined) {
     stage.duration = options.duration;
@@ -99,7 +103,7 @@ function createStage(
     stage.errorMessage = options.errorMessage;
   }
 
-  return stage;
+  return stage as PipelineStage;
 }
 
 // Mock pipeline scenarios with different states

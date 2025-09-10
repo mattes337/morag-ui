@@ -4,7 +4,6 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { 
-  validateFile, 
   validateFiles, 
   FileValidationResult,
   SUPPORTED_FILE_TYPES,
@@ -12,6 +11,14 @@ import {
   MAX_FILES_COUNT,
   formatFileSize
 } from '@/lib/utils/fileValidation';
+
+// Synchronous basic validation for immediate checks
+function validateFileBasic(file: File): boolean {
+  // Only check size and type synchronously - content validation is async
+  if (!SUPPORTED_FILE_TYPES[file.type as keyof typeof SUPPORTED_FILE_TYPES]) return false;
+  if (file.size > MAX_FILE_SIZE || file.size === 0) return false;
+  return true;
+}
 
 export interface FileTypeValidatorProps {
   files: File[];
@@ -26,11 +33,31 @@ export function FileTypeValidator({
   showDetails = true,
   className = '' 
 }: FileTypeValidatorProps) {
-  const validationResult = React.useMemo(() => {
-    if (files.length === 0) {
-      return { isValid: true, errors: [] };
+  const [validationResult, setValidationResult] = React.useState<FileValidationResult>({ isValid: true, errors: [] });
+  const [isValidating, setIsValidating] = React.useState(false);
+
+  React.useEffect(() => {
+    async function performValidation() {
+      if (files.length === 0) {
+        setValidationResult({ isValid: true, errors: [] });
+        return;
+      }
+      
+      setIsValidating(true);
+      try {
+        const result = await validateFiles(files);
+        setValidationResult(result);
+      } catch (error) {
+        setValidationResult({
+          isValid: false,
+          errors: [{ code: 'VALIDATION_ERROR', message: 'Failed to validate files' }]
+        });
+      } finally {
+        setIsValidating(false);
+      }
     }
-    return validateFiles(files);
+    
+    performValidation();
   }, [files]);
 
   React.useEffect(() => {
@@ -42,9 +69,9 @@ export function FileTypeValidator({
   }
 
   const hasErrors = !validationResult.isValid;
-  const hasWarnings = files.some(file => {
-    const fileResult = validateFile(file);
-    return fileResult.isValid && file.size > MAX_FILE_SIZE * 0.8;
+  // Simplified warning check - don't use async validateFile in render
+  const hasWarnings = !isValidating && !hasErrors && files.some(file => {
+    return validateFileBasic(file) && file.size > MAX_FILE_SIZE * 0.8;
   });
 
   return (
@@ -57,7 +84,7 @@ export function FileTypeValidator({
               <XCircle className="h-4 w-4" />
               <span className="text-sm">
                 {validationResult.errors.length === 1 
-                  ? validationResult.errors[0].message
+                  ? validationResult.errors[0]?.message || 'Unknown error'
                   : `${validationResult.errors.length} validation errors found`
                 }
               </span>
@@ -97,7 +124,7 @@ export function FileTypeValidator({
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900">Validation Details:</h4>
           <ul className="space-y-1 text-sm text-gray-600">
-            {validationResult.errors.map((error, index) => (
+            {validationResult.errors.map((error: any, index: number) => (
               <li key={index} className="flex items-start gap-2">
                 <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                 <span>{error.message}</span>

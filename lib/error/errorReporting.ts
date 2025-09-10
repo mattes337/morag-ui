@@ -5,24 +5,24 @@
 
 export interface ErrorReport {
   message: string;
-  stack?: string;
+  stack: string | undefined;
   context: string;
   timestamp: string;
   url: string;
   userAgent: string;
-  userId?: string;
-  sessionId?: string;
-  additional?: Record<string, any>;
+  userId: string | undefined;
+  sessionId: string | undefined;
+  additional: Record<string, any> | undefined;
 }
 
 export interface ErrorReportingConfig {
-  endpoint?: string;
-  apiKey?: string;
-  enabled?: boolean;
-  maxRetries?: number;
-  retryDelay?: number;
-  batchSize?: number;
-  flushInterval?: number;
+  endpoint: string | undefined;
+  apiKey: string | undefined;
+  enabled: boolean | undefined;
+  maxRetries: number | undefined;
+  retryDelay: number | undefined;
+  batchSize: number | undefined;
+  flushInterval: number | undefined;
 }
 
 class ErrorReporter {
@@ -186,6 +186,8 @@ export function reportJavaScriptError(
     timestamp: new Date().toISOString(),
     url: typeof window !== 'undefined' ? window.location.href : '',
     userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
+    userId: undefined,
+    sessionId: undefined,
     additional,
   };
   
@@ -201,10 +203,13 @@ export function reportApiError(
 ): Promise<void> {
   const errorReport: ErrorReport = {
     message: `API Error: ${status} ${statusText}`,
+    stack: undefined,
     context: 'api',
     timestamp: new Date().toISOString(),
     url: typeof window !== 'undefined' ? window.location.href : '',
     userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
+    userId: undefined,
+    sessionId: undefined,
     additional: {
       apiUrl: url,
       status,
@@ -229,6 +234,8 @@ export function reportUserAction(
     timestamp: new Date().toISOString(),
     url: typeof window !== 'undefined' ? window.location.href : '',
     userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
+    userId: undefined,
+    sessionId: undefined,
     additional: {
       action,
       originalError: error.message,
@@ -247,10 +254,13 @@ export function reportPerformanceIssue(
 ): Promise<void> {
   const errorReport: ErrorReport = {
     message: `Performance Issue: ${metric} (${value}ms) exceeded threshold (${threshold}ms)`,
+    stack: undefined,
     context: 'performance',
     timestamp: new Date().toISOString(),
     url: typeof window !== 'undefined' ? window.location.href : '',
     userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
+    userId: undefined,
+    sessionId: undefined,
     additional: {
       metric,
       value,

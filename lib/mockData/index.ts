@@ -63,8 +63,19 @@ export type {
   MockJob,
 } from './jobMockData'
 
-// Search mock data exports (if it exists)
+// Document mock data exports
+export * from './documentMockData'
+export type {
+  DocumentMetadata,
+  UploadProgress,
+} from './documentMockData'
+
+// Search mock data exports
 export * from './searchMockData'
+export type {
+  SearchResult,
+  SearchFilters,
+} from './searchMockData'
 
 // Re-export legacy types for backward compatibility
 export type {
@@ -83,6 +94,16 @@ export type {
 
 // Unified data access helpers
 export const mockData = {
+  // Document data
+  documents: {
+    all: () => import('./documentMockData').then(m => m.mockDocuments),
+    byId: (id: string) => import('./documentMockData').then(m => m.getDocumentById(id)),
+    byStatus: (status: string) => import('./documentMockData').then(m => m.getDocumentsByStatus(status as any)),
+    byTag: (tag: string) => import('./documentMockData').then(m => m.getDocumentsByTag(tag)),
+    search: (query: string) => import('./documentMockData').then(m => m.searchDocuments(query)),
+    stats: () => import('./documentMockData').then(m => m.getMockDocumentStats()),
+  },
+
   // User data
   users: {
     all: () => import('./userMockData').then(m => m.mockUsers),
@@ -126,10 +147,33 @@ export const mockData = {
     queue: () => import('./jobMockData').then(m => m.getJobQueue()),
     statistics: () => import('./jobMockData').then(m => m.getJobStatistics()),
   },
+
+  // Search data
+  search: {
+    all: () => import('./searchMockData').then(m => m.mockSearchResults),
+    filter: (results: any[], query: string, filters: any) => 
+      import('./searchMockData').then(m => m.filterSearchResults(results, query, filters)),
+    paginate: (results: any[], page: number, limit?: number) => 
+      import('./searchMockData').then(m => m.paginateResults(results, page, limit)),
+    simulate: (query: string, filters: any, page?: number, limit?: number) => 
+      import('./searchMockData').then(m => m.simulateSearchApi(query, filters, page, limit)),
+    facets: () => import('./searchMockData').then(m => m.searchFacets),
+  },
 }
 
 // Data validation helpers
 export const validateMockData = {
+  document: (document: any): boolean => {
+    return document && 
+           typeof document.id === 'string' && 
+           typeof document.name === 'string' && 
+           typeof document.filename === 'string' &&
+           typeof document.type === 'string' &&
+           typeof document.size === 'number' &&
+           typeof document.realmId === 'string' &&
+           Array.isArray(document.tags)
+  },
+  
   user: (user: any): boolean => {
     return user && 
            typeof user.id === 'string' && 
@@ -161,13 +205,26 @@ export const validateMockData = {
 
 // Mock data statistics for debugging and monitoring
 export const getMockDataStats = async () => {
-  const [users, realms, jobs] = await Promise.all([
+  const [documents, users, realms, jobs] = await Promise.all([
+    mockData.documents.all(),
     mockData.users.all(),
     mockData.realms.all(),
     mockData.jobs.all(),
   ])
   
   return {
+    documents: {
+      total: documents.length,
+      byStatus: {
+        pending: documents.filter(d => d.status === 'pending').length,
+        processing: documents.filter(d => d.status === 'processing').length,
+        completed: documents.filter(d => d.status === 'completed').length,
+        failed: documents.filter(d => d.status === 'failed').length,
+      },
+      totalSize: documents.reduce((sum, d) => sum + d.size, 0),
+      totalChunks: documents.reduce((sum, d) => sum + (d.chunkCount || 0), 0),
+      totalFacts: documents.reduce((sum, d) => sum + (d.factCount || 0), 0),
+    },
     users: {
       total: users.length,
       active: users.filter(u => u.status === 'active').length,

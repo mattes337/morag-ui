@@ -1,14 +1,16 @@
 // DashboardLayout.tsx - Main dashboard layout container
 'use client'
 
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useLayoutState } from './hooks/useLayoutState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useRenderTracking, useRerenderTracking } from '@/lib/hooks/usePerformanceTracking'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileMenu } from './MobileMenu'
 import { SearchOverlay } from './SearchOverlay'
+import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { DashboardLayoutProps, LayoutContextType } from './types'
 import { mockNavigation, mockUser, mockCurrentRealm, mockNotifications, getUnreadCount } from './mockData'
 
@@ -27,6 +29,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children, 
   className 
 }) => {
+  // Performance tracking for the layout component
+  useRenderTracking('DashboardLayout', { debugMode: process.env.NODE_ENV === 'development' })
+  useRerenderTracking('DashboardLayout', { 
+    debugMode: process.env.NODE_ENV === 'development',
+    debugInfo: { hasChildren: !!children, className }
+  })
+
   const layoutState = useLayoutState()
   const { state, toggleSidebar, toggleSearch, toggleMobileMenu } = layoutState
 
@@ -62,7 +71,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   // Check if mobile viewport
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  const layoutContextValue: LayoutContextType = layoutState
+  // Memoize context value to prevent unnecessary re-renders across dashboard
+  const layoutContextValue: LayoutContextType = useMemo(() => ({
+    ...layoutState
+  }), [
+    layoutState
+  ])
 
   return (
     <LayoutContext.Provider value={layoutContextValue}>

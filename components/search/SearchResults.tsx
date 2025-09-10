@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -38,7 +38,7 @@ export interface SearchResultsProps {
   className?: string;
 }
 
-export const SearchResults: React.FC<SearchResultsProps> = ({
+export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
   results,
   totalResults,
   currentPage,
@@ -61,7 +61,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       case 'xlsx':
         return <Sheet className="h-5 w-5 text-green-500" data-testid="xlsx-icon" />;
       case 'image':
-        return <Image className="h-5 w-5 text-purple-500" data-testid="image-icon" />;
+        return <Image className="h-5 w-5 text-purple-500" data-testid="image-icon" alt="" />;
       case 'video':
         return <Video className="h-5 w-5 text-pink-500" data-testid="video-icon" />;
       case 'audio':
@@ -81,46 +81,79 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
   };
 
-  // Highlight search terms in text
-  const highlightText = (text: string, terms: string[]) => {
-    if (!terms.length || !query) return text;
-    
-    let highlightedText = text;
-    terms.forEach(term => {
-      const regex = new RegExp(`(${term})`, 'gi');
-      highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
-    });
-    
-    return <span dangerouslySetInnerHTML={{ __html: highlightedText }} data-testid="highlight-content" />;
-  };
+  // Memoized regex cache to prevent regex recreation on every render
+  const regexCache = useMemo(() => {
+    const cache = new Map<string, RegExp>();
+    return {
+      get: (term: string) => {
+        if (!cache.has(term)) {
+          // Escape special regex characters to prevent ReDoS attacks
+          const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          cache.set(term, new RegExp(`(${escapedTerm})`, 'gi'));
+        }
+        return cache.get(term)!;
+      },
+      clear: () => cache.clear()
+    };
+  }, []);
+
+  // Optimized highlight function with memoized regex patterns
+  const highlightText = useMemo(() => {
+    const highlightFunction = (text: string, terms: string[]) => {
+      if (!terms.length || !query || !text) return text;
+      
+      // Clear cache if it gets too large (prevent memory leaks)
+      if (regexCache instanceof Map && regexCache.size > 100) {
+        regexCache.clear();
+      }
+      
+      let highlightedText = text;
+      
+      // Process terms in order of length (longest first) to avoid partial matches
+      const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+      
+      for (const term of sortedTerms) {
+        if (term && term.trim()) {
+          const regex = regexCache.get(term.trim());
+          highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+        }
+      }
+      
+      return <span dangerouslySetInnerHTML={{ __html: highlightedText }} data-testid="highlight-content" />;
+    };
+    return highlightFunction;
+  }, [query, regexCache]);
 
   // Loading skeleton
-  const LoadingSkeleton = () => (
-    <div className="space-y-4">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Card key={index} data-testid="result-skeleton">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <Skeleton className="h-5 w-5 rounded" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-                <div className="flex items-center gap-4 pt-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-6 w-12" />
+  const LoadingSkeleton = React.memo(function LoadingSkeleton() {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <Card key={index} data-testid="result-skeleton">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Skeleton className="h-5 w-5 rounded" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex items-center gap-4 pt-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  });
 
   // Empty state
-  const EmptyResults = () => (
+  const EmptyResults = React.memo(function EmptyResults() {
+    return (
     <div className="text-center py-12">
       <div className="max-w-md mx-auto space-y-4">
         <div className="text-muted-foreground">
@@ -146,10 +179,11 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         )}
       </div>
     </div>
-  );
+    );
+  });
 
   // Pagination component
-  const Pagination = () => {
+  const Pagination = React.memo(function Pagination() {
     if (totalPages <= 1) return null;
 
     const getVisiblePages = () => {
@@ -227,7 +261,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </Button>
       </nav>
     );
-  };
+  });
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -237,7 +271,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <div aria-label={`${totalResults} search results`}>
             <p className="text-sm text-muted-foreground">
               {totalResults.toLocaleString()} results
-              {query && <span> for "{query}"</span>}
+              {query && <span> for &quot;{query}&quot;</span>}
               {totalPages > 1 && (
                 <span> • Page {currentPage} of {totalPages}</span>
               )}
@@ -254,13 +288,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
       {/* Results list */}
       {!isLoading && results.length > 0 && (
-        <div role="list" className="space-y-4">
+        <ul className="space-y-4 list-none">
           {results.map((result) => (
-            <Card
-              key={result.id}
-              className="transition-all hover:shadow-md cursor-pointer"
-              role="listitem"
-            >
+            <li key={result.id} className="list-none">
+              <Card
+                className="transition-all hover:shadow-md cursor-pointer"
+              >
               <CardContent className="p-6">
                 <button
                   onClick={() => onResultClick(result)}
@@ -276,7 +309,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     <div className="flex-1 min-w-0">
                       {/* Title and relevance score */}
                       <div className="flex items-start justify-between gap-4">
-                        <h3 role="heading" className="font-semibold text-lg leading-tight">
+                        <h3 className="font-semibold text-lg leading-tight">
                           {result.highlights.length > 0 && query
                             ? highlightText(result.title, result.highlights)
                             : result.title
@@ -344,15 +377,18 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                   </div>
                 </button>
               </CardContent>
-            </Card>
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {/* Pagination */}
       {!isLoading && <Pagination />}
     </div>
   );
-};
+});
+
+SearchResults.displayName = 'SearchResults';
 
 export default SearchResults;

@@ -145,7 +145,7 @@ export function usePipelineState(options: UsePipelineStateOptions = {}): Pipelin
         intervalRef.current = null;
       }
     };
-  }, [isRealTimeActive, pipeline?.status, pipelineId, refreshInterval]);
+  }, [isRealTimeActive, pipeline?.status, pipelineId, refreshInterval, pipeline]);
 
   // Cleanup interval on unmount
   useEffect(() => {
