@@ -3,14 +3,12 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
-import { Tooltip } from '@/components/ui/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/Tooltip';
 import { 
   type StageExecution, 
   formatDuration, 
-  getStatusColor, 
   getStatusIcon,
-  getPipelineProgress,
-  type PipelineProgress
+  getPipelineProgress
 } from '@/lib/utils/pipelineHelpers';
 
 const statusVariants = cva(
@@ -206,11 +204,18 @@ const ProcessingStatus = React.forwardRef<HTMLDivElement, ProcessingStatusProps>
               </span>
               
               {currentExecution && (
-                <Tooltip content={`Currently processing: ${currentExecution.stage.replace('-', ' ')}`}>
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {currentExecution.progress}% through current stage
-                  </span>
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-blue-600 dark:text-blue-400 font-medium cursor-help">
+                        {currentExecution.progress}% through current stage
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Currently processing: {currentExecution.stage.replace('-', ' ')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
 
@@ -273,4 +278,3 @@ const ProcessingStatus = React.forwardRef<HTMLDivElement, ProcessingStatusProps>
 ProcessingStatus.displayName = 'ProcessingStatus';
 
 export { ProcessingStatus, statusVariants };
-export type { ProcessingStatusProps };

@@ -162,10 +162,11 @@ const ProcessingPipeline = React.forwardRef<HTMLDivElement, ProcessingPipelinePr
       isLoading,
       error,
       actions,
-    } = usePipelineState({
-      pipelineId,
-      enableRealTime: realTime,
-    });
+    } = usePipelineState(
+      pipelineId 
+        ? { pipelineId, enableRealTime: realTime }
+        : { enableRealTime: realTime }
+    );
 
     // Use external pipeline or hook pipeline
     const pipeline = externalPipeline || hookPipeline;
@@ -371,13 +372,15 @@ const ProcessingPipeline = React.forwardRef<HTMLDivElement, ProcessingPipelinePr
                       'flex-shrink-0',
                       containerLayout === 'vertical' ? 'h-8 w-full flex justify-center' : 'w-16'
                     )}>
-                      <ProgressFlow
-                        stages={[stage, pipeline.stages[index + 1]]}
-                        orientation={containerLayout === 'vertical' ? 'vertical' : 'horizontal'}
-                        size={size}
-                        animated={realTime}
-                        showProgress={showProgress && stage.status === 'running'}
-                      />
+                      {pipeline.stages[index + 1] && (
+                        <ProgressFlow
+                          stages={[stage, pipeline.stages[index + 1]!]}
+                          orientation={containerLayout === 'vertical' ? 'vertical' : 'horizontal'}
+                          size={size}
+                          animated={realTime}
+                          showProgress={showProgress && stage.status === 'running'}
+                        />
+                      )}
                     </div>
                   )}
                 </React.Fragment>

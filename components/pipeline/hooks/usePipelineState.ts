@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   PipelinePipeline, 
-  PipelineStage, 
   mockPipelines, 
   getPipelineById,
   updatePipelineProgress,
   calculateOverallProgress 
 } from '@/lib/mockData/pipelineMockData';
+import type { PipelineStage } from '@/lib/mockData/pipelineMockData';
 
 export interface UsePipelineStateOptions {
   /**
@@ -162,14 +162,16 @@ export function usePipelineState(options: UsePipelineStateOptions = {}): Pipelin
     try {
       const updatedStages = pipeline.stages.map(stage => {
         if (stage.id === stageId && stage.status === 'failed' && stage.canRetry) {
-          return {
+          const retryStage: PipelineStage = {
             ...stage,
             status: 'running' as const,
             progress: 0,
-            errorMessage: undefined,
             startTime: new Date(),
-            endTime: undefined,
           };
+          // Remove optional properties instead of setting to undefined
+          delete (retryStage as any).errorMessage;
+          delete (retryStage as any).endTime;
+          return retryStage;
         }
         return stage;
       });
@@ -200,13 +202,15 @@ export function usePipelineState(options: UsePipelineStateOptions = {}): Pipelin
       const updatedStages = pipeline.stages.map((stage, index) => {
         if (stage.id === stageId && stage.status === 'failed' && stage.canSkip) {
           stageIndex = index;
-          return {
+          const skippedStage: PipelineStage = {
             ...stage,
             status: 'skipped' as const,
             progress: 0,
-            errorMessage: undefined,
             endTime: new Date(),
           };
+          // Remove optional errorMessage instead of setting to undefined
+          delete (skippedStage as any).errorMessage;
+          return skippedStage;
         }
         return stage;
       });
@@ -214,12 +218,12 @@ export function usePipelineState(options: UsePipelineStateOptions = {}): Pipelin
       // Start the next pending stage if available
       if (stageIndex >= 0 && stageIndex < updatedStages.length - 1) {
         const nextStage = updatedStages[stageIndex + 1];
-        if (nextStage.status === 'pending') {
+        if (nextStage && nextStage.status === 'pending') {
           updatedStages[stageIndex + 1] = {
             ...nextStage,
             status: 'running',
             startTime: new Date(),
-          };
+          } as PipelineStage;
         }
       }
 

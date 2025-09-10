@@ -66,7 +66,7 @@ describe('SearchFilters', () => {
       const customFilters = {
         documentType: 'pdf' as const,
         dateRange: 'last-month' as const,
-        sortBy: 'date' as const
+        sortBy: 'date-desc' as const
       };
 
       render(
@@ -175,7 +175,6 @@ describe('SearchFilters', () => {
     });
 
     it('shows custom date picker when custom range is selected', async () => {
-      const user = userEvent.setup();
       
       render(
         <SearchFilters
@@ -243,7 +242,7 @@ describe('SearchFilters', () => {
       const customFilters = {
         documentType: 'pdf' as const,
         dateRange: 'last-month' as const,
-        sortBy: 'date' as const
+        sortBy: 'date-desc' as const
       };
 
       render(

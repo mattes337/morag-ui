@@ -203,9 +203,9 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
             <div className="space-y-1">
               <Progress
                 id={progressId}
-                value={progress >= 0 ? progress : undefined}
+                value={progress >= 0 ? progress : 0}
                 aria-label={`Upload progress for ${fileInfo.name}`}
-                aria-valuenow={progress >= 0 ? progress : undefined}
+                aria-valuenow={progress >= 0 ? progress : 0}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 className={cn(

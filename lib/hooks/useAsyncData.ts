@@ -39,7 +39,6 @@ export function useAsyncData<T = any>(
     refetchOnWindowFocus = false,
     refetchInterval,
     staleTime = 300000, // 5 minutes
-    cacheTime = 600000, // 10 minutes
     retry = { attempts: 3, delay: 1000 },
     onSuccess,
     onError,
@@ -47,10 +46,10 @@ export function useAsyncData<T = any>(
   } = options;
 
   const [state, setState] = useState<{
-    data?: T;
+    data: T | undefined;
     loading: boolean;
-    error?: ApiError;
-    lastFetch?: Date;
+    error: ApiError | undefined;
+    lastFetch: Date | undefined;
   }>({
     loading: false,
     error: undefined,
@@ -87,7 +86,7 @@ export function useAsyncData<T = any>(
       }
 
       // Retry logic
-      if (retryCount < retry.attempts) {
+      if (retryCount < (retry.attempts || 3)) {
         return new Promise((resolve, reject) => {
           retryTimeoutRef.current = setTimeout(async () => {
             try {
@@ -96,7 +95,7 @@ export function useAsyncData<T = any>(
             } catch (retryError) {
               reject(retryError);
             }
-          }, retry.delay * Math.pow(2, retryCount)); // Exponential backoff
+          }, (retry.delay || 1000) * Math.pow(2, retryCount)); // Exponential backoff
         });
       }
 
@@ -278,7 +277,7 @@ export function useQuery<T = any>(
     if (!response.success) {
       throw response.error;
     }
-    return response.data;
+    return response.data as T;
   }, [endpoint]);
 
   return useAsyncData<T>(key, fetchFn, options);
@@ -298,7 +297,7 @@ export function usePaginatedQuery<T = any>(
     if (!response.success) {
       throw response.error;
     }
-    return response.data;
+    return response.data as T;
   }, [endpoint, page, limit]);
 
   const paginationKey = Array.isArray(key) 
@@ -327,7 +326,7 @@ export function useInfiniteQuery<T = any>(
     if (!response.success) {
       throw response.error;
     }
-    return response.data;
+    return response.data as T;
   }, [endpoint, pageParam]);
 
   const result = useAsyncData<T>(

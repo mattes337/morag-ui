@@ -179,10 +179,10 @@ export function useRerenderTracking(
  */
 export function useMemoryTracking(interval: number = 5000): MemoryStats | null {
   const [memoryStats, setMemoryStats] = useState<MemoryStats | null>(null);
-  const intervalRef = useRef<number>();
+  const intervalRef = useRef<number | undefined>(undefined);
   
   useEffect(() => {
-    if (typeof window === 'undefined' || !performance.memory) {
+    if (typeof window === 'undefined' || !(performance as any).memory) {
       return;
     }
     
@@ -273,7 +273,7 @@ export function useTrackedCallback<T extends (...args: any[]) => any>(
 ): { callback: T; hitCount: number; missCount: number } {
   const statsRef = useRef({ hitCount: 0, missCount: 0 });
   const shouldTrack = process.env.NODE_ENV === 'development';
-  const previousDepsRef = useRef<React.DependencyList>();
+  const previousDepsRef = useRef<React.DependencyList>([]);
   
   const memoizedCallback = useMemo(() => {
     if (shouldTrack) {

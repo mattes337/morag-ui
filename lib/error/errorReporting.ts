@@ -31,7 +31,7 @@ class ErrorReporter {
   private flushTimer?: NodeJS.Timeout;
   private retryCount = 0;
 
-  constructor(config: ErrorReportingConfig = {}) {
+  constructor(config: Partial<ErrorReportingConfig> = {}) {
     this.config = {
       endpoint: config.endpoint || '/api/errors',
       apiKey: config.apiKey || '',
@@ -58,7 +58,7 @@ class ErrorReporter {
     this.errorQueue.push(error);
 
     // Flush immediately if queue is full or if it's a critical error
-    if (this.errorQueue.length >= this.config.batchSize || this.isCriticalError(error)) {
+    if (this.errorQueue.length >= (this.config.batchSize || 10) || this.isCriticalError(error)) {
       await this.flush();
     }
   }
@@ -76,14 +76,14 @@ class ErrorReporter {
       console.warn('Failed to send error reports:', error);
       
       // Re-queue errors for retry if we haven't exceeded max retries
-      if (this.retryCount < this.config.maxRetries) {
+      if (this.retryCount < (this.config.maxRetries || 3)) {
         this.errorQueue.unshift(...errors);
         this.retryCount++;
         
         // Retry with exponential backoff
         setTimeout(() => {
           this.flush();
-        }, this.config.retryDelay * Math.pow(2, this.retryCount));
+        }, (this.config.retryDelay || 1000) * Math.pow(2, this.retryCount));
       } else {
         console.error('Max retries exceeded, dropping error reports:', errors);
         this.retryCount = 0;
@@ -92,7 +92,7 @@ class ErrorReporter {
   }
 
   private async sendErrors(errors: ErrorReport[]): Promise<void> {
-    const response = await fetch(this.config.endpoint, {
+    const response = await fetch(this.config.endpoint || '/api/errors', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

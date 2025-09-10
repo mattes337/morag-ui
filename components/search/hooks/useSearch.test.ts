@@ -10,22 +10,29 @@ jest.mock('@/lib/api/searchApi', () => ({
 // Mock debounce
 jest.mock('lodash.debounce', () => {
   return jest.fn((fn, delay) => {
-    const debouncedFn = jest.fn((...args) => {
-      clearTimeout(debouncedFn._timeout);
-      debouncedFn._timeout = setTimeout(() => fn(...args), delay);
-    });
+    const debouncedFn = jest.fn((...args: any[]) => {
+      clearTimeout((debouncedFn as any)._timeout);
+      (debouncedFn as any)._timeout = setTimeout(() => fn(...args), delay);
+    }) as jest.Mock & {
+      _timeout?: NodeJS.Timeout | null;
+      flush: jest.Mock;
+      cancel: jest.Mock;
+    };
+    
     debouncedFn.flush = jest.fn(() => {
       if (debouncedFn._timeout) {
         clearTimeout(debouncedFn._timeout);
         fn();
       }
     });
+    
     debouncedFn.cancel = jest.fn(() => {
       if (debouncedFn._timeout) {
         clearTimeout(debouncedFn._timeout);
         debouncedFn._timeout = null;
       }
     });
+    
     return debouncedFn;
   });
 });
@@ -65,7 +72,7 @@ describe('useSearch', () => {
       const initialFilters = {
         documentType: 'pdf' as const,
         dateRange: 'last-month' as const,
-        sortBy: 'date' as const
+        sortBy: 'date-desc' as const
       };
 
       const { result } = renderHook(() => useSearch({ initialFilters }));

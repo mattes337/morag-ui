@@ -47,7 +47,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
     
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.kind === 'file') {
+      if (item?.kind === 'file') {
         const isAccepted = acceptedTypes.some(acceptedType => {
           if (acceptedType.startsWith('.')) {
             // File extension check

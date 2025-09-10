@@ -61,7 +61,7 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
       case 'xlsx':
         return <Sheet className="h-5 w-5 text-green-500" data-testid="xlsx-icon" />;
       case 'image':
-        return <Image className="h-5 w-5 text-purple-500" data-testid="image-icon" alt="" />;
+        return <Image className="h-5 w-5 text-purple-500" data-testid="image-icon" />;
       case 'video':
         return <Video className="h-5 w-5 text-pink-500" data-testid="video-icon" />;
       case 'audio':

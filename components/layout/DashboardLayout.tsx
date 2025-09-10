@@ -148,7 +148,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {state.isSearchOpen && (
           <div data-testid="search-overlay">
             <ErrorBoundary
-              fallback={({ error, onRetry }) => (
+              fallback={({ error: _error, onRetry }) => (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-card border rounded-lg shadow-lg z-50 p-6">
                   <div className="text-center space-y-4">
                     <h3 className="text-lg font-semibold text-destructive">Search Error</h3>
@@ -182,8 +182,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 onClose={toggleSearch}
                 onSearch={(query) => {
                   // Search analytics tracking
-                  if (typeof window !== 'undefined' && window.gtag) {
-                    window.gtag('event', 'search', {
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    (window as any).gtag('event', 'search', {
                       event_category: 'engagement',
                       event_label: 'dashboard_search_overlay',
                       search_term: query

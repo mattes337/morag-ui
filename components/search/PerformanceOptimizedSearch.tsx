@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useTransition, useDeferredValue } from 'react';
+import React, { useCallback, useTransition, useDeferredValue } from 'react';
 import { SearchInterface } from './SearchInterface';
 import { SearchResults } from './SearchResults';
 import { useSearch } from './hooks/useSearch';
@@ -30,14 +30,12 @@ export const PerformanceOptimizedSearch: React.FC<PerformanceOptimizedSearchProp
   
   const {
     query,
-    filters,
     results,
     totalResults,
     currentPage,
     totalPages,
     isLoading,
     goToPage,
-    searchNow,
     updateFilters
   } = useSearch({
     debounceDelay: 300, // Slightly faster for better UX
@@ -100,6 +98,7 @@ export const PerformanceOptimizedSearch: React.FC<PerformanceOptimizedSearchProp
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [enableMemoryMonitoring]);
 
   return (

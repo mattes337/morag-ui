@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import { useAsyncData } from './useAsyncData';
 import { mockApiClient } from '../api/mockApiClient';
-import { queryKeys, getInvalidationKeys } from '../utils/queryKeys';
+import { queryKeys } from '../utils/queryKeys';
 import type { 
   ApiResponse, 
   AsyncDataState,
@@ -176,7 +176,7 @@ export function useJobStatistics(options?: {
   }>(
     queryKeys.jobs.statistics,
     async () => {
-      const response = await mockApiClient.get(endpoint);
+      const response = await mockApiClient.get<{ total: number; byStatus: { pending: number; running: number; completed: number; failed: number; cancelled: number; }; byType: Record<string, number>; avgProcessingTime: number; successRate: number; queueLength: number; throughputPerHour: number; }>(endpoint);
       if (!response.success) {
         throw response.error;
       }
@@ -305,6 +305,8 @@ export function useJobCancel() {
 
       results.forEach((result, index) => {
         const jobId = jobIds[index];
+        if (!jobId) return; // Skip if jobId is undefined
+        
         if (result.status === 'fulfilled' && result.value) {
           success.push(jobId);
         } else {
@@ -398,7 +400,10 @@ export function useJobLogs(jobId: string, options?: {
   }>(
     ['jobs', 'logs', jobId],
     async () => {
-      const response = await mockApiClient.get(`/api/jobs/${jobId}/logs`);
+      if (!jobId) {
+        throw new Error('Job ID is required');
+      }
+      const response = await mockApiClient.get<{ jobId: string; logs: { timestamp: string; level: 'info' | 'warn' | 'error' | 'debug'; message: string; details?: Record<string, any>; }[]; metrics: { cpuUsage: number; memoryUsage: number; duration: number; throughput?: number; }; }>(`/api/jobs/${jobId}/logs`);
       if (!response.success) {
         throw response.error;
       }

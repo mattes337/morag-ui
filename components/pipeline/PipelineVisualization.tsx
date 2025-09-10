@@ -5,14 +5,12 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
-import { Tooltip } from '@/components/ui/Tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip';
 import { 
   type StageExecution,
-  type PipelineProgress,
   STAGE_INFO,
   PIPELINE_STAGES,
   getPipelineProgress,
-  getStageConnections,
   formatDuration,
   getStatusIcon,
   canRetryStage,
@@ -166,8 +164,8 @@ const PipelineVisualization = React.forwardRef<HTMLDivElement, PipelineVisualiza
     // Calculate pipeline progress
     const progress = getPipelineProgress(executions);
     
-    // Get stage connections for animated progress bars
-    const connections = getStageConnections(executions);
+    // Get stage connections for animated progress bars (for future use)
+    // const connections = getStageConnections(executions);
     
     // Ensure we have executions for all pipeline stages
     const stageExecutions = PIPELINE_STAGES.map(stageName => {
@@ -414,17 +412,18 @@ const PipelineVisualization = React.forwardRef<HTMLDivElement, PipelineVisualiza
                     </div>
 
                     {/* Connection Arrow */}
-                    {!isLastStage && (
+                    {!isLastStage && stageExecutions[index + 1] && (
                       <div className={cn(connectionVariants({ 
-                        status: getConnectionStatus(execution, stageExecutions[index + 1]),
+                        status: getConnectionStatus(execution, stageExecutions[index + 1]!),
                         size 
                       }))}>
                         {showAnimatedProgress && 
                          execution.status === 'COMPLETED' && 
-                         stageExecutions[index + 1].status === 'RUNNING' ? (
+                         stageExecutions[index + 1]!.status === 'RUNNING' ? (
                           // Animated progress arrow
-                          <Tooltip content="Processing in progress">
-                            <div className="relative">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="relative">
                               <svg 
                                 className="w-6 h-6 text-blue-500" 
                                 fill="none" 
@@ -446,15 +445,19 @@ const PipelineVisualization = React.forwardRef<HTMLDivElement, PipelineVisualiza
                                   <div className="w-1 h-1 bg-blue-500 rounded-full animate-ping" style={{ animationDelay: '300ms' }}></div>
                                 </div>
                               </div>
-                            </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Processing in progress
+                            </TooltipContent>
                           </Tooltip>
                         ) : (
                           // Static arrow
                           <svg 
                             className={cn(
                               'w-6 h-6',
-                              getConnectionStatus(execution, stageExecutions[index + 1]) === 'completed' && 'text-green-500',
-                              getConnectionStatus(execution, stageExecutions[index + 1]) === 'failed' && 'text-red-500'
+                              getConnectionStatus(execution, stageExecutions[index + 1]!) === 'completed' && 'text-green-500',
+                              getConnectionStatus(execution, stageExecutions[index + 1]!) === 'failed' && 'text-red-500'
                             )} 
                             fill="none" 
                             viewBox="0 0 24 24" 
@@ -530,4 +533,3 @@ const PipelineVisualization = React.forwardRef<HTMLDivElement, PipelineVisualiza
 PipelineVisualization.displayName = 'PipelineVisualization';
 
 export { PipelineVisualization, pipelineVisualizationVariants, stageFlowVariants };
-export type { PipelineVisualizationProps };

@@ -6,7 +6,6 @@ import { Badge, Progress, Button, Tooltip, TooltipContent, TooltipProvider, Tool
 import { cn } from '@/lib/utils';
 import { 
   PipelineStage, 
-  PipelineStageStatus,
   getStageStatusIcon,
   formatDuration 
 } from '@/lib/mockData/pipelineMockData';

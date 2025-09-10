@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { SearchInterface } from './SearchInterface';
@@ -7,7 +7,10 @@ import { SearchInterface } from './SearchInterface';
 // Mock lodash.debounce
 jest.mock('lodash.debounce', () => {
   return jest.fn((fn) => {
-    const debouncedFn = jest.fn((...args) => fn(...args));
+    const debouncedFn = jest.fn((...args: any[]) => fn(...args)) as jest.Mock & {
+      cancel: jest.Mock;
+      flush: jest.Mock;
+    };
     debouncedFn.cancel = jest.fn();
     debouncedFn.flush = jest.fn();
     return debouncedFn;
@@ -224,8 +227,6 @@ describe('SearchInterface', () => {
         searchDebounced: mockSearchDebounced
       });
 
-      const user = userEvent.setup();
-      
       render(
         <SearchInterface 
           onSearch={mockOnSearch}

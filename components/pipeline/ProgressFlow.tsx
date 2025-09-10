@@ -3,7 +3,7 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { PipelineStage, PipelineStageStatus } from '@/lib/mockData/pipelineMockData';
+import { PipelineStage } from '@/lib/mockData/pipelineMockData';
 
 const progressFlowVariants = cva(
   'flex items-center justify-center relative',
@@ -225,6 +225,8 @@ const ProgressFlow = React.forwardRef<HTMLDivElement, ProgressFlowProps>(
 
     const connections = stages.slice(0, -1).map((stage, index) => {
       const nextStage = stages[index + 1];
+      if (!nextStage) return null;
+      
       const key = `connection-${stage.id}-${nextStage.id}`;
 
       if (renderConnection) {

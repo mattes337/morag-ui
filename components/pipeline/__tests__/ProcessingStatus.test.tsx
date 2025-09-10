@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProcessingStatus } from '../ProcessingStatus';
 import { createMockStageExecution } from '@/lib/utils/pipelineHelpers';
@@ -18,7 +18,6 @@ describe('ProcessingStatus', () => {
     createMockStageExecution('markdown-conversion', 'COMPLETED', 100, {
       startTime: new Date('2024-01-01T10:00:00Z'),
       endTime: new Date('2024-01-01T10:02:00Z'),
-      duration: 120000, // 2 minutes
     }),
     createMockStageExecution('markdown-optimizer', 'RUNNING', 75, {
       startTime: new Date('2024-01-01T10:02:00Z'),
@@ -237,7 +236,7 @@ describe('ProcessingStatus', () => {
     );
 
     const statusElement = screen.getByText('Test Document.pdf').closest('[role="button"]');
-    statusElement!.focus();
+    (statusElement as HTMLElement)?.focus();
     
     await user.keyboard('{Enter}');
     expect(handleStatusClick).toHaveBeenCalledTimes(1);

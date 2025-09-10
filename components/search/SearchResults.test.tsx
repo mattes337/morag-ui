@@ -3,8 +3,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { SearchResults } from './SearchResults';
+import { SearchResult } from '@/lib/mockData/searchMockData';
 
-const mockResults = [
+const mockResults: SearchResult[] = [
   {
     id: '1',
     title: 'Document 1',
@@ -345,8 +346,16 @@ describe('SearchResults', () => {
 
   describe('Content Highlighting', () => {
     it('highlights search terms in content', () => {
-      const resultsWithHighlights = [{
-        ...mockResults[0],
+      const firstResult = mockResults[0];
+      expect(firstResult).toBeDefined();
+      const resultsWithHighlights: SearchResult[] = [{
+        id: firstResult!.id,
+        title: firstResult!.title,
+        content: firstResult!.content,
+        documentType: firstResult!.documentType,
+        createdAt: firstResult!.createdAt,
+        relevanceScore: firstResult!.relevanceScore,
+        metadata: firstResult!.metadata,
         highlights: ['content', 'document']
       }];
 

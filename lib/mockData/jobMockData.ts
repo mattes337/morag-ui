@@ -838,12 +838,6 @@ export const getJobStatistics = () => {
       .map(type => [type, getJobsByType(type).length])
   )
   
-  const byPriority = {
-    critical: getJobsByPriority('critical').length,
-    high: getJobsByPriority('high').length,
-    normal: getJobsByPriority('normal').length,
-    low: getJobsByPriority('low').length,
-  }
   
   const completedJobs = getCompletedJobs()
   const averageDuration = completedJobs.length > 0
@@ -856,12 +850,18 @@ export const getJobStatistics = () => {
   
   return {
     total,
-    byStatus,
+    byStatus: {
+      pending: byStatus.pending,
+      running: byStatus.running,
+      completed: byStatus.completed,
+      failed: byStatus.failed,
+      cancelled: byStatus.cancelled,
+    },
     byType,
-    byPriority,
-    averageDuration,
+    avgProcessingTime: averageDuration,
     successRate,
-    activeJobs: byStatus.pending + byStatus.running + byStatus.paused,
+    queueLength: byStatus.pending + byStatus.running,
+    throughputPerHour: Math.round(Math.random() * 100 + 50), // Mock throughput
   }
 }
 

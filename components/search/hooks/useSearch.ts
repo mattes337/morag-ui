@@ -400,7 +400,7 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
   }, [minQueryLength, pageSize]);
 
   // Stable debounced search function using useRef to prevent memory leaks
-  const debouncedSearchRef = useRef<ReturnType<typeof debounce>>();
+  const debouncedSearchRef = useRef<ReturnType<typeof debounce> | null>(null);
   
   // Create stable debounced function only when dependencies change
   const debouncedSearch = useMemo(() => {

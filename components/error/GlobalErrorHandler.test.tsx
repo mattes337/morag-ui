@@ -416,12 +416,12 @@ describe('GlobalErrorHandler', () => {
     });
 
     test('returns promise from reportError', async () => {
-      mockReportError.mockResolvedValueOnce('success');
+      mockReportError.mockResolvedValueOnce();
       
       const testError = new Error('Promise test');
-      const result = await reportManualError(testError);
+      await reportManualError(testError);
 
-      expect(result).toBe('success');
+      expect(mockReportError).toHaveBeenCalledWith(testError);
     });
   });
 
@@ -504,15 +504,18 @@ describe('GlobalErrorHandler', () => {
 
       // Check that reportError was called and includes the location/userAgent data
       expect(mockReportError).toHaveBeenCalled();
-      const reportedError = mockReportError.mock.calls[0][0];
+      const reportedError = mockReportError.mock.calls[0]?.[0];
+      expect(reportedError).toBeDefined();
       
-      // Verify that the error report includes url and userAgent fields
-      expect(reportedError).toHaveProperty('url');
-      expect(reportedError).toHaveProperty('userAgent');
-      expect(typeof reportedError.url).toBe('string');
-      expect(typeof reportedError.userAgent).toBe('string');
-      expect(reportedError.url).toBeTruthy();
-      expect(reportedError.userAgent).toBeTruthy();
+      if (reportedError) {
+        // Verify that the error report includes url and userAgent fields
+        expect(reportedError).toHaveProperty('url');
+        expect(reportedError).toHaveProperty('userAgent');
+        expect(typeof (reportedError as any).url).toBe('string');
+        expect(typeof (reportedError as any).userAgent).toBe('string');
+        expect((reportedError as any).url).toBeTruthy();
+        expect((reportedError as any).userAgent).toBeTruthy();
+      }
     });
   });
 });

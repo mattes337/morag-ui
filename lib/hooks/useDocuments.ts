@@ -6,12 +6,9 @@
 import { useCallback, useState } from 'react';
 import { useAsyncData } from './useAsyncData';
 import { mockApiClient } from '../api/mockApiClient';
-import { queryKeys, getInvalidationKeys } from '../utils/queryKeys';
+import { queryKeys } from '../utils/queryKeys';
 import type { 
-  ApiResponse, 
-  DocumentUploadRequest, 
   DocumentUploadResponse,
-  AsyncDataState,
   ApiError
 } from '../api/types';
 import type { DocumentMetadata, UploadProgress } from '../mockData/documentMockData';
@@ -43,7 +40,7 @@ export function useDocuments(realmId?: string, options?: {
     {
       enabled,
       staleTime,
-      refetchInterval,
+      ...(refetchInterval !== undefined && { refetchInterval }),
       refetchOnWindowFocus: true,
     }
   );
@@ -104,7 +101,10 @@ export function useDocumentUpload() {
           fileId,
           filename: file.name,
           progress: 0,
-          status: 'uploading'
+          status: 'uploading',
+          speed: undefined,
+          eta: undefined,
+          error: undefined
         });
       });
       setUploadProgress(new Map(progressMap));
@@ -175,13 +175,16 @@ export function useDocumentUpload() {
       
       // Create batch response
       const batchResponse: DocumentUploadResponse = {
-        documents: results.map((result, index) => ({
-          id: result.documentId,
-          filename: files[index].name,
-          size: files[index].size,
-          uploadUrl: `/api/documents/${result.documentId}/download`,
-          status: 'completed'
-        })),
+        documents: results.map((result, index) => {
+          const file = files[index];
+          return {
+            id: result.documentId,
+            filename: file?.name || 'unknown',
+            size: file?.size || 0,
+            uploadUrl: `/api/documents/${result.documentId}/download`,
+            status: 'completed'
+          };
+        }),
         batchId: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       };
 
@@ -220,7 +223,7 @@ export function useDocumentDelete() {
 
   const deleteDocument = useCallback(async (
     documentId: string,
-    realmId?: string
+    _realmId?: string
   ): Promise<boolean> => {
     setIsDeleting(true);
     setError(null);
@@ -265,6 +268,8 @@ export function useDocumentDelete() {
 
       results.forEach((result, index) => {
         const documentId = documentIds[index];
+        if (!documentId) return; // Skip if no documentId
+        
         if (result.status === 'fulfilled' && result.value) {
           success.push(documentId);
         } else {
@@ -321,7 +326,7 @@ export function useDocumentStats(realmId?: string, options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled,
@@ -357,7 +362,7 @@ export function useDocumentProcessing(documentId: string, options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled: enabled && !!documentId,

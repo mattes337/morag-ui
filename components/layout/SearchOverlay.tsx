@@ -71,12 +71,6 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
     router.push(`/search?q=${encodeURIComponent(recentQuery)}`)
   }
 
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
-    }
-  }
 
   if (!isOpen) return null
 
@@ -156,7 +150,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                           {result.content.length > 80 ? result.content.substring(0, 80) + '...' : result.content}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {result.type} • {result.author} • {new Date(result.updatedAt).toLocaleDateString()}
+                          {result.documentType} • {new Date(result.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground ml-2" />

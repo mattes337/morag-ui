@@ -79,7 +79,10 @@ export function SecurityProvider({ children }: SecurityProviderProps) {
    * Secure fetch wrapper
    */
   const secureFetch = React.useCallback(
-    async (url: string, options: RequestInit = {}): Promise<Response> => {
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = input instanceof Request ? input.url : input.toString();
+      const options = input instanceof Request ? { ...init, ...input } : init || {};
+      
       return csrfFetch(url, {
         ...options,
         credentials: 'include',

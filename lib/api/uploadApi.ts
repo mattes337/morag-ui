@@ -295,7 +295,7 @@ export const uploadFiles = async (
   }
   
   // Process files in batches to limit concurrent uploads
-  const batches = [];
+  const batches: File[][] = [];
   for (let i = 0; i < files.length; i += CONCURRENT_UPLOADS) {
     batches.push(files.slice(i, i + CONCURRENT_UPLOADS));
   }
@@ -305,10 +305,11 @@ export const uploadFiles = async (
   for (const batch of batches) {
     const batchPromises = batch.map(async (file, batchIndex) => {
       const globalIndex = batches.indexOf(batch) * CONCURRENT_UPLOADS + batchIndex;
-      const fileId = fileProgress[globalIndex].id;
       
       // Update status to uploading
-      fileProgress[globalIndex].status = 'uploading';
+      if (fileProgress[globalIndex]) {
+        fileProgress[globalIndex].status = 'uploading';
+      }
       if (onProgress) {
         onProgress({
           overall: Math.round((completedFiles / files.length) * 100),
@@ -317,7 +318,7 @@ export const uploadFiles = async (
       }
       
       const result = await uploadFile(file, (progress) => {
-        if (typeof progress === 'number') {
+        if (typeof progress === 'number' && fileProgress[globalIndex]) {
           fileProgress[globalIndex].progress = progress;
           
           if (onProgress) {
@@ -330,12 +331,12 @@ export const uploadFiles = async (
       });
       
       // Update final status
-      if (result.success) {
+      if (result.success && fileProgress[globalIndex]) {
         fileProgress[globalIndex].status = 'completed';
         fileProgress[globalIndex].progress = 100;
-      } else {
+      } else if (fileProgress[globalIndex]) {
         fileProgress[globalIndex].status = 'error';
-        fileProgress[globalIndex].error = result.error;
+        fileProgress[globalIndex].error = result.error || 'Upload failed';
       }
       
       completedFiles++;
@@ -465,8 +466,7 @@ export const getUploadStatus = async (uploadId: string): Promise<UploadResult> =
  */
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'test') {
   // Mock fetch for tests
-  const originalFetch = global.fetch;
-  global.fetch = jest.fn().mockImplementation((url: string, options?: RequestInit) => {
+  global.fetch = jest.fn().mockImplementation((_url: string, _options?: RequestInit) => {
     // Default successful response for testing
     return Promise.resolve({
       ok: true,

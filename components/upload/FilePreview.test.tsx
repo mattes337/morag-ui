@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { 
-  renderWithA11y, 
   testComponentAccessibility 
 } from '@/lib/accessibility/a11y-test-utils';
 import { FilePreview } from './FilePreview';

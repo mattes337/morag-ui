@@ -28,7 +28,7 @@ interface UseApiReturn<T> extends ApiState<T> {
 export function useApi<T = any>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   endpoint: string,
-  options: UseApiOptions = {}
+  options: Partial<UseApiOptions> = {}
 ): UseApiReturn<T> {
   const [state, setState] = useState<ApiState<T>>({
     loading: false,
@@ -142,15 +142,18 @@ export function useApi<T = any>(
     }
   }, [method, endpoint, defaultConfig, retry]);
 
-  const execute = useCallback(async (config: ApiRequestConfig = {}): Promise<ApiResponse<T>> => {
+  const execute = useCallback(async (config: Partial<ApiRequestConfig> = {}): Promise<ApiResponse<T>> => {
     if (!enabled) {
       return { 
         success: false, 
+        data: undefined,
         error: { 
           code: 'DISABLED', 
           message: 'API call is disabled', 
-          statusCode: 400 
+          statusCode: 400,
+          details: undefined 
         },
+        message: undefined,
         timestamp: new Date().toISOString(),
         requestId: 'disabled'
       };
@@ -163,7 +166,8 @@ export function useApi<T = any>(
     }));
 
     try {
-      const response = await executeWithRetry(config);
+      const mergedConfig = { ...defaultConfig, ...config } as ApiRequestConfig;
+      const response = await executeWithRetry(mergedConfig);
       
       const newState: ApiState<T> = {
         data: response.data,
@@ -184,11 +188,14 @@ export function useApi<T = any>(
       if (error.name === 'AbortError' || error.message === 'Request cancelled') {
         return {
           success: false,
+          data: undefined,
           error: {
             code: 'CANCELLED',
             message: 'Request was cancelled',
-            statusCode: 0
+            statusCode: 0,
+            details: undefined
           },
+          message: undefined,
           timestamp: new Date().toISOString(),
           requestId: 'cancelled'
         };
@@ -212,7 +219,9 @@ export function useApi<T = any>(
 
       return {
         success: false,
+        data: undefined,
         error: apiError,
+        message: undefined,
         timestamp: new Date().toISOString(),
         requestId: 'error'
       };

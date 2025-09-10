@@ -67,19 +67,29 @@ export const UploadProgress: React.FC<UploadProgressProps> = ({
 
   // Convert files to FileItem format for FilePreview
   const fileItems: FileItem[] = useMemo(() => {
-    return files.map(file => ({
-      id: file.id,
-      file: new File([''], file.name, { type: file.type }), // Mock File object
-      status: file.status,
-      progress: file.progress,
-      error: file.error || null,
-      uploadSpeed: file.uploadSpeed,
-      timeRemaining: file.timeRemaining
-    }));
+    return files.map(file => {
+      const fileItem: FileItem = {
+        id: file.id,
+        file: new File([''], file.name, { type: file.type }), // Mock File object
+        status: file.status,
+        progress: file.progress,
+        error: file.error || null
+      };
+      
+      // Only add optional properties if they exist
+      if (file.uploadSpeed !== undefined) {
+        fileItem.uploadSpeed = file.uploadSpeed;
+      }
+      if (file.timeRemaining !== undefined) {
+        fileItem.timeRemaining = file.timeRemaining;
+      }
+      
+      return fileItem;
+    });
   }, [files]);
 
   // Handle individual file removal
-  const handleRemoveFile = useCallback((fileId: string) => {
+  const handleRemoveFile = useCallback((_fileId: string) => {
     // For this implementation, we treat file removal as cancellation
     onCancel();
   }, [onCancel]);

@@ -14,9 +14,9 @@ interface ApiContextValue {
   baseURL: string;
   isOnline: boolean;
   globalLoading: boolean;
-  globalError?: ApiError;
+  globalError: ApiError | undefined;
   setGlobalLoading: (loading: boolean) => void;
-  setGlobalError: (error?: ApiError) => void;
+  setGlobalError: (error: ApiError | undefined) => void;
   clearGlobalError: () => void;
 }
 
@@ -64,6 +64,7 @@ export function ApiProvider({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [globalError]);
 
   const clearGlobalError = () => {

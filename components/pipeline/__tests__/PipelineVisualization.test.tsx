@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PipelineVisualization } from '../PipelineVisualization';
 import { createMockStageExecution } from '@/lib/utils/pipelineHelpers';
@@ -239,9 +239,9 @@ describe('PipelineVisualization', () => {
     );
 
     const stageElement = screen.getByText('Markdown Conversion').closest('[role="button"]');
-    expect(stageElement).toHaveTabIndex(0);
+    expect(stageElement).toHaveAttribute('tabindex', '0');
     
-    stageElement!.focus();
+    (stageElement as HTMLElement)?.focus();
     await user.keyboard('{Enter}');
     expect(handleStageClick).toHaveBeenCalledWith(mockExecutions[0]);
   });

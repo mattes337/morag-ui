@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { 
-  renderWithA11y, 
   testComponentAccessibility 
 } from '@/lib/accessibility/a11y-test-utils';
 import { DocumentUpload } from './DocumentUpload';
@@ -20,10 +19,10 @@ describe('DocumentUpload Accessibility', () => {
     jest.clearAllMocks();
     
     // Default mock implementations
-    mockFileValidation.validateFiles.mockReturnValue({
+    mockFileValidation.validateFiles.mockReturnValue(Promise.resolve({
       isValid: true,
       errors: []
-    });
+    }));
     mockFileValidation.isDragAndDropSupported.mockReturnValue(true);
     mockFileValidation.formatFileSize.mockImplementation((bytes) => `${Math.round(bytes / 1024)}KB`);
     mockFileValidation.getFileIcon.mockReturnValue('file-text');
@@ -46,7 +45,6 @@ describe('DocumentUpload Accessibility', () => {
     });
 
     test('provides accessible feedback for drag and drop', async () => {
-      const user = userEvent.setup();
       render(<DocumentUpload onUpload={jest.fn()} />);
       
       const dropZone = screen.getByRole('region', { name: /drop zone|upload area/i });
@@ -77,10 +75,10 @@ describe('DocumentUpload Accessibility', () => {
     });
 
     test('validates files before processing', async () => {
-      mockFileValidation.validateFiles.mockReturnValue({
+      mockFileValidation.validateFiles.mockReturnValue(Promise.resolve({
         isValid: false,
         errors: [{ code: 'FILE_TOO_LARGE', message: 'File is too large' }]
-      });
+      }));
 
       const onUpload = jest.fn();
       const user = userEvent.setup();
@@ -99,13 +97,13 @@ describe('DocumentUpload Accessibility', () => {
     });
 
     test('shows file validation errors accessibly', async () => {
-      mockFileValidation.validateFiles.mockReturnValue({
+      mockFileValidation.validateFiles.mockReturnValue(Promise.resolve({
         isValid: false,
         errors: [
           { code: 'FILE_TOO_LARGE', message: 'File is too large' },
           { code: 'UNSUPPORTED_FILE_TYPE', message: 'Unsupported file type' }
         ]
-      });
+      }));
 
       const user = userEvent.setup();
       render(<DocumentUpload onUpload={jest.fn()} />);

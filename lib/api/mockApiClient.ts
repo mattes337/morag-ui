@@ -15,7 +15,7 @@ import {
 } from './types';
 
 // Import all mock data modules
-import { mockData, validateMockData } from '../mockData';
+import { mockData } from '../mockData';
 import * as searchMockData from '../mockData/searchMockData';
 import * as documentMockData from '../mockData/documentMockData';
 import * as pipelineMockData from '../mockData/pipelineMockData';
@@ -24,7 +24,6 @@ class MockApiClient implements ApiClient {
   private cache = new Map<string, CacheEntry<any>>();
   private requestId = 0;
   private readonly baseDelay = 100; // Base delay in ms
-  private readonly maxDelay = 500; // Max delay in ms
   private readonly errorRate = 0.05; // 5% failure rate
 
   constructor() {
@@ -75,6 +74,8 @@ class MockApiClient implements ApiClient {
         return {
           success: true,
           data: cached,
+          error: undefined,
+          message: undefined,
           timestamp: new Date().toISOString(),
           requestId
         };
@@ -100,7 +101,9 @@ class MockApiClient implements ApiClient {
       const error = this.generateRandomError();
       return {
         success: false,
+        data: undefined,
         error,
+        message: undefined,
         timestamp: new Date().toISOString(),
         requestId
       };
@@ -117,6 +120,8 @@ class MockApiClient implements ApiClient {
     return {
       success: true,
       data: responseData,
+      error: undefined,
+      message: undefined,
       timestamp: new Date().toISOString(),
       requestId
     };
@@ -142,30 +147,45 @@ class MockApiClient implements ApiClient {
   }
 
   private generateRandomError(): ApiError {
-    const errors = [
+    const errors: ApiError[] = [
       {
         code: ApiErrorCode.NETWORK_ERROR,
         message: 'Network connection failed',
+        details: undefined,
         statusCode: 0
       },
       {
         code: ApiErrorCode.TIMEOUT,
         message: 'Request timeout',
+        details: undefined,
         statusCode: 408
       },
       {
         code: ApiErrorCode.INTERNAL_ERROR,
         message: 'Internal server error',
+        details: undefined,
         statusCode: 500
       },
       {
         code: ApiErrorCode.RATE_LIMITED,
         message: 'Too many requests',
+        details: undefined,
         statusCode: 429
       }
     ];
 
-    return errors[Math.floor(Math.random() * errors.length)];
+    const randomIndex = Math.floor(Math.random() * errors.length);
+    const error = errors[randomIndex];
+    if (!error) {
+      // Fallback error if array access somehow fails
+      return {
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Unknown error occurred',
+        details: undefined,
+        statusCode: 500
+      };
+    }
+    return error;
   }
 
   private async generateMockResponse<T>(method: string, endpoint: string, data?: any): Promise<T> {
@@ -199,24 +219,24 @@ class MockApiClient implements ApiClient {
     
     // Realm management endpoints
     if (endpoint.includes('/realms')) {
-      return this.generateRealmResponse(endpoint, method, data) as T;
+      return await this.generateRealmResponse(endpoint, method, data) as T;
     }
     
     // Analytics endpoints
     if (endpoint.includes('/analytics')) {
-      return this.generateAnalyticsResponse(endpoint) as T;
+      return await this.generateAnalyticsResponse(endpoint) as T;
     }
     
     // Job management endpoints
     if (endpoint.includes('/jobs')) {
-      return this.generateJobResponse(endpoint, method, data) as T;
+      return await this.generateJobResponse(endpoint, method, data) as T;
     }
     
     // Default fallback
     return this.generateDefaultResponse(endpoint, method, data) as T;
   }
 
-  private async generateSearchResponse(endpoint: string, data?: any): Promise<any> {
+  private async generateSearchResponse(_endpoint: string, data?: any): Promise<any> {
     // Extract search parameters from endpoint or data
     const searchQuery = data?.query || data?.q || '';
     const limit = data?.limit || 10;
@@ -244,7 +264,7 @@ class MockApiClient implements ApiClient {
     };
   }
 
-  private generateDocumentUploadResponse(files?: any): any {
+  private generateDocumentUploadResponse(_files?: any): any {
     // Generate document upload response
     const documentId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const pipelineId = `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -257,7 +277,7 @@ class MockApiClient implements ApiClient {
     };
   }
 
-  private generateDocumentListResponse(endpoint: string): any {
+  private generateDocumentListResponse(_endpoint: string): any {
     // Return actual mock documents
     return documentMockData.mockDocuments;
   }
@@ -290,52 +310,158 @@ class MockApiClient implements ApiClient {
     return { message: 'User operation completed', data: data };
   }
 
-  private generateRealmResponse(endpoint: string, method: string, data?: any): any {
+  private async generateRealmResponse(endpoint: string, method: string, data?: any): Promise<any> {
     if (method === 'GET') {
+      // Handle specific realm endpoints
+      if (endpoint.includes('/members')) {
+        // Return mock realm members
+        return [
+          {
+            id: 'user-1',
+            email: 'admin@example.com',
+            name: 'Admin User',
+            role: 'admin' as const,
+            joinedAt: '2023-01-01T00:00:00Z',
+            lastActive: new Date().toISOString()
+          },
+          {
+            id: 'user-2', 
+            email: 'member@example.com',
+            name: 'Member User',
+            role: 'member' as const,
+            joinedAt: '2023-02-01T00:00:00Z',
+            lastActive: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+          }
+        ];
+      }
+      
+      if (endpoint.includes('/settings')) {
+        return {
+          processing: {
+            autoProcessOnUpload: true,
+            defaultStages: ['markdown-conversion', 'chunker', 'fact-generator', 'ingestor'],
+            enableMarkdownOptimizer: false,
+            chunkingStrategy: 'semantic' as const,
+            chunkSize: 1000,
+            chunkOverlap: 100,
+          },
+          storage: {
+            maxFileSize: 104857600, // 100MB
+            allowedFileTypes: ['pdf', 'docx', 'pptx', 'xlsx', 'txt', 'md'],
+            retentionPolicyDays: 365,
+          },
+          access: {
+            allowPublicSharing: false,
+            requireApprovalForNewMembers: true,
+            defaultMemberRole: 'member' as const,
+          }
+        };
+      }
+      
+      if (endpoint.includes('/usage')) {
+        return {
+          storage: {
+            used: 2147483648, // 2GB
+            available: 8589934592, // 8GB
+            total: 10737418240 // 10GB
+          },
+          documents: {
+            total: 150,
+            processed: 142,
+            pending: 5,
+            failed: 3
+          },
+          processing: {
+            totalJobs: 200,
+            successfulJobs: 185,
+            failedJobs: 15,
+            avgProcessingTime: 45000 // 45 seconds
+          },
+          members: {
+            total: 8,
+            active: 6,
+            lastWeek: 2
+          }
+        };
+      }
+      
       // Extract realm ID from endpoint if present
       const realmId = endpoint.split('/').pop();
       if (realmId && realmId !== 'realms') {
-        return mockData.realms.byId(realmId);
+        return await mockData.realms.byId(realmId);
       }
-      return mockData.realms.all();
+      return await mockData.realms.all();
     }
     
     // Default realm response
     return { message: 'Realm operation completed', data: data };
   }
 
-  private generateAnalyticsResponse(endpoint: string): any {
+  private async generateAnalyticsResponse(endpoint: string): Promise<any> {
     // Extract realm ID from endpoint if present
     const parts = endpoint.split('/');
     const realmId = parts.find(part => part.startsWith('realm-')) || 'realm-1';
     
     if (endpoint.includes('/global')) {
-      return mockData.analytics.global();
+      return await mockData.analytics.global();
     }
     if (endpoint.includes('/dashboard')) {
-      return mockData.analytics.dashboard();
+      return await mockData.analytics.dashboard();
     }
     if (endpoint.includes('/health')) {
-      return mockData.analytics.systemHealth();
+      return await mockData.analytics.systemHealth();
     }
     
-    return mockData.analytics.byRealm(realmId);
+    return await mockData.analytics.byRealm(realmId);
   }
 
-  private generateJobResponse(endpoint: string, method: string, data?: any): any {
+  private async generateJobResponse(endpoint: string, method: string, data?: any): Promise<any> {
     if (method === 'GET') {
+      // Handle specific job logs endpoint
+      if (endpoint.includes('/logs')) {
+        const pathParts = endpoint.split('/');
+        const jobIdIndex = pathParts.indexOf('jobs') + 1;
+        const jobId = jobIdIndex < pathParts.length ? pathParts[jobIdIndex] : null;
+        
+        if (jobId) {
+          const job = await mockData.jobs.byId(jobId);
+          if (job) {
+            return {
+              jobId,
+              logs: job.logs || [],
+              metrics: {
+                cpuUsage: Math.random() * 100,
+                memoryUsage: Math.random() * 1000,
+                duration: job.duration || 0,
+                throughput: Math.random() * 100
+              }
+            };
+          }
+        }
+        return {
+          jobId: jobId || 'unknown',
+          logs: [],
+          metrics: {
+            cpuUsage: 0,
+            memoryUsage: 0,
+            duration: 0,
+            throughput: 0
+          }
+        };
+      }
+      
       // Extract job ID from endpoint if present
       const jobId = endpoint.split('/').pop();
       if (jobId && jobId !== 'jobs') {
-        return mockData.jobs.byId(jobId);
+        return await mockData.jobs.byId(jobId);
       }
       if (endpoint.includes('/queue')) {
-        return mockData.jobs.queue();
+        return await mockData.jobs.queue();
       }
       if (endpoint.includes('/statistics')) {
-        return mockData.jobs.statistics();
+        return await mockData.jobs.statistics();
       }
-      return mockData.jobs.all();
+      return await mockData.jobs.all();
     }
     
     // Default job response

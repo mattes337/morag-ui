@@ -642,7 +642,7 @@ export class SearchApi {
    * };
    * ```
    */
-  async getSearchFacets(query?: string): Promise<{
+  async getSearchFacets(_query?: string): Promise<{
     /** Document types with result counts */
     documentTypes: Array<{ value: string; label: string; count: number }>;
     /** Available date range filters */

@@ -71,7 +71,8 @@ export const ApiProvider: React.FC<ApiProviderProps> = ({
       setGlobalError({
         code: 'NETWORK_ERROR' as any,
         message: 'No internet connection. Please check your network and try again.',
-        statusCode: 0
+        statusCode: 0,
+        details: undefined
       });
     }
   }, [isOnline]);

@@ -62,9 +62,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const dragDropSupported = isDragAndDropSupported();
 
   // Add files to queue
-  const addFilesToQueue = useCallback((newFiles: File[]) => {
+  const addFilesToQueue = useCallback(async (newFiles: File[]) => {
     // Validate files
-    const validation = validateFiles(newFiles);
+    const validation = await validateFiles(newFiles);
     
     if (!validation.isValid) {
       setValidationErrors(validation.errors.map(error => error.message));
@@ -119,11 +119,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   }, [disabled]);
 
-  // Remove file from queue
-  const handleRemoveFile = useCallback((fileId: string) => {
-    setFileQueue(prev => prev.filter(file => file.id !== fileId));
-    setValidationErrors([]);
-  }, []);
+  // Remove file from queue (TODO: Connect to UI)
+  // const handleRemoveFile = useCallback((fileId: string) => {
+  //   setFileQueue(prev => prev.filter(file => file.id !== fileId));
+  //   setValidationErrors([]);
+  // }, []);
 
   // Clear all files
   const handleClearAll = useCallback(() => {
@@ -135,18 +135,22 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const handleRetryFile = useCallback((fileId: string) => {
     if (fileId === 'all') {
       // Retry all failed files
-      setFileQueue(prev => prev.map(file => 
-        file.status === 'error' 
-          ? { ...file, status: 'pending', progress: 0, error: undefined }
-          : file
-      ));
+      setFileQueue(prev => prev.map(file => {
+        if (file.status === 'error') {
+          const { error, ...fileWithoutError } = file;
+          return { ...fileWithoutError, status: 'pending' as const, progress: 0 };
+        }
+        return file;
+      }));
     } else {
       // Retry specific file
-      setFileQueue(prev => prev.map(file => 
-        file.id === fileId && file.status === 'error'
-          ? { ...file, status: 'pending', progress: 0, error: undefined }
-          : file
-      ));
+      setFileQueue(prev => prev.map(file => {
+        if (file.id === fileId && file.status === 'error') {
+          const { error, ...fileWithoutError } = file;
+          return { ...fileWithoutError, status: 'pending' as const, progress: 0 };
+        }
+        return file;
+      }));
     }
   }, []);
 
@@ -178,12 +182,18 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             setFileQueue(prev => prev.map(file => {
               const progressFile = progress.files.find(f => f.filename === file.name);
               if (progressFile) {
-                return {
+                const updatedFile: QueuedFile = {
                   ...file,
                   progress: progressFile.progress,
                   status: progressFile.status as QueuedFile['status'],
-                  error: progressFile.error
                 };
+                
+                // Only add error property if it exists
+                if (progressFile.error) {
+                  updatedFile.error = progressFile.error;
+                }
+                
+                return updatedFile;
               }
               return file;
             }));
@@ -194,16 +204,34 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       // Update final status
       results.forEach((result, index) => {
         const uploadedFile = filesToUpload[index];
-        setFileQueue(prev => prev.map(file => 
-          file.id === uploadedFile.id
-            ? {
+        if (!uploadedFile) return; // Skip if no corresponding file
+        
+        setFileQueue(prev => prev.map(file => {
+          if (file.id === uploadedFile.id) {
+            if (result.success) {
+              const { error, ...fileWithoutError } = file;
+              return {
+                ...fileWithoutError,
+                status: 'completed' as const,
+                progress: 100
+              };
+            } else {
+              const updatedFile: QueuedFile = {
                 ...file,
-                status: result.success ? 'completed' : 'error',
-                progress: result.success ? 100 : file.progress,
-                error: result.success ? undefined : result.error
+                status: 'error' as const,
+                progress: file.progress
+              };
+              
+              // Only add error property if it exists
+              if (result.error) {
+                updatedFile.error = result.error;
               }
-            : file
-        ));
+              
+              return updatedFile;
+            }
+          }
+          return file;
+        }));
       });
       
       // Call onUpload callback

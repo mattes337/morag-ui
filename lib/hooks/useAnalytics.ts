@@ -8,8 +8,6 @@ import { useAsyncData } from './useAsyncData';
 import { mockApiClient } from '../api/mockApiClient';
 import { queryKeys } from '../utils/queryKeys';
 import type { 
-  ApiResponse, 
-  AsyncDataState,
   ApiError,
   AnalyticsData
 } from '../api/types';
@@ -78,7 +76,7 @@ export function useGlobalAnalytics(options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled,
@@ -133,7 +131,7 @@ export function useRealmAnalytics(realmId: string, options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled: enabled && !!realmId,
@@ -182,7 +180,7 @@ export function useUsageAnalytics(
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled: enabled && !!realmId,
@@ -234,7 +232,7 @@ export function usePerformanceAnalytics(realmId: string, options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled: enabled && !!realmId,
@@ -283,7 +281,7 @@ export function useTrendAnalytics(
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled: enabled && !!realmId,
@@ -329,7 +327,7 @@ export function useSystemHealth(options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled,
@@ -385,7 +383,7 @@ export function useUserEngagement(realmId?: string, options?: {
       if (!response.success) {
         throw response.error;
       }
-      return response.data!;
+      return response.data as any;
     },
     {
       enabled,

@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { 
-  renderWithA11y, 
   testComponentAccessibility 
 } from '@/lib/accessibility/a11y-test-utils';
 import { UploadProgress } from './UploadProgress';
@@ -15,7 +14,6 @@ const mockFiles = [
     type: 'application/pdf',
     status: 'uploading' as const,
     progress: 45,
-    error: null,
   },
   {
     id: 'file-2',
@@ -24,7 +22,6 @@ const mockFiles = [
     type: 'text/plain',
     status: 'completed' as const,
     progress: 100,
-    error: null,
   },
   {
     id: 'file-3',
@@ -102,8 +99,10 @@ describe('UploadProgress Accessibility', () => {
     });
 
     test('handles indeterminate progress state', () => {
+      const firstFile = mockFiles[0];
+      expect(firstFile).toBeDefined();
       const indeterminateFiles = [{
-        ...mockFiles[0],
+        ...firstFile,
         progress: -1, // Indeterminate
       }];
       
@@ -170,7 +169,6 @@ describe('UploadProgress Accessibility', () => {
         ...file,
         status: 'completed' as const,
         progress: 100,
-        error: null,
       }));
       
       const user = userEvent.setup();
@@ -184,9 +182,13 @@ describe('UploadProgress Accessibility', () => {
     });
 
     test('shows retry all button when there are errors', async () => {
+      const firstFile = mockFiles[0];
+      const secondFile = mockFiles[1];
+      expect(firstFile).toBeDefined();
+      expect(secondFile).toBeDefined();
       const filesWithErrors = [
-        { ...mockFiles[0], status: 'error' as const, error: 'Network error' },
-        { ...mockFiles[1], status: 'error' as const, error: 'Server error' },
+        { ...firstFile, status: 'error' as const, error: 'Network error' },
+        { ...secondFile, status: 'error' as const, error: 'Server error' },
       ];
       
       const user = userEvent.setup();
@@ -254,7 +256,6 @@ describe('UploadProgress Accessibility', () => {
         ...file,
         status: 'completed' as const,
         progress: 100,
-        error: null,
       }));
       
       rerender(<UploadProgress {...mockProps} files={completedFiles} />);
@@ -268,11 +269,17 @@ describe('UploadProgress Accessibility', () => {
 
   describe('Upload Speed and Time Estimates', () => {
     test('shows upload speed information', () => {
-      const filesWithSpeed = mockFiles.map(file => ({
-        ...file,
-        uploadSpeed: file.status === 'uploading' ? 1024 * 1024 : undefined, // 1MB/s
-        timeRemaining: file.status === 'uploading' ? 30 : undefined, // 30 seconds
-      }));
+      const filesWithSpeed = mockFiles.map(file => {
+        const base = { ...file };
+        if (file.status === 'uploading') {
+          return {
+            ...base,
+            uploadSpeed: 1024 * 1024, // 1MB/s
+            timeRemaining: 30, // 30 seconds
+          };
+        }
+        return base;
+      });
       
       render(<UploadProgress {...mockProps} files={filesWithSpeed} />);
       
@@ -280,10 +287,16 @@ describe('UploadProgress Accessibility', () => {
     });
 
     test('shows time remaining estimates', () => {
-      const filesWithTime = mockFiles.map(file => ({
-        ...file,
-        timeRemaining: file.status === 'uploading' ? 45 : undefined, // 45 seconds
-      }));
+      const filesWithTime = mockFiles.map(file => {
+        const base = { ...file };
+        if (file.status === 'uploading') {
+          return {
+            ...base,
+            timeRemaining: 45, // 45 seconds
+          };
+        }
+        return base;
+      });
       
       render(<UploadProgress {...mockProps} files={filesWithTime} />);
       
@@ -328,7 +341,6 @@ describe('UploadProgress Accessibility', () => {
         ...file,
         status: 'completed' as const,
         progress: 100,
-        error: null,
       }));
       
       render(<UploadProgress {...mockProps} files={completedFiles} />);

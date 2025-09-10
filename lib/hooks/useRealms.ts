@@ -6,10 +6,8 @@
 import { useCallback, useState } from 'react';
 import { useAsyncData } from './useAsyncData';
 import { mockApiClient } from '../api/mockApiClient';
-import { queryKeys, getInvalidationKeys } from '../utils/queryKeys';
+import { queryKeys } from '../utils/queryKeys';
 import type { 
-  ApiResponse, 
-  AsyncDataState,
   ApiError,
   Realm
 } from '../api/types';
@@ -270,7 +268,10 @@ export function useRealmMembers(realmId: string, options?: {
   }>>(
     queryKeys.realms.members(realmId),
     async () => {
-      const response = await mockApiClient.get(`/api/realms/${realmId}/members`);
+      if (!realmId) {
+        throw new Error('Realm ID is required');
+      }
+      const response = await mockApiClient.get<{ id: string; email: string; name: string; role: 'admin' | 'member' | 'viewer'; joinedAt: string; lastActive: string; }[]>(`/api/realms/${realmId}/members`);
       if (!response.success) {
         throw response.error;
       }
@@ -313,7 +314,10 @@ export function useRealmSettings(realmId: string, options?: {
   }>(
     queryKeys.realms.settings(realmId),
     async () => {
-      const response = await mockApiClient.get(`/api/realms/${realmId}/settings`);
+      if (!realmId) {
+        throw new Error('Realm ID is required');
+      }
+      const response = await mockApiClient.get<{ processing: { autoProcessOnUpload: boolean; defaultStages: string[]; enableMarkdownOptimizer: boolean; chunkingStrategy: 'semantic' | 'fixed' | 'hybrid'; chunkSize: number; chunkOverlap: number; }; storage: { maxFileSize: number; allowedFileTypes: string[]; retentionPolicyDays: number; }; access: { allowPublicSharing: boolean; requireApprovalForNewMembers: boolean; defaultMemberRole: 'member' | 'viewer'; }; }>(`/api/realms/${realmId}/settings`);
       if (!response.success) {
         throw response.error;
       }
@@ -397,7 +401,10 @@ export function useRealmUsage(realmId: string, options?: {
   }>(
     queryKeys.realms.usage(realmId),
     async () => {
-      const response = await mockApiClient.get(`/api/realms/${realmId}/usage`);
+      if (!realmId) {
+        throw new Error('Realm ID is required');
+      }
+      const response = await mockApiClient.get<{ storage: { used: number; available: number; total: number; }; documents: { total: number; processed: number; pending: number; failed: number; }; processing: { totalJobs: number; successfulJobs: number; failedJobs: number; avgProcessingTime: number; }; members: { total: number; active: number; lastWeek: number; }; }>(`/api/realms/${realmId}/usage`);
       if (!response.success) {
         throw response.error;
       }

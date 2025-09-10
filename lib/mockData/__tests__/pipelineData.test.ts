@@ -9,8 +9,6 @@ import {
   retryFailedStage,
   skipFailedStage,
   generateMockPipelineExecution,
-  type PipelineExecution,
-  type PipelineDocument,
 } from '../pipelineData';
 
 describe('pipelineData', () => {
@@ -71,7 +69,8 @@ describe('pipelineData', () => {
   describe('getPipelineExecutionById', () => {
     it('should return the correct execution by ID', () => {
       const firstExecution = mockPipelineExecutions[0];
-      const result = getPipelineExecutionById(firstExecution.id);
+      expect(firstExecution).toBeDefined();
+      const result = getPipelineExecutionById(firstExecution!.id);
       
       expect(result).toEqual(firstExecution);
     });
@@ -113,9 +112,13 @@ describe('pipelineData', () => {
       expect(recent).toHaveLength(5);
       
       for (let i = 0; i < recent.length - 1; i++) {
-        const current = recent[i].startTime.getTime();
-        const next = recent[i + 1].startTime.getTime();
-        expect(current).toBeGreaterThanOrEqual(next);
+        const current = recent[i]?.startTime?.getTime();
+        const next = recent[i + 1]?.startTime?.getTime();
+        expect(current).toBeDefined();
+        expect(next).toBeDefined();
+        if (current !== undefined && next !== undefined) {
+          expect(current).toBeGreaterThanOrEqual(next);
+        }
       }
     });
 
@@ -227,7 +230,8 @@ describe('pipelineData', () => {
 
     it('should return false for non-existent stage', () => {
       const execution = mockPipelineExecutions[0];
-      const result = retryFailedStage(execution.id, 'non-existent-stage-id');
+      expect(execution).toBeDefined();
+      const result = retryFailedStage(execution!.id, 'non-existent-stage-id');
       expect(result).toBe(false);
     });
 
@@ -272,7 +276,8 @@ describe('pipelineData', () => {
 
     it('should return false for non-existent stage', () => {
       const execution = mockPipelineExecutions[0];
-      const result = skipFailedStage(execution.id, 'non-existent-stage-id');
+      expect(execution).toBeDefined();
+      const result = skipFailedStage(execution!.id, 'non-existent-stage-id');
       expect(result).toBe(false);
     });
 
