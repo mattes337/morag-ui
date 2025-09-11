@@ -165,18 +165,35 @@ This comprehensive index catalogs all documented and implemented features in the
 | Error Handling | `components/ui/EmptyState.tsx` | 60% | Need global error boundaries integration |
 | Integration Refinement | Various integration points | 85% | Final polish and accessibility improvements |
 
-### Planned Features ❌
+### Next Sprint Features (Backend Integration) 🚧
+
+| Feature | Backend API | Priority | Status |
+|---------|-------------|----------|---------|
+| Document Processing Pipeline | MoRAG API (morag.drydev.de:8000) | High | Ready for implementation |
+| File Management Integration | /api/v1/files/* endpoints | High | Real backend available |
+| Stage Execution Interface | /api/v1/stages/* endpoints | High | OpenAPI spec complete |
+| Mock API Cleanup | Remove lib/mockData/* files | High | Cleanup task |
+| Real-time Status Updates | Polling /api/v1/stages/status | Medium | Production backend ready |
+| Error Handling for Network | HTTP error responses | Medium | Backend error codes documented |
+
+### Future Features (Post-Backend Integration) ❌
 
 | Feature | Documentation | Priority | Dependencies |
 |---------|---------------|----------|--------------|
-| Document Processing Pipeline | `docs/BACKEND_API_GUIDE.md` | High | Backend API implementation |
-| Realm Management | `docs/PRD.md`, wireframes | Medium | Backend realm system |
-| Vector Database Integration | API specs | High | Backend implementation |
-| User Management | `docs/PRD.md:272-287` | Medium | Admin authentication |
-| API Key Management | `docs/WIREFRAMES.md:604-637` | Low | Backend API (have UI components) |
-| Real-time WebSocket Integration | Backend specification | Medium | WebSocket backend implementation |
+| Realm Management | `docs/PRD.md`, wireframes | Medium | Multi-tenant backend support |
+| Vector Database Integration | API specs | High | Vector DB backend endpoints |
+| User Management | `docs/PRD.md:272-287` | Medium | User/role backend APIs |
+| WebSocket Real-time Updates | Backend specification | Low | WebSocket endpoint implementation |
 
 ## TODO Inheritance Tree
+
+### Backend Integration TODOs (Next Sprint)
+- [ ] TODO: Connect document processing pipeline to MoRAG API (http://morag.drydev.de:8000/)
+- [ ] TODO: Replace all mock API implementations with real HTTP clients
+- [ ] TODO: Implement file upload/download with /api/v1/files/* endpoints
+- [ ] TODO: Add stage execution interface with /api/v1/stages/* endpoints
+- [ ] TODO: Remove lib/mockData/* files and localStorage-based mocks
+- [ ] TODO: Add error handling for real network failures and HTTP errors
 
 ### From Documentation
 - [ ] TODO: Implement complete document processing pipeline (from: docs/PRD.md:154-177)
@@ -195,6 +212,12 @@ This comprehensive index catalogs all documented and implemented features in the
 - [ ] TODO: Implement data fetching hooks for dashboard (inferred from mock data usage)
 - [ ] TODO: Add form submission handlers (inferred from form components)
 - [ ] TODO: Implement route protection logic (inferred from ProtectedRoute component)
+
+### Quality & Polish TODOs
+- [ ] TODO: Add global error boundary components 
+- [ ] TODO: Implement advanced data fetching hooks with real HTTP
+- [ ] TODO: Add production-ready request retry and caching logic
+- [ ] TODO: Implement comprehensive logging and monitoring
 
 ## Feature Dependencies Graph
 
@@ -225,12 +248,13 @@ Backend Integration (❌)
 
 ## Quick Statistics
 
-- **Total Features Documented**: 55
-- **Features Implemented**: 23 (89% of core UI features)
+- **Total Features Documented**: 61
+- **Features Implemented**: 23 (89% of core UI features)  
 - **Features In Progress**: 2 (4%)
-- **Features Planned**: 30 (including backend-dependent features)
-- **Total TODOs**: 6 (significantly reduced after sprint)
-- **Critical TODOs**: 0 (all critical blocking issues resolved)
+- **Next Sprint Features**: 6 (backend integration ready)
+- **Future Features**: 4 (awaiting backend endpoints)
+- **Total TODOs**: 25 (comprehensive task inventory)
+- **Critical TODOs**: 6 (backend integration tasks)
 
 ## Development Insights
 
@@ -242,11 +266,12 @@ Backend Integration (❌)
 5. **Design System**: Consistent theme system with dark mode support
 
 ### Recommended Next Steps
-1. **Final Polish**: Address remaining 48 ESLint warnings for full code quality
-2. **Add Global Error Boundaries**: Complete error handling infrastructure
-3. **Backend Integration**: Begin API integration for document processing
-4. **Real-time Features**: Implement WebSocket integration for live updates
-5. **Security Hardening**: Add JWT validation, CSRF protection, security headers
+1. **Backend Integration**: Connect to real MoRAG API (http://morag.drydev.de:8000/) 
+2. **Mock Cleanup**: Remove all lib/mockData/* and mock API implementations
+3. **File Management**: Implement real file upload/download with /api/v1/files/*
+4. **Stage Execution**: Connect pipeline to /api/v1/stages/* endpoints
+5. **Error Handling**: Add global error boundaries for network failures
+6. **Status Monitoring**: Real-time status updates via polling /api/v1/stages/status
 
 ### Architecture Observations
 - Project follows clean architecture patterns with separation of concerns
@@ -290,4 +315,4 @@ Backend Integration (❌)
 
 ---
 
-*This index was updated post-parallel sprint analyzing 200+ source files, 50+ new components, comprehensive test suites, and integrated feature implementations. Updated: 2025-09-11 after successful parallel sprint orchestration.*
+*This index was updated post-parallel sprint for backend integration planning. Analyzed production MoRAG API (morag.drydev.de:8000), OpenAPI specification, and identified 6 parallelizable tasks for real backend integration. Updated: 2025-09-11 for backend integration sprint.*

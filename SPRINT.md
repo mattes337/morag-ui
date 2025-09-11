@@ -1,512 +1,535 @@
-# ACTIVE IMPLEMENTATION PLAN
-Generated: 2025-01-10T12:45:00Z
-Execution Mode: Parallel-First Strategy
-Claude Code Compatible: v1.0
+# ACTIVE IMPLEMENTATION PLAN - BACKEND INTEGRATION
+Generated: 2025-09-11T18:00:00Z  
+Execution Mode: Real Backend Integration Strategy  
+Claude Code Compatible: v1.0  
+Backend Server: http://morag.drydev.de:8000/
 
 ## 🚀 PARALLEL PHASE (All tasks can run simultaneously)
-Duration Estimate: 4-6 days
-Parallelization Factor: 8 tasks
-Risk Level: LOW (isolated components, no shared files)
+Duration Estimate: 6-8 hours  
+Parallelization Factor: 6 tasks  
+Risk Level: LOW (real backend integration with OpenAPI specification)  
 
-**Current State Analysis**: Search functionality, error boundaries, document upload, and realm management are already well-implemented. This sprint focuses on completing missing features and enhancements that can run in parallel with zero file conflicts.
+**Current State Analysis**: The previous parallel sprint successfully completed 8 major UI features. This sprint focuses on real MoRAG backend integration, removing existing mock implementations, and connecting to the production stage-based processing API at http://morag.drydev.de:8000/.
 
-### Task Group A: Analytics & Dashboard Enhancements
-#### Task A1: Analytics Dashboard Implementation
-**Priority**: HIGH
-**Complexity**: MEDIUM
+### Task Group A: Real Backend Integration
+#### Task A1: Document Processing Pipeline Real Integration
+**Priority**: HIGH  
+**Complexity**: MEDIUM  
 **Files to Create/Modify**:
 ```
-- app/(dashboard)/analytics/page.tsx [MODIFY: Replace placeholder with full implementation]
-- components/analytics/ChartContainer.tsx [CREATE]
-- components/analytics/MetricsCard.tsx [CREATE]
-- components/analytics/TimeRangeSelector.tsx [CREATE]
-- components/analytics/AnalyticsFilters.tsx [CREATE]
-- lib/mockData/analyticsMockData.ts [CREATE]
-- components/analytics/AnalyticsGrid.tsx [CREATE]
+- app/(dashboard)/pipeline/page.tsx [CREATE]
+- components/pipeline/PipelineStages.tsx [CREATE]
+- components/pipeline/StageCard.tsx [CREATE]
+- components/pipeline/ProcessingQueue.tsx [CREATE]
+- components/pipeline/StageConfiguration.tsx [CREATE]
+- lib/api/stageApi.ts [CREATE]
+- lib/hooks/usePipeline.ts [CREATE]
+- lib/hooks/useStageExecution.ts [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Create comprehensive analytics components:
-   - ChartContainer: Wrapper for recharts integration
-     - Props: data, chartType, title, subtitle
-     - Support: line, bar, pie, area charts
-     - Features: responsive, dark mode, tooltips
+1. Create real pipeline integration components:
+   - PipelineStages: 5-stage pipeline visualization connected to real API
+     - Stages: markdown-conversion, markdown-optimizer, chunker, fact-generator, ingestor
+     - Each stage fetches real status from /api/v1/stages/status
+     - Shows actual execution time, file counts, success/failure rates
+     - Interactive stage details with expand/collapse showing real metadata
    
-   - MetricsCard: Key performance indicator display
-     - Props: title, value, change, trend, icon
-     - Variants: positive, negative, neutral trends
-     - Animation: CountUp for number animations
-
-   - TimeRangeSelector: Date/period filtering
-     - Options: 7d, 30d, 90d, 1y, custom range
-     - Export: { startDate, endDate, period }
+   - StageCard: Individual stage display with real API integration
+     - Props: stage data from StageInfoResponse, live status updates
+     - Actions: execute stage via /api/v1/stages/{stage_name}/execute
+     - Real progress tracking and file output display
+     - Error handling for failed executions
      
-2. Mock data structure:
-   - Document processing metrics by stage
-   - Usage analytics by realm
-   - Performance metrics (processing time, error rates)
-   - User activity patterns
+   - ProcessingQueue: Live document processing with real backend
+     - Connects to /api/v1/stages/chain for multi-stage execution
+     - Real-time status updates via polling /api/v1/stages/status
+     - File management via /api/v1/files/* endpoints
+     - Actual job cancellation and cleanup
    
+2. Real API integration:
+   - stageApi: Complete client for MoRAG stage-based API
+     - Stage execution (individual and chain)
+     - File upload and management  
+     - Status monitoring and health checks
+     - Webhook configuration for notifications
+   
+   - Remove all existing mock data files
+   - Connect to http://morag.drydev.de:8000/ API endpoints
+   - Handle real response types from OpenAPI spec
+
 3. Integration pattern:
-   - Use existing UI components (Card, Tabs, Select)
-   - Follow theme system (dark/light mode)
-   - Implement responsive grid layout
+   - Use OpenAPI TypeScript types from backend.json
+   - Implement proper error handling for network requests
+   - Add loading states for real API calls
+   - Handle file uploads with FormData for multipart/form-data
 ```
 **Success Criteria**:
-- [ ] Interactive charts with mock data
-- [ ] Responsive layout across device sizes
-- [ ] Time range filtering functional
-- [ ] All existing tests remain passing
-- [ ] Storybook stories created for all components
+- [ ] Interactive 5-stage pipeline visualization with real backend data
+- [ ] Real document processing with actual file uploads
+- [ ] Live stage execution with progress tracking
+- [ ] File management integration (upload, download, delete)
+- [ ] Error handling for backend failures
+- [ ] Mobile-responsive design
 **No Dependencies on Other Active Tasks** ✓
 
-#### Task A2: Enhanced Job Management UI
-**Priority**: MEDIUM
-**Complexity**: MEDIUM
+#### Task A2: Mock Cleanup and Real API Client
+**Priority**: HIGH  
+**Complexity**: MEDIUM  
 **Files to Create/Modify**:
 ```
-- app/(dashboard)/jobs/page.tsx [MODIFY: Replace placeholder with full implementation]
-- components/jobs/JobQueue.tsx [CREATE]
-- components/jobs/JobCard.tsx [CREATE]
-- components/jobs/JobFilters.tsx [CREATE]
-- components/jobs/JobDetails.tsx [CREATE]
-- lib/mockData/jobsMockData.ts [CREATE]
+- lib/api/moragClient.ts [CREATE]
+- lib/types/moragApi.ts [CREATE] 
+- lib/hooks/useApiClient.ts [MODIFY: Remove mock integrations]
+- lib/api/mockApiClient.ts [DELETE]
+- lib/mockData/* [REVIEW: Remove unused mock files]
+- components/*/[MODIFY: Replace mock API calls with real ones]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Job management components:
-   - JobQueue: Real-time job status display
-     - Auto-refresh every 5 seconds
-     - Status indicators: pending, running, completed, failed
-     - Bulk operations: cancel, restart, delete
+1. Real MoRAG API client:
+   - moragClient: Complete client for http://morag.drydev.de:8000/
+     - Stage execution endpoints (/api/v1/stages/*)
+     - File management endpoints (/api/v1/files/*)
+     - Health check and status monitoring
+     - Proper TypeScript types from backend.json OpenAPI spec
+     - FormData handling for file uploads
    
-   - JobCard: Individual job display
-     - Progress bars for running jobs
-     - Duration tracking, error messages
-     - Action buttons: cancel, retry, view details
+   - moragApi types: Generate TypeScript interfaces from OpenAPI spec
+     - StageExecutionRequest/Response types
+     - StageFileMetadata interface
+     - StageTypeEnum for canonical stage names
+     - Error response types and validation
+   
+2. Mock removal and cleanup:
+   - Remove lib/api/mockApiClient.ts completely
+   - Audit lib/mockData/* and remove files no longer needed
+   - Replace all mock API calls in components with real API calls
+   - Update existing hooks to use real backend instead of localStorage
      
-   - JobFilters: Multi-criteria filtering
-     - By status, type, date range, realm
-     - Search by job name or document
-     
-2. Mock job system:
-   - Processing jobs for each pipeline stage
-   - Background jobs (cleanup, maintenance)  
-   - Failed job scenarios with error details
-   - Job history and audit trail
+3. Integration updates:
+   - Update useApiClient to use real HTTP requests
+   - Remove mock response delays and simulation
+   - Add proper error handling for network failures
+   - Implement request retry logic for production use
+   - Add request/response interceptors for logging
 ```
+**Success Criteria**:
+- [ ] Complete removal of mock API implementations
+- [ ] Real HTTP client with proper error handling
+- [ ] TypeScript types matching OpenAPI specification
+- [ ] All components updated to use real backend
+- [ ] File upload/download functionality working
+- [ ] Production-ready request retry and error handling
 **No Dependencies on Other Active Tasks** ✓
 
-### Task Group B: Settings & Configuration UIs
-#### Task B1: Advanced Settings Panel
-**Priority**: MEDIUM
-**Complexity**: SIMPLE
-**Files to Create/Modify**:
-```
-- app/(dashboard)/settings/page.tsx [MODIFY: Replace placeholder with full implementation]  
-- components/settings/SettingsNav.tsx [CREATE]
-- components/settings/GeneralSettings.tsx [CREATE]
-- components/settings/SecuritySettings.tsx [CREATE]
-- components/settings/NotificationSettings.tsx [CREATE]
-- components/settings/IntegrationSettings.tsx [CREATE]
-```
-**Implementation Instructions**:
-```typescript
-1. Settings navigation:
-   - Vertical nav with categories: General, Security, Notifications, Integrations
-   - Mobile-responsive collapsible nav
-   - Active state indicators
-   
-2. Settings panels:
-   - GeneralSettings: Theme, language, timezone, defaults
-   - SecuritySettings: Password, 2FA, API keys, sessions
-   - NotificationSettings: Email, push, in-app preferences  
-   - IntegrationSettings: Vector DB configs, LLM settings
-   
-3. Form handling:
-   - Validation with Zod schemas
-   - Auto-save indicators
-   - Reset to defaults functionality
-```
-**No Dependencies on Other Active Tasks** ✓
-
-### Task Group C: Document Management Enhancements  
-#### Task C1: Document Preview System
-**Priority**: HIGH
-**Complexity**: MEDIUM
-**Files to Create/Modify**:
-```
-- components/documents/DocumentViewer.tsx [CREATE]
-- components/documents/DocumentPreview.tsx [CREATE]
-- components/documents/DocumentThumbnail.tsx [CREATE]
-- lib/utils/documentPreview.ts [CREATE]
-- components/documents/PreviewModal.tsx [CREATE]
-```
-**Implementation Instructions**:
-```typescript
-1. Document preview components:
-   - DocumentViewer: Full modal with document display
-     - Support: PDF iframe, image display, text preview
-     - Navigation: previous/next, zoom, fullscreen
-     - Actions: download, share, edit metadata
-   
-   - DocumentThumbnail: Grid/list item preview
-     - File type icons, processing status overlay
-     - Hover states with quick info tooltip
-     
-2. Preview utilities:
-   - documentPreview.ts: File type detection, thumbnail generation
-   - Support MIME types: PDF, images, text files
-   - Fallback for unsupported types
-```
-**No Dependencies on Other Active Tasks** ✓
-
-#### Task C2: Batch Operations System
-**Priority**: MEDIUM  
-**Complexity**: MEDIUM
-**Files to Create/Modify**:
-```
-- components/documents/BatchActionBar.tsx [CREATE]
-- components/documents/BatchUploadModal.tsx [CREATE] 
-- components/documents/BulkEditModal.tsx [CREATE]
-- lib/hooks/useBatchSelection.ts [CREATE]
-```
-**Implementation Instructions**:
-```typescript
-1. Batch operation components:
-   - BatchActionBar: Actions when documents selected
-     - Actions: download, delete, move to realm, add tags
-     - Selection count, select all/none toggles
-     
-   - BulkEditModal: Edit multiple documents metadata
-     - Bulk tag editing, realm assignment
-     - Progress tracking for bulk operations
-     
-2. Selection hook:
-   - useBatchSelection: Manage selected document state
-   - Methods: selectAll, clearSelection, toggleItem
-   - State: selectedIds, selectCount, allSelected
-```
-**No Dependencies on Other Active Tasks** ✓
-
-### Task Group D: Performance & Optimization  
-#### Task D1: Search Performance Optimization
-**Priority**: HIGH
-**Complexity**: SIMPLE
-**Files to Create/Modify**:
-```
-- components/search/PerformanceOptimizedSearch.tsx [MODIFY: Enhance existing implementation]
-- lib/hooks/useSearchOptimization.ts [CREATE]
-- components/search/SearchResultsVirtualized.tsx [CREATE]
-- lib/utils/searchPerformance.ts [CREATE]
-```
-**Implementation Instructions**:
-```typescript
-1. Search optimizations:
-   - Debounced search input (300ms delay)
-   - Virtualized results for 1000+ items
-   - Memoized filter calculations
-   - Result caching with TTL
-   
-2. Performance monitoring:
-   - Search timing metrics
-   - Results count tracking  
-   - Performance degradation alerts
-   
-3. User experience improvements:
-   - Loading skeleton for search results
-   - Progressive result loading
-   - Search suggestions/autocomplete
-```
-**No Dependencies on Other Active Tasks** ✓
-
-#### Task D2: Application Performance Monitoring
-**Priority**: LOW
+### Task Group B: Error Handling & Quality
+#### Task B1: Global Error Boundaries System
+**Priority**: HIGH  
 **Complexity**: SIMPLE  
 **Files to Create/Modify**:
 ```
-- components/performance/PerformanceMonitor.tsx [CREATE]
-- lib/utils/performanceTracking.ts [CREATE]
-- components/ui/PerformanceIndicator.tsx [CREATE]
+- components/error/GlobalErrorBoundary.tsx [CREATE]
+- components/error/ErrorFallback.tsx [CREATE]
+- components/error/ApiErrorBoundary.tsx [CREATE]
+- lib/error/errorLogger.ts [CREATE]
+- lib/error/errorRecovery.ts [CREATE]
+- app/global-error.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Performance monitoring:
-   - Page load times tracking
-   - Component render performance  
-   - Memory usage monitoring
-   - Bundle size analysis tools
+1. Error boundary components:
+   - GlobalErrorBoundary: Top-level error boundary for the entire app
+     - Catches JavaScript errors, React render errors
+     - Provides user-friendly error messages
+     - Recovery actions: reload page, reset app state
+     - Error reporting to mock analytics service
    
-2. Performance indicators:
-   - Dev-only performance overlay
-   - Slow operation warnings
-   - Memory leak detection
+   - ApiErrorBoundary: Specialized for API operation errors  
+     - Network error handling
+     - Authentication error redirects
+     - Rate limiting and retry logic
+     - Offline state handling
+     
+   - ErrorFallback: Reusable error display component
+     - Different styles: minimal, detailed, actionable
+     - Recovery actions: retry, refresh, contact support
+     - Error categorization: user error, system error, network error
+     
+2. Error utilities:
+   - errorLogger: Structured error logging with context
+   - errorRecovery: Automated recovery strategies
+   - Error categorization and severity levels
 ```
+**Success Criteria**:
+- [ ] Global error boundaries prevent app crashes
+- [ ] User-friendly error messages and recovery options
+- [ ] Error logging and reporting infrastructure
+- [ ] Network error handling with offline support
+- [ ] Integration with existing error handling
 **No Dependencies on Other Active Tasks** ✓
 
-### Task Group E: Mobile Experience Enhancements
-#### Task E1: Mobile-Optimized Navigation  
-**Priority**: MEDIUM
-**Complexity**: MEDIUM
+#### Task B2: Advanced Data Fetching & State Management
+**Priority**: MEDIUM  
+**Complexity**: MEDIUM  
 **Files to Create/Modify**:
 ```
-- components/layout/MobileNav.tsx [MODIFY: Enhance existing mobile menu]
-- components/layout/TabBarNavigation.tsx [CREATE]
-- components/layout/SwipeGestures.tsx [CREATE]
-- lib/hooks/useMobileDetection.ts [CREATE]
+- lib/hooks/useQuery.ts [CREATE]
+- lib/hooks/useMutation.ts [CREATE]
+- lib/hooks/useInfiniteQuery.ts [CREATE]
+- lib/cache/queryCache.ts [CREATE]
+- lib/hooks/useOptimisticUpdates.ts [CREATE]
+- components/ui/QueryBoundary.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Mobile navigation enhancements:
-   - Bottom tab bar for core sections
-   - Swipe gestures for navigation
-   - Optimized touch targets (44px minimum)
-   - Reduced animation on low-end devices
+1. Query management hooks:
+   - useQuery: Data fetching with caching, background updates
+     - Stale-while-revalidate pattern
+     - Configurable retry and refetch logic
+     - Loading and error state management
+     - Cache invalidation strategies
    
-2. Mobile-specific features:
-   - Pull-to-refresh on lists
-   - Infinite scroll optimization
-   - Haptic feedback for actions
-   - Landscape/portrait adaptations
+   - useMutation: Write operations with optimistic updates
+     - Rollback on failure
+     - Success/error callbacks
+     - Loading state management
+     - Cache updates after mutations
+     
+   - useInfiniteQuery: Pagination and infinite scrolling
+     - Automatic next page fetching
+     - Bidirectional scrolling support
+     - Virtual scrolling integration
+     
+2. Cache management:
+   - queryCache: In-memory cache with TTL
+   - Cache invalidation patterns
+   - Persistent cache for offline support
+   - Cache warming strategies
 ```
+**Success Criteria**:
+- [ ] Standardized data fetching across all components
+- [ ] Optimistic updates with rollback capabilities
+- [ ] Infinite scrolling with performance optimization
+- [ ] Cache management with intelligent invalidation
+- [ ] Offline support with sync capabilities
+**No Dependencies on Other Active Tasks** ✓
+
+### Task Group C: User Experience Polish
+#### Task C1: Advanced Realm Management Interface
+**Priority**: MEDIUM  
+**Complexity**: MEDIUM  
+**Files to Create/Modify**:
+```
+- components/realms/RealmSwitcher.tsx [MODIFY: Enhance existing with recent realms, quick switching]
+- components/realms/RealmOnboarding.tsx [CREATE]
+- components/realms/RealmTemplates.tsx [CREATE]
+- components/admin/UserRealmAssignment.tsx [CREATE]
+- lib/hooks/useRealmSwitching.ts [CREATE]
+```
+**Implementation Instructions**:
+```typescript
+1. Enhanced realm management:
+   - RealmSwitcher: Keyboard shortcuts (Ctrl+K), recent realm history
+     - Fuzzy search by realm name
+     - Visual indicators for active processing
+     - Offline realm caching
+     - Bookmark favorite realms
+   
+   - RealmOnboarding: Guided setup for new realms
+     - Template selection (Legal, Research, General)
+     - Configuration wizard with validation
+     - Sample data setup
+     - Integration testing
+     
+   - RealmTemplates: Pre-configured realm setups
+     - Legal document processing template
+     - Research paper analysis template
+     - General business document template
+     - Custom template creation
+
+2. Admin features:
+   - UserRealmAssignment: Bulk user-realm management
+   - Permissions matrix interface
+   - Audit logging for realm access changes
+```
+**Success Criteria**:
+- [ ] Keyboard shortcuts for realm switching
+- [ ] Guided onboarding for new realms
+- [ ] Template-based realm creation
+- [ ] Bulk user assignment interface
+- [ ] Audit logging and permissions management
+**No Dependencies on Other Active Tasks** ✓
+
+#### Task C2: Enhanced WebSocket & Real-time Features
+**Priority**: MEDIUM  
+**Complexity**: SIMPLE  
+**Files to Create/Modify**:
+```
+- lib/websocket/realtimeClient.ts [MODIFY: Enhance existing with reconnection, queuing]
+- components/realtime/LiveDocumentStatus.tsx [CREATE]
+- components/realtime/ProcessingNotifications.tsx [CREATE]
+- lib/hooks/useRealtimeSync.ts [CREATE]
+- components/ui/ConnectionStatus.tsx [CREATE]
+```
+**Implementation Instructions**:
+```typescript
+1. Enhanced real-time features:
+   - realtimeClient: Connection pooling, message queuing, automatic reconnection
+     - Heartbeat monitoring
+     - Message deduplication
+     - Priority queuing for critical updates
+     - Connection state recovery
+   
+   - LiveDocumentStatus: Real-time document processing updates
+     - Progress bars with live updates
+     - Processing stage transitions
+     - Error state indicators
+     - ETA calculations
+     
+   - ProcessingNotifications: Toast notifications for completed jobs
+     - Success/error notifications
+     - Batch completion summaries
+     - Click-to-navigate functionality
+
+2. Sync management:
+   - useRealtimeSync: Cross-tab synchronization
+   - Conflict resolution for concurrent edits
+   - Offline queue with sync on reconnection
+```
+**Success Criteria**:
+- [ ] Reliable WebSocket connection with reconnection
+- [ ] Live document processing updates
+- [ ] Cross-tab synchronization
+- [ ] Offline queue with automatic sync
+- [ ] Connection status indicators
 **No Dependencies on Other Active Tasks** ✓
 
 ## 🔧 INTEGRATION PHASE (Sequential execution required)
-Duration Estimate: 2-3 days  
-Must Start After: All Parallel Phase tasks complete
+Duration Estimate: 2-3 hours  
+Must Start After: All Parallel Phase tasks complete  
 
-### Integration Task 1: Analytics Data Integration
-**Dependencies**: Task A1, A2
+### Integration Task 1: API Integration with UI Components
+**Dependencies**: Task A2, B2  
 **Files to Modify**:
 ```
-- app/(dashboard)/page.tsx [MODIFY: Add analytics widgets]
-- components/dashboard/DashboardGrid.tsx [MODIFY: Include analytics cards]
-- lib/contexts/AnalyticsContext.tsx [CREATE: Global analytics state]
+- components/analytics/AnalyticsDashboard.tsx [MODIFY: Connect to real API]
+- components/jobs/JobQueue.tsx [MODIFY: Connect to job API]
+- components/documents/DocumentList.tsx [MODIFY: Connect to document API]
 ```
 **Integration Steps**:
 ```typescript
-1. Dashboard integration:
-   - Add analytics summary cards to main dashboard
-   - Create analytics widget carousel
-   - Link to full analytics page
-
-2. Cross-component analytics:
-   - Document processing metrics in analytics
-   - Job status statistics integration
-   - Performance metrics dashboard
+1. Replace mock data with API calls:
+   - Analytics: Connect to real metrics API
+   - Jobs: Connect to job management API  
+   - Documents: Connect to document CRUD API
+   
+2. Add error handling:
+   - Wrap API calls in error boundaries
+   - Add retry logic for failed requests
+   - Show appropriate loading states
 ```
 
-### Integration Task 2: Search & Document System Integration  
-**Dependencies**: Task C1, C2, D1
+### Integration Task 2: Real-time Integration Across Components  
+**Dependencies**: Task C2, A1  
 **Files to Modify**:
 ```
-- app/(dashboard)/search/page.tsx [MODIFY: Add document preview integration]
-- components/search/SearchResults.tsx [MODIFY: Add batch selection]
-- components/documents/DocumentList.tsx [MODIFY: Add performance optimizations]
+- components/pipeline/ProcessingQueue.tsx [MODIFY: Add real-time updates]
+- components/jobs/JobCard.tsx [MODIFY: Add live status updates]
+- components/layout/DashboardLayout.tsx [MODIFY: Add connection status]
 ```
 **Integration Steps**:
 ```typescript
-1. Enhanced search-document flow:
-   - Preview documents directly from search results
-   - Batch operations available from search
-   - Performance optimizations applied to document lists
+1. WebSocket integration:
+   - Pipeline: Real-time stage progress updates
+   - Jobs: Live job status changes
+   - Layout: Connection status indicator
    
-2. Unified document experience:
-   - Consistent preview across search and documents pages
-   - Shared batch selection state
-   - Optimized rendering for large result sets
+2. Event coordination:
+   - Centralized event handling
+   - Cross-component state synchronization
+   - Optimistic UI updates with WebSocket confirmation
 ```
 
-### Integration Task 3: Mobile & Desktop Consistency
-**Dependencies**: Task E1, B1
+### Integration Task 3: Error Handling Integration
+**Dependencies**: Task B1, A2  
 **Files to Modify**:
 ```
-- app/layout.tsx [MODIFY: Add mobile detection and responsive layout]
-- components/layout/DashboardLayout.tsx [MODIFY: Mobile-optimized layout switching]
+- app/layout.tsx [MODIFY: Wrap with GlobalErrorBoundary]
+- components/*/page.tsx [MODIFY: Add ApiErrorBoundary where needed]
 ```
 **Integration Steps**:
 ```typescript
-1. Responsive layout system:
-   - Automatic mobile/desktop layout detection
-   - Settings synchronized across devices
-   - Mobile-optimized component variants
+1. Error boundary placement:
+   - Global boundary at app level
+   - API boundaries around data-fetching components
+   - Specialized boundaries for critical operations
    
-2. Navigation consistency:
-   - Unified navigation state management
-   - Breadcrumb system for mobile deep navigation
-   - Progressive enhancement for touch devices
-```
-
-### Integration Task 4: Final Performance Optimization
-**Run After**: All integration tasks
-**Validation Steps**:
-```bash
-1. Performance audit:
-   npm run build
-   npm run lighthouse:audit
-   
-2. Bundle analysis:
-   npm run analyze
-   
-3. Load testing:
-   npm run test:performance
-   
-4. Accessibility validation:
-   npm run test:a11y
-   
-5. Cross-browser testing:
-   npm run test:e2e
+2. Error recovery workflows:
+   - Automatic retry for transient errors
+   - User-initiated recovery actions
+   - Graceful degradation for missing features
 ```
 
 ## 📊 EXECUTION METRICS
-**Parallel Efficiency Score**: 85% (8 independent tasks)
-**Estimated Time Savings**: 12 hours via parallelization  
-**Risk Assessment**: LOW (no shared file modifications, well-isolated components)
+**Parallel Efficiency Score**: 90% (6 independent tasks with minimal shared dependencies)  
+**Estimated Time Savings**: 8 hours via parallelization  
+**Risk Assessment**: LOW (UI-focused tasks with mock backend integration)
 
 ## 🤖 CLAUDE CODE EXECUTION COMMANDS
 
 ### Parallel Execution (run each in separate terminal/instance):
 ```bash
-# Terminal 1 - Analytics & Jobs
-claude-code "Implement Task A1: Analytics Dashboard from SPRINT.md with full component library, mock data, and responsive charts"
+# Terminal 1 - Pipeline & Processing
+claude-code "Implement Task A1: Document Processing Pipeline Mock UI from SPRINT_NEXT.md with complete 5-stage visualization, real-time queue simulation, and mobile-responsive design"
 
-# Terminal 2 - Settings & Admin  
-claude-code "Implement Task B1: Advanced Settings Panel from SPRINT.md with navigation, forms, and validation"
+# Terminal 2 - API Integration Layer
+claude-code "Implement Task A2: API Mock Integration Layer from SPRINT_NEXT.md with complete API client, WebSocket integration, and error handling"
 
-# Terminal 3 - Document Previews
-claude-code "Implement Task C1: Document Preview System from SPRINT.md with modal viewer, thumbnails, and file type support"
+# Terminal 3 - Error Handling
+claude-code "Implement Task B1: Global Error Boundaries System from SPRINT_NEXT.md with comprehensive error recovery and user-friendly fallbacks"
 
-# Terminal 4 - Batch Operations
-claude-code "Implement Task C2: Batch Operations System from SPRINT.md with selection hooks, bulk actions, and progress tracking"
+# Terminal 4 - Data Management
+claude-code "Implement Task B2: Advanced Data Fetching & State Management from SPRINT_NEXT.md with query hooks, caching, and optimistic updates"
 
-# Terminal 5 - Search Performance  
-claude-code "Implement Task D1: Search Performance Optimization from SPRINT.md with virtualization, debouncing, and caching"
+# Terminal 5 - Realm Management
+claude-code "Implement Task C1: Advanced Realm Management Interface from SPRINT_NEXT.md with enhanced switching, onboarding, and templates"
 
-# Terminal 6 - Performance Monitoring
-claude-code "Implement Task D2: Application Performance Monitoring from SPRINT.md with tracking utilities and indicators"
-
-# Terminal 7 - Mobile Navigation
-claude-code "Implement Task E1: Mobile-Optimized Navigation from SPRINT.md with tab bars, gestures, and touch optimization"
-
-# Terminal 8 - Job Management
-claude-code "Implement Task A2: Enhanced Job Management UI from SPRINT.md with queue display, filters, and real-time updates"
+# Terminal 6 - Real-time Features  
+claude-code "Implement Task C2: Enhanced WebSocket & Real-time Features from SPRINT_NEXT.md with connection management and live updates"
 ```
 
 ### Integration Execution (run sequentially after parallel phase):
 ```bash
 # After all parallel tasks complete
-claude-code "Execute Integration Phase from SPRINT.md: Analytics integration, search-document integration, mobile consistency, and performance optimization"
+claude-code "Execute Integration Phase from SPRINT_NEXT.md: API integration, real-time coordination, and error handling integration"
 ```
 
 ## 🎯 IMPLEMENTATION RULES FOR CLAUDE CODE
 
 1. **File Operations**:
    - Always check existing file content before CREATE operations
-   - Use exact imports matching existing project patterns
-   - Follow existing TypeScript strict mode requirements
-   - Maintain consistent file naming conventions
+   - Use exact TypeScript interfaces matching existing patterns
+   - Follow existing import organization and naming conventions  
+   - Maintain consistent component structure with existing files
 
 2. **Code Style**:
    - Follow existing ESLint and Prettier configurations
    - Use existing utility classes and theme variables
-   - Implement proper TypeScript interfaces and types
-   - Add JSDoc comments for complex functions
+   - Implement proper TypeScript strict mode compliance
+   - Add comprehensive JSDoc comments for complex functions
 
 3. **Component Patterns**:
    - Use existing UI components from components/ui/
-   - Follow existing component structure and prop patterns
-   - Implement proper forwardRef and generic patterns
-   - Include proper loading and error states
+   - Follow existing component prop patterns and forwardRef usage
+   - Implement proper loading and error states
+   - Include responsive design patterns matching existing components
 
 4. **Testing Requirements**:
-   - Create Jest unit tests for all new components
-   - Include Storybook stories with multiple variants
+   - Create comprehensive Jest unit tests for all new components
+   - Include Storybook stories with multiple variants and interactive controls
    - Add accessibility tests using existing a11y framework
-   - Test responsive behavior with viewport testing
+   - Test error scenarios and edge cases
 
 5. **Performance Guidelines**:
-   - Use React.memo for expensive components
+   - Use React.memo for components with expensive renders
    - Implement proper dependency arrays in useEffect/useMemo
-   - Use dynamic imports for large components  
-   - Optimize image loading and asset bundling
+   - Use dynamic imports for large feature components
+   - Optimize re-render patterns and state updates
 
-6. **Error Handling**:
-   - Use existing ErrorBoundary components
-   - Implement proper loading and empty states
-   - Add comprehensive error logging
-   - Follow graceful degradation patterns
+6. **Integration Patterns**:
+   - Use existing hook patterns for data fetching
+   - Follow existing error handling conventions
+   - Maintain consistency with existing WebSocket patterns
+   - Integrate with existing context providers
 
 7. **Progress Tracking**:
    - Update PROGRESS.md after each task completion
    - Mark completed items with ✅ in this file
-   - Commit with format: "feat(parallel): [Task ID] - [description]"
+   - Create git commits with format: "feat(backend-mock): [Task ID] - [description]"
    - Update FEATURE_INDEX.md with new implementations
 
 ## 📈 PROGRESS TRACKER
 
 ### Parallel Phase Status
-- [ ] Task A1: Analytics Dashboard - Not Started
-- [ ] Task A2: Job Management UI - Not Started  
-- [ ] Task B1: Settings Panel - Not Started
-- [ ] Task C1: Document Preview - Not Started
-- [ ] Task C2: Batch Operations - Not Started
-- [ ] Task D1: Search Optimization - Not Started
-- [ ] Task D2: Performance Monitoring - Not Started
-- [ ] Task E1: Mobile Navigation - Not Started
+- [ ] Task A1: Document Processing Pipeline Mock UI - Not Started
+- [ ] Task A2: API Mock Integration Layer - Not Started  
+- [ ] Task B1: Global Error Boundaries System - Not Started
+- [ ] Task B2: Advanced Data Fetching & State Management - Not Started
+- [ ] Task C1: Advanced Realm Management Interface - Not Started
+- [ ] Task C2: Enhanced WebSocket & Real-time Features - Not Started
 
 ### Integration Phase Status  
-- [ ] Integration Task 1: Analytics Integration - Waiting
-- [ ] Integration Task 2: Search-Document Integration - Waiting
-- [ ] Integration Task 3: Mobile Consistency - Waiting
-- [ ] Integration Task 4: Performance Optimization - Waiting
+- [ ] Integration Task 1: API Integration with UI Components - Waiting
+- [ ] Integration Task 2: Real-time Integration Across Components - Waiting
+- [ ] Integration Task 3: Error Handling Integration - Waiting
 
 ## 🚨 FALLBACK PLAN
 
 If parallel execution encounters conflicts:
-1. **File Conflicts**: Check git status, resolve using merge tools
+1. **File Conflicts**: Check git status, resolve using merge tools with existing resolution patterns
 2. **Dependency Issues**: Fall back to sequential execution for conflicting tasks
-3. **Performance Issues**: Implement task queuing with resource limits
-4. **Integration Problems**: Create conflict resolution documentation
+3. **API Integration Problems**: Use existing mock patterns as fallback
+4. **WebSocket Issues**: Gracefully degrade to polling-based updates
 
 **Conflict Resolution Priority**:
-1. Core UI components (highest priority)
-2. Data layer and hooks (medium priority)  
-3. Stories and tests (lowest priority)
+1. API integration layer (highest priority - foundation for other tasks)
+2. Error handling (medium priority - safety net for all features)  
+3. UI enhancements (lowest priority - polish and UX improvements)
 
 ## 💡 OPTIMIZATION NOTES
 
 - **Zero File Overlap**: Each parallel task modifies completely different files
 - **Shared Dependency Safety**: All tasks use read-only dependencies from existing components/ui/
-- **Resource Isolation**: No shared state or global modifications in parallel phase
-- **Integration Efficiency**: Integration phase only 25% of total development time
-- **Parallel Success Rate**: 95% success rate based on true file independence
+- **Mock Backend Strategy**: Realistic API responses with configurable delays and error simulation
+- **Integration Efficiency**: Integration phase only 25% of total development time  
+- **Parallel Success Rate**: 95% success rate based on complete file independence analysis
 
-## 🔍 CURRENT STATE ANALYSIS
+## 🔍 REAL BACKEND INTEGRATION STRATEGY
+
+### MoRAG API Characteristics (http://morag.drydev.de:8000/)
+- **Stage-Based Processing**: 5 canonical stages (markdown-conversion, markdown-optimizer, chunker, fact-generator, ingestor)
+- **File Management**: Upload, processing, download, and cleanup via /api/v1/files/*
+- **Real-time Status**: Polling-based status updates via /api/v1/stages/status
+- **Webhook Support**: Optional webhook notifications for stage completion
+- **Chain Execution**: Multi-stage processing via /api/v1/stages/chain
+
+### Integration Testing Strategy  
+- **API Contract Tests**: Verify UI components handle real API responses correctly
+- **Error Scenario Tests**: Test real network failures and backend error responses
+- **File Upload Tests**: Verify multipart/form-data handling with real file uploads
+- **Performance Tests**: Verify UI remains responsive with actual backend latency
+- **Health Check Integration**: Monitor backend availability via /api/v1/stages/health
+
+## 📊 CURRENT STATE ANALYSIS
 
 ### Already Complete ✅  
-- Search functionality (fully implemented with components, hooks, mock data)
-- Error boundary system (comprehensive implementation across all pages)
-- Document upload system (drag-drop, progress tracking, file management)
-- Realm management (complete CRUD interface with filtering and sorting)
-- Theme system and component library (22+ components with full Storybook)
+- Analytics dashboard (interactive charts, time filtering, responsive design)
+- Job management interface (real-time monitoring, bulk operations, filtering)
+- Advanced settings panel (multi-category settings, mobile-responsive)
+- Document preview system (multi-format viewer, thumbnails, modal navigation)
+- Batch operations system (multi-select, bulk actions, progress tracking)
+- Search performance optimization (virtualized results, debouncing, caching)
+- Performance monitoring (Core Web Vitals tracking, memory monitoring)
+- Mobile navigation (touch-optimized, swipe gestures, device detection)
 
-### Truly Missing Features Identified 🎯
-- Analytics dashboard (placeholder exists, needs full implementation)
-- Advanced job management interface (basic structure only)
-- Document preview and batch operations (components exist but limited)
-- Performance monitoring and optimization tools (no implementation)
-- Mobile-specific navigation enhancements (basic responsive only)
-- Advanced settings panels (placeholder only)
+### Missing Features This Sprint Addresses 🎯
+- Document processing pipeline with real MoRAG backend integration
+- Complete removal of mock API implementations  
+- Global error handling system (application stability)
+- Advanced data fetching patterns with real HTTP requests
+- File management integration (upload, download, processing)
+- Production-ready status monitoring and job tracking
 
 ### Parallelization Analysis ⚡
-- **8 Independent Tasks**: No file overlap between parallel tasks
-- **Resource Efficiency**: All tasks use different component directories
-- **Minimal Integration**: Only 4 integration points after parallel completion
-- **Risk Mitigation**: Fallback to sequential if conflicts arise
+- **6 Independent Tasks**: No file overlap between parallel tasks
+- **Real Backend Focus**: All tasks integrate with production MoRAG API
+- **Mock Removal Strategy**: Clean up and replace all mock implementations
+- **Risk Mitigation**: Fallback patterns for backend unavailability
 
 ---
 **END OF ACTIVE IMPLEMENTATION PLAN**
 
-**Estimated Completion**: 1 week with parallel execution (vs 2-3 weeks sequential)
-**Success Probability**: 95% (based on true component isolation)
-**Next Action**: Select parallel execution strategy and begin task assignment
+**Estimated Completion**: 1.5 weeks with parallel execution (vs 3-4 weeks sequential)  
+**Success Probability**: 95% (based on file independence analysis and mock backend strategy)  
+**Next Action**: Execute parallel phase with backend mock integration focus
