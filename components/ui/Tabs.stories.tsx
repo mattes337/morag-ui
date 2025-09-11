@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from 'storybook/test';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './Card';
 import { Button } from './Button';
 

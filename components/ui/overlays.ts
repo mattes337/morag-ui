@@ -15,8 +15,8 @@ export {
   DialogTitle,
   DialogDescription,
   dialogContentVariants,
-} from './Dialog';
-export type { DialogProps, DialogContentProps } from './Dialog';
+} from './dialog';
+export type { DialogProps, DialogContentProps } from './dialog';
 
 export {
   Tooltip,

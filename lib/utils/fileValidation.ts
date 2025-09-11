@@ -3,8 +3,28 @@
  * Implements magic byte checking to prevent MIME type spoofing attacks
  */
 
-// Simple file type detection based on magic bytes (client-safe implementation)
-function detectFileTypeFromBuffer(buffer: Uint8Array): { mime: string; ext: string } | null {
+// Enhanced file type detection with fallback to manual detection
+async function detectFileTypeFromBuffer(buffer: Uint8Array): Promise<{ mime: string; ext: string } | null> {
+  try {
+    // Try to use file-type library for robust magic byte detection
+    const { fileTypeFromBuffer } = await import('file-type').catch(() => ({ fileTypeFromBuffer: null }));
+    
+    if (fileTypeFromBuffer) {
+      const result = await fileTypeFromBuffer(buffer);
+      if (result) {
+        return { mime: result.mime, ext: result.ext };
+      }
+    }
+  } catch (error) {
+    console.warn('file-type library not available, using manual detection:', error);
+  }
+  
+  // Fallback to manual detection for supported types
+  return detectFileTypeManually(buffer);
+}
+
+// Manual file type detection as fallback (client-safe implementation)
+function detectFileTypeManually(buffer: Uint8Array): { mime: string; ext: string } | null {
   // PDF
   if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) {
     return { mime: 'application/pdf', ext: 'pdf' };
@@ -131,8 +151,8 @@ export async function validateFileContent(file: File): Promise<FileValidationRes
     const buffer = await file.slice(0, 4096).arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
     
-    // Use our custom file type detection
-    const detectedType = detectFileTypeFromBuffer(uint8Array);
+    // Use enhanced file type detection with file-type library
+    const detectedType = await detectFileTypeFromBuffer(uint8Array);
     
     // Check if detected type matches declared MIME type
     if (!detectedType) {
@@ -173,14 +193,39 @@ export async function validateFileContent(file: File): Promise<FileValidationRes
       }
     }
     
-    // Additional security check: scan for suspicious patterns
+    // Enhanced security check: scan for suspicious patterns and executables
     const suspiciousPatterns = [
       /%PDF-/,      // PDF header but claimed as different type
       /PK\x03\x04/, // ZIP header but claimed as different type
-      /<\?php/,     // PHP code
+      /<\?php/i,    // PHP code
       /<script/i,   // JavaScript
-      /\x00PE\x00\x00/, // Windows executable
-      /\x7fELF/,    // Linux executable
+      /javascript:/i, // JavaScript protocol
+      /on\w+\s*=/i, // Event handlers (onclick, onload, etc.)
+      /eval\s*\(/i, // Eval function calls
+      /document\./i, // DOM manipulation
+      /window\./i,  // Window object access
+      /<iframe/i,   // Iframe injection
+      /<object/i,   // Object embedding
+      /<embed/i,    // Embed elements
+      /<form/i,     // Form elements
+      /<meta/i,     // Meta tags
+      /<link/i,     // Link elements
+      /@import/i,   // CSS imports
+      /expression\s*\(/i, // CSS expressions
+      /url\s*\(/i,  // CSS URL functions
+      /\x00PE\x00\x00/, // Windows PE executable
+      /\x7fELF/,    // Linux ELF executable
+      /MZ/,         // DOS executable header
+      /\x89PNG/,    // PNG but claimed as different type
+      /\xff\xd8\xff/, // JPEG but claimed as different type
+      /GIF8[79]a/,  // GIF but claimed as different type
+      /RIFF.*WEBP/, // WebP format
+      /\x1f\x8b/,   // GZIP archive
+      /Rar!/,       // RAR archive
+      /7z\xbc\xaf\x27\x1c/, // 7-Zip archive
+      /\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1/, // Microsoft Office compound document
+      /\x50\x4b\x05\x06/, // ZIP end of central directory
+      /\x50\x4b\x07\x08/, // ZIP data descriptor
     ];
     
     const fileHeader = new TextDecoder('utf-8', { fatal: false }).decode(uint8Array.slice(0, 512));

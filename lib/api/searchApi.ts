@@ -1,5 +1,6 @@
-import { SearchResult, SearchFilters, simulateSearchApi } from '@/lib/mockData/searchMockData';
+import { SearchResult, SearchFilters, simulateSearchApi, mockSearchResults } from '@/lib/mockData/searchMockData';
 import { trackCacheOperation } from '@/lib/utils/performanceMonitoring';
+import { getSearchWorkerManager } from '@/lib/workers/searchWorkerManager';
 
 /**
  * Search request parameters for document search API
@@ -395,13 +396,40 @@ export class SearchApi {
         return cached;
       }
 
-      // Perform search with mock API
-      const response = await simulateSearchApi(
-        request.query,
-        request.filters,
-        request.page || 1,
-        request.limit || 10
-      );
+      // Use web worker for heavy processing if dataset is large
+      const shouldUseWorker = mockSearchResults.length > 100 || request.query.length > 50;
+      let response: SearchResponse;
+
+      if (shouldUseWorker) {
+        try {
+          // Use web worker for heavy processing
+          const workerManager = getSearchWorkerManager();
+          response = await workerManager.searchWithWorker(
+            request.query,
+            request.filters,
+            mockSearchResults,
+            request.page || 1,
+            request.limit || 10
+          );
+        } catch (workerError) {
+          console.warn('Web worker search failed, falling back to main thread:', workerError);
+          // Fallback to main thread implementation
+          response = await simulateSearchApi(
+            request.query,
+            request.filters,
+            request.page || 1,
+            request.limit || 10
+          );
+        }
+      } else {
+        // Use main thread for small datasets
+        response = await simulateSearchApi(
+          request.query,
+          request.filters,
+          request.page || 1,
+          request.limit || 10
+        );
+      }
 
       // Cache the result
       searchCache.set(request, response);

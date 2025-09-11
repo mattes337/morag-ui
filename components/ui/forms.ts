@@ -27,5 +27,5 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
   selectTriggerVariants,
-} from './Select';
-export type { SelectProps, SelectTriggerProps, SelectContentProps } from './Select';
+} from './select';
+export type { SelectProps, SelectTriggerProps, SelectContentProps } from './select';

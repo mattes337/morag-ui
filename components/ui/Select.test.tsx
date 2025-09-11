@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './Select';
+} from './select';
 
 describe('Select', () => {
   const BasicSelect = () => (

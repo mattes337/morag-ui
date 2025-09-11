@@ -7,9 +7,9 @@
 // Generic API response wrapper
 export interface ApiResponse<T = any> {
   success: boolean;
-  data: T | undefined;
-  error: ApiError | undefined;
-  message: string | undefined;
+  data?: T;
+  error?: ApiError;
+  message?: string;
   timestamp: string;
   requestId: string;
 }
@@ -18,7 +18,7 @@ export interface ApiResponse<T = any> {
 export interface ApiError {
   code: string;
   message: string;
-  details: Record<string, any> | undefined;
+  details?: Record<string, any>;
   statusCode: number;
 }
 
@@ -35,15 +35,15 @@ export enum ApiErrorCode {
 
 // Request configuration
 export interface ApiRequestConfig {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | undefined;
-  headers: Record<string, string> | undefined;
-  params: Record<string, any> | undefined;
-  body: any | undefined;
-  timeout: number | undefined;
-  retries: number | undefined;
-  cache: boolean | undefined;
-  cacheTTL: number | undefined;
-  signal: AbortSignal | undefined;
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  headers?: Record<string, string>;
+  params?: Record<string, any>;
+  body?: any;
+  timeout?: number;
+  retries?: number;
+  cache?: boolean;
+  cacheTTL?: number;
+  signal?: AbortSignal;
 }
 
 // API client interface
@@ -57,10 +57,10 @@ export interface ApiClient {
 
 // Hook states
 export interface ApiState<T> {
-  data: T | undefined;
+  data?: T;
   loading: boolean;
-  error: ApiError | undefined;
-  lastFetch: Date | undefined;
+  error?: ApiError;
+  lastFetch?: Date;
 }
 
 export interface AsyncDataState<T> extends ApiState<T> {
@@ -78,30 +78,30 @@ export interface CacheEntry<T> {
 
 // Request context
 export interface RequestContext {
-  signal: AbortSignal | undefined;
-  retryCount: number | undefined;
-  startTime: number | undefined;
+  signal?: AbortSignal;
+  retryCount?: number;
+  startTime?: number;
 }
 
 // Search API types
 export interface SearchRequest {
   query: string;
-  filters: {
-    documentType: string[] | undefined;
-    dateRange: {
-      start: string | undefined;
-      end: string | undefined;
-    } | undefined;
-    relevanceThreshold: number | undefined;
-  } | undefined;
-  pagination: {
+  filters?: {
+    documentType?: string[];
+    dateRange?: {
+      start?: string;
+      end?: string;
+    };
+    relevanceThreshold?: number;
+  };
+  pagination?: {
     page: number;
     limit: number;
-  } | undefined;
-  sort: {
+  };
+  sort?: {
     field: string;
     order: 'asc' | 'desc';
-  } | undefined;
+  };
 }
 
 export interface SearchResult {
@@ -119,18 +119,18 @@ export interface SearchResponse {
   totalCount: number;
   currentPage: number;
   totalPages: number;
-  facets: Record<string, any> | undefined;
+  facets?: Record<string, any>;
 }
 
 // Document API types
 export interface DocumentUploadRequest {
   files: File[];
   realmId: string;
-  metadata: Record<string, any> | undefined;
-  processingOptions: {
-    stages: string[] | undefined;
-    autoProcess: boolean | undefined;
-  } | undefined;
+  metadata?: Record<string, any>;
+  processingOptions?: {
+    stages?: string[];
+    autoProcess?: boolean;
+  };
 }
 
 export interface DocumentUploadResponse {
@@ -150,10 +150,10 @@ export interface PipelineStage {
   name: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   progress: number;
-  startTime: string | undefined;
-  endTime: string | undefined;
-  duration: number | undefined;
-  error: string | undefined;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  error?: string;
 }
 
 export interface PipelineStatus {
@@ -161,7 +161,7 @@ export interface PipelineStatus {
   stages: PipelineStage[];
   overallProgress: number;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  estimatedTimeRemaining: number | undefined;
+  estimatedTimeRemaining?: number;
 }
 
 // User API types
@@ -169,7 +169,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  avatar: string | undefined;
+  avatar?: string;
   role: 'admin' | 'user' | 'viewer';
   createdAt: string;
   lastActive: string;
@@ -178,7 +178,7 @@ export interface User {
 export interface Realm {
   id: string;
   name: string;
-  description: string | undefined;
+  description?: string;
   ownerId: string;
   memberCount: number;
   documentCount: number;
@@ -219,9 +219,9 @@ export interface ProcessingJob {
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   progress: number;
   createdAt: string;
-  startedAt: string | undefined;
-  completedAt: string | undefined;
-  error: string | undefined;
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
   metadata: Record<string, any>;
 }
 

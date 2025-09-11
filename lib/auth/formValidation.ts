@@ -347,29 +347,101 @@ export const sanitizeInput = (input: string | null | undefined): string => {
   let sanitized = input.trim()
   
   // Remove null bytes and control characters (except newlines, tabs, and carriage returns)
-  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '')
   
-  // Use DOMPurify to sanitize HTML content
+  // Use DOMPurify to sanitize HTML content with strict settings
   sanitized = DOMPurify.sanitize(sanitized, {
     ALLOWED_TAGS: [], // No HTML tags allowed
     ALLOWED_ATTR: [], // No attributes allowed
     KEEP_CONTENT: true, // Keep text content but remove tags
+    FORBID_TAGS: ['script', 'object', 'embed', 'iframe', 'form', 'input', 'textarea', 'select', 'button'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onchange', 'onsubmit'],
+    ALLOW_DATA_ATTR: false,
+    ALLOW_UNKNOWN_PROTOCOLS: false,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+    RETURN_DOM_IMPORT: false,
+    SANITIZE_DOM: true,
+    WHOLE_DOCUMENT: false,
+    USE_PROFILES: {
+      html: false,
+      svg: false,
+      svgFilters: false,
+      mathMl: false
+    }
   })
   
-  // Additional protection against script injection
+  // Enhanced protection against various injection attacks
   const suspiciousPatterns = [
-    /<script/i,
-    /javascript:/i,
-    /on\w+\s*=/i,
-    /data:text\/html/i,
-    /vbscript:/i,
-    /livescript:/i,
+    // Script injection patterns
+    /<script[^>]*>[\s\S]*?<\/script>/gi,
+    /<iframe[^>]*>[\s\S]*?<\/iframe>/gi,
+    /<object[^>]*>[\s\S]*?<\/object>/gi,
+    /<embed[^>]*>/gi,
+    /<link[^>]*>/gi,
+    /<meta[^>]*>/gi,
+    /<style[^>]*>[\s\S]*?<\/style>/gi,
+    
+    // JavaScript protocol
+    /javascript\s*:/gi,
+    /vbscript\s*:/gi,
+    /livescript\s*:/gi,
+    /mocha\s*:/gi,
+    /data\s*:\s*text\/html/gi,
+    
+    // Event handlers
+    /on\w+\s*=\s*["'][^"']*["']/gi,
+    /on\w+\s*=\s*[^>\s]+/gi,
+    
+    // Expression and eval patterns
+    /expression\s*\([^)]*\)/gi,
+    /eval\s*\([^)]*\)/gi,
+    /setTimeout\s*\([^)]*\)/gi,
+    /setInterval\s*\([^)]*\)/gi,
+    
+    // Data URIs with scripts
+    /data\s*:\s*[^,]*script/gi,
+    
+    // CSS injection
+    /@import/gi,
+    /url\s*\(\s*["']?\s*javascript/gi,
+    
+    // HTML entity encoding bypass attempts
+    /&#x?[0-9a-f]+;?/gi,
+    
+    // Unicode normalization attacks
+    /[\u202a-\u202e\u2066-\u2069]/g,
+    
+    // Protocol relative URLs that could be dangerous
+    /\/\/[^\/\s]*(javascript|data|vbscript)/gi,
+    
+    // SVG script injection
+    /<svg[^>]*>[\s\S]*?<\/svg>/gi,
+    
+    // Form injection
+    /<form[^>]*>[\s\S]*?<\/form>/gi,
+    /<input[^>]*>/gi,
+    /<textarea[^>]*>[\s\S]*?<\/textarea>/gi,
+    /<select[^>]*>[\s\S]*?<\/select>/gi,
+    /<button[^>]*>[\s\S]*?<\/button>/gi,
   ]
   
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(sanitized)) {
       throw new Error('Input contains potentially malicious content')
     }
+  }
+  
+  // Additional check for encoded malicious content
+  try {
+    const decoded = decodeURIComponent(sanitized);
+    for (const pattern of suspiciousPatterns.slice(0, 10)) { // Check core patterns on decoded content
+      if (pattern.test(decoded)) {
+        throw new Error('Input contains encoded malicious content')
+      }
+    }
+  } catch (decodeError) {
+    // If decoding fails, that's fine - continue with original sanitized content
   }
   
   return sanitized

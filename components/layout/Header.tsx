@@ -5,6 +5,16 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui'
 import { HeaderProps } from './types'
+import { RealmSelector } from '@/components/realms/RealmSelector'
+import { NotificationBell } from '@/components/ui/NotificationBell'
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu'
+import { Settings, User, LogOut, ChevronDown } from 'lucide-react'
 
 export const Header: React.FC<HeaderProps> = ({
   user,
@@ -70,20 +80,49 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Realm switcher */}
-        {currentRealm && (
-          <div data-testid="realm-switcher">
-            <Button variant="ghost" size="sm">
-              {currentRealm.name}
-            </Button>
-          </div>
-        )}
+        <RealmSelector 
+          onManageRealms={() => {
+            // Navigate to realms management page
+            window.location.href = '/realms'
+          }}
+          data-testid="realm-switcher"
+        />
+
+        {/* Real-time notifications */}
+        <NotificationBell 
+          size="sm"
+          className="notification-bell"
+        />
 
         {/* User menu */}
-        <div data-testid="user-menu">
-          <Button variant="ghost" size="sm">
-            {user.name}
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" data-testid="user-menu">
+              <span>{user.name}</span>
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
+              <User className="h-4 w-4 mr-2" />
+              <span>Profile Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
+              <Settings className="h-4 w-4 mr-2" />
+              <span>Account Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => {
+                // Handle logout logic
+                console.log('Logging out...');
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              <span>Sign Out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Theme toggle */}
         <Button

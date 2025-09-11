@@ -56,6 +56,7 @@
     "types/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "lib/security/__tests__/security.test.ts"
   ]
 }

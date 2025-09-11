@@ -35,33 +35,149 @@ const buttonVariants = cva(
   }
 );
 
+/**
+ * Props for the Button component
+ * 
+ * A comprehensive button component with multiple variants, loading states, and accessibility features.
+ * Supports composition patterns, icon placement, and proper ARIA attributes.
+ * 
+ * @example
+ * ```tsx
+ * // Basic button
+ * <Button onClick={handleClick}>Click me</Button>
+ * 
+ * // Primary button with icon
+ * <Button variant="default" leftIcon={<SaveIcon />}>
+ *   Save Document
+ * </Button>
+ * 
+ * // Loading state with custom text
+ * <Button loading={isSubmitting} loadingText="Saving...">
+ *   Save Changes
+ * </Button>
+ * 
+ * // Destructive action
+ * <Button variant="destructive" onClick={handleDelete}>
+ *   Delete File
+ * </Button>
+ * 
+ * // As child composition (advanced)
+ * <Button asChild>
+ *   <Link href="/dashboard">Go to Dashboard</Link>
+ * </Button>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Different sizes and variants
+ * <div className="space-x-2">
+ *   <Button size="sm" variant="ghost">Small Ghost</Button>
+ *   <Button size="default" variant="outline">Default Outline</Button>
+ *   <Button size="lg" variant="secondary">Large Secondary</Button>
+ *   <Button size="icon" variant="ghost"><SearchIcon /></Button>
+ * </div>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Form submission with validation
+ * const handleSubmit = async () => {
+ *   setIsSubmitting(true);
+ *   try {
+ *     await submitForm();
+ *   } finally {
+ *     setIsSubmitting(false);
+ *   }
+ * };
+ * 
+ * <Button 
+ *   onClick={handleSubmit}
+ *   loading={isSubmitting}
+ *   disabled={!isFormValid}
+ *   loadingText="Submitting form..."
+ *   leftIcon={<CheckIcon />}
+ * >
+ *   Submit Application
+ * </Button>
+ * ```
+ */
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   /**
-   * When true, renders as a Slot component for composition
+   * When true, renders as a Slot component for composition with other elements
+   * Useful for wrapping Links or other interactive elements while maintaining button styling
+   * 
+   * @example
+   * ```tsx
+   * <Button asChild>
+   *   <Link href="/profile">View Profile</Link>
+   * </Button>
+   * ```
    */
   asChild?: boolean;
+  
   /**
-   * Optional loading state
+   * Shows loading spinner and disables interaction when true
+   * Automatically adds proper ARIA attributes for screen readers
+   * 
+   * @example
+   * ```tsx
+   * <Button loading={isUploading} loadingText="Uploading file...">
+   *   Upload Document
+   * </Button>
+   * ```
    */
   loading?: boolean;
+  
   /**
-   * Optional icon to display before the button text
+   * Icon element to display before the button text
+   * Automatically hidden when loading to avoid visual conflicts
+   * 
+   * @example
+   * ```tsx
+   * <Button leftIcon={<DownloadIcon />}>Download Report</Button>
+   * ```
    */
   leftIcon?: React.ReactNode;
+  
   /**
-   * Optional icon to display after the button text
+   * Icon element to display after the button text  
+   * Commonly used for action indicators like external links or dropdowns
+   * 
+   * @example
+   * ```tsx
+   * <Button rightIcon={<ExternalLinkIcon />}>Open in New Tab</Button>
+   * <Button rightIcon={<ChevronDownIcon />}>More Options</Button>
+   * ```
    */
   rightIcon?: React.ReactNode;
+  
   /**
-   * Loading text announced to screen readers when loading is true
+   * Custom text announced to screen readers during loading state
+   * Provides context about what action is being performed
+   * 
    * @default "Loading..."
+   * @example
+   * ```tsx
+   * <Button loading={isSaving} loadingText="Saving your changes...">
+   *   Save Draft
+   * </Button>
+   * ```
    */
   loadingText?: string;
+  
   /**
    * When true, prevents the button from being focusable but keeps it visible
-   * Different from disabled which also prevents interaction
+   * Different from disabled which also prevents interaction and changes styling
+   * Useful for temporarily inactive states that should remain visually consistent
+   * 
+   * @example
+   * ```tsx
+   * <Button inert={isFormSubmitting && !isCurrentStep}>
+   *   Next Step
+   * </Button>
+   * ```
    */
   inert?: boolean;
 }

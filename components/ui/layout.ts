@@ -10,8 +10,8 @@ export {
   TabsContent,
   tabsListVariants,
   tabsTriggerVariants,
-} from './Tabs';
-export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './Tabs';
+} from './tabs';
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs';
 
 export {
   Drawer,

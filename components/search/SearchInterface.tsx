@@ -18,37 +18,223 @@ import { useSearch } from './hooks/useSearch';
 /**
  * Props for the SearchInterface component
  * 
- * Provides a comprehensive search interface with query input, advanced filters,
- * keyboard shortcuts, and accessibility features.
+ * A comprehensive search interface with advanced filtering, keyboard shortcuts, and accessibility features.
+ * Includes debounced search, quick filters, search suggestions, and a collapsible advanced options panel.
  * 
  * @example
  * ```tsx
- * // Basic usage
+ * // Basic usage with search handling
  * <SearchInterface
- *   onSearch={(query) => console.log('Searching for:', query)}
- *   onFilter={(filters) => console.log('Applying filters:', filters)}
+ *   onSearch={(query) => {
+ *     console.log('Searching for:', query);
+ *     performDocumentSearch(query);
+ *   }}
+ *   onFilter={(filters) => {
+ *     console.log('Applying filters:', filters);
+ *     updateSearchFilters(filters);
+ *   }}
  * />
+ * ```
  * 
- * // With custom styling and auto-focus
+ * @example
+ * ```tsx
+ * // Advanced usage with state management
+ * const [searchState, setSearchState] = useState({
+ *   query: '',
+ *   results: [],
+ *   isLoading: false
+ * });
+ * 
+ * const handleSearch = useCallback(async (query: string) => {
+ *   if (query.trim().length < 3) return;
+ *   
+ *   setSearchState(prev => ({ ...prev, isLoading: true }));
+ *   try {
+ *     const results = await searchApi.searchDocuments({
+ *       query,
+ *       filters: currentFilters,
+ *       page: 1,
+ *       limit: 20
+ *     });
+ *     setSearchState({ query, results: results.results, isLoading: false });
+ *   } catch (error) {
+ *     console.error('Search failed:', error);
+ *     setSearchState(prev => ({ ...prev, isLoading: false }));
+ *   }
+ * }, [currentFilters]);
+ * 
  * <SearchInterface
  *   onSearch={handleSearch}
- *   onFilter={handleFilter}
- *   className="my-4"
+ *   onFilter={updateFilters}
  *   placeholder="Search documents, knowledge base, and more..."
  *   autoFocus={true}
+ *   className="mb-6"
+ * />
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Integrated with search results display
+ * const SearchPage = () => {
+ *   const [query, setQuery] = useState('');
+ *   const [filters, setFilters] = useState(defaultFilters);
+ *   const [results, setResults] = useState([]);
+ * 
+ *   return (
+ *     <div className="space-y-6">
+ *       <SearchInterface
+ *         onSearch={(newQuery) => {
+ *           setQuery(newQuery);
+ *           // Trigger search with current filters
+ *           if (newQuery.trim()) {
+ *             performSearch(newQuery, filters);
+ *           } else {
+ *             setResults([]);
+ *           }
+ *         }}
+ *         onFilter={(newFilters) => {
+ *           setFilters(newFilters);
+ *           // Re-search with new filters if there's a query
+ *           if (query.trim()) {
+ *             performSearch(query, newFilters);
+ *           }
+ *         }}
+ *         placeholder="What are you looking for?"
+ *       />
+ *       <SearchResults results={results} query={query} />
+ *     </div>
+ *   );
+ * };
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // With error handling and loading states
+ * <SearchInterface
+ *   onSearch={async (query) => {
+ *     try {
+ *       setIsSearching(true);
+ *       const response = await searchDocuments(query, filters);
+ *       setSearchResults(response.results);
+ *       // Show success toast
+ *       toast.success(`Found ${response.totalResults} documents`);
+ *     } catch (error) {
+ *       // Handle search errors gracefully
+ *       toast.error('Search failed. Please try again.');
+ *       console.error('Search error:', error);
+ *     } finally {
+ *       setIsSearching(false);
+ *     }
+ *   }}
+ *   onFilter={(newFilters) => {
+ *     // Validate filters before applying
+ *     if (validateSearchFilters(newFilters)) {
+ *       applyFilters(newFilters);
+ *     } else {
+ *       toast.error('Invalid filter configuration');
+ *     }
+ *   }}
  * />
  * ```
  */
 export interface SearchInterfaceProps {
-  /** Callback fired when search query changes or search is executed */
+  /** 
+   * Callback fired when search query changes or search is executed
+   * Receives the current search query string. Called on form submission,
+   * debounced input changes (3+ characters), and when query is cleared.
+   * 
+   * @param query - The search query string (trimmed)
+   * 
+   * @example
+   * ```tsx
+   * onSearch={(query) => {
+   *   if (query) {
+   *     // Perform search
+   *     searchDocuments(query);
+   *     // Track analytics
+   *     analytics.track('search_performed', { query });
+   *   } else {
+   *     // Clear results when query is empty
+   *     clearSearchResults();
+   *   }
+   * }}
+   * ```
+   */
   onSearch: (query: string) => void;
-  /** Callback fired when filter options are changed */
+  
+  /** 
+   * Callback fired when filter options are changed
+   * Receives the complete filter object with all current filter values.
+   * Called when any filter changes through the UI or quick filter buttons.
+   * 
+   * @param filters - Complete filter object with current values
+   * 
+   * @example
+   * ```tsx
+   * onFilter={(filters) => {
+   *   // Update URL params to maintain filter state
+   *   const params = new URLSearchParams();
+   *   Object.entries(filters).forEach(([key, value]) => {
+   *     if (value !== 'all') params.set(key, value);
+   *   });
+   *   router.push(`/search?${params.toString()}`);
+   *   
+   *   // Update local state
+   *   setCurrentFilters(filters);
+   * }}
+   * ```
+   */
   onFilter: (filters: any) => void;
-  /** Additional CSS classes to apply to the root element */
+  
+  /** 
+   * Additional CSS classes to apply to the root element
+   * Useful for spacing and layout adjustments in different contexts
+   * 
+   * @example
+   * ```tsx
+   * // Add margin and max width
+   * <SearchInterface className="mx-auto max-w-4xl my-8" ... />
+   * 
+   * // Custom background in a modal
+   * <SearchInterface className="bg-gray-50 p-4 rounded-lg" ... />
+   * ```
+   */
   className?: string;
-  /** Placeholder text for the search input */
+  
+  /** 
+   * Placeholder text for the search input
+   * Should be descriptive of what can be searched to guide users
+   * 
+   * @default "Search documents, knowledge base, and more..."
+   * 
+   * @example
+   * ```tsx
+   * // Context-specific placeholders
+   * <SearchInterface placeholder="Search customer support articles..." />
+   * <SearchInterface placeholder="Find research papers and publications..." />
+   * <SearchInterface placeholder="Search meeting notes and documents..." />
+   * ```
+   */
   placeholder?: string;
-  /** Whether to automatically focus the search input on mount */
+  
+  /** 
+   * Whether to automatically focus the search input when component mounts
+   * Useful for search-focused pages or modal dialogs
+   * 
+   * @default false
+   * 
+   * @example
+   * ```tsx
+   * // Auto-focus on search page
+   * <SearchInterface autoFocus={true} ... />
+   * 
+   * // Don't auto-focus when search is secondary
+   * <SearchInterface autoFocus={false} ... />
+   * 
+   * // Conditional auto-focus based on user preference
+   * <SearchInterface autoFocus={!isMobile && userPreferences.autoFocusSearch} ... />
+   * ```
+   */
   autoFocus?: boolean;
 }
 
@@ -68,6 +254,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = React.memo(({
     filters,
     updateFilters,
     isLoading,
+    isPending,
     searchNow,
     searchDebounced
   } = useSearch();
@@ -124,26 +311,34 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = React.memo(({
     onFilter(newFilters);
   }, [updateFilters, onFilter]);
 
-  // Memoized filter handlers to prevent function recreation on every render
+  // Stable filter handlers that don't recreate on filters change to prevent cascade re-renders
   const handlePdfFilter = useCallback(() => {
-    handleFiltersChange({ ...filters, documentType: 'pdf' });
-  }, [handleFiltersChange, filters]);
+    const newFilters = { documentType: 'pdf' as const };
+    updateFilters(newFilters);
+    onFilter(newFilters);
+  }, [updateFilters, onFilter]);
   
   const handleLastWeekFilter = useCallback(() => {
-    handleFiltersChange({ ...filters, dateRange: 'last-week' });
-  }, [handleFiltersChange, filters]);
+    const newFilters = { dateRange: 'last-week' as const };
+    updateFilters(newFilters);
+    onFilter(newFilters);
+  }, [updateFilters, onFilter]);
   
   const handleNewestFirstFilter = useCallback(() => {
-    handleFiltersChange({ ...filters, sortBy: 'date-desc' });
-  }, [handleFiltersChange, filters]);
+    const newFilters = { sortBy: 'date-desc' as const };
+    updateFilters(newFilters);
+    onFilter(newFilters);
+  }, [updateFilters, onFilter]);
   
   const handleClearAllFilters = useCallback(() => {
-    handleFiltersChange({ 
-      documentType: 'all',
-      dateRange: 'all',
-      sortBy: 'relevance'
-    });
-  }, [handleFiltersChange]);
+    const defaultFilters = { 
+      documentType: 'all' as const,
+      dateRange: 'all' as const,
+      sortBy: 'relevance' as const
+    };
+    updateFilters(defaultFilters);
+    onFilter(defaultFilters);
+  }, [updateFilters, onFilter]);
   
   // Memoized active filters check to prevent recalculation on every render
   const hasActiveFilters = useMemo(() => {
@@ -187,13 +382,18 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = React.memo(({
               <Button
                 type="submit"
                 disabled={!query.trim() || isLoading}
-                className="px-6 h-12"
+                className={`px-6 h-12 ${isPending ? 'opacity-75' : ''}`}
                 aria-label="Search"
               >
                 {isLoading ? (
                   <div data-testid="search-loading">
                     <Spinner className="h-4 w-4 mr-2" />
                     Searching...
+                  </div>
+                ) : isPending ? (
+                  <div data-testid="search-pending">
+                    <Spinner className="h-4 w-4 mr-2" />
+                    Processing...
                   </div>
                 ) : (
                   <>

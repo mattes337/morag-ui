@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from './Dialog';
+} from './dialog';
 
 describe('Dialog', () => {
   it('should not render dialog content initially', () => {

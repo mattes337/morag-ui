@@ -7,8 +7,8 @@
 export { Button, buttonVariants } from './Button';
 export type { ButtonProps } from './Button';
 
-export { Input, inputVariants } from './Input';
-export type { InputProps } from './Input';
+export { Input, inputVariants } from './input';
+export type { InputProps } from './input';
 
 export { Label, labelVariants } from './Label';
 export type { LabelProps } from './Label';
@@ -24,14 +24,14 @@ export {
 } from './Card';
 export type { CardProps } from './Card';
 
-export { Badge, badgeVariants } from './Badge';
-export type { BadgeProps } from './Badge';
+export { Badge, badgeVariants } from './badge';
+export type { BadgeProps } from './badge';
 
 export { Spinner, spinnerVariants } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
-export { Skeleton } from './Skeleton';
-export type { SkeletonProps } from './Skeleton';
+export { Skeleton } from './skeleton';
+export type { SkeletonProps } from './skeleton';
 
 export { Separator, separatorVariants } from './Separator';
 export type { SeparatorProps } from './Separator';

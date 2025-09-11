@@ -13,15 +13,174 @@ export interface ErrorBoundaryState {
   errorInfo: ErrorInfo | null;
 }
 
+/**
+ * Props for the ErrorBoundary component
+ * 
+ * A robust error boundary that catches JavaScript errors in child components,
+ * provides fallback UI, and includes security-conscious error handling for production.
+ * 
+ * @example
+ * ```tsx
+ * // Basic usage with default fallback
+ * <ErrorBoundary>
+ *   <MyComponent />
+ * </ErrorBoundary>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Custom fallback with error reporting
+ * <ErrorBoundary
+ *   fallback={({ error, onRetry }) => (
+ *     <div className="text-center p-8">
+ *       <h2>Something went wrong</h2>
+ *       <p>{error?.message}</p>
+ *       <Button onClick={onRetry}>Try Again</Button>
+ *     </div>
+ *   )}
+ *   onError={(error, errorInfo) => {
+ *     // Log to monitoring service
+ *     errorReporting.logError(error, {
+ *       componentStack: errorInfo.componentStack,
+ *       userId: user.id,
+ *       timestamp: Date.now()
+ *     });
+ *   }}
+ * >
+ *   <DocumentUpload />
+ * </ErrorBoundary>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Auto-reset when dependencies change
+ * <ErrorBoundary
+ *   resetKeys={[userId, documentId]}
+ *   resetOnPropsChange={true}
+ *   onError={(error) => {
+ *     toast.error('Failed to load document. Please try again.');
+ *   }}
+ * >
+ *   <DocumentViewer documentId={documentId} />
+ * </ErrorBoundary>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Nested error boundaries for granular error handling
+ * <ErrorBoundary fallback={AppErrorFallback}>
+ *   <Header />
+ *   <main>
+ *     <ErrorBoundary fallback={SearchErrorFallback}>
+ *       <SearchInterface />
+ *     </ErrorBoundary>
+ *     
+ *     <ErrorBoundary fallback={DocumentsErrorFallback}>
+ *       <DocumentList />
+ *     </ErrorBoundary>
+ *   </main>
+ * </ErrorBoundary>
+ * ```
+ */
 export interface ErrorBoundaryProps {
+  /** 
+   * Child components to wrap with error boundary protection
+   * Any JavaScript errors thrown by these components will be caught
+   */
   children: ReactNode;
+  
+  /** 
+   * Custom fallback component to render when an error occurs
+   * Receives error details and retry function as props
+   * 
+   * @example
+   * ```tsx
+   * const CustomErrorFallback = ({ error, onRetry }) => (
+   *   <Card className="border-destructive">
+   *     <CardHeader>
+   *       <CardTitle className="text-destructive">Error Loading Component</CardTitle>
+   *       <CardDescription>
+   *         {process.env.NODE_ENV === 'development' ? error?.message : 'Something went wrong'}
+   *       </CardDescription>
+   *     </CardHeader>
+   *     <CardFooter>
+   *       <Button onClick={onRetry} variant="outline">Try Again</Button>
+   *     </CardFooter>
+   *   </Card>
+   * );
+   * ```
+   */
   fallback?: React.ComponentType<{
     error: Error | null;
     errorInfo: ErrorInfo | null;
     onRetry: () => void;
   }>;
+  
+  /** 
+   * Callback fired when an error is caught
+   * Use for logging, analytics, or user notification
+   * 
+   * @param error - The JavaScript error that was thrown
+   * @param errorInfo - React error information including component stack
+   * 
+   * @example
+   * ```tsx
+   * onError={(error, errorInfo) => {
+   *   // Log to external service
+   *   Sentry.captureException(error, {
+   *     contexts: {
+   *       react: {
+   *         componentStack: errorInfo.componentStack
+   *       }
+   *     }
+   *   });
+   *   
+   *   // Show user notification
+   *   toast.error('Something went wrong. Our team has been notified.');
+   *   
+   *   // Track in analytics
+   *   analytics.track('error_boundary_triggered', {
+   *     errorType: error.name,
+   *     errorMessage: error.message
+   *   });
+   * }}
+   * ```
+   */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  
+  /** 
+   * When true, automatically resets error state when props change
+   * Useful for components that should retry when their dependencies update
+   * 
+   * @default false
+   * 
+   * @example
+   * ```tsx
+   * // Reset when user or document changes
+   * <ErrorBoundary resetOnPropsChange={true}>
+   *   <UserProfile userId={currentUserId} />
+ * </ErrorBoundary>
+   * ```
+   */
   resetOnPropsChange?: boolean;
+  
+  /** 
+   * Array of values that trigger error boundary reset when changed
+   * Component will automatically retry when any of these values change
+   * 
+   * @example
+   * ```tsx
+   * // Reset when specific dependencies change
+   * <ErrorBoundary resetKeys={[documentId, userId, realm]}>
+   *   <DocumentViewer />
+   * </ErrorBoundary>
+   * 
+   * // Reset when search query changes
+   * <ErrorBoundary resetKeys={[searchQuery, filters]}>
+   *   <SearchResults />
+   * </ErrorBoundary>
+   * ```
+   */
   resetKeys?: Array<string | number | boolean | null | undefined>;
 }
 
@@ -94,25 +253,91 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Create a new sanitized error with minimal information
     const sanitizedError = new Error('An unexpected error occurred');
     
-    // Only include safe error messages (no stack traces or sensitive paths)
+    // Define safe error messages that don't expose sensitive information
     const safeMessages = [
       'Network Error',
       'Validation Error',
-      'Authentication Error',
+      'Authentication Error', 
       'Authorization Error',
       'Not Found',
-      'Service Unavailable'
+      'Service Unavailable',
+      'Timeout Error',
+      'Connection Error',
+      'Invalid Input',
+      'Permission Denied',
+      'Resource Not Found',
+      'Bad Request'
+    ];
+
+    // Enhanced security: check if error message contains sensitive patterns
+    const sensitivePatterns = [
+      /\/[a-zA-Z]:/,        // Windows file paths (C:, D:, etc.)
+      /\/home\/\w+/,        // Unix home directories
+      /\/var\/\w+/,         // Unix system directories
+      /\/usr\/\w+/,         // Unix system directories
+      /\/opt\/\w+/,         // Unix system directories
+      /node_modules/,       // Node.js module paths
+      /\.js:\d+:\d+/,       // JavaScript stack trace locations
+      /\.ts:\d+:\d+/,       // TypeScript stack trace locations
+      /localhost:\d+/,      // Local server addresses
+      /127\.0\.0\.1/,       // Localhost IP
+      /password/i,          // Password references
+      /secret/i,            // Secret references
+      /token/i,             // Token references
+      /key/i,               // Key references
+      /database/i,          // Database references
+      /connection/i,        // Connection strings
+      /ENOENT/,             // File system errors
+      /EACCES/,             // Permission errors
+      /EMFILE/,             // File descriptor errors
+      /Error:\s*at\s/,      // Stack trace beginnings
     ];
 
     // Check if the error message is safe to expose
-    const isSafeMessage = safeMessages.some(safeMsg => 
-      error.message.toLowerCase().includes(safeMsg.toLowerCase())
-    );
+    let isSafeMessage = false;
+    let safeMessageText = 'An unexpected error occurred';
 
-    if (isSafeMessage) {
-      sanitizedError.message = error.message;
+    // First check if it matches any safe message patterns
+    for (const safeMsg of safeMessages) {
+      if (error.message.toLowerCase().includes(safeMsg.toLowerCase())) {
+        // Additional check: ensure it doesn't contain sensitive patterns
+        const containsSensitiveInfo = sensitivePatterns.some(pattern => 
+          pattern.test(error.message)
+        );
+        
+        if (!containsSensitiveInfo) {
+          isSafeMessage = true;
+          safeMessageText = error.message;
+          break;
+        }
+      }
     }
 
+    // If not safe, provide a generic message based on error type
+    if (!isSafeMessage) {
+      // Try to categorize the error and provide appropriate generic message
+      const errorMessage = error.message.toLowerCase();
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        safeMessageText = 'Network connection error';
+      } else if (errorMessage.includes('auth') || errorMessage.includes('login')) {
+        safeMessageText = 'Authentication error';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('access')) {
+        safeMessageText = 'Access permission error';
+      } else if (errorMessage.includes('timeout')) {
+        safeMessageText = 'Request timeout error';
+      } else if (errorMessage.includes('parse') || errorMessage.includes('json')) {
+        safeMessageText = 'Data format error';
+      } else {
+        safeMessageText = 'An unexpected error occurred';
+      }
+    }
+
+    sanitizedError.message = safeMessageText;
+    
+    // Ensure no stack trace is included
+    delete (sanitizedError as any).stack;
+    
     return sanitizedError;
   };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useTransition } from 'react';
 import debounce from 'lodash.debounce';
 import { SearchResult, SearchFilters } from '@/lib/mockData/searchMockData';
 import { searchApi } from '@/lib/api/searchApi';
@@ -113,6 +113,8 @@ export interface UseSearchReturn {
   filters: SearchFilters;
   /** Whether a search request is in progress */
   isLoading: boolean;
+  /** Whether a non-urgent search operation is pending (React 18 Transition) */
+  isPending: boolean;
   /** Array of search result documents */
   results: SearchResult[];
   /** Total number of results across all pages */
@@ -352,6 +354,9 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  
+  // React 18 Concurrent Features
+  const [isPending, startTransition] = useTransition();
 
   // Memoized search function
   const performSearch = useCallback(async (
@@ -402,34 +407,45 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
   // Stable debounced search function using useRef to prevent memory leaks
   const debouncedSearchRef = useRef<ReturnType<typeof debounce> | null>(null);
   
-  // Create stable debounced function only when dependencies change
+  // Create stable debounced function only when delay changes, not on every performSearch change
   const debouncedSearch = useMemo(() => {
     // Cancel previous debounced function if it exists
     if (debouncedSearchRef.current) {
       debouncedSearchRef.current.cancel();
     }
     
-    // Create new debounced function
+    // Create new debounced function with stable reference to performSearch
     debouncedSearchRef.current = debounce((searchQuery: string, searchFilters: SearchFilters) => {
-      performSearch(searchQuery, searchFilters, 1);
+      // Use startTransition for non-urgent debounced searches to improve responsiveness
+      startTransition(() => {
+        performSearch(searchQuery, searchFilters, 1);
+      });
     }, debounceDelay);
     
     return debouncedSearchRef.current;
-  }, [performSearch, debounceDelay]);
+  }, [debounceDelay]); // Only depend on debounceDelay, not performSearch
 
-  // Update filters
+  // Update filters with optimized dependencies
   const updateFilters = useCallback((newFilters: Partial<SearchFilters>) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    
-    // Reset to first page when filters change
-    setCurrentPage(1);
-    
-    // Trigger search if we have a query
-    if (query.trim() && query.trim().length >= minQueryLength) {
-      performSearch(query, updatedFilters, 1);
-    }
-  }, [filters, query, performSearch, minQueryLength]);
+    setFilters(prevFilters => {
+      const updatedFilters = { ...prevFilters, ...newFilters };
+      
+      // Reset to first page when filters change
+      setCurrentPage(1);
+      
+      // Schedule search in next tick to avoid stale closure issues
+      setTimeout(() => {
+        setQuery(currentQuery => {
+          if (currentQuery.trim() && currentQuery.trim().length >= minQueryLength) {
+            performSearch(currentQuery, updatedFilters, 1);
+          }
+          return currentQuery;
+        });
+      }, 0);
+      
+      return updatedFilters;
+    });
+  }, [performSearch, minQueryLength]);
 
   // Pagination functions
   const goToPage = useCallback((page: number) => {
@@ -512,6 +528,7 @@ export const useSearch = (options: UseSearchOptions = {}): UseSearchReturn => {
     query,
     filters,
     isLoading,
+    isPending,
     results,
     totalResults,
     currentPage,

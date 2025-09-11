@@ -6,8 +6,8 @@
 export { Button, buttonVariants } from './Button';
 export type { ButtonProps } from './Button';
 
-export { Input, inputVariants } from './Input';
-export type { InputProps } from './Input';
+export { Input, inputVariants } from './input';
+export type { InputProps } from './input';
 
 export { Label, labelVariants } from './Label';
 export type { LabelProps } from './Label';
@@ -23,14 +23,14 @@ export {
 } from './Card';
 export type { CardProps } from './Card';
 
-export { Badge, badgeVariants } from './Badge';
-export type { BadgeProps } from './Badge';
+export { Badge, badgeVariants } from './badge';
+export type { BadgeProps } from './badge';
 
 export { Spinner, spinnerVariants } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
-export { Skeleton } from './Skeleton';
-export type { SkeletonProps } from './Skeleton';
+export { Skeleton } from './skeleton';
+export type { SkeletonProps } from './skeleton';
 
 export { Separator, separatorVariants } from './Separator';
 export type { SeparatorProps } from './Separator';
@@ -61,8 +61,8 @@ export {
   DialogTitle,
   DialogDescription,
   dialogContentVariants,
-} from './Dialog';
-export type { DialogProps, DialogContentProps } from './Dialog';
+} from './dialog';
+export type { DialogProps, DialogContentProps } from './dialog';
 
 export {
   Tooltip,
@@ -90,8 +90,8 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
   selectTriggerVariants,
-} from './Select';
-export type { SelectProps, SelectTriggerProps, SelectContentProps } from './Select';
+} from './select';
+export type { SelectProps, SelectTriggerProps, SelectContentProps } from './select';
 
 export {
   Table,
@@ -125,8 +125,8 @@ export {
   TabsContent,
   tabsListVariants,
   tabsTriggerVariants,
-} from './Tabs';
-export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './Tabs';
+} from './tabs';
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs';
 
 export {
   ToastProvider,

@@ -21,7 +21,7 @@ export interface SearchFiltersProps {
   className?: string;
 }
 
-export const SearchFilters: React.FC<SearchFiltersProps> = ({
+export const SearchFilters: React.FC<SearchFiltersProps> = React.memo(({
   filters,
   onFiltersChange,
   className = ''
@@ -209,7 +209,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
       />
     </div>
   );
-};
+});
 
 interface FilterControlsProps {
   filters: SearchFiltersType;
@@ -325,5 +325,7 @@ const FilterControls: React.FC<FilterControlsProps> = ({
     </div>
   );
 };
+
+SearchFilters.displayName = 'SearchFilters';
 
 export default SearchFilters;

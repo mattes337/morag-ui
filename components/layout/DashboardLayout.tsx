@@ -13,6 +13,7 @@ import { SearchOverlay } from './SearchOverlay'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { DashboardLayoutProps, LayoutContextType } from './types'
 import { mockNavigation, mockUser, mockCurrentRealm, mockNotifications, getUnreadCount } from './mockData'
+import { RealmProvider } from '@/lib/hooks/useRealm'
 
 // Layout Context
 const LayoutContext = createContext<LayoutContextType | null>(null)
@@ -79,15 +80,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   ])
 
   return (
-    <LayoutContext.Provider value={layoutContextValue}>
-      <div 
-        className={cn(
-          'flex h-screen bg-background text-foreground',
-          isMobile && 'mobile',
-          className
-        )}
-        data-testid="dashboard-layout"
-      >
+    <RealmProvider>
+      <LayoutContext.Provider value={layoutContextValue}>
+        <div 
+          className={cn(
+            'flex h-screen bg-background text-foreground',
+            isMobile && 'mobile',
+            className
+          )}
+          data-testid="dashboard-layout"
+        >
         {/* Sidebar - Desktop */}
         <nav
           className={cn(
@@ -197,8 +199,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </ErrorBoundary>
           </div>
         )}
-      </div>
-    </LayoutContext.Provider>
+        </div>
+      </LayoutContext.Provider>
+    </RealmProvider>
   )
 }
 

@@ -81,47 +81,64 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
     return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
   };
 
-  // Memoized regex cache to prevent regex recreation on every render
+  // Memoized regex cache with proper memory management
   const regexCache = useMemo(() => {
     const cache = new Map<string, RegExp>();
+    const MAX_CACHE_SIZE = 50; // Reduced from 100 to prevent memory issues
+    
     return {
       get: (term: string) => {
         if (!cache.has(term)) {
+          // Enforce cache size limit with LRU eviction
+          if (cache.size >= MAX_CACHE_SIZE) {
+            const firstKey = cache.keys().next().value;
+            if (firstKey) cache.delete(firstKey);
+          }
+          
           // Escape special regex characters to prevent ReDoS attacks
           const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          cache.set(term, new RegExp(`(${escapedTerm})`, 'gi'));
+          // Limit term length to prevent catastrophic backtracking
+          const safeTerm = escapedTerm.slice(0, 50);
+          cache.set(term, new RegExp(`(${safeTerm})`, 'gi'));
         }
         return cache.get(term)!;
       },
-      clear: () => cache.clear()
+      clear: () => cache.clear(),
+      size: () => cache.size
     };
   }, []);
 
-  // Optimized highlight function with memoized regex patterns
+  // Optimized highlight function with better performance and memory management
   const highlightText = useMemo(() => {
-    const highlightFunction = (text: string, terms: string[]) => {
+    return (text: string, terms: string[]) => {
       if (!terms.length || !query || !text) return text;
       
-      // Clear cache if it gets too large (prevent memory leaks)
-      if (regexCache instanceof Map && regexCache.size > 100) {
-        regexCache.clear();
-      }
+      // Limit text length for highlighting to prevent performance issues
+      const maxTextLength = 500;
+      const textToHighlight = text.length > maxTextLength 
+        ? text.slice(0, maxTextLength) + '...' 
+        : text;
       
-      let highlightedText = text;
+      let highlightedText = textToHighlight;
       
-      // Process terms in order of length (longest first) to avoid partial matches
-      const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+      // Process only first 5 terms to prevent performance degradation
+      const limitedTerms = terms.slice(0, 5)
+        .filter(term => term && term.trim() && term.length >= 2)
+        .sort((a, b) => b.length - a.length);
       
-      for (const term of sortedTerms) {
-        if (term && term.trim()) {
+      for (const term of limitedTerms) {
+        try {
           const regex = regexCache.get(term.trim());
           highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+        } catch (error) {
+          // Skip problematic terms to prevent crashes
+          console.warn('Regex error for term:', term, error);
+          continue;
         }
       }
       
       return <span dangerouslySetInnerHTML={{ __html: highlightedText }} data-testid="highlight-content" />;
     };
-    return highlightFunction;
   }, [query, regexCache]);
 
   // Loading skeleton

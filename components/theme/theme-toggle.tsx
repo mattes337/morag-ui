@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/Select';
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/Switch';
 import { useTheme } from '@/lib/theme/theme-provider';
 import { cn } from '@/lib/utils';

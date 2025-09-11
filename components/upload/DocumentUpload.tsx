@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/Label';
 import { DropZone } from './DropZone';
 import { UploadProgress } from './UploadProgress';

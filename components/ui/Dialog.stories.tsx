@@ -9,9 +9,9 @@ import {
   DialogTitle, 
   DialogTrigger,
   DialogClose 
-} from './Dialog';
+} from './dialog';
 import { Button } from './Button';
-import { Input } from './Input';
+import { Input } from './input';
 import { Label } from './Label';
 import { Separator } from './Separator';
 

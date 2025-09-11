@@ -61,7 +61,7 @@ class MockApiClient implements ApiClient {
   ): Promise<ApiResponse<T>> {
     const requestId = (++this.requestId).toString();
     const context: RequestContext = {
-      signal: config?.signal,
+      ...(config?.signal && { signal: config.signal }),
       retryCount: 0,
       startTime: Date.now()
     };
@@ -74,8 +74,6 @@ class MockApiClient implements ApiClient {
         return {
           success: true,
           data: cached,
-          error: undefined,
-          message: undefined,
           timestamp: new Date().toISOString(),
           requestId
         };
@@ -101,9 +99,7 @@ class MockApiClient implements ApiClient {
       const error = this.generateRandomError();
       return {
         success: false,
-        data: undefined,
         error,
-        message: undefined,
         timestamp: new Date().toISOString(),
         requestId
       };
@@ -120,8 +116,6 @@ class MockApiClient implements ApiClient {
     return {
       success: true,
       data: responseData,
-      error: undefined,
-      message: undefined,
       timestamp: new Date().toISOString(),
       requestId
     };

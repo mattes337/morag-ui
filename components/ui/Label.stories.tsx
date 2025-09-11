@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Label } from './Label';
-import { Input } from './Input';
+import { Input } from './input';
 import { Checkbox } from './Checkbox';
 
 const meta = {

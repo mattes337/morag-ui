@@ -14,13 +14,278 @@ import {
   MAX_FILES_COUNT 
 } from '@/lib/utils/fileValidation';
 
+/**
+ * Props for the DocumentUpload component
+ * 
+ * A comprehensive document upload interface with drag-and-drop, file validation, progress tracking,
+ * and processing pipeline visualization. Supports multiple file types and provides detailed feedback.
+ * 
+ * @example
+ * ```tsx
+ * // Basic upload with completion callback
+ * <DocumentUpload
+ *   onUploadComplete={(files) => {
+ *     console.log(`Uploaded ${files.length} files successfully`);
+ *     // Refresh document list or navigate to processing view
+ *     router.push('/documents');
+ *   }}
+ * />
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Advanced usage with all callbacks and state management
+ * const [uploadState, setUploadState] = useState({
+ *   isUploading: false,
+ *   progress: {},
+ *   completedFiles: [],
+ *   pipelineStatus: {}
+ * });
+ * 
+ * <DocumentUpload
+ *   onUploadStart={(files) => {
+ *     setUploadState(prev => ({ ...prev, isUploading: true }));
+ *     analytics.track('upload_started', { fileCount: files.length });
+ *   }}
+ *   onUploadProgress={(progress) => {
+ *     setUploadState(prev => ({ ...prev, progress }));
+ *     // Update global progress indicator
+ *     updateGlobalProgress(Object.values(progress));
+ *   }}
+ *   onPipelineUpdate={(fileId, stage, status) => {
+ *     setUploadState(prev => ({
+ *       ...prev,
+ *       pipelineStatus: {
+ *         ...prev.pipelineStatus,
+ *         [fileId]: { stage, status, timestamp: Date.now() }
+ *       }
+ *     }));
+ *   }}
+ *   onUploadComplete={(files) => {
+ *     setUploadState(prev => ({ 
+ *       ...prev, 
+ *       isUploading: false,
+ *       completedFiles: files 
+ *     }));
+ *     toast.success(`Successfully uploaded ${files.length} documents`);
+ *   }}
+ *   showPipeline={true}
+ *   className="max-w-4xl mx-auto"
+ * />
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // In a modal or wizard step
+ * const UploadModal = ({ isOpen, onClose }) => {
+ *   const [step, setStep] = useState('upload'); // 'upload' | 'processing' | 'complete'
+ *   
+ *   return (
+ *     <Modal isOpen={isOpen} onClose={onClose}>
+ *       <ModalContent>
+ *         {step === 'upload' && (
+ *           <DocumentUpload
+ *             onUploadStart={() => setStep('processing')}
+ *             onUploadComplete={() => setStep('complete')}
+ *             showPipeline={false} // Hide in modal to save space
+ *             className="p-0" // Remove default padding in modal
+ *           />
+ *         )}
+ *         {step === 'processing' && <ProcessingView />}
+ *         {step === 'complete' && <CompletionView />}
+ *       </ModalContent>
+ *     </Modal>
+ *   );
+ * };
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // With error handling and retry logic
+ * <DocumentUpload
+ *   onUploadComplete={(files) => {
+ *     // Update document cache
+ *     queryClient.invalidateQueries(['documents']);
+ *     
+ *     // Navigate to document list with success message
+ *     router.push('/documents?upload=success');
+ *   }}
+ *   onUploadStart={(files) => {
+ *     // Validate file count against user limits
+ *     if (files.length > userLimits.maxFiles) {
+ *       toast.error(`Maximum ${userLimits.maxFiles} files allowed`);
+ *       return false; // Prevent upload
+ *     }
+ *   }}
+ *   disabled={!hasUploadPermission || isMaintenanceMode}
+ *   className={`transition-opacity ${
+ *     hasUploadPermission ? 'opacity-100' : 'opacity-50'
+ *   }`}
+ * />
+ * ```
+ */
 export interface DocumentUploadProps {
+  /**
+   * Callback fired when all files have been successfully uploaded and processed
+   * Receives array of File objects that were successfully uploaded
+   * 
+   * @param files - Array of successfully uploaded File objects
+   * 
+   * @example
+   * ```tsx
+   * onUploadComplete={(files) => {
+   *   console.log(`Uploaded ${files.length} files:`);
+   *   files.forEach(file => console.log(`- ${file.name} (${file.size} bytes)`));
+   *   
+   *   // Update UI state
+   *   setDocumentCount(prev => prev + files.length);
+   *   
+   *   // Show success notification
+   *   toast.success('Documents uploaded successfully!');
+   * }}
+   * ```
+   */
   onUploadComplete?: (files: File[]) => void;
+  
+  /**
+   * Callback fired when upload process begins for selected files
+   * Useful for showing loading states or tracking analytics
+   * 
+   * @param files - Array of File objects about to be uploaded
+   * 
+   * @example
+   * ```tsx
+   * onUploadStart={(files) => {
+   *   // Show global loading indicator
+   *   setIsGloballyLoading(true);
+   *   
+   *   // Track upload initiation
+   *   analytics.track('document_upload_started', {
+   *     fileCount: files.length,
+   *     totalSize: files.reduce((sum, f) => sum + f.size, 0)
+   *   });
+   *   
+   *   // Disable other actions during upload
+   *   setActionsDisabled(true);
+   * }}
+   * ```
+   */
   onUploadStart?: (files: File[]) => void;
+  
+  /**
+   * Callback fired when upload progress changes for any file
+   * Receives object mapping file IDs to progress percentages (0-100)
+   * 
+   * @param progress - Object with fileId as key and progress percentage as value
+   * 
+   * @example
+   * ```tsx
+   * onUploadProgress={(progress) => {
+   *   // Calculate overall progress
+   *   const totalProgress = Object.values(progress).reduce((sum, p) => sum + p, 0) / Object.keys(progress).length;
+   *   
+   *   // Update global progress bar
+   *   setGlobalProgress(totalProgress);
+   *   
+   *   // Update window title with progress
+   *   document.title = `Uploading... ${Math.round(totalProgress)}%`;
+   *   
+   *   // Log detailed progress
+   *   console.log('Upload progress:', progress);
+   * }}
+   * ```
+   */
   onUploadProgress?: (progress: { [fileId: string]: number }) => void;
+  
+  /**
+   * Callback fired when processing pipeline stage changes for a document
+   * Provides real-time updates on document processing through the 5-stage pipeline
+   * 
+   * @param fileId - Unique identifier for the file being processed
+   * @param stage - Current processing stage name
+   * @param status - Current status of the stage ('pending' | 'running' | 'completed' | 'failed')
+   * 
+   * @example
+   * ```tsx
+   * onPipelineUpdate={(fileId, stage, status) => {
+   *   console.log(`File ${fileId}: ${stage} is ${status}`);
+   *   
+   *   // Update pipeline visualization state
+   *   setPipelineState(prev => ({
+   *     ...prev,
+   *     [fileId]: { currentStage: stage, status }
+   *   }));
+   *   
+   *   // Track processing milestones
+   *   if (status === 'completed' && stage === 'ingestor') {
+   *     analytics.track('document_processing_complete', { fileId });
+   *   }
+   *   
+   *   // Handle processing errors
+   *   if (status === 'failed') {
+   *     toast.error(`Processing failed at ${stage} stage`);
+   *   }
+   * }}
+   * ```
+   */
   onPipelineUpdate?: (fileId: string, stage: string, status: string) => void;
+  
+  /**
+   * When true, disables the entire upload interface
+   * Useful during maintenance, permission restrictions, or other blocking states
+   * 
+   * @default false
+   * 
+   * @example
+   * ```tsx
+   * // Disable during maintenance
+   * <DocumentUpload disabled={isMaintenanceMode} />
+   * 
+   * // Disable based on permissions
+   * <DocumentUpload disabled={!user.canUpload} />
+   * 
+   * // Disable during critical operations
+   * <DocumentUpload disabled={isSystemBackup || isDatabaseMigration} />
+   * ```
+   */
   disabled?: boolean;
+  
+  /**
+   * Additional CSS classes to apply to the root container
+   * Useful for custom spacing, sizing, or integration with layout systems
+   * 
+   * @example
+   * ```tsx
+   * // Center with max width
+   * <DocumentUpload className="max-w-4xl mx-auto my-8" />
+   * 
+   * // Full width in a grid layout
+   * <DocumentUpload className="col-span-full" />
+   * 
+   * // Custom spacing in a form
+   * <DocumentUpload className="mb-6 border-t pt-6" />
+   * ```
+   */
   className?: string;
+  
+  /**
+   * Whether to show the processing pipeline visualization
+   * When true, displays real-time pipeline status for uploaded documents
+   * 
+   * @default true
+   * 
+   * @example
+   * ```tsx
+   * // Show pipeline in main upload view
+   * <DocumentUpload showPipeline={true} />
+   * 
+   * // Hide pipeline in modal or compact view
+   * <DocumentUpload showPipeline={false} />
+   * 
+   * // Show pipeline based on user preference
+   * <DocumentUpload showPipeline={userSettings.showDetailedProgress} />
+   * ```
+   */
   showPipeline?: boolean;
 }
 
@@ -42,17 +307,6 @@ export function DocumentUpload({
 
   // API hooks for upload simulation
   const { execute: uploadDocument, error: apiError } = useApi('POST', '/api/documents/upload', {
-    enabled: undefined,
-    onSuccess: undefined,
-    onError: undefined,
-    headers: undefined,
-    params: undefined,
-    body: undefined,
-    timeout: undefined,
-    retries: undefined,
-    cache: undefined,
-    cacheTTL: undefined,
-    signal: undefined,
     retry: { attempts: 3, delay: 1000, backoff: 'exponential' }
   });
 
@@ -141,15 +395,7 @@ export function DocumentUpload({
 
         // Use API client for upload simulation  
         const response = await uploadDocument({
-          method: undefined,
           headers: { 'Content-Type': 'multipart/form-data' },
-          params: undefined,
-          body: undefined,
-          timeout: undefined,
-          retries: undefined,
-          cache: undefined,
-          cacheTTL: undefined,
-          signal: undefined,
           // In a real implementation, you'd pass the FormData to the POST method
           // For our mock, we'll simulate the file upload
         });

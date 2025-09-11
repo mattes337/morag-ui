@@ -19,12 +19,16 @@
     "test:a11y": "jest --testNamePattern=\"Accessibility\"",
     "test:a11y:watch": "jest --testNamePattern=\"Accessibility\" --watch",
     "test:a11y:coverage": "jest --testNamePattern=\"Accessibility\" --coverage",
+    "test:security": "jest --testNamePattern=\"Security\"",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "lint:a11y": "eslint --ext .tsx,.ts components/ lib/ app/ --config .eslintrc.json",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "security:check": "npm audit --audit-level=high && node scripts/validate-security.js",
+    "security:test": "npm run test:security",
+    "security:full": "npm run security:check && npm run test:security",
     "accessibility:check": "npm run lint:a11y && npm run test:a11y",
     "accessibility:full": "npm run lint:a11y && npm run test:a11y:coverage && npm run storybook:build"
   },
@@ -57,6 +61,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dompurify": "^3.2.6",
+    "file-type": "^21.0.0",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.542.0",
     "next": "^15.5.2",
@@ -64,6 +69,7 @@
     "playwright": "^1.55.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "^3.2.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7"
@@ -96,6 +102,7 @@
     "@types/node": "^24.3.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "@types/uuid": "^10.0.0",
     "@types/webpack": "^5.28.5",
     "axe-core": "^4.10.3",
     "concurrently": "^9.2.1",
@@ -113,6 +120,7 @@
     "style-loader": "^4.0.0",
     "typescript": "^5.9.2",
     "util": "^0.12.5",
+    "uuid": "^13.0.0",
     "webpack-bundle-analyzer": "^4.10.2"
   }
 }

@@ -26,6 +26,104 @@ const cardVariants = cva(
   }
 );
 
+/**
+ * Props for the Card component and its sub-components
+ * 
+ * A flexible card component system for creating content containers with consistent styling.
+ * Includes header, content, footer sections and multiple visual variants.
+ * 
+ * @example
+ * ```tsx
+ * // Basic card with content
+ * <Card>
+ *   <CardHeader>
+ *     <CardTitle>Document Analysis</CardTitle>
+ *     <CardDescription>AI-powered insights from your documents</CardDescription>
+ *   </CardHeader>
+ *   <CardContent>
+ *     <p>Processing complete. Found 15 key insights.</p>
+ *   </CardContent>
+ *   <CardFooter>
+ *     <Button>View Details</Button>
+ *   </CardFooter>
+ * </Card>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Different variants and padding
+ * <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ *   <Card variant="outlined" padding="sm">
+ *     <CardContent>Compact card with small padding</CardContent>
+ *   </Card>
+ *   
+ *   <Card variant="elevated" padding="lg">
+ *     <CardContent>Elevated card with large padding</CardContent>
+ *   </Card>
+ *   
+ *   <Card variant="ghost">
+ *     <CardContent>Borderless ghost card</CardContent>
+ *   </Card>
+ * </div>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Interactive card with hover effects
+ * <Card 
+ *   className="cursor-pointer transition-all hover:shadow-lg"
+ *   onClick={() => router.push('/document/123')}
+ * >
+ *   <CardHeader>
+ *     <CardTitle>Q4 Financial Report.pdf</CardTitle>
+ *     <CardDescription>Last modified 2 hours ago</CardDescription>
+ *   </CardHeader>
+ *   <CardContent>
+ *     <div className="flex items-center gap-2">
+ *       <Badge variant="secondary">PDF</Badge>
+ *       <Badge variant="success">Processed</Badge>
+ *     </div>
+ *   </CardContent>
+ * </Card>
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // Complex card with multiple sections
+ * <Card variant="outlined" className="max-w-md">
+ *   <CardHeader className="text-center">
+ *     <Avatar className="mx-auto mb-2">
+ *       <AvatarImage src={user.avatar} />
+ *       <AvatarFallback>{user.initials}</AvatarFallback>
+ *     </Avatar>
+ *     <CardTitle>{user.name}</CardTitle>
+ *     <CardDescription>{user.role}</CardDescription>
+ *   </CardHeader>
+ *   
+ *   <CardContent className="space-y-4">
+ *     <div className="grid grid-cols-3 text-center">
+ *       <div>
+ *         <div className="font-bold">{user.documentsCount}</div>
+ *         <div className="text-sm text-muted-foreground">Documents</div>
+ *       </div>
+ *       <div>
+ *         <div className="font-bold">{user.searchesCount}</div>
+ *         <div className="text-sm text-muted-foreground">Searches</div>
+ *       </div>
+ *       <div>
+ *         <div className="font-bold">{user.realmCount}</div>
+ *         <div className="text-sm text-muted-foreground">Realms</div>
+ *       </div>
+ *     </div>
+ *   </CardContent>
+ *   
+ *   <CardFooter className="flex-col gap-2">
+ *     <Button className="w-full">View Profile</Button>
+ *     <Button variant="outline" className="w-full">Send Message</Button>
+ *   </CardFooter>
+ * </Card>
+ * ```
+ */
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {}
