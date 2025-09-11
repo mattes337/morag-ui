@@ -149,11 +149,11 @@ export function JobDetail({
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Name</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Name</dt>
                         <p className="text-sm">{job.name}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Type</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Type</dt>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="capitalize">
                             {job.type.replace('_', ' ')}
@@ -161,18 +161,18 @@ export function JobDetail({
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Status</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Status</dt>
                         <div className="mt-1">
                           <JobStatus job={job} showProgress showETA />
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Realm</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Realm</dt>
                         <p className="text-sm">{job.realmName}</p>
                       </div>
                       {job.documentName && (
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground">Document</label>
+                          <dt className="text-sm font-medium text-muted-foreground">Document</dt>
                           <p className="text-sm">{job.documentName}</p>
                         </div>
                       )}
@@ -189,28 +189,28 @@ export function JobDetail({
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Created</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Created</dt>
                         <p className="text-sm font-mono">{formatDate(job.createdAt)}</p>
                       </div>
                       {job.startedAt && (
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground">Started</label>
+                          <dt className="text-sm font-medium text-muted-foreground">Started</dt>
                           <p className="text-sm font-mono">{formatDate(job.startedAt)}</p>
                         </div>
                       )}
                       {job.completedAt && (
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground">Completed</label>
+                          <dt className="text-sm font-medium text-muted-foreground">Completed</dt>
                           <p className="text-sm font-mono">{formatDate(job.completedAt)}</p>
                         </div>
                       )}
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Estimated Duration</label>
+                        <dt className="text-sm font-medium text-muted-foreground">Estimated Duration</dt>
                         <p className="text-sm">{formatDuration(job.estimatedDuration)}</p>
                       </div>
                       {job.actualDuration && (
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground">Actual Duration</label>
+                          <dt className="text-sm font-medium text-muted-foreground">Actual Duration</dt>
                           <p className="text-sm">{formatDuration(job.actualDuration)}</p>
                         </div>
                       )}
@@ -231,25 +231,25 @@ export function JobDetail({
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {job.metadata.fileSize && (
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">File Size</label>
+                            <dt className="text-sm font-medium text-muted-foreground">File Size</dt>
                             <p className="text-sm">{formatFileSize(job.metadata.fileSize)}</p>
                           </div>
                         )}
                         {job.metadata.fileType && (
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">File Type</label>
+                            <dt className="text-sm font-medium text-muted-foreground">File Type</dt>
                             <Badge variant="outline">{job.metadata.fileType}</Badge>
                           </div>
                         )}
                         {job.metadata.chunkCount && (
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Chunks</label>
+                            <dt className="text-sm font-medium text-muted-foreground">Chunks</dt>
                             <p className="text-sm">{job.metadata.chunkCount.toLocaleString()}</p>
                           </div>
                         )}
                         {job.metadata.factCount && (
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Facts</label>
+                            <dt className="text-sm font-medium text-muted-foreground">Facts</dt>
                             <p className="text-sm">{job.metadata.factCount.toLocaleString()}</p>
                           </div>
                         )}
@@ -315,11 +315,11 @@ export function JobDetail({
                       <CardContent>
                         <div className="space-y-2">
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Attempts</label>
+                            <dt className="text-sm font-medium text-muted-foreground">Attempts</dt>
                             <p className="text-sm">{job.retryCount} of {job.maxRetries}</p>
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-muted-foreground">Remaining Retries</label>
+                            <dt className="text-sm font-medium text-muted-foreground">Remaining Retries</dt>
                             <p className="text-sm">{job.maxRetries - job.retryCount}</p>
                           </div>
                         </div>
@@ -419,19 +419,19 @@ export function JobDetail({
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <label className="font-medium text-muted-foreground">Worker Node</label>
+                          <dt className="font-medium text-muted-foreground">Worker Node</dt>
                           <p>worker-{Math.floor(Math.random() * 10) + 1}.cluster.local</p>
                         </div>
                         <div>
-                          <label className="font-medium text-muted-foreground">Process ID</label>
+                          <dt className="font-medium text-muted-foreground">Process ID</dt>
                           <p className="font-mono">{Math.floor(Math.random() * 90000) + 10000}</p>
                         </div>
                         <div>
-                          <label className="font-medium text-muted-foreground">Queue Position</label>
+                          <dt className="font-medium text-muted-foreground">Queue Position</dt>
                           <p>{job.status === 'queued' ? Math.floor(Math.random() * 20) + 1 : 'N/A'}</p>
                         </div>
                         <div>
-                          <label className="font-medium text-muted-foreground">Priority</label>
+                          <dt className="font-medium text-muted-foreground">Priority</dt>
                           <Badge variant="outline" className="capitalize">{job.priority}</Badge>
                         </div>
                       </div>
@@ -450,21 +450,21 @@ export function JobDetail({
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="space-y-2">
                           <div>
-                            <label className="font-medium text-muted-foreground">Average Processing Time</label>
+                            <dt className="font-medium text-muted-foreground">Average Processing Time</dt>
                             <p>{formatDuration(Math.floor(Math.random() * 30) + 10)}</p>
                           </div>
                           <div>
-                            <label className="font-medium text-muted-foreground">Success Rate</label>
+                            <dt className="font-medium text-muted-foreground">Success Rate</dt>
                             <p>{(Math.random() * 15 + 85).toFixed(1)}%</p>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div>
-                            <label className="font-medium text-muted-foreground">Throughput</label>
+                            <dt className="font-medium text-muted-foreground">Throughput</dt>
                             <p>{(Math.random() * 50 + 20).toFixed(1)} docs/hour</p>
                           </div>
                           <div>
-                            <label className="font-medium text-muted-foreground">Queue Time</label>
+                            <dt className="font-medium text-muted-foreground">Queue Time</dt>
                             <p>{formatDuration(Math.floor(Math.random() * 5) + 1)}</p>
                           </div>
                         </div>

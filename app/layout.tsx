@@ -42,7 +42,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background font-sans antialiased supports-[hover:hover]:hover:bg-background/95"
+            data-mobile-optimized="true">
         <GlobalErrorHandler 
           showNotifications={true}
           enableReporting={process.env.NODE_ENV === 'production'}

@@ -11,7 +11,7 @@ export interface NavigationItem {
   id: string
   name: string
   href: string
-  icon: string
+  icon: string | React.ReactNode
   badge?: number
   isActive?: boolean
   children?: NavigationSubItem[]
@@ -277,6 +277,29 @@ export interface LayoutContextType {
   toggleMobileMenu: () => void
   /** Toggle search overlay open/closed */
   toggleSearch: () => void
+  /** Device detection information */
+  device?: {
+    isMobile: boolean
+    isTablet: boolean
+    isDesktop: boolean
+    isTouchDevice: boolean
+    isIOS: boolean
+    isAndroid: boolean
+    orientation: 'portrait' | 'landscape'
+    screenSize: 'small' | 'medium' | 'large'
+    supportsHover: boolean
+    isLowEndDevice: boolean
+    viewportWidth: number
+    viewportHeight: number
+  }
+  /** Device capabilities for performance optimization */
+  capabilities?: {
+    shouldReduceAnimations: boolean
+    shouldUseLazyLoading: boolean
+    shouldPreloadImages: boolean
+    optimalImageQuality: 'low' | 'medium' | 'high'
+    recommendedPageSize: number
+  }
   /** Set application theme */
   setTheme: (theme: Theme) => void
 }

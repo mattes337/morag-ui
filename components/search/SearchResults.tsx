@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
   Button,
   Badge,
-  Skeleton
+  Skeleton,
+  Checkbox
 } from '@/components/ui';
 import { 
   FileText,
@@ -21,10 +22,16 @@ import {
   ChevronRight,
   ExternalLink,
   Calendar,
-  User
+  User,
+  Eye,
+  Download,
+  Check
 } from 'lucide-react';
 import { SearchResult } from '@/lib/mockData/searchMockData';
 import { formatDistanceToNow } from 'date-fns';
+import { DocumentViewer } from '@/components/documents/DocumentViewer';
+import { BatchActionBar } from '@/components/documents/BatchActionBar';
+import { useBatchSelection } from '@/lib/hooks/useBatchSelection';
 
 export interface SearchResultsProps {
   results: SearchResult[];
@@ -36,6 +43,12 @@ export interface SearchResultsProps {
   onResultClick: (result: SearchResult) => void;
   query?: string;
   className?: string;
+  // New props for enhanced functionality
+  enableBatchActions?: boolean;
+  enableDocumentPreview?: boolean;
+  onBatchDownload?: (resultIds: string[]) => void;
+  onBatchDelete?: (resultIds: string[]) => void;
+  onBatchTag?: (resultIds: string[]) => void;
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
@@ -47,8 +60,83 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
   onPageChange,
   onResultClick,
   query,
-  className = ''
+  className = '',
+  enableBatchActions = true,
+  enableDocumentPreview = true,
+  onBatchDownload,
+  onBatchDelete,
+  onBatchTag
 }) => {
+  // State for document preview
+  const [previewDocument, setPreviewDocument] = useState<SearchResult | null>(null);
+  
+  // Batch selection state
+  const batchSelection = useBatchSelection({
+    onSelectionChange: (selectedIds) => {
+      console.log('Selection changed:', selectedIds.size, 'items selected');
+    }
+  });
+
+  // Convert SearchResult to DocumentViewer format
+  const convertToDocumentFormat = (result: SearchResult) => ({
+    id: result.id,
+    name: result.title,
+    filename: result.title,
+    type: result.documentType,
+    size: result.metadata.size || 0,
+    status: 'completed' as const,
+    url: result.metadata.url,
+    description: result.excerpt,
+    uploadedAt: new Date(result.createdAt),
+    uploadedBy: result.metadata.author || 'Unknown',
+    tags: result.metadata.tags,
+  });
+
+  // Handle batch actions
+  const handleBatchDownload = () => {
+    if (onBatchDownload) {
+      onBatchDownload(batchSelection.getSelectedArray());
+    }
+  };
+
+  const handleBatchDelete = () => {
+    if (onBatchDelete) {
+      onBatchDelete(batchSelection.getSelectedArray());
+      batchSelection.clearSelection();
+    }
+  };
+
+  const handleBatchTag = () => {
+    if (onBatchTag) {
+      onBatchTag(batchSelection.getSelectedArray());
+    }
+  };
+
+  // Handle individual result selection
+  const handleResultSelection = (resultId: string, selected: boolean) => {
+    if (selected) {
+      batchSelection.selectItem(resultId);
+    } else {
+      batchSelection.deselectItem(resultId);
+    }
+  };
+
+  // Handle select all toggle
+  const handleSelectAll = () => {
+    if (batchSelection.allSelected) {
+      batchSelection.clearSelection();
+    } else {
+      batchSelection.selectAll(results.map(r => r.id));
+    }
+  };
+
+  // Handle document preview
+  const handlePreviewClick = (result: SearchResult, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (enableDocumentPreview) {
+      setPreviewDocument(result);
+    }
+  };
   // Document type icons mapping
   const getDocumentIcon = (type: string) => {
     switch (type) {
@@ -282,6 +370,21 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Batch Action Bar */}
+      {enableBatchActions && batchSelection.selectCount > 0 && (
+        <BatchActionBar
+          selectedCount={batchSelection.selectCount}
+          totalCount={results.length}
+          allSelected={batchSelection.allSelected}
+          isPartialSelection={batchSelection.isPartialSelection}
+          onSelectAll={handleSelectAll}
+          onClearSelection={batchSelection.clearSelection}
+          onDownload={handleBatchDownload}
+          onDelete={handleBatchDelete}
+          onAddTags={handleBatchTag}
+        />
+      )}
+
       {/* Results header */}
       {!isLoading && totalResults > 0 && (
         <div className="flex items-center justify-between">
@@ -292,8 +395,31 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
               {totalPages > 1 && (
                 <span> • Page {currentPage} of {totalPages}</span>
               )}
+              {batchSelection.selectCount > 0 && (
+                <span> • {batchSelection.selectCount} selected</span>
+              )}
             </p>
           </div>
+          {enableBatchActions && results.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAll}
+              className="ml-4"
+            >
+              {batchSelection.allSelected ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <Checkbox className="h-4 w-4 mr-2" />
+                  Select All
+                </>
+              )}
+            </Button>
+          )}
         </div>
       )}
 
@@ -309,21 +435,35 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
           {results.map((result) => (
             <li key={result.id} className="list-none">
               <Card
-                className="transition-all hover:shadow-md cursor-pointer"
+                className={`transition-all hover:shadow-md ${
+                  batchSelection.isSelected(result.id) ? 'ring-2 ring-primary' : ''
+                }`}
               >
               <CardContent className="p-6">
-                <button
-                  onClick={() => onResultClick(result)}
-                  className="w-full text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-                  aria-label={`Open ${result.title}`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Document icon */}
+                <div className="flex items-start gap-4">
+                  {/* Selection checkbox */}
+                  {enableBatchActions && (
                     <div className="flex-shrink-0 mt-1">
-                      {getDocumentIcon(result.documentType)}
+                      <Checkbox
+                        checked={batchSelection.isSelected(result.id)}
+                        onCheckedChange={(checked) => 
+                          handleResultSelection(result.id, checked as boolean)
+                        }
+                        aria-label={`Select ${result.title}`}
+                      />
                     </div>
+                  )}
 
-                    <div className="flex-1 min-w-0">
+                  {/* Document icon */}
+                  <div className="flex-shrink-0 mt-1">
+                    {getDocumentIcon(result.documentType)}
+                  </div>
+
+                  <button
+                    onClick={() => onResultClick(result)}
+                    className="flex-1 min-w-0 text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                    aria-label={`Open ${result.title}`}
+                  >
                       {/* Title and relevance score */}
                       <div className="flex items-start justify-between gap-4">
                         <h3 className="font-semibold text-lg leading-tight">
@@ -385,14 +525,36 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
                           )}
                         </div>
                       )}
-                    </div>
+                    </button>
 
-                    {/* External link indicator */}
-                    <div className="flex-shrink-0">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                  {/* Action buttons */}
+                  <div className="flex-shrink-0 flex items-center gap-2">
+                    {enableDocumentPreview && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handlePreviewClick(result, e)}
+                        className="p-2"
+                        aria-label={`Preview ${result.title}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onResultClick(result);
+                      }}
+                      className="p-2"
+                      aria-label={`Open ${result.title}`}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
                   </div>
-                </button>
+                </div>
               </CardContent>
               </Card>
             </li>
@@ -402,6 +564,18 @@ export const SearchResults: React.FC<SearchResultsProps> = React.memo(({
 
       {/* Pagination */}
       {!isLoading && <Pagination />}
+
+      {/* Document Preview Modal */}
+      {previewDocument && enableDocumentPreview && (
+        <DocumentViewer
+          document={convertToDocumentFormat(previewDocument)}
+          documents={results.map(convertToDocumentFormat)}
+          mode="modal"
+          enableNavigation={true}
+          showMetadata={true}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
     </div>
   );
 });

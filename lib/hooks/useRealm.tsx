@@ -357,4 +357,3 @@ export const useRealmFiltering = () => {
 }
 
 export default useRealm
-export { RealmProvider }

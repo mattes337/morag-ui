@@ -1,0 +1,66 @@
+{
+  "issue_type": "file_casing_conflicts",
+  "completed": true,
+  "target_files_resolved": [
+    "Input.tsx/input.tsx",
+    "Badge.tsx/badge.tsx"
+  ],
+  "files_standardized": [
+    "components/ui/Badge.tsx → components/ui/badge.tsx",
+    "components/ui/Badge.stories.tsx → components/ui/badge.stories.tsx", 
+    "components/ui/Badge.test.tsx → components/ui/badge.test.tsx",
+    "components/ui/Input.tsx → components/ui/input.tsx",
+    "components/ui/Input.stories.tsx → components/ui/input.stories.tsx",
+    "components/ui/Input.test.tsx → components/ui/input.test.tsx"
+  ],
+  "imports_updated": [
+    "app/(dashboard)/settings/page.tsx",
+    "components/pipeline/ProcessingStatus.tsx",
+    "components/pipeline/PipelineVisualization.tsx",
+    "components/jobs/JobStatus.tsx",
+    "components/jobs/JobList.tsx",
+    "components/jobs/JobDetail.tsx",
+    "components/jobs/JobActions.tsx",
+    "components/settings/ProfileSettings.tsx",
+    "components/settings/NotificationSettings.tsx",
+    "components/settings/APIKeySettings.tsx",
+    "components/settings/AccountSettings.tsx",
+    "components/realms/RealmSelector.tsx",
+    "components/analytics/UsageChart.tsx",
+    "components/analytics/ProcessingChart.tsx",
+    "components/analytics/PerformanceMetrics.tsx",
+    "components/analytics/MetricsCards.tsx",
+    "components/analytics/AnalyticsDashboard.tsx",
+    "components/upload/DocumentUpload.tsx",
+    "components/ui/core.ts",
+    "components/ui/index.ts",
+    "components/ui/NotificationBell.tsx",
+    "components/ui/Dialog.stories.tsx",
+    "components/ui/Label.stories.tsx",
+    "components/ui/badge.stories.tsx",
+    "components/ui/badge.test.tsx",
+    "components/ui/input.stories.tsx",
+    "components/ui/input.test.tsx"
+  ],
+  "verification_results": {
+    "original_conflicts_resolved": true,
+    "badge_casing_resolved": true,
+    "input_casing_resolved": true,
+    "no_remaining_badge_input_conflicts": true,
+    "other_casing_conflicts_exist": true,
+    "other_conflicts_out_of_scope": [
+      "Skeleton.tsx/skeleton.tsx",
+      "Select.tsx/select.tsx",
+      "Dialog.tsx/dialog.tsx", 
+      "Tabs.tsx/tabs.tsx"
+    ]
+  },
+  "errors": [],
+  "scope_adherence": {
+    "target_files_addressed": true,
+    "scope_exceeded": false,
+    "original_requirements_met": true
+  },
+  "completion_time": "2025-09-10T17:15:00Z",
+  "summary": "Successfully resolved the specific Badge.tsx/badge.tsx and Input.tsx/input.tsx casing conflicts identified in PARALLEL_VERIFICATION.json. All files have been standardized to lowercase naming and all import references have been updated. The original task scope has been completed successfully. Additional casing conflicts exist for other components but were outside the specified remediation scope."
+}

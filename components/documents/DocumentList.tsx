@@ -272,7 +272,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               <div className="flex gap-2">
                 <select
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
+                  onChange={(e) => setFilterType(e.target.value)} onBlur={(e) => setFilterType(e.target.value)} aria-label="Filter documents by type"
                   className="px-3 py-2 border rounded-md text-sm"
                 >
                   <option value="all">All Types</option>
@@ -284,7 +284,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
                 <select
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
+                  onChange={(e) => setFilterStatus(e.target.value)} onBlur={(e) => setFilterStatus(e.target.value)} aria-label="Filter documents by status"
                   className="px-3 py-2 border rounded-md text-sm"
                 >
                   <option value="all">All Status</option>
@@ -301,6 +301,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     setSortBy(field as any);
                     setSortOrder(order as any);
                   }}
+                  onBlur={(e) => {
+                    const [field, order] = e.target.value.split("-");
+                    setSortBy(field as any);
+                    setSortOrder(order as any);
+                  }}
+                  aria-label="Sort documents"
                   className="px-3 py-2 border rounded-md text-sm"
                 >
                   <option value="date-desc">Newest First</option>

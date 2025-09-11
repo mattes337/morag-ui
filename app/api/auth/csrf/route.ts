@@ -13,7 +13,7 @@ const CSRF_SECRET = process.env.CSRF_SECRET || process.env.JWT_SECRET || 'fallba
  * GET /api/auth/csrf
  * Generate and return a new CSRF token
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Generate signed CSRF token
     const { token, signature, timestamp } = createSignedCSRFToken(CSRF_SECRET);

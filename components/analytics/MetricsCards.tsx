@@ -152,12 +152,11 @@ export function MetricsCards({
   }
 
   return (
-    <div 
+    <section 
       className={cn(
         "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6",
         className
       )}
-      role="region"
       aria-label="Key Performance Metrics"
     >
       {metrics.map((metric) => {
@@ -169,7 +168,6 @@ export function MetricsCards({
           <Card 
             key={metric.id}
             className="transition-all duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2"
-            role="article"
             aria-labelledby={`metric-${metric.id}-title`}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -233,7 +231,7 @@ export function MetricsCards({
           </Card>
         )
       })}
-    </div>
+    </section>
   )
 }
 

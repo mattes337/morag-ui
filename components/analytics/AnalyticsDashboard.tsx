@@ -38,11 +38,6 @@ interface AnalyticsDashboardProps {
 type DateRange = '7d' | '30d' | '90d'
 type ViewType = 'overview' | 'detailed' | 'performance'
 
-const dateRangeLabels = {
-  '7d': 'Last 7 Days',
-  '30d': 'Last 30 Days',
-  '90d': 'Last 90 Days'
-}
 
 /**
  * AnalyticsDashboard component - Main analytics dashboard with real-time metrics
@@ -73,7 +68,7 @@ export function AnalyticsDashboard({ className, realmId }: AnalyticsDashboardPro
   )
 
   // Real-time updates integration
-  const { jobUpdates, documentUpdates, connectionState } = useRealTimeUpdates({
+  const { connectionState } = useRealTimeUpdates({
     onJobUpdate: (update) => {
       // Refresh analytics when jobs complete to show updated metrics
       if (update.status === 'completed' || update.status === 'failed') {

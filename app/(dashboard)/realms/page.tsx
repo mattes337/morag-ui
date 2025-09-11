@@ -46,14 +46,8 @@ import {
   Filter,
   Grid3x3,
   List,
-  SortAsc,
-  SortDesc,
   Trash2,
-  Copy,
-  Settings,
   Users,
-  Activity,
-  MoreHorizontal,
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -79,7 +73,7 @@ const DEFAULT_FILTERS: RealmFilters = {
 }
 
 export default function RealmsPage() {
-  const { availableRealms, isLoading, refreshRealms } = useRealm()
+  const { isLoading } = useRealm()
   const [filters, setFilters] = useState<RealmFilters>(DEFAULT_FILTERS)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [selectedRealm, setSelectedRealm] = useState<MockRealm | null>(null)

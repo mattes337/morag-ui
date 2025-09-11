@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { AnalyticsDashboard } from './AnalyticsDashboard'
@@ -297,7 +297,7 @@ describe('AnalyticsDashboard', () => {
       )
       
       if (exportButtons.length > 0) {
-        await user.click(exportButtons[0])
+        await user.click(exportButtons[0]!)
         expect(exportAnalyticsData.metrics).toHaveBeenCalled()
       }
     })

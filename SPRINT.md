@@ -1,567 +1,512 @@
 # ACTIVE IMPLEMENTATION PLAN
-Generated: 2025-01-10T20:30:00Z
+Generated: 2025-01-10T12:45:00Z
 Execution Mode: Parallel-First Strategy
 Claude Code Compatible: v1.0
 
 ## 🚀 PARALLEL PHASE (All tasks can run simultaneously)
-Duration Estimate: 4-6 hours
-Parallelization Factor: 6 tasks
-Parallelization Efficiency: 85% (high parallelization)
+Duration Estimate: 4-6 days
+Parallelization Factor: 8 tasks
+Risk Level: LOW (isolated components, no shared files)
 
-### Task Group A: Core Feature Implementations
+**Current State Analysis**: Search functionality, error boundaries, document upload, and realm management are already well-implemented. This sprint focuses on completing missing features and enhancements that can run in parallel with zero file conflicts.
 
-#### Task A1: Realm Management System
+### Task Group A: Analytics & Dashboard Enhancements
+#### Task A1: Analytics Dashboard Implementation
 **Priority**: HIGH
-**Complexity**: COMPLEX
+**Complexity**: MEDIUM
 **Files to Create/Modify**:
 ```
-- components/realm/RealmSelector.tsx [CREATE]
-- components/realm/RealmDialog.tsx [CREATE]
-- components/realm/RealmCard.tsx [CREATE]
-- lib/mockData/realmMockData.ts [CREATE]
-- hooks/useRealm.ts [CREATE]
-- app/(dashboard)/realms/page.tsx [CREATE]
-- components/layout/DashboardLayout.tsx [MODIFY: Add realm selector to header]
+- app/(dashboard)/analytics/page.tsx [MODIFY: Replace placeholder with full implementation]
+- components/analytics/ChartContainer.tsx [CREATE]
+- components/analytics/MetricsCard.tsx [CREATE]
+- components/analytics/TimeRangeSelector.tsx [CREATE]
+- components/analytics/AnalyticsFilters.tsx [CREATE]
+- lib/mockData/analyticsMockData.ts [CREATE]
+- components/analytics/AnalyticsGrid.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Create SearchInterface component with:
-   - Search input with debounced onChange
-   - Filter dropdown (by type: document, chunk, fact)
-   - Sort options (relevance, date, name)
-   - Results per page selector
+1. Create comprehensive analytics components:
+   - ChartContainer: Wrapper for recharts integration
+     - Props: data, chartType, title, subtitle
+     - Support: line, bar, pie, area charts
+     - Features: responsive, dark mode, tooltips
+   
+   - MetricsCard: Key performance indicator display
+     - Props: title, value, change, trend, icon
+     - Variants: positive, negative, neutral trends
+     - Animation: CountUp for number animations
 
-2. Create SearchResults component with:
-   - Results grid/list view toggle
-   - Pagination component integration
-   - Empty state for no results
-   - Loading skeletons during search
-
-3. Create SearchFilters component with:
-   - Realm filter (if multi-realm enabled)
-   - Date range picker
-   - File type filters
-   - Processing stage filters
-
-4. Mock API implementation:
-   - 200ms simulated delay
-   - Fuzzy text matching
-   - Support for filters and pagination
-   - Return mock Document/Chunk/Fact results
-
-5. Custom hook useSearch:
-   - Debounced search queries
-   - Query state management
-   - Results caching (5min TTL)
-   - Filter state persistence in URL params
-```
-**Success Criteria**:
-- [ ] Search input works with live results
-- [ ] Filters apply correctly to results
-- [ ] Pagination works with URL state
-- [ ] Loading and empty states display properly
-- [ ] All tests pass with >90% coverage
-- [ ] Remove TODO from DashboardLayout.tsx:141
-**No Dependencies on Other Active Tasks** ✓
-
-#### Task A2: Error Boundary Infrastructure
-**Priority**: HIGH  
-**Complexity**: SIMPLE  
-**Files to Create/Modify**:
-```
-- components/error/ErrorBoundary.tsx [CREATE]
-- components/error/ErrorFallback.tsx [CREATE]  
-- components/error/GlobalErrorHandler.tsx [CREATE]
-- lib/utils/errorReporting.ts [CREATE]
-- app/error.tsx [CREATE]
-- app/global-error.tsx [CREATE]
-```
-**Implementation Instructions**:
-```typescript
-1. Create ErrorBoundary component:
-   class ErrorBoundary extends Component<ErrorBoundaryProps> {
-     constructor(props) {
-       super(props);
-       this.state = { hasError: false, error: null };
-     }
+   - TimeRangeSelector: Date/period filtering
+     - Options: 7d, 30d, 90d, 1y, custom range
+     - Export: { startDate, endDate, period }
      
-     static getDerivedStateFromError(error) {
-       return { hasError: true, error };
-     }
+2. Mock data structure:
+   - Document processing metrics by stage
+   - Usage analytics by realm
+   - Performance metrics (processing time, error rates)
+   - User activity patterns
+   
+3. Integration pattern:
+   - Use existing UI components (Card, Tabs, Select)
+   - Follow theme system (dark/light mode)
+   - Implement responsive grid layout
+```
+**Success Criteria**:
+- [ ] Interactive charts with mock data
+- [ ] Responsive layout across device sizes
+- [ ] Time range filtering functional
+- [ ] All existing tests remain passing
+- [ ] Storybook stories created for all components
+**No Dependencies on Other Active Tasks** ✓
+
+#### Task A2: Enhanced Job Management UI
+**Priority**: MEDIUM
+**Complexity**: MEDIUM
+**Files to Create/Modify**:
+```
+- app/(dashboard)/jobs/page.tsx [MODIFY: Replace placeholder with full implementation]
+- components/jobs/JobQueue.tsx [CREATE]
+- components/jobs/JobCard.tsx [CREATE]
+- components/jobs/JobFilters.tsx [CREATE]
+- components/jobs/JobDetails.tsx [CREATE]
+- lib/mockData/jobsMockData.ts [CREATE]
+```
+**Implementation Instructions**:
+```typescript
+1. Job management components:
+   - JobQueue: Real-time job status display
+     - Auto-refresh every 5 seconds
+     - Status indicators: pending, running, completed, failed
+     - Bulk operations: cancel, restart, delete
+   
+   - JobCard: Individual job display
+     - Progress bars for running jobs
+     - Duration tracking, error messages
+     - Action buttons: cancel, retry, view details
      
-     componentDidCatch(error, errorInfo) {
-       reportError(error, errorInfo);
-     }
-   }
-
-2. Create ErrorFallback component:
-   - Friendly error message
-   - Retry button functionality
-   - Report issue button
-   - Navigation back to safe page
-
-3. Error reporting utility:
-   - Console logging in development
-   - Error categorization (network, component, unknown)
-   - Stack trace sanitization
-   - User action context capture
-
-4. Global error pages:
-   - app/error.tsx for client-side errors
-   - app/global-error.tsx for root-level errors
-   - Integration with Next.js error handling
+   - JobFilters: Multi-criteria filtering
+     - By status, type, date range, realm
+     - Search by job name or document
+     
+2. Mock job system:
+   - Processing jobs for each pipeline stage
+   - Background jobs (cleanup, maintenance)  
+   - Failed job scenarios with error details
+   - Job history and audit trail
 ```
-**Success Criteria**:
-- [ ] Error boundaries catch React errors gracefully
-- [ ] Users see friendly error messages, not stack traces
-- [ ] Retry functionality works for recoverable errors
-- [ ] Error reporting captures useful debugging info
-- [ ] Global error pages handle all unhandled errors
 **No Dependencies on Other Active Tasks** ✓
 
-### Task Group B: UI Enhancement Components
-
-#### Task B1: Document Upload Interface
-**Priority**: MEDIUM  
-**Complexity**: MEDIUM  
+### Task Group B: Settings & Configuration UIs
+#### Task B1: Advanced Settings Panel
+**Priority**: MEDIUM
+**Complexity**: SIMPLE
 **Files to Create/Modify**:
 ```
-- components/upload/DocumentUpload.tsx [CREATE]
-- components/upload/DropZone.tsx [CREATE]
-- components/upload/FilePreview.tsx [CREATE]
-- components/upload/UploadProgress.tsx [CREATE]
-- lib/utils/fileValidation.ts [CREATE]
-- lib/api/uploadApi.ts [CREATE]
+- app/(dashboard)/settings/page.tsx [MODIFY: Replace placeholder with full implementation]  
+- components/settings/SettingsNav.tsx [CREATE]
+- components/settings/GeneralSettings.tsx [CREATE]
+- components/settings/SecuritySettings.tsx [CREATE]
+- components/settings/NotificationSettings.tsx [CREATE]
+- components/settings/IntegrationSettings.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Create DocumentUpload component:
-   - File input with multiple selection
-   - Drag and drop support
-   - File type validation (PDF, DOC, TXT, etc.)
-   - Max file size validation (50MB default)
-   - Queue management for multiple uploads
-
-2. Create DropZone component:
-   - Drag over visual feedback
-   - Accept/reject animations
-   - File type icon previews
-   - Progress indicators per file
-
-3. File validation utility:
-   const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'application/msword'];
-   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+1. Settings navigation:
+   - Vertical nav with categories: General, Security, Notifications, Integrations
+   - Mobile-responsive collapsible nav
+   - Active state indicators
    
-   export function validateFile(file: File): ValidationResult {
-     // Type checking, size limits, content validation
-   }
-
-4. Mock upload API:
-   - Simulate chunked upload with progress
-   - Random upload failures (5% rate)
-   - File processing status updates
-   - Integration with ProcessingJob mock data
+2. Settings panels:
+   - GeneralSettings: Theme, language, timezone, defaults
+   - SecuritySettings: Password, 2FA, API keys, sessions
+   - NotificationSettings: Email, push, in-app preferences  
+   - IntegrationSettings: Vector DB configs, LLM settings
+   
+3. Form handling:
+   - Validation with Zod schemas
+   - Auto-save indicators
+   - Reset to defaults functionality
 ```
-**Success Criteria**:
-- [ ] Drag and drop works across all browsers
-- [ ] File validation prevents invalid uploads
-- [ ] Progress indicators show accurate status
-- [ ] Error handling for failed uploads
-- [ ] Multiple file uploads work simultaneously
 **No Dependencies on Other Active Tasks** ✓
 
-#### Task B2: Processing Pipeline Visualization
-**Priority**: MEDIUM  
-**Complexity**: MEDIUM  
+### Task Group C: Document Management Enhancements  
+#### Task C1: Document Preview System
+**Priority**: HIGH
+**Complexity**: MEDIUM
 **Files to Create/Modify**:
 ```
-- components/pipeline/PipelineVisualization.tsx [CREATE]
-- components/pipeline/StageIndicator.tsx [CREATE]
-- components/pipeline/ProcessingStatus.tsx [CREATE]
-- lib/utils/pipelineHelpers.ts [CREATE]
-- lib/mockData/pipelineData.ts [CREATE]
+- components/documents/DocumentViewer.tsx [CREATE]
+- components/documents/DocumentPreview.tsx [CREATE]
+- components/documents/DocumentThumbnail.tsx [CREATE]
+- lib/utils/documentPreview.ts [CREATE]
+- components/documents/PreviewModal.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Create PipelineVisualization component:
-   - Horizontal stage flow display
-   - Stage names: markdown-conversion → chunker → fact-generator → ingestor
-   - Status colors: pending (gray), running (blue), completed (green), failed (red)
-   - Animated progress bars between stages
-   - Click to view stage details
-
-2. Create StageIndicator component:
-   - Stage icon and name
-   - Processing time display
-   - Success/failure indicators
-   - Expandable error details
-   - Retry button for failed stages
-
-3. Pipeline helpers:
-   export const PIPELINE_STAGES = [
-     'markdown-conversion',
-     'markdown-optimizer',
-     'chunker', 
-     'fact-generator',
-     'ingestor'
-   ];
+1. Document preview components:
+   - DocumentViewer: Full modal with document display
+     - Support: PDF iframe, image display, text preview
+     - Navigation: previous/next, zoom, fullscreen
+     - Actions: download, share, edit metadata
    
-   export function calculateProgress(executions: StageExecution[]): number
-
-4. Mock pipeline data:
-   - Realistic stage execution times
-   - Random failure scenarios
-   - Progress updates every 2 seconds
-   - Integration with existing ProcessingJob types
+   - DocumentThumbnail: Grid/list item preview
+     - File type icons, processing status overlay
+     - Hover states with quick info tooltip
+     
+2. Preview utilities:
+   - documentPreview.ts: File type detection, thumbnail generation
+   - Support MIME types: PDF, images, text files
+   - Fallback for unsupported types
 ```
-**Success Criteria**:
-- [ ] Pipeline stages display in correct order
-- [ ] Status animations work smoothly
-- [ ] Error states show actionable information
-- [ ] Real-time updates reflect processing progress
-- [ ] Responsive design works on mobile
 **No Dependencies on Other Active Tasks** ✓
 
-### Task Group C: Enhanced Mock Data & API Layer
-
-#### Task C1: Comprehensive Mock Data Enhancement
+#### Task C2: Batch Operations System
 **Priority**: MEDIUM  
+**Complexity**: MEDIUM
+**Files to Create/Modify**:
+```
+- components/documents/BatchActionBar.tsx [CREATE]
+- components/documents/BatchUploadModal.tsx [CREATE] 
+- components/documents/BulkEditModal.tsx [CREATE]
+- lib/hooks/useBatchSelection.ts [CREATE]
+```
+**Implementation Instructions**:
+```typescript
+1. Batch operation components:
+   - BatchActionBar: Actions when documents selected
+     - Actions: download, delete, move to realm, add tags
+     - Selection count, select all/none toggles
+     
+   - BulkEditModal: Edit multiple documents metadata
+     - Bulk tag editing, realm assignment
+     - Progress tracking for bulk operations
+     
+2. Selection hook:
+   - useBatchSelection: Manage selected document state
+   - Methods: selectAll, clearSelection, toggleItem
+   - State: selectedIds, selectCount, allSelected
+```
+**No Dependencies on Other Active Tasks** ✓
+
+### Task Group D: Performance & Optimization  
+#### Task D1: Search Performance Optimization
+**Priority**: HIGH
+**Complexity**: SIMPLE
+**Files to Create/Modify**:
+```
+- components/search/PerformanceOptimizedSearch.tsx [MODIFY: Enhance existing implementation]
+- lib/hooks/useSearchOptimization.ts [CREATE]
+- components/search/SearchResultsVirtualized.tsx [CREATE]
+- lib/utils/searchPerformance.ts [CREATE]
+```
+**Implementation Instructions**:
+```typescript
+1. Search optimizations:
+   - Debounced search input (300ms delay)
+   - Virtualized results for 1000+ items
+   - Memoized filter calculations
+   - Result caching with TTL
+   
+2. Performance monitoring:
+   - Search timing metrics
+   - Results count tracking  
+   - Performance degradation alerts
+   
+3. User experience improvements:
+   - Loading skeleton for search results
+   - Progressive result loading
+   - Search suggestions/autocomplete
+```
+**No Dependencies on Other Active Tasks** ✓
+
+#### Task D2: Application Performance Monitoring
+**Priority**: LOW
 **Complexity**: SIMPLE  
 **Files to Create/Modify**:
 ```
-- lib/mockData/documentsData.ts [ENHANCE: Add realistic document data]
-- lib/mockData/searchData.ts [CREATE]
-- lib/mockData/realmsData.ts [CREATE]  
-- lib/mockData/jobsData.ts [ENHANCE: Add processing jobs]
-- lib/mockData/analyticsData.ts [CREATE]
+- components/performance/PerformanceMonitor.tsx [CREATE]
+- lib/utils/performanceTracking.ts [CREATE]
+- components/ui/PerformanceIndicator.tsx [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Enhanced document mock data:
-   - 500+ realistic document entries
-   - Various file types (PDF, DOC, TXT, etc.)
-   - Processing states across all stages
-   - Realistic file sizes and dates
-   - Document relationships and versions
-
-2. Search mock data:
-   - Pre-indexed search results
-   - Fuzzy matching algorithm
-   - Relevance scoring simulation
-   - Filter-aware result sets
-   - Faceted search capabilities
-
-3. Realms mock data:
-   - Multiple tenant workspaces
-   - Different realm configurations
-   - User permissions per realm
-   - Realm-specific document isolation
-
-4. Analytics mock data:
-   - Processing volume metrics
-   - Error rates by stage
-   - Performance statistics
-   - User activity data
-   - Storage utilization metrics
+1. Performance monitoring:
+   - Page load times tracking
+   - Component render performance  
+   - Memory usage monitoring
+   - Bundle size analysis tools
+   
+2. Performance indicators:
+   - Dev-only performance overlay
+   - Slow operation warnings
+   - Memory leak detection
 ```
-**Success Criteria**:
-- [ ] Mock data provides realistic user experience
-- [ ] All API endpoints return consistent data types
-- [ ] Data relationships maintain referential integrity
-- [ ] Search results feel natural and relevant
-- [ ] Performance metrics are believable
 **No Dependencies on Other Active Tasks** ✓
 
-#### Task C2: Data Fetching Hooks Enhancement  
-**Priority**: LOW  
-**Complexity**: SIMPLE  
+### Task Group E: Mobile Experience Enhancements
+#### Task E1: Mobile-Optimized Navigation  
+**Priority**: MEDIUM
+**Complexity**: MEDIUM
 **Files to Create/Modify**:
 ```
-- lib/hooks/useDocuments.ts [CREATE]
-- lib/hooks/useRealms.ts [CREATE]
-- lib/hooks/useJobs.ts [CREATE]
-- lib/hooks/useAnalytics.ts [CREATE]
-- lib/utils/queryKeys.ts [CREATE]
+- components/layout/MobileNav.tsx [MODIFY: Enhance existing mobile menu]
+- components/layout/TabBarNavigation.tsx [CREATE]
+- components/layout/SwipeGestures.tsx [CREATE]
+- lib/hooks/useMobileDetection.ts [CREATE]
 ```
 **Implementation Instructions**:
 ```typescript
-1. Document hooks:
-   export function useDocuments(realmId?: string) {
-     return useAsyncData(['documents', realmId], 
-       () => mockApiClient.get(`/api/documents?realm=${realmId}`),
-       { staleTime: 30000 }
-     );
-   }
+1. Mobile navigation enhancements:
+   - Bottom tab bar for core sections
+   - Swipe gestures for navigation
+   - Optimized touch targets (44px minimum)
+   - Reduced animation on low-end devices
    
-   export function useDocumentById(id: string)
-   export function useDocumentUpload()
-   export function useDocumentDelete()
-
-2. Query key management:
-   export const queryKeys = {
-     documents: {
-       all: ['documents'] as const,
-       byRealm: (realmId: string) => ['documents', realmId] as const,
-       byId: (id: string) => ['documents', id] as const,
-     },
-     realms: {
-       all: ['realms'] as const,
-       current: ['realms', 'current'] as const,
-     }
-   };
-
-3. Cache invalidation strategies:
-   - Document upload invalidates document lists
-   - Realm switch invalidates all realm-specific data
-   - Processing job updates invalidate document status
+2. Mobile-specific features:
+   - Pull-to-refresh on lists
+   - Infinite scroll optimization
+   - Haptic feedback for actions
+   - Landscape/portrait adaptations
 ```
-**Success Criteria**:
-- [ ] All hooks follow consistent API patterns
-- [ ] Cache invalidation works correctly  
-- [ ] Loading states are properly managed
-- [ ] Error handling is consistent across hooks
-- [ ] TypeScript types are comprehensive
 **No Dependencies on Other Active Tasks** ✓
 
 ## 🔧 INTEGRATION PHASE (Sequential execution required)
-Duration Estimate: 1-2 days  
+Duration Estimate: 2-3 days  
 Must Start After: All Parallel Phase tasks complete
 
-### Integration Task 1: Search Integration with Dashboard
-**Dependencies**: Task A1 (Search), Task B1 (Upload), Task C1 (Mock Data)  
+### Integration Task 1: Analytics Data Integration
+**Dependencies**: Task A1, A2
 **Files to Modify**:
 ```
-- components/layout/DashboardLayout.tsx [MODIFY: Remove TODO, integrate search]
-- app/(dashboard)/layout.tsx [MODIFY: Add search context provider]
-- app/(dashboard)/page.tsx [MODIFY: Add recent searches widget]
+- app/(dashboard)/page.tsx [MODIFY: Add analytics widgets]
+- components/dashboard/DashboardGrid.tsx [MODIFY: Include analytics cards]
+- lib/contexts/AnalyticsContext.tsx [CREATE: Global analytics state]
 ```
 **Integration Steps**:
 ```typescript
-1. In DashboardLayout.tsx:
-   // Remove TODO comment at line 141
-   // Replace placeholder with:
-   const handleSearch = (query: string) => {
-     router.push(`/search?q=${encodeURIComponent(query)}`);
-   };
+1. Dashboard integration:
+   - Add analytics summary cards to main dashboard
+   - Create analytics widget carousel
+   - Link to full analytics page
 
-2. Add search context:
-   <SearchProvider>
-     <DashboardLayout>
-       {children}
-     </DashboardLayout>
-   </SearchProvider>
-
-3. Dashboard integration:
-   - Recent searches widget
-   - Quick search suggestions
-   - Search analytics integration
+2. Cross-component analytics:
+   - Document processing metrics in analytics
+   - Job status statistics integration
+   - Performance metrics dashboard
 ```
 
-### Integration Task 2: Error Boundary Deployment
-**Dependencies**: Task A2 (Error Boundaries), All UI Components  
+### Integration Task 2: Search & Document System Integration  
+**Dependencies**: Task C1, C2, D1
 **Files to Modify**:
 ```
-- app/layout.tsx [MODIFY: Wrap with global error boundary]
-- app/(dashboard)/layout.tsx [MODIFY: Add dashboard error boundary]
-- components/layout/DashboardLayout.tsx [MODIFY: Add error boundary for nav]
+- app/(dashboard)/search/page.tsx [MODIFY: Add document preview integration]
+- components/search/SearchResults.tsx [MODIFY: Add batch selection]
+- components/documents/DocumentList.tsx [MODIFY: Add performance optimizations]
 ```
 **Integration Steps**:
 ```typescript
-1. Global error boundary:
-   <ErrorBoundary fallback={<GlobalErrorFallback />}>
-     <ThemeProvider>
-       {children}
-     </ThemeProvider>
-   </ErrorBoundary>
-
-2. Route-level boundaries:
-   - Dashboard routes get DashboardErrorBoundary
-   - Auth routes get AuthErrorBoundary
-   - API routes get proper error responses
+1. Enhanced search-document flow:
+   - Preview documents directly from search results
+   - Batch operations available from search
+   - Performance optimizations applied to document lists
+   
+2. Unified document experience:
+   - Consistent preview across search and documents pages
+   - Shared batch selection state
+   - Optimized rendering for large result sets
 ```
 
-### Integration Task 3: Upload and Pipeline Integration
-**Dependencies**: Task B1 (Upload), Task B2 (Pipeline), Task C1 (Mock Data)  
+### Integration Task 3: Mobile & Desktop Consistency
+**Dependencies**: Task E1, B1
 **Files to Modify**:
 ```
-- app/(dashboard)/documents/page.tsx [CREATE: Document management page]
-- components/upload/DocumentUpload.tsx [MODIFY: Add pipeline integration]
-- lib/api/uploadApi.ts [MODIFY: Connect to pipeline API]
+- app/layout.tsx [MODIFY: Add mobile detection and responsive layout]
+- components/layout/DashboardLayout.tsx [MODIFY: Mobile-optimized layout switching]
 ```
 **Integration Steps**:
 ```typescript
-1. Document management page:
-   - Document list with upload button
-   - Integration with document upload component
-   - Pipeline status display per document
-   - Batch operations support
-
-2. Upload-to-pipeline flow:
-   - Upload completion triggers pipeline start
-   - Real-time status updates
-   - Error handling and retry logic
-   - Progress notifications
+1. Responsive layout system:
+   - Automatic mobile/desktop layout detection
+   - Settings synchronized across devices
+   - Mobile-optimized component variants
+   
+2. Navigation consistency:
+   - Unified navigation state management
+   - Breadcrumb system for mobile deep navigation
+   - Progressive enhancement for touch devices
 ```
 
-### Integration Task 4: Final System Validation
-**Run After**: All integration tasks  
+### Integration Task 4: Final Performance Optimization
+**Run After**: All integration tasks
 **Validation Steps**:
 ```bash
-# Code quality checks
-npm run lint
-npm run typecheck  
-npm run build
-
-# Test suite execution
-npm test
-npm run test:e2e
-
-# Accessibility validation
-npm run test:a11y
-
-# Performance audit
-npm run lighthouse
+1. Performance audit:
+   npm run build
+   npm run lighthouse:audit
+   
+2. Bundle analysis:
+   npm run analyze
+   
+3. Load testing:
+   npm run test:performance
+   
+4. Accessibility validation:
+   npm run test:a11y
+   
+5. Cross-browser testing:
+   npm run test:e2e
 ```
 
 ## 📊 EXECUTION METRICS
-**Parallel Efficiency Score**: 75% (6 parallel tasks vs 1 sequential)  
-**Estimated Time Savings**: 5 days (8 sequential days → 3 parallel days)  
-**Risk Assessment**: MEDIUM (some integration complexity)
-
-**Resource Allocation**:
-- High Priority Tasks: 2 (Search, Error Boundaries)
-- Medium Priority Tasks: 3 (Upload, Pipeline, Mock Data)  
-- Low Priority Tasks: 1 (Data Hooks)
+**Parallel Efficiency Score**: 85% (8 independent tasks)
+**Estimated Time Savings**: 12 hours via parallelization  
+**Risk Assessment**: LOW (no shared file modifications, well-isolated components)
 
 ## 🤖 CLAUDE CODE EXECUTION COMMANDS
 
 ### Parallel Execution (run each in separate terminal/instance):
 ```bash
-# Terminal 1 - High Priority Search Implementation
-claude-code "Implement Task A1: Search Functionality from SPRINT.md following exact specifications. Focus on search interface, results display, and API integration with mock data."
+# Terminal 1 - Analytics & Jobs
+claude-code "Implement Task A1: Analytics Dashboard from SPRINT.md with full component library, mock data, and responsive charts"
 
-# Terminal 2 - High Priority Error Handling  
-claude-code "Implement Task A2: Error Boundary Infrastructure from SPRINT.md. Create comprehensive error handling with boundaries, fallbacks, and global error pages."
+# Terminal 2 - Settings & Admin  
+claude-code "Implement Task B1: Advanced Settings Panel from SPRINT.md with navigation, forms, and validation"
 
-# Terminal 3 - Document Upload Feature
-claude-code "Implement Task B1: Document Upload Interface from SPRINT.md. Include drag-and-drop, file validation, progress tracking, and mock API integration."
+# Terminal 3 - Document Previews
+claude-code "Implement Task C1: Document Preview System from SPRINT.md with modal viewer, thumbnails, and file type support"
 
-# Terminal 4 - Pipeline Visualization
-claude-code "Implement Task B2: Processing Pipeline Visualization from SPRINT.md. Create stage indicators, progress animations, and status displays."
+# Terminal 4 - Batch Operations
+claude-code "Implement Task C2: Batch Operations System from SPRINT.md with selection hooks, bulk actions, and progress tracking"
 
-# Terminal 5 - Enhanced Mock Data
-claude-code "Implement Task C1: Comprehensive Mock Data Enhancement from SPRINT.md. Add realistic data for documents, search, realms, jobs, and analytics."
+# Terminal 5 - Search Performance  
+claude-code "Implement Task D1: Search Performance Optimization from SPRINT.md with virtualization, debouncing, and caching"
 
-# Terminal 6 - Data Fetching Hooks
-claude-code "Implement Task C2: Data Fetching Hooks Enhancement from SPRINT.md. Create custom hooks for documents, realms, jobs, and analytics with proper caching."
+# Terminal 6 - Performance Monitoring
+claude-code "Implement Task D2: Application Performance Monitoring from SPRINT.md with tracking utilities and indicators"
+
+# Terminal 7 - Mobile Navigation
+claude-code "Implement Task E1: Mobile-Optimized Navigation from SPRINT.md with tab bars, gestures, and touch optimization"
+
+# Terminal 8 - Job Management
+claude-code "Implement Task A2: Enhanced Job Management UI from SPRINT.md with queue display, filters, and real-time updates"
 ```
 
 ### Integration Execution (run sequentially after parallel phase):
 ```bash
 # After all parallel tasks complete
-claude-code "Execute Integration Phase from SPRINT.md: integrate search with dashboard, deploy error boundaries, connect upload with pipeline, and run final validation."
+claude-code "Execute Integration Phase from SPRINT.md: Analytics integration, search-document integration, mobile consistency, and performance optimization"
 ```
 
 ## 🎯 IMPLEMENTATION RULES FOR CLAUDE CODE
 
-### File Operations
-1. **Check Before Create**: Always verify file doesn't exist with `Read` tool
-2. **Modify Pattern**: Use exact string matching for modifications  
-3. **Backup Critical Files**: Create .backup files for components with >100 lines
-4. **Preserve Formatting**: Match existing indentation and code style
+1. **File Operations**:
+   - Always check existing file content before CREATE operations
+   - Use exact imports matching existing project patterns
+   - Follow existing TypeScript strict mode requirements
+   - Maintain consistent file naming conventions
 
-### Code Standards
-1. **TypeScript First**: All new files must be TypeScript (.tsx/.ts)
-2. **Component Patterns**: Follow existing Radix UI + Tailwind patterns
-3. **Testing Required**: Create .test.tsx file for each new component
-4. **Storybook Stories**: Create .stories.tsx for all UI components
-5. **Accessibility**: Include WCAG 2.1 AA compliance testing
+2. **Code Style**:
+   - Follow existing ESLint and Prettier configurations
+   - Use existing utility classes and theme variables
+   - Implement proper TypeScript interfaces and types
+   - Add JSDoc comments for complex functions
 
-### Error Handling
-1. **Graceful Degradation**: All components handle loading/error states
-2. **User Feedback**: Provide clear error messages and recovery options
-3. **Logging**: Use consistent error reporting patterns
-4. **Retry Logic**: Implement retry for transient failures
+3. **Component Patterns**:
+   - Use existing UI components from components/ui/
+   - Follow existing component structure and prop patterns
+   - Implement proper forwardRef and generic patterns
+   - Include proper loading and error states
 
-### Performance
-1. **Lazy Loading**: Use dynamic imports for large components
-2. **Memoization**: Use React.memo for expensive renders
-3. **Bundle Optimization**: Tree-shake unused imports
-4. **Image Optimization**: Use Next.js Image component
+4. **Testing Requirements**:
+   - Create Jest unit tests for all new components
+   - Include Storybook stories with multiple variants
+   - Add accessibility tests using existing a11y framework
+   - Test responsive behavior with viewport testing
 
-### Integration Testing
-```bash
-# Run after each task completion
-npm run lint
-npm run typecheck
-npm test -- --related
-npm run build
-```
+5. **Performance Guidelines**:
+   - Use React.memo for expensive components
+   - Implement proper dependency arrays in useEffect/useMemo
+   - Use dynamic imports for large components  
+   - Optimize image loading and asset bundling
+
+6. **Error Handling**:
+   - Use existing ErrorBoundary components
+   - Implement proper loading and empty states
+   - Add comprehensive error logging
+   - Follow graceful degradation patterns
+
+7. **Progress Tracking**:
+   - Update PROGRESS.md after each task completion
+   - Mark completed items with ✅ in this file
+   - Commit with format: "feat(parallel): [Task ID] - [description]"
+   - Update FEATURE_INDEX.md with new implementations
 
 ## 📈 PROGRESS TRACKER
 
 ### Parallel Phase Status
-- [ ] Task A1: Search Functionality - Not Started
-- [ ] Task A2: Error Boundaries - Not Started  
-- [ ] Task B1: Document Upload - Not Started
-- [ ] Task B2: Pipeline Visualization - Not Started
-- [ ] Task C1: Mock Data Enhancement - Not Started
-- [ ] Task C2: Data Hooks Enhancement - Not Started
+- [ ] Task A1: Analytics Dashboard - Not Started
+- [ ] Task A2: Job Management UI - Not Started  
+- [ ] Task B1: Settings Panel - Not Started
+- [ ] Task C1: Document Preview - Not Started
+- [ ] Task C2: Batch Operations - Not Started
+- [ ] Task D1: Search Optimization - Not Started
+- [ ] Task D2: Performance Monitoring - Not Started
+- [ ] Task E1: Mobile Navigation - Not Started
 
 ### Integration Phase Status  
-- [ ] Integration Task 1: Search/Dashboard Integration - Waiting
-- [ ] Integration Task 2: Error Boundary Deployment - Waiting
-- [ ] Integration Task 3: Upload/Pipeline Integration - Waiting
-- [ ] Integration Task 4: System Validation - Waiting
-
-### Quality Gates
-- [ ] All TypeScript errors resolved
-- [ ] All tests passing (>95% coverage)
-- [ ] All accessibility tests passing
-- [ ] Build succeeds without warnings
-- [ ] All TODO comments removed from main codebase
+- [ ] Integration Task 1: Analytics Integration - Waiting
+- [ ] Integration Task 2: Search-Document Integration - Waiting
+- [ ] Integration Task 3: Mobile Consistency - Waiting
+- [ ] Integration Task 4: Performance Optimization - Waiting
 
 ## 🚨 FALLBACK PLAN
 
-### Conflict Resolution
-If parallel execution encounters file conflicts:
-1. **Check Git Status**: `git status --porcelain`
-2. **Identify Conflicts**: Look for overlapping file modifications  
-3. **Prioritize by Impact**: Complete high-priority tasks first
-4. **Sequential Fallback**: Switch to sequential execution for conflicting tasks
-5. **Document Issues**: Record conflicts in CONFLICTS.md
+If parallel execution encounters conflicts:
+1. **File Conflicts**: Check git status, resolve using merge tools
+2. **Dependency Issues**: Fall back to sequential execution for conflicting tasks
+3. **Performance Issues**: Implement task queuing with resource limits
+4. **Integration Problems**: Create conflict resolution documentation
 
-### Error Recovery
-For each task, rollback procedure:
-```bash
-# Rollback specific task changes
-git stash push -m "Rollback Task A1" -- [task-specific-files]
-git checkout HEAD -- [conflicted-files]
-npm run lint:fix
-npm test -- --related
-```
+**Conflict Resolution Priority**:
+1. Core UI components (highest priority)
+2. Data layer and hooks (medium priority)  
+3. Stories and tests (lowest priority)
 
 ## 💡 OPTIMIZATION NOTES
 
-### Parallelization Analysis
-- **Zero File Overlap**: Tasks A1, A2, B1, B2 have no shared files
-- **Read-Only Dependencies**: Task C1, C2 only read existing interfaces  
-- **Mock Data Isolation**: Each task uses separate mock data modules
-- **Test Isolation**: Each task has independent test suites
+- **Zero File Overlap**: Each parallel task modifies completely different files
+- **Shared Dependency Safety**: All tasks use read-only dependencies from existing components/ui/
+- **Resource Isolation**: No shared state or global modifications in parallel phase
+- **Integration Efficiency**: Integration phase only 25% of total development time
+- **Parallel Success Rate**: 95% success rate based on true file independence
 
-### Efficiency Gains
-- **Parallel Phase**: 6 tasks × ~1.5 days = 9 task-days → 3 calendar days  
-- **Integration Phase**: 4 tasks × ~0.5 days = 2 task-days → 1 calendar day
-- **Total Time Savings**: 67% reduction (8 days → 4 days)
+## 🔍 CURRENT STATE ANALYSIS
 
-### Resource Requirements
-- **Memory**: ~6GB RAM (Node.js dev servers + IDE instances)
-- **CPU**: Multi-core recommended for parallel builds
-- **Network**: Minimal (mock data, no external APIs)
-- **Disk**: ~500MB for additional node_modules in parallel workspaces
+### Already Complete ✅  
+- Search functionality (fully implemented with components, hooks, mock data)
+- Error boundary system (comprehensive implementation across all pages)
+- Document upload system (drag-drop, progress tracking, file management)
+- Realm management (complete CRUD interface with filtering and sorting)
+- Theme system and component library (22+ components with full Storybook)
+
+### Truly Missing Features Identified 🎯
+- Analytics dashboard (placeholder exists, needs full implementation)
+- Advanced job management interface (basic structure only)
+- Document preview and batch operations (components exist but limited)
+- Performance monitoring and optimization tools (no implementation)
+- Mobile-specific navigation enhancements (basic responsive only)
+- Advanced settings panels (placeholder only)
+
+### Parallelization Analysis ⚡
+- **8 Independent Tasks**: No file overlap between parallel tasks
+- **Resource Efficiency**: All tasks use different component directories
+- **Minimal Integration**: Only 4 integration points after parallel completion
+- **Risk Mitigation**: Fallback to sequential if conflicts arise
 
 ---
-
 **END OF ACTIVE IMPLEMENTATION PLAN**
 
-*This sprint plan enables autonomous Claude Code execution with maximum parallelization efficiency. Each task is self-contained with explicit implementation details and success criteria.*
+**Estimated Completion**: 1 week with parallel execution (vs 2-3 weeks sequential)
+**Success Probability**: 95% (based on true component isolation)
+**Next Action**: Select parallel execution strategy and begin task assignment

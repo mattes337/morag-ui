@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useLayoutState } from './hooks/useLayoutState'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useRenderTracking, useRerenderTracking } from '@/lib/hooks/usePerformanceTracking'
+import { useMobileDetection, useDeviceCapabilities } from '@/lib/hooks/useMobileDetection'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { MobileMenu } from './MobileMenu'
@@ -69,14 +70,30 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   }, [state.theme])
 
-  // Check if mobile viewport
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  // Enhanced mobile detection with device capabilities
+  const device = useMobileDetection()
+  const capabilities = useDeviceCapabilities()
+  
+  const { 
+    isMobile, 
+    isTablet, 
+    isDesktop, 
+    isTouchDevice, 
+    orientation, 
+    screenSize,
+    supportsHover 
+  } = device
 
   // Memoize context value to prevent unnecessary re-renders across dashboard
   const layoutContextValue: LayoutContextType = useMemo(() => ({
-    ...layoutState
+    ...layoutState,
+    // Add device information to layout context for child components
+    device,
+    capabilities
   }), [
-    layoutState
+    layoutState,
+    device,
+    capabilities
   ])
 
   return (
@@ -85,7 +102,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div 
           className={cn(
             'flex h-screen bg-background text-foreground',
+            // Device-specific classes
             isMobile && 'mobile',
+            isTablet && 'tablet',
+            isDesktop && 'desktop',
+            isTouchDevice && 'touch-device',
+            orientation === 'portrait' && 'portrait',
+            orientation === 'landscape' && 'landscape',
+            screenSize && `screen-${screenSize}`,
+            !supportsHover && 'no-hover',
+            capabilities.shouldReduceAnimations && 'reduce-motion',
             className
           )}
           data-testid="dashboard-layout"

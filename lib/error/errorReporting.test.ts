@@ -23,20 +23,20 @@ const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 jest.useFakeTimers();
 
 // Mock window methods
-const mockLocation = { href: 'https://test.example.com/page' };
+const mockLocation = { 
+  href: 'https://test.example.com/page',
+  hostname: 'test.example.com',
+  protocol: 'https:',
+  pathname: '/page'
+};
 const mockUserAgent = 'Test User Agent';
 
-try {
-  Object.defineProperty(window, 'location', {
-    get: () => mockLocation,
-    configurable: true,
-  });
-} catch (e) {
-  // Location might already be mocked in other tests
-  // Use a different mocking approach
-  delete (window as any).location;
-  (window as any).location = mockLocation;
-}
+// Use simple location mocking to avoid JSDOM issues
+beforeAll(() => {
+  // Mock location in global scope only
+  delete (global as any).location;
+  (global as any).location = mockLocation;
+});
 
 Object.defineProperty(navigator, 'userAgent', {
   get: () => mockUserAgent,

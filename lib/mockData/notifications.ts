@@ -298,7 +298,7 @@ function generateNotifications(): Notification[] {
     return text.replace(/{(\w+)}/g, (match, key) => variables[key] || match);
   };
   
-  const generateVariables = (type: NotificationType, category: NotificationCategory): Record<string, string> => {
+  const generateVariables = (type: NotificationType, _category: NotificationCategory): Record<string, string> => {
     const variables: Record<string, string> = {};
     
     // Common variables
@@ -418,17 +418,19 @@ function generateNotifications(): Notification[] {
       data: variables,
       template: `${type}-${category}`,
       variables,
-      tracking: source === 'marketing' ? {
-        campaignId: `campaign-${randomInt(100, 999)}`,
-        source: 'email',
-        medium: 'newsletter'
-      } : undefined
+      ...(source === 'marketing' && {
+        tracking: {
+          campaignId: `campaign-${randomInt(100, 999)}`,
+          source: 'email',
+          medium: 'newsletter'
+        }
+      })
     };
     
     const notification: Notification = {
       id: `notif-${i.toString().padStart(4, '0')}`,
       userId,
-      realmId,
+      ...(realmId && { realmId }),
       type,
       category,
       title,
@@ -436,17 +438,17 @@ function generateNotifications(): Notification[] {
       priority,
       status,
       createdAt,
-      readAt: status === 'read' ? randomDate(createdAt, new Date()) : undefined,
-      dismissedAt: status === 'dismissed' ? randomDate(createdAt, new Date()) : undefined,
-      expiresAt: Math.random() > 0.8 ? randomDate(new Date(), new Date('2024-12-31')) : undefined,
-      actionUrl: Math.random() > 0.6 ? `/dashboard/${category}s` : undefined,
-      actionLabel: Math.random() > 0.6 ? randomChoice(['View Details', 'Take Action', 'Learn More', 'Fix Now']) : undefined,
+      ...(status === 'read' && { readAt: randomDate(createdAt, new Date()) }),
+      ...(status === 'dismissed' && { dismissedAt: randomDate(createdAt, new Date()) }),
+      ...(Math.random() > 0.8 && { expiresAt: randomDate(new Date(), new Date('2024-12-31')) }),
+      ...(Math.random() > 0.6 && { actionUrl: `/dashboard/${category}s` }),
+      ...(Math.random() > 0.6 && { actionLabel: randomChoice(['View Details', 'Take Action', 'Learn More', 'Fix Now']) }),
       metadata,
       relatedEntityType: category,
       relatedEntityId: `${category}-${randomInt(1, 100)}`,
       channels: notificationChannels,
       isSticky: priority === 'critical' || priority === 'urgent',
-      groupId: Math.random() > 0.7 ? `group-${randomInt(1, 20)}` : undefined,
+      ...(Math.random() > 0.7 && { groupId: `group-${randomInt(1, 20)}` }),
       tags: randomChoices([
         'automated', 'user-triggered', 'scheduled', 'alert', 'update', 
         'reminder', 'collaboration', 'system', 'urgent', 'info'
@@ -606,7 +608,7 @@ export const sampleNotificationPreferences: NotificationPreferences = {
     },
     'push': {
       enabled: true,
-      types: ['urgent', 'critical'],
+      types: ['warning', 'error'],
       priorities: ['urgent', 'critical']
     },
     'sms': {
@@ -631,7 +633,7 @@ export const sampleNotificationPreferences: NotificationPreferences = {
     }
   },
   frequency: {
-    immediate: ['security', 'error', 'critical'],
+    immediate: ['security', 'error', 'warning'],
     hourly: ['processing', 'collaboration'],
     daily: ['system', 'reminder'],
     weekly: ['marketing', 'info'],

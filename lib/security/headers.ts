@@ -186,7 +186,7 @@ export function withRateLimit(config: RateLimitConfig) {
     return async (request: NextRequest): Promise<NextResponse> => {
       const key = config.keyGenerator 
         ? config.keyGenerator(request)
-        : request.ip || 'unknown';
+        : request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || 'unknown';
       
       if (!limiter.isAllowed(key)) {
         return new NextResponse(
@@ -219,7 +219,7 @@ export const apiRateLimit = withRateLimit({
   keyGenerator: (request) => {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    return forwardedFor?.split(',')[0] || realIp || request.ip || 'unknown';
+    return forwardedFor?.split(',')[0] || realIp  || 'unknown';
   }
 });
 
@@ -232,7 +232,7 @@ export const authRateLimit = withRateLimit({
   keyGenerator: (request) => {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    return forwardedFor?.split(',')[0] || realIp || request.ip || 'unknown';
+    return forwardedFor?.split(',')[0] || realIp  || 'unknown';
   }
 });
 

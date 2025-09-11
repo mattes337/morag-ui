@@ -51,6 +51,21 @@ function SearchPageContent() {
     // For now, we'll just log it
   };
 
+  const handleBatchDownload = (resultIds: string[]) => {
+    console.log('Batch download requested for:', resultIds);
+    // Implement batch download logic
+  };
+
+  const handleBatchDelete = (resultIds: string[]) => {
+    console.log('Batch delete requested for:', resultIds);
+    // Implement batch delete logic
+  };
+
+  const handleBatchTag = (resultIds: string[]) => {
+    console.log('Batch tag requested for:', resultIds);
+    // Implement batch tag logic
+  };
+
   const handlePageChange = (page: number) => {
     goToPage(page);
   };
@@ -92,7 +107,6 @@ function SearchPageContent() {
             onSearch={handleSearch}
             onFilter={handleFilter}
             placeholder="Search documents, knowledge base, and more..."
-            autoFocus
           />
         </ErrorBoundary>
 
@@ -149,6 +163,11 @@ function SearchPageContent() {
                 onPageChange={handlePageChange}
                 onResultClick={handleResultClick}
                 query={query}
+                enableBatchActions={true}
+                enableDocumentPreview={true}
+                onBatchDownload={handleBatchDownload}
+                onBatchDelete={handleBatchDelete}
+                onBatchTag={handleBatchTag}
               />
             </ErrorBoundary>
           </div>

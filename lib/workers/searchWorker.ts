@@ -33,6 +33,9 @@ export interface SearchWorkerResponse {
   };
 }
 
+// Declare importScripts for TypeScript
+declare const importScripts: ((...urls: string[]) => void) | undefined;
+
 // Check if we're in a worker context
 if (typeof self !== 'undefined' && typeof importScripts === 'function') {
   self.onmessage = async (event: MessageEvent<SearchWorkerMessage>) => {

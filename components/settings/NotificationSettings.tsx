@@ -25,6 +25,10 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+interface NotificationSettingsProps {
+  className?: string
+}
+
 interface NotificationRowProps {
   icon: React.ReactNode
   title: string
@@ -187,7 +191,7 @@ const QuietHoursSetting: React.FC<QuietHoursSettingProps> = ({
   )
 }
 
-export function NotificationSettings() {
+export function NotificationSettings({ className }: NotificationSettingsProps = {}) {
   const {
     notifications,
     updateNotifications,
@@ -247,7 +251,7 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", className)}>
       {/* Email Notifications */}
       <Card>
         <CardHeader>
